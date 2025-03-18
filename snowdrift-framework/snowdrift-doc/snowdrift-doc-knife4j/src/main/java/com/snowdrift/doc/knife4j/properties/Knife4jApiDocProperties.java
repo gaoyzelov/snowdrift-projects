@@ -3,7 +3,6 @@ package com.snowdrift.doc.knife4j.properties;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
-import springfox.documentation.service.Contact;
 
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
@@ -58,9 +57,4 @@ public class Knife4jApiDocProperties implements Serializable {
     @NotBlank(message = "文档扫描包不能为空")
     private String basePackage = "com.snowdrift";
 
-    /**
-     * 联系方式
-     */
-    @NotNull(message = "联系方式不能为空")
-    private Contact contact = new Contact("Gaoyzelov", "https://github.com/gaoyzelov/snowdrift-projects", "gaoyzelov@qq.com");
 }

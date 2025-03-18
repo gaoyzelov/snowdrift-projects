@@ -61,7 +61,6 @@ public class Knife4jApiDocAutoConfiguration {
                 .title(properties.getTitle())
                 .description("# " + properties.getDescription())
                 .termsOfServiceUrl(properties.getWebsite())
-                .contact(properties.getContact())
                 .version(properties.getVersion())
                 .build();
     }

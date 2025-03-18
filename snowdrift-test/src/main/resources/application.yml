@@ -1,6 +1,8 @@
 snowdrift:
   doc:
     knife4j:
-      title:
-      base-package:
       enabled: true
+      title: 测试服务接口文档
+      base-package: com.snowdrift.test.controller
+      description: 测试服务接口文档
+      version: v1
