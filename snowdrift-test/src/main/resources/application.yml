@@ -1,0 +1,6 @@
+snowdrift:
+  doc:
+    knife4j:
+      title:
+      base-package:
+      enabled: true

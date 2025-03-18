@@ -13,4 +13,20 @@
 
     <artifactId>snowdrift-bom</artifactId>
     <version>${revision}</version>
+    <packaging>pom</packaging>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-doc-knife4j</artifactId>
+                <version>${revision}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 </project>

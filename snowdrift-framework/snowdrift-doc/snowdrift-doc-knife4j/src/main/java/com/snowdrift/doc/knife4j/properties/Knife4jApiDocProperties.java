@@ -26,7 +26,7 @@ public class Knife4jApiDocProperties implements Serializable {
      * 是否启用
      */
     @NotNull(message = "是否启用不能为空")
-    private Boolean enabled = Boolean.TRUE;
+    private Boolean enabled = Boolean.FALSE;
 
     /**
      * 文档标题
