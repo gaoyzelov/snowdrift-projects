@@ -3,6 +3,7 @@ snowdrift:
     knife4j:
       enabled: true
       title: 测试服务接口文档
-      base-package: com.snowdrift.test.controller
       description: 测试服务接口文档
+      website: http://localhost:8080/swagger-ui.html
+      base-package: com.snowdrift.test.controller
       version: v1
