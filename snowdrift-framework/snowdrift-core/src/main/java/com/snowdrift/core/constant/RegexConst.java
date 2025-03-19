@@ -15,4 +15,5 @@ public interface RegexConst {
     String CARD_NO = "^[1-9]\\d{5}(19|20)\\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\\d{3}[Xx\\d]$";
     String EMAIL = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
     String DATA_SIZE = "^\\d+(\\.\\d+)?(B|KB|MB|GB|TB|PB)$";
+    String DATE_TIME = "\\d{4}-\\d{1,2}-\\d{1,2}(\\s\\d{1,2}:\\d{1,2}(:\\d{1,2})?(.\\d{1,6})?)?";
 }
