@@ -16,4 +16,5 @@ public interface RegexConst {
     String EMAIL = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
     String DATA_SIZE = "^\\d+(\\.\\d+)?(B|KB|MB|GB|TB|PB)$";
     String DATE_TIME = "\\d{4}-\\d{1,2}-\\d{1,2}(\\s\\d{1,2}:\\d{1,2}(:\\d{1,2})?(.\\d{1,6})?)?";
+    String SPEL = "^#.*.$";
 }
