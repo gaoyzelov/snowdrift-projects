@@ -4,54 +4,16 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.snowdrift</groupId>
-    <artifactId>snowdrift-framework</artifactId>
+    <parent>
+        <groupId>com.snowdrift</groupId>
+        <artifactId>snowdrift-framework</artifactId>
+        <version>1.0.0</version>
+        <relativePath/>
+    </parent>
+
+    <artifactId>snowdrift-parent</artifactId>
     <version>${revision}</version>
     <packaging>pom</packaging>
-    <name>snowdrift-framework</name>
-    <description>Snowdrift Framework</description>
-    <url>https://github.com/gaoyzelov/snowdrift-projects</url>
-
-    <licenses>
-        <license>
-            <name>Apache License, Version 2.0</name>
-            <url>https://www.apache.org/licenses/LICENSE-2.0</url>
-        </license>
-    </licenses>
-
-    <developers>
-        <developer>
-            <name>Gaoyzelov</name>
-            <email>gaoyzelov@qq.com</email>
-        </developer>
-    </developers>
-
-    <modules>
-        <module>snowdrift-core</module>
-        <module>snowdrift-doc</module>
-        <module>snowdrift-cache</module>
-    </modules>
-
-    <properties>
-        <revision>1.0.0</revision>
-        <java.version>8</java.version>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
-        <maven-compiler-plugin.version>3.13.0</maven-compiler-plugin.version>
-        <spring-boot.version>2.7.18</spring-boot.version>
-        <spring-cloud.version>2021.0.9</spring-cloud.version>
-        <spring-cloud-alibaba.version>2021.0.6.2</spring-cloud-alibaba.version>
-        <dubbo.version>3.1.11</dubbo.version>
-        <guava.version>33.4.0-jre</guava.version>
-        <knife4j.version>4.4.0</knife4j.version>
-        <redisson.verison>3.18.0</redisson.verison>
-        <transmittable-thread-local.version>2.14.2</transmittable-thread-local.version>
-        <mapstruct.version>1.6.0</mapstruct.version>
-        <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
-    </properties>
 
     <dependencyManagement>
         <dependencies>
@@ -123,18 +85,25 @@
                 <artifactId>lombok-mapstruct-binding</artifactId>
                 <version>${lombok-mapstruct-binding.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-cache-redis</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-doc-knife4j</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <build>
-        <finalName>${project.artifactId}</finalName>
-        <resources>
-            <resource>
-                <directory>src/main/resources</directory>
-                <filtering>true</filtering>
-            </resource>
-        </resources>
-
         <pluginManagement>
             <plugins>
                 <plugin>
@@ -168,34 +137,5 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
-        <plugins>
-            <!-- 统一revision版本 -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>flatten-maven-plugin</artifactId>
-                <version>${flatten-maven-plugin.version}</version>
-                <configuration>
-                    <flattenMode>resolveCiFriendliesOnly</flattenMode>
-                    <updatePomFile>true</updatePomFile>
-                </configuration>
-                <executions>
-                    <execution>
-                        <id>flatten</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>flatten</goal>
-                        </goals>
-                    </execution>
-                    <execution>
-                        <id>flatten.clean</id>
-                        <phase>clean</phase>
-                        <goals>
-                            <goal>clean</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
     </build>
 </project>
