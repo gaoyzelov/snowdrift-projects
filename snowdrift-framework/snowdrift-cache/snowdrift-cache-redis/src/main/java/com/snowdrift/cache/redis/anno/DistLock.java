@@ -18,7 +18,7 @@ public @interface DistLock {
     /**
      * 锁前缀
      */
-    String value() default "lock:";
+    String value() default "redisson";
 
     /**
      * 锁key
@@ -38,17 +38,7 @@ public @interface DistLock {
     /**
      * 是否阻塞获取
      */
-    boolean block() default true;
-
-    /**
-     * 重试次数
-     */
-    int retryCount() default 0;
-
-    /**
-     * 重试间隔时间，单位秒
-     */
-    int retryInterval() default 1;
+    boolean block() default false;
 
     /**
      * 提示信息

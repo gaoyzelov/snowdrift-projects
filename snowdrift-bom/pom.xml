@@ -24,6 +24,11 @@
             </dependency>
             <dependency>
                 <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-cache-redis</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-doc-knife4j</artifactId>
                 <version>${revision}</version>
             </dependency>
