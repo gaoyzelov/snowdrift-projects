@@ -30,6 +30,7 @@
         <module>snowdrift-core</module>
         <module>snowdrift-doc</module>
         <module>snowdrift-cache</module>
+        <module>snowdrift-orm</module>
     </modules>
 
     <properties>
@@ -51,6 +52,8 @@
         <transmittable-thread-local.version>2.14.2</transmittable-thread-local.version>
         <mapstruct.version>1.6.0</mapstruct.version>
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
+        <mybatis-plus.version>3.5.7</mybatis-plus.version>
+        <swagger-annotations.version>1.6.6</swagger-annotations.version>
     </properties>
 
     <dependencyManagement>
@@ -122,6 +125,21 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok-mapstruct-binding</artifactId>
                 <version>${lombok-mapstruct-binding.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-annotation</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.swagger</groupId>
+                <artifactId>swagger-annotations</artifactId>
+                <version>${swagger-annotations.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
