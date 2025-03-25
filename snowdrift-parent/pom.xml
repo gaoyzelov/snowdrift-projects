@@ -100,6 +100,11 @@
                 <artifactId>snowdrift-doc-knife4j</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-web</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

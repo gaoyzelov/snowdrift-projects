@@ -1,7 +1,7 @@
 package com.snowdrift.core.result;
 
-import com.snowdrift.core.constant.MsgConst;
 import com.snowdrift.core.enums.ErrorCodeEnum;
+import com.snowdrift.core.enums.ResultEnum;
 import com.snowdrift.core.exception.BaseException;
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
@@ -48,7 +48,7 @@ public class JsonResult<T> {
      * @return JsonResult
      */
     public static <T> JsonResult<T> ok(T data) {
-        return ok(MsgConst.OK_MESSAGE, data);
+        return ok(ResultEnum.OK.getNote(), data);
     }
 
     /**
@@ -60,7 +60,7 @@ public class JsonResult<T> {
      * @return JsonResult
      */
     public static <T> JsonResult<T> ok(String msg, T data) {
-        return build(MsgConst.OK_CODE, msg, data);
+        return build(ResultEnum.OK.getCode(), msg, data);
     }
 
     /**
@@ -81,7 +81,7 @@ public class JsonResult<T> {
      * @return JsonResult
      */
     public static <T> JsonResult<T> err(T data) {
-        return err(MsgConst.ERR_MESSAGE, data);
+        return err(ResultEnum.ERR.getNote(), data);
     }
 
     /**
@@ -93,7 +93,7 @@ public class JsonResult<T> {
      * @return JsonResult
      */
     public static <T> JsonResult<T> err(String msg, T data) {
-        return build(MsgConst.ERR_CODE, msg, data);
+        return build(ResultEnum.ERR.getCode(), msg, data);
     }
 
     /**

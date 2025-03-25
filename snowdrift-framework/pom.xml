@@ -31,6 +31,7 @@
         <module>snowdrift-doc</module>
         <module>snowdrift-cache</module>
         <module>snowdrift-orm</module>
+        <module>snowdrift-web</module>
     </modules>
 
     <properties>
@@ -54,6 +55,7 @@
         <lombok-mapstruct-binding.version>0.2.0</lombok-mapstruct-binding.version>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <swagger-annotations.version>1.6.6</swagger-annotations.version>
+        <fastjson2.version>2.0.51</fastjson2.version>
     </properties>
 
     <dependencyManagement>
@@ -140,6 +142,11 @@
                 <groupId>io.swagger</groupId>
                 <artifactId>swagger-annotations</artifactId>
                 <version>${swagger-annotations.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.alibaba.fastjson2</groupId>
+                <artifactId>fastjson2</artifactId>
+                <version>${fastjson2.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

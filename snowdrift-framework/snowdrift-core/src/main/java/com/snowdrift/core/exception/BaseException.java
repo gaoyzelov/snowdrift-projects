@@ -1,7 +1,7 @@
 package com.snowdrift.core.exception;
 
-import com.snowdrift.core.constant.MsgConst;
 import com.snowdrift.core.enums.ErrorCodeEnum;
+import com.snowdrift.core.enums.ResultEnum;
 import lombok.Getter;
 
 /**
@@ -22,7 +22,7 @@ public class BaseException extends RuntimeException {
 
     public BaseException(String message) {
         super(message);
-        this.code = MsgConst.ERR_CODE;
+        this.code = ResultEnum.ERR.getCode();
     }
 
     public BaseException(Integer code, String message){
@@ -37,6 +37,6 @@ public class BaseException extends RuntimeException {
 
     public BaseException(String message, Throwable cause) {
         super(message, cause);
-        this.code = MsgConst.ERR_CODE;
+        this.code = ResultEnum.ERR.getCode();
     }
 }

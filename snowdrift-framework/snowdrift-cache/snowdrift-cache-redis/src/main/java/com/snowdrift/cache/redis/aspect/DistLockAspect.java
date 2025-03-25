@@ -40,7 +40,7 @@ public class DistLockAspect {
      * @return Object
      */
     @Around("@annotation(distLock)")
-    public Object around(ProceedingJoinPoint joinPoint, DistLock distLock) throws Throwable {
+    public Object doAround(ProceedingJoinPoint joinPoint, DistLock distLock) throws Throwable {
         String lockKey = getLockKey(joinPoint, distLock);
         boolean locked;
         if (distLock.block()) {
