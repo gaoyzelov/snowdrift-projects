@@ -7,6 +7,7 @@ import com.snowdrift.core.context.SecurityContextHolder;
 import com.snowdrift.core.enums.ResultEnum;
 import com.snowdrift.core.utils.DesensitizeUtil;
 import com.snowdrift.core.utils.NetUtil;
+import com.snowdrift.core.utils.SpringUtil;
 import com.snowdrift.web.anno.AccessLog;
 import com.snowdrift.web.bo.WebLog;
 import com.snowdrift.web.handler.IAccessLogHandler;
@@ -21,9 +22,9 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * AccessLogAspect
@@ -36,9 +37,6 @@ import java.util.Objects;
 @Slf4j
 @Aspect
 public class AccessLogAspect {
-
-    @Resource
-    private IAccessLogHandler accessLogHandler;
 
     /**
      * 环绕通知
@@ -62,7 +60,8 @@ public class AccessLogAspect {
         } finally {
             stopWatch.stop();
             webLog.setRequestCost(stopWatch.getTotalTimeMillis());
-            accessLogHandler.handle(webLog);
+            Optional.ofNullable(SpringUtil.getBean(IAccessLogHandler.class))
+                    .ifPresent(accessLogHandler -> accessLogHandler.handle(webLog));
         }
         return result;
     }
