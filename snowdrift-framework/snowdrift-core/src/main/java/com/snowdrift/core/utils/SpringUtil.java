@@ -1,6 +1,6 @@
 package com.snowdrift.core.utils;
 
-import com.sun.xml.internal.ws.util.UtilException;
+import com.snowdrift.core.exception.BaseException;
 import org.apache.commons.lang3.ArrayUtils;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ListableBeanFactory;
@@ -55,7 +55,7 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
     public static ListableBeanFactory getBeanFactory() {
         final ListableBeanFactory factory = null == beanFactory ? applicationContext : beanFactory;
         if (null == factory) {
-            throw new UtilException("ConfigurableListableBeanFactory或ApplicationContext对象没有注入，请检查是否为Spring环境！");
+            throw new BaseException("ConfigurableListableBeanFactory或ApplicationContext对象没有注入，请检查是否为Spring环境！");
         }
         return factory;
     }
@@ -64,16 +64,16 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
      * 获取{@link ConfigurableListableBeanFactory}
      *
      * @return {@link ConfigurableListableBeanFactory}
-     * @throws UtilException 当上下文非ConfigurableListableBeanFactory抛出异常
+     * @throws BaseException 当上下文非ConfigurableListableBeanFactory抛出异常
      */
-    public static ConfigurableListableBeanFactory getConfigurableBeanFactory() throws UtilException {
+    public static ConfigurableListableBeanFactory getConfigurableBeanFactory() throws BaseException {
         final ConfigurableListableBeanFactory factory;
         if (Objects.nonNull(beanFactory)) {
             factory = beanFactory;
         } else if (applicationContext instanceof ConfigurableApplicationContext) {
             factory = ((ConfigurableApplicationContext) applicationContext).getBeanFactory();
         } else {
-            throw new UtilException("从上下文中找不到ConfigurableListableBeanFactory对象！");
+            throw new BaseException("从上下文中找不到ConfigurableListableBeanFactory对象！");
         }
         return factory;
     }
@@ -237,7 +237,7 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
             DefaultSingletonBeanRegistry registry = (DefaultSingletonBeanRegistry) factory;
             registry.destroySingleton(beanName);
         } else {
-            throw new UtilException("Can not unregister bean, the factory is not a DefaultSingletonBeanRegistry!");
+            throw new BaseException("Can not unregister bean, the factory is not a DefaultSingletonBeanRegistry!");
         }
     }
 

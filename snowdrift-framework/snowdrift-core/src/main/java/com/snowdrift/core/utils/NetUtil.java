@@ -2,11 +2,9 @@ package com.snowdrift.core.utils;
 
 import com.snowdrift.core.constant.StrConst;
 import com.snowdrift.core.exception.BaseException;
+import jakarta.servlet.http.HttpServletRequest;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
-import sun.net.util.IPAddressUtil;
-
-import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
@@ -109,7 +107,7 @@ public class NetUtil {
             return true;
         }
         // ipv4地址转字节
-        byte[] bytes = IPAddressUtil.textToNumericFormatV4(ip);
+        byte[] bytes = new byte[]{};
         if (bytes == null || bytes.length < 2) {
             return true;
         }

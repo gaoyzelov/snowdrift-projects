@@ -2,7 +2,7 @@ package com.snowdrift.core.entity;
 
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.snowdrift.core.constant.ColumnConst;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -15,9 +15,10 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@Schema(description = "OwnerEntity")
 public class OwnerEntity extends BaseEntity {
 
-    @ApiModelProperty(value = "归属者ID", example = "1", position = 97)
+    @Schema(description = "归属者ID", example = "1")
     @TableField(ColumnConst.OWNER_ID)
     private Long ownerId;
 }

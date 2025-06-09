@@ -3,8 +3,7 @@ package com.snowdrift.core.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.Version;
 import com.snowdrift.core.constant.ColumnConst;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -17,10 +16,10 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@ApiModel(value = "VersionEntity", description = "VersionEntity")
+@Schema(description = "VersionEntity")
 public class VersionEntity extends BaseEntity {
 
-    @ApiModelProperty(value = "乐观锁", example = "1", position = 97)
+    @Schema(description = "乐观锁", example = "1")
     @Version
     @TableField(ColumnConst.VERSION)
     private Long version;

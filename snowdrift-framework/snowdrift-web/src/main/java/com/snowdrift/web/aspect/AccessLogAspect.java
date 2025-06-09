@@ -11,6 +11,7 @@ import com.snowdrift.core.utils.SpringUtil;
 import com.snowdrift.web.anno.AccessLog;
 import com.snowdrift.web.bo.WebLog;
 import com.snowdrift.web.handler.IAccessLogHandler;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -22,7 +23,6 @@ import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Objects;
 import java.util.Optional;
 

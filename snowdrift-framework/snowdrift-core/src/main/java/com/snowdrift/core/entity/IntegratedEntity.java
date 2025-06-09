@@ -4,8 +4,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.baomidou.mybatisplus.annotation.Version;
 import com.snowdrift.core.constant.ColumnConst;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -20,24 +19,24 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-@ApiModel(value = "IntegratedEntity", description = "IntegratedEntity")
+@Schema(description = "IntegratedEntity")
 public class IntegratedEntity extends BaseEntity {
 
-    @ApiModelProperty(value = "归属者ID", example = "1", position = 97)
+    @Schema(description = "归属者ID", example = "1")
     @TableField(ColumnConst.OWNER_ID)
     private Long ownerId;
 
-    @ApiModelProperty(value = "是否删除", example = "0", position = 98)
+    @Schema(description = "是否删除", example = "0")
     @TableField(ColumnConst.DELETED)
     @TableLogic
     private Integer deleted;
 
-    @ApiModelProperty(value = "乐观锁", example = "1", position = 99)
+    @Schema(description = "乐观锁", example = "1")
     @Version
     @TableField(ColumnConst.VERSION)
     private Long version;
 
-    @ApiModelProperty(value = "租户ID", example = "1", position = 100)
+    @Schema(description = "租户ID", example = "1")
     @TableField(ColumnConst.TENANT_ID)
     private Long tenantId;
 }

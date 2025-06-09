@@ -3,8 +3,7 @@ package com.snowdrift.core.result;
 import com.snowdrift.core.enums.ErrorCodeEnum;
 import com.snowdrift.core.enums.ResultEnum;
 import com.snowdrift.core.exception.BaseException;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
 
@@ -18,16 +17,16 @@ import lombok.Data;
  */
 @Data
 @Builder
-@ApiModel(value = "JsonResult", description = "统一返回结果封装")
+@Schema(description = "统一返回结果封装")
 public class JsonResult<T> {
 
-    @ApiModelProperty(value = "状态码", example = "1")
+    @Schema(description = "状态码", example = "1")
     private Integer code;
 
-    @ApiModelProperty(value = "返回信息", example = "操作成功", position = 1)
+    @Schema(description = "返回信息", example = "操作成功")
     private String msg;
 
-    @ApiModelProperty(value = "返回数据", position = 2)
+    @Schema(description = "返回数据")
     private T data;
 
     /**

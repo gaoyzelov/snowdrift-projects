@@ -1,7 +1,5 @@
 package com.snowdrift.core.result;
-
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -18,21 +16,21 @@ import java.util.List;
  */
 @Data
 @Accessors(chain = true)
-@ApiModel(value = "PageData", description = "分页数据")
+@Schema(description = "分页数据")
 public class PageData<T> implements Serializable {
 
-    @ApiModelProperty(value = "当前页", example = "1")
+    @Schema(description = "当前页", example = "1")
     private Long current;
 
-    @ApiModelProperty(value = "总页数", example = "1000", position = 1)
+    @Schema(description = "总页数", example = "1000")
     private Long pages;
 
-    @ApiModelProperty(value = "每页数据条数", example = "10", position = 2)
+    @Schema(description = "每页数据条数", example = "10")
     private Long size;
 
-    @ApiModelProperty(value = "总数", example = "99999", position = 3)
+    @Schema(description = "总数", example = "99999")
     private Long total;
 
-    @ApiModelProperty(value = "数据列表", position = 4)
+    @Schema(description = "数据列表")
     private List<T> records;
 }

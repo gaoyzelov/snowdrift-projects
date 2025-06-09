@@ -3,8 +3,7 @@ package com.snowdrift.core.entity;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import com.snowdrift.core.constant.ColumnConst;
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -18,10 +17,10 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-@ApiModel(value = "LogicDeleteEntity", description = "LogicDeleteEntity")
+@Schema(description = "LogicDeleteEntity")
 public class LogicDeleteEntity extends BaseEntity {
 
-    @ApiModelProperty(value = "是否删除，0-未删除，1-已删除", example = "0", position = 97)
+    @Schema(description = "是否删除，0-未删除，1-已删除", example = "0")
     @TableField(ColumnConst.DELETED)
     @TableLogic(value = "0", delval = "1")
     private Integer deleted;
