@@ -1,4 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.snowdrift.web.config.WebAutoConfiguration,\
-  com.snowdrift.web.config.JacksonConfiguration,\
-  com.snowdrift.web.config.AsyncAutoConfiguration

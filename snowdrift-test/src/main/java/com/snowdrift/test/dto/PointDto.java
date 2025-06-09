@@ -1,7 +1,6 @@
 package com.snowdrift.test.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -15,12 +14,12 @@ import java.io.Serializable;
  * @since 1.0
  */
 @Data
-@ApiModel(value = "点坐标")
+@Schema(description = "点坐标")
 public class PointDto implements Serializable {
 
-    @ApiModelProperty(value = "x坐标")
+    @Schema(description = "x坐标")
     private String x;
 
-    @ApiModelProperty(value = "y坐标")
+    @Schema(description = "y坐标")
     private String y;
 }

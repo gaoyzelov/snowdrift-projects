@@ -1,7 +1,6 @@
 package com.snowdrift.test.dto;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 import org.springframework.format.annotation.DateTimeFormat;
 
@@ -18,22 +17,22 @@ import java.util.List;
  * @since 1.0
  */
 @Data
-@ApiModel
+@Schema(title = "用户参数", description = "用户信息")
 public class UserDto implements Serializable {
 
-    @ApiModelProperty(value = "主键")
+    @Schema(title = "用户ID", description = "自增ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1", defaultValue = "1", allowableValues = {"1", "2", "3"})
     private Integer id;
 
-    @ApiModelProperty(value = "姓名")
+    @Schema(description = "姓名")
     private String name;
 
-    @ApiModelProperty(value = "生日")
+    @Schema(description = "生日")
     @DateTimeFormat(pattern = "yyyy-MM-dd")
     private LocalDate birthday;
 
-    @ApiModelProperty(value = "坐标")
+    @Schema(description = "坐标")
     private PointDto point;
 
-    @ApiModelProperty(value = "坐标集合")
+    @Schema(description = "坐标集合")
     private List<PointDto> points;
 }

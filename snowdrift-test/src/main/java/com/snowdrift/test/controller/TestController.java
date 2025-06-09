@@ -19,12 +19,12 @@ import org.springframework.web.bind.annotation.RestController;
  * @description xxxxxxxx
  * @since 1.0
  */
-@Tag(name = "测试模块",description = "测试模块")
+@Tag(name = "测试",description = "测试模块")
 @RestController
 @RequestMapping("/v1/test")
 public class TestController {
 
-    @Operation(summary = "测试日志接口",description = "测试日志口")
+    @Operation(summary = "测试",description = "测试日志口")
     @AccessLog(value = "测试日志接口", module = "测试模块")
     @PostMapping
     public JsonResult<UserDto> test2(@RequestBody @Validated UserDto userDto) {

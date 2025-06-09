@@ -4,6 +4,7 @@ import com.snowdrift.web.aspect.AccessLogAspect;
 import com.snowdrift.web.handler.IAccessLogHandler;
 import com.snowdrift.web.handler.DefaultAccessLogHandler;
 import com.snowdrift.web.properties.CorsProperties;
+import jakarta.annotation.Resource;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -13,8 +14,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import javax.annotation.Resource;
 import java.util.List;
 
 /**
