@@ -1,12 +1,14 @@
 package com.snowdrift.doc.knife4j.properties;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Knife4jApiDocProperties
@@ -26,6 +28,23 @@ public class Knife4jApiDocProperties implements Serializable {
      */
     @NotNull(message = "是否启用不能为空")
     private Boolean enabled = Boolean.FALSE;
+
+    /**
+     * 文档分组
+     */
+    @NotBlank(message = "文档分组不能为空")
+    private String group = "v1";
+
+    /**
+     * 文档显示名称
+     */
+    private String displayName;
+
+    /**
+     * 文档扫描包
+     */
+    @NotEmpty(message = "文档扫描包不能为空")
+    private List<String> basePackages;
 
     /**
      * 文档标题
@@ -50,11 +69,5 @@ public class Knife4jApiDocProperties implements Serializable {
      */
     @NotBlank(message = "文档版本不能为空")
     private String version = "1.0.0";
-
-    /**
-     * 文档扫描包
-     */
-    @NotBlank(message = "文档扫描包不能为空")
-    private String basePackage = "com.snowdrift";
 
 }

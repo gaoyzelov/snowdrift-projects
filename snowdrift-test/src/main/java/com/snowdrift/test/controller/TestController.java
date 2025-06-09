@@ -1,15 +1,15 @@
 package com.snowdrift.test.controller;
 
-import com.snowdrift.cache.redis.anno.DistLock;
 import com.snowdrift.core.result.JsonResult;
 import com.snowdrift.test.dto.UserDto;
 import com.snowdrift.web.anno.AccessLog;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.concurrent.TimeUnit;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 /**
  * TestController
@@ -19,20 +19,12 @@ import java.util.concurrent.TimeUnit;
  * @description xxxxxxxx
  * @since 1.0
  */
-@Api(tags = "测试接口")
+@Tag(name = "测试模块",description = "测试模块")
 @RestController
 @RequestMapping("/v1/test")
 public class TestController {
 
-    @ApiOperation(value = "测试分布式锁接口")
-    @GetMapping
-    @DistLock(value = "test:", key = "#id")
-    public JsonResult<?> test(Integer id) throws InterruptedException{
-        TimeUnit.SECONDS.sleep(id);
-        return JsonResult.ok();
-    }
-
-    @ApiOperation(value = "测试日志口")
+    @Operation(summary = "测试日志接口",description = "测试日志口")
     @AccessLog(value = "测试日志接口", module = "测试模块")
     @PostMapping
     public JsonResult<UserDto> test2(@RequestBody @Validated UserDto userDto) {

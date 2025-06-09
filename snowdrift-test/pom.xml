@@ -15,7 +15,7 @@
     <version>${revision}</version>
 
     <properties>
-        <java.version>8</java.version>
+        <java.version>17</java.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -28,10 +28,6 @@
         <dependency>
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-doc-knife4j</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.snowdrift</groupId>
-            <artifactId>snowdrift-cache-redis</artifactId>
         </dependency>
     </dependencies>
 

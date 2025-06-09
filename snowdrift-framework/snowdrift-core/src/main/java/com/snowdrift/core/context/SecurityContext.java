@@ -36,5 +36,5 @@ public class SecurityContext implements Serializable {
     /**
      * 额外信息
      */
-    private Map<String,Object> extra;
+    private Map<String, Object> extra;
 }
