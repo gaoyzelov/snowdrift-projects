@@ -45,7 +45,7 @@
         <spring-cloud.version>2022.0.0-RC2</spring-cloud.version>
         <flatten-maven-plugin.version>1.6.0</flatten-maven-plugin.version>
         <maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
-        <dubbo.version>3.1.11</dubbo.version>
+        <dubbo.version>3.3.0</dubbo.version>
         <guava.version>33.4.8-jre</guava.version>
         <knife4j.version>4.4.0</knife4j.version>
         <redisson.verison>3.48.0</redisson.verison>
