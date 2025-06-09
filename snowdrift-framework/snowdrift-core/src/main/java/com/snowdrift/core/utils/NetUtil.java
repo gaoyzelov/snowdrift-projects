@@ -1,13 +1,17 @@
 package com.snowdrift.core.utils;
 
+import com.google.common.collect.Sets;
+import com.google.common.net.InetAddresses;
 import com.snowdrift.core.constant.StrConst;
 import com.snowdrift.core.exception.BaseException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.RandomUtils;
 import org.apache.commons.lang3.StringUtils;
+
 import java.io.IOException;
-import java.net.DatagramSocket;
-import java.net.ServerSocket;
+import java.net.*;
+import java.util.Set;
 
 /**
  * NetUtil
@@ -30,14 +34,14 @@ public class NetUtil {
     public static final int MAX_PORT = 65535;
 
     /**
-     * 本地IP地址
-     */
-    public static final String LOCALHOST = "127.0.0.1";
-
-    /**
      * 未知IP地址
      */
     private static final String UNKNOWN = "unknown";
+
+    /**
+     * 默认请求头
+     */
+    private static final  Set<String> DEFAULT_HEADERS = Sets.newHashSet("X-Forwarded-For", "X-Real-IP", "Proxy-Client-IP", "WL-Proxy-Client-IP", "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR");
 
 
     /**
@@ -94,65 +98,38 @@ public class NetUtil {
 
     /**
      * 判断是否为局域网/内网IP
-     * <p>
-     * 10.0.0.0 到 10.255.255.255
-     * 172.16.0.0 到 172.31.255.255
-     * 192.168.0.0 到 192.168.255.255
      *
      * @param ip ip地址
      * @return true/false
      */
     public static boolean isInternalIp(String ip) {
-        if (StringUtils.equals(ip, LOCALHOST)) {
+        if (StringUtils.isBlank(ip) || !InetAddresses.isInetAddress(ip)) {
+            return false;
+        }
+        InetAddress inetAddress = InetAddresses.forString(ip);
+        if (inetAddress.isLinkLocalAddress()){
             return true;
         }
-        // ipv4地址转字节
-        byte[] bytes = new byte[]{};
-        if (bytes == null || bytes.length < 2) {
+        if (inetAddress.isSiteLocalAddress()){
             return true;
         }
-        // 首位
-        byte first = bytes[0];
-        // 第二位
-        byte second = bytes[1];
-        // 10.x.x.x
-        final byte byte_10 = (byte) 0x0A; // 10
-        // 172.16.x.x
-        final byte byte_172 = (byte) 0xAC; // 172
-        final byte byte_16 = (byte) 0x10; // 16
-        final byte byte_31 = (byte) 0x1F; // 31
-        // 192.168.x.x
-        final byte byte_192 = (byte) 0xC0; // 192
-        final byte byte_168 = (byte) 0xA8; // 168
-
-        // 按首位进行判断
-        switch (first) {
-            case byte_10:
-                return true;
-            case byte_172:
-                if (second >= byte_16 && second <= byte_31) {
-                    return true;
-                }
-            case byte_192:
-                if (second == byte_168) {
-                    return true;
-                }
-            default:
-                return false;
-        }
+        return inetAddress.isLoopbackAddress();
     }
 
     /**
      * 获取请求IP
      *
      * @param request HttpServletRequest
+     * @param headers 请求头
      * @return IP地址
      */
-    public static String getRequestIp(HttpServletRequest request) {
-        // 请求头
-        String[] headers = {"X-Forwarded-For", "X-Real-IP", "Proxy-Client-IP", "WL-Proxy-Client-IP", "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR"};
+    public static String getRequestIp(HttpServletRequest request, String... headers) {
+        Set<String> defaultHeaders = DEFAULT_HEADERS;
+        if (ArrayUtils.isNotEmpty(headers)) {
+            defaultHeaders.addAll(Sets.newHashSet(headers));
+        }
         String ip;
-        for (String header : headers) {
+        for (String header : defaultHeaders) {
             ip = request.getHeader(header);
             if (StringUtils.isNotBlank(ip) && !StringUtils.endsWithIgnoreCase(ip, UNKNOWN)) {
                 return getMultistageReverseProxyIp(ip);
