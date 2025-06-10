@@ -23,6 +23,7 @@ import java.util.Objects;
  * @description Spring 工具类
  * @since 1.0.0
  */
+@SuppressWarnings("all")
 public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextAware {
 
     private static ConfigurableListableBeanFactory beanFactory;
@@ -85,7 +86,6 @@ public class SpringUtil implements BeanFactoryPostProcessor, ApplicationContextA
      * @param name Bean名称
      * @return Bean
      */
-    @SuppressWarnings("unchecked")
     public static <T> T getBean(String name) {
         return (T) getBeanFactory().getBean(name);
     }
