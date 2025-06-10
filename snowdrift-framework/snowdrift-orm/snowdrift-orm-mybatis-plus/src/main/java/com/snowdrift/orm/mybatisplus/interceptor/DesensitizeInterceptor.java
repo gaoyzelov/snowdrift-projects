@@ -35,13 +35,11 @@ public class DesensitizeInterceptor implements Interceptor {
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         Object result = invocation.proceed();
-        if (result instanceof List) {
-            List<?> resultList = (List<?>) result;
+        if (result instanceof List<?> resultList) {
             for (Object obj : resultList) {
                 doDesensitize(obj);
             }
-        } else if (result instanceof Map) {
-            Map<?, ?> resultMap = (Map<?, ?>) result;
+        } else if (result instanceof Map<?, ?> resultMap) {
             for (Object obj : resultMap.values()) {
                 doDesensitize(obj);
             }
