@@ -1,6 +1,7 @@
 package com.snowdrift.pay.yee.config;
 
 import com.snowdrift.pay.yee.properties.YeeProperties;
+import com.snowdrift.pay.yee.provider.CredentialsProvider;
 import com.snowdrift.pay.yee.provider.SdkConfigProvider;
 import com.snowdrift.pay.yee.service.IYeePayService;
 import com.snowdrift.pay.yee.service.impl.YeePayServiceImpl;
