@@ -33,6 +33,7 @@
         <module>snowdrift-orm</module>
         <module>snowdrift-web</module>
         <module>snowdrift-oss</module>
+        <module>snowdrift-pay</module>
     </modules>
 
     <properties>
@@ -53,6 +54,7 @@
         <mybatis-plus.version>3.5.12</mybatis-plus.version>
         <swagger-annotations.version>2.2.19</swagger-annotations.version>
         <fastjson2.version>2.0.57</fastjson2.version>
+        <yeepay.sdk.version>4.4.15</yeepay.sdk.version>
     </properties>
 
     <dependencyManagement>
@@ -129,6 +131,21 @@
                 <groupId>com.alibaba.fastjson2</groupId>
                 <artifactId>fastjson2</artifactId>
                 <version>${fastjson2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yeepay.yop.sdk</groupId>
+                <artifactId>yop-java-sdk</artifactId>
+                <version>${yeepay.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yeepay.yop.sdk</groupId>
+                <artifactId>yop-java-sdk-crypto-inter</artifactId>
+                <version>${yeepay.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.yeepay.yop.sdk</groupId>
+                <artifactId>yop-java-sdk-crypto-gm</artifactId>
+                <version>${yeepay.sdk.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

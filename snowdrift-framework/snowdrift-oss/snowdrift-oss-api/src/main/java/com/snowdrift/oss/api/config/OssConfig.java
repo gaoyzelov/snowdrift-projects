@@ -1,13 +1,12 @@
 package com.snowdrift.oss.api.config;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 import lombok.Data;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
-import javax.validation.constraints.NotNull;
 import java.io.Serializable;
 
 /**
@@ -21,31 +20,31 @@ import java.io.Serializable;
 @Data
 @Builder
 @Valid
-@ApiModel(value = "OssConfig", description = "OSS配置")
+@Schema(title = "OssConfig", description = "OSS配置")
 public class OssConfig implements Serializable {
 
+    @Schema(title = "OSS服务端点", example = "oss-cn-beijing.aliyuncs.com")
     @NotBlank(message = "endpoint不能为空")
-    @ApiModelProperty(value = "OSS服务端点", example = "oss-cn-beijing.aliyuncs.com", position = 1)
     private String endpoint;
 
-    @ApiModelProperty(value = "访问秘钥", example = "4a96sd7f89s7df9as7df", position = 2)
+    @Schema(title = "访问秘钥", example = "4a96sd7f89s7df9as7df")
     @NotBlank(message = "accessKey不能为空")
     private String accessKey;
 
-    @ApiModelProperty(value = "安全秘钥", example = "4a96sd7f89s7df9as7df", position = 3)
+    @Schema(title = "安全秘钥", example = "4a96sd7f89s7df9as7df")
     @NotBlank(message = "secretKey不能为空")
     private String secretKey;
 
-    @ApiModelProperty(value = "存储桶", example = "test", position = 4)
+    @Schema(title = "存储桶", example = "test")
     private String bucket;
 
-    @ApiModelProperty(value = "区域", example = "cn-beijing", position = 5)
+    @Schema(title = "区域", example = "cn-beijing")
     private String region;
 
-    @ApiModelProperty(value = "域名", example = "https://test.oss-cn-beijing.aliyuncs.com", position = 6)
+    @Schema(title = "域名", example = "https://test.oss-cn-beijing.aliyuncs.com")
     private String domain;
 
-    @ApiModelProperty(value = "是否使用https", example = "false", position = 7)
+    @Schema(title = "是否使用https", example = "false")
     @NotNull
     private Boolean secure = Boolean.FALSE;
 }

@@ -1,7 +1,7 @@
 package com.snowdrift.orm.mybatisplus.condition;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import io.swagger.annotations.Schema;
+import io.swagger.annotations.Schema;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -15,12 +15,12 @@ import java.io.Serializable;
  * @since 1.0.0
  */
 @Data
-@ApiModel(value = "SortQuery", description = "排序条件")
+@Schema(value = "SortQuery", description = "排序条件")
 public class SortCondition implements Serializable {
 
-    @ApiModelProperty(value = "排序字段", example = "userId",position = 98)
+    @Schema(value = "排序字段", example = "userId",position = 98)
     private String sortBy;
 
-    @ApiModelProperty(value = "true-升序，false-降序", example = "false", position = 99)
+    @Schema(value = "true-升序，false-降序", example = "false", position = 99)
     private Boolean asc = Boolean.TRUE;
 }
