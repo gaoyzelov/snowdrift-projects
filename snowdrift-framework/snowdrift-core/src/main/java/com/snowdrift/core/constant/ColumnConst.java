@@ -9,10 +9,11 @@ package com.snowdrift.core.constant;
  * @since 1.0.0
  */
 public interface ColumnConst {
-
     String OWNER_ID = "owner_id";
+    String CREATE_ID = "create_id";
     String CREATE_BY = "create_by";
     String CREATE_TIME = "create_time";
+    String UPDATE_ID = "update_id";
     String UPDATE_BY = "update_by";
     String UPDATE_TIME = "update_time";
     String DELETED = "deleted";

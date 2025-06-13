@@ -13,7 +13,7 @@ import java.io.Serializable;
  * @author gaoye
  * @date 2025/06/10 09:47:53
  * @description 经纬度坐标点
- * @since 1.0
+ * @since 1.0.0
  */
 @Data
 @AllArgsConstructor

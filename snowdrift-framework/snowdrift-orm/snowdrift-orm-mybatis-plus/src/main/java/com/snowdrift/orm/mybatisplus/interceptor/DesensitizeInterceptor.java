@@ -58,7 +58,7 @@ public class DesensitizeInterceptor implements Interceptor {
         for (Field field : fields) {
             if (field.isAnnotationPresent(Desensitize.class)) {
                 field.setAccessible(true);
-                Object value = field.get(obj);
+                Object title = field.get(obj);
                 if (Objects.isNull(value)) {
                     continue;
                 }

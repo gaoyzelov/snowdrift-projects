@@ -15,19 +15,19 @@ import java.io.Serializable;
  * @since 1.0.0
  */
 @Data
-@Schema(value = "OssObj", description = "OSS对象")
+@Schema(title = "OssObj", description = "OSS对象")
 public class OssObj implements Serializable {
 
-    @Schema(value = "存储桶", example = "test")
+    @Schema(title = "存储桶", example = "test")
     private String bucket;
 
-    @Schema(value = "对象名", example = "test.jpg", position = 1)
+    @Schema(title = "对象名", example = "test.jpg")
     private String name;
 
-    @Schema(value = "文件大小，Byte", example = "1024", position = 2)
+    @Schema(title = "文件大小，Byte", example = "1024")
     private Long size;
 
-    @Schema(value = "是否为文件夹", example = "true", position = 3)
+    @Schema(title = "是否为文件夹", example = "true")
     private Boolean isDir;
 
 }

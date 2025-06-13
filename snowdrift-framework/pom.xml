@@ -55,6 +55,7 @@
         <swagger-annotations.version>2.2.19</swagger-annotations.version>
         <fastjson2.version>2.0.57</fastjson2.version>
         <yeepay.sdk.version>4.4.15</yeepay.sdk.version>
+        <bcpkix.version>1.78.1</bcpkix.version>
     </properties>
 
     <dependencyManagement>
@@ -143,6 +144,11 @@
                 <groupId>com.yeepay.yop.sdk</groupId>
                 <artifactId>yop-java-sdk-crypto-gm</artifactId>
                 <version>${yeepay.sdk.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bcpkix.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

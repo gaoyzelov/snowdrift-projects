@@ -19,7 +19,7 @@ import java.util.Map;
 public class SecurityContext implements Serializable {
 
     /**
-     * ID
+     * 唯一表示
      */
     private Object id;
 

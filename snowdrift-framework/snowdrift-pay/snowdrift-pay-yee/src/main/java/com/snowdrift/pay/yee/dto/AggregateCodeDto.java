@@ -29,7 +29,7 @@ public class AggregateCodeDto extends RequestDto{
 
     @Schema(title = "订单金额，单位：元,两位小数，最低0.01", required = true)
     @NotNull(message = "订单金额不能为空")
-    @DecimalMin(value = "0.01", message = "订单金额最低0.01")
+    @DecimalMin(title = "0.01", message = "订单金额最低0.01")
     private BigDecimal orderAmount;
 
     @Schema(title = "商品名称", required = true)

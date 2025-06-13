@@ -19,8 +19,7 @@ public final class SecurityContextHolder {
 
     private static final ThreadLocal<SecurityContext> contextHolder = new TransmittableThreadLocal<>();
 
-    private SecurityContextHolder() {
-    }
+    private SecurityContextHolder() {}
 
     /**
      * 获取上下文

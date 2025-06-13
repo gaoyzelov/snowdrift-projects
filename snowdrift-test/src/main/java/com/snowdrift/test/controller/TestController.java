@@ -25,7 +25,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TestController {
 
     @Operation(summary = "测试",description = "测试日志口")
-    @AccessLog(value = "测试日志接口", module = "测试模块")
+    @AccessLog(title = "测试日志接口", module = "测试模块")
     @PostMapping
     public JsonResult<UserDto> test2(@RequestBody @Validated UserDto userDto) {
         int i = 1 / 0;

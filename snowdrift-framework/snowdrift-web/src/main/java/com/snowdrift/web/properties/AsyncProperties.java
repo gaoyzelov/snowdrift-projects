@@ -31,21 +31,21 @@ public class AsyncProperties implements Serializable {
      * 线程池核心线程数
      */
     @NotNull(message = "线程池核心线程数不能为空")
-    @Min(value = 1,message = "线程池核心线程数不能小于1")
+    @Min(title = 1,message = "线程池核心线程数不能小于1")
     private Integer corePoolSize = 5;
 
     /**
      * 线程池最大线程数
      */
     @NotNull(message = "线程池最大线程数不能为空")
-    @Min(value = 1,message = "线程池最大线程数不能小于1")
+    @Min(title = 1,message = "线程池最大线程数不能小于1")
     private Integer maxPoolSize = 10;
 
     /**
      * 队列容量
      */
     @NotNull(message = "队列容量不能为空")
-    @Min(value = 1,message = "队列容量不能小于1")
+    @Min(title = 1,message = "队列容量不能小于1")
     private Integer queueCapacity = 256;
 
     /**
