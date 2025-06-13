@@ -1,1 +1,1 @@
-com.snowdrift.core.utils.SpringUtil
+com.snowdrift.core.config.SnowdriftAutoConfig

@@ -2,15 +2,23 @@ package com.snowdrift.core.utils;
 
 import com.snowdrift.core.constant.RegexConst;
 import com.snowdrift.core.exception.BaseException;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
+import jakarta.validation.ValidatorFactory;
+import lombok.NonNull;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * ValidateUtil
@@ -187,4 +195,21 @@ public final class ValidateUtil {
         }
     }
 
+    /**
+     * 校验对象参数
+     *
+     * @param t 对象
+     * @return 错误信息
+     */
+    public static <T> Set<String> validate(@NonNull T t){
+        Set<String> errors = Collections.emptySet();
+        try (ValidatorFactory validatorFactory = Validation.buildDefaultValidatorFactory()){
+            Validator validator = validatorFactory.getValidator();
+            Set<ConstraintViolation<T>> cvs = validator.validate(t);
+            if (CollectionUtils.isNotEmpty(cvs)) {
+                errors = cvs.stream().map(ConstraintViolation::getMessage).collect(Collectors.toSet());
+            }
+        }
+        return errors;
+    }
 }
