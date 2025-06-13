@@ -29,11 +29,6 @@
     <modules>
         <module>snowdrift-core</module>
         <module>snowdrift-doc</module>
-        <module>snowdrift-cache</module>
-        <module>snowdrift-orm</module>
-        <module>snowdrift-web</module>
-        <module>snowdrift-oss</module>
-        <module>snowdrift-pay</module>
     </modules>
 
     <properties>

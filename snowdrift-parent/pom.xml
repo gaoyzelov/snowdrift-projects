@@ -46,6 +46,13 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-bom</artifactId>
+                <version>${mybatis-plus.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
@@ -71,38 +78,13 @@
                 <version>${transmittable-thread-local.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct</artifactId>
-                <version>${mapstruct.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.mapstruct</groupId>
-                <artifactId>mapstruct-processor</artifactId>
-                <version>${mapstruct.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.projectlombok</groupId>
-                <artifactId>lombok-mapstruct-binding</artifactId>
-                <version>${lombok-mapstruct-binding.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-core</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
                 <groupId>com.snowdrift</groupId>
-                <artifactId>snowdrift-cache-redis</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-doc-knife4j</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.snowdrift</groupId>
-                <artifactId>snowdrift-web</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>

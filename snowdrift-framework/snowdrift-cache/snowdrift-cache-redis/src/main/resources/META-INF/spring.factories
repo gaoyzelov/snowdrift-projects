@@ -1,3 +1,0 @@
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  com.snowdrift.cache.redis.config.RedisCacheAutoConfiguration,\
-  com.snowdrift.cache.redis.config.RedisLockAutoConfiguration
