@@ -27,6 +27,11 @@
                 <artifactId>snowdrift-doc-knife4j</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-protocol-JT808</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 </project>
