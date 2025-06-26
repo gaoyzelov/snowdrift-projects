@@ -30,6 +30,7 @@
         <module>snowdrift-core</module>
         <module>snowdrift-doc</module>
         <module>snowdrift-protocol</module>
+        <module>snowdrift-cache</module>
     </modules>
 
     <properties>
