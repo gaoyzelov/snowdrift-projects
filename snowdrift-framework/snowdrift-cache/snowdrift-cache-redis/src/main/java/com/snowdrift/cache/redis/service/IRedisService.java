@@ -1,5 +1,9 @@
 package com.snowdrift.cache.redis.service;
 import com.snowdrift.cache.redis.exception.LockException;
+
+import java.time.Duration;
+import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -39,4 +43,50 @@ public interface IRedisService {
     boolean isLocked(String key);
 
     boolean isHeldByCurrentThread(String key);
+
+    void unlock(String key, boolean force);
+
+    void set(String key, Object value);
+
+    void setEx(String key, Object value, Duration timout);
+
+    <T> T get(String key, Class<T> clazz);
+
+    Long getTtl(String key);
+
+    Boolean setNx(String key, Object value);
+
+    Boolean setNxEx(String key, Object value, Duration timeout);
+
+    Boolean setBit(String key, long offset, boolean value);
+
+    Boolean getBit(String key, long offset);
+
+    Long bitCount(String key);
+
+    Boolean hasKey(String key);
+
+    Boolean delKey(String key);
+
+    Long delKeys(Collection<String> keys);
+
+    Long getIncr(String key);
+
+    Long getIncr(String key, long delta);
+
+    Long getDecr(String key);
+
+    Long getDecr(String key, long delta);
+
+    void hashSet(String key, String hashKey, Object value);
+
+    Boolean hashSetNx(String key, String hashKey, Object value);
+
+    void hashSetBatch(String key, Map<String, Object> map);
+
+    Long hashGetIncr(String key, String hashKey, long delta);
+
+    <T> T hashGet(String key, String hashKey, Class<T> clazz);
+
+    Map<Object,Object> hashGetAll(String key);
 }
