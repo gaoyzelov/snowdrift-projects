@@ -1,6 +1,13 @@
-*/target/
-*.flattened-pom.xml
+# 忽略所有模块编译输出
+**/target/
+**/build/
+**/out/
+**/*.jar
+**/*.war
+**/*.ear
+**/*.class
 !.mvn/wrapper/maven-wrapper.jar
+.flattened-pom.xml
 
 ### STS ###
 .apt_generated
