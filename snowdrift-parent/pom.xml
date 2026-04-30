@@ -6,13 +6,12 @@
 
     <parent>
         <groupId>com.snowdrift</groupId>
-        <artifactId>snowdrift-dependencies</artifactId>
-        <version>1.0.0</version>
-        <relativePath>../snowdrift-dependencies/pom.xml</relativePath>
+        <artifactId>snowdrift</artifactId>
+        <version>${revision}</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>snowdrift-parent</artifactId>
-    <version>${revision}</version>
     <name>snowdrift-parent</name>
     <description>Snowdrift Parent Pom</description>
     <packaging>pom</packaging>
@@ -32,14 +31,18 @@
         </developer>
     </developers>
 
-    <properties>
-        <java.version>17</java.version>
-        <source.delimiter>@</source.delimiter>
-        <maven.compiler.source>${java.version}</maven.compiler.source>
-        <maven.compiler.target>${java.version}</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-    </properties>
+    <dependencyManagement>
+        <dependencies>
+            <!-- Import Snowdrift Dependencies BOM -->
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-dependencies</artifactId>
+                <version>${revision}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <build>
         <finalName>${project.artifactId}</finalName>

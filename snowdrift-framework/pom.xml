@@ -8,12 +8,12 @@
         <groupId>com.snowdrift</groupId>
         <artifactId>snowdrift-parent</artifactId>
         <version>${revision}</version>
-        <relativePath>../snowdrift-dependencies/pom.xml</relativePath>
+        <relativePath>../snowdrift-parent/pom.xml</relativePath>
     </parent>
 
     <artifactId>snowdrift-framework</artifactId>
-    <packaging>pom</packaging>
     <name>snowdrift-framework</name>
+    <packaging>pom</packaging>
     <description>Snowdrift Framework</description>
     <url>https://github.com/gaoyzelov/snowdrift-projects</url>
 
@@ -32,28 +32,7 @@
     </developers>
 
     <modules>
-
+        <module>snowdrift-common</module>
     </modules>
 
-    <properties>
-        <java.version>17</java.version>
-        <revision>1.0.0</revision>
-    </properties>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-            </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>flatten-maven-plugin</artifactId>
-            </plugin>
-        </plugins>
-    </build>
 </project>
