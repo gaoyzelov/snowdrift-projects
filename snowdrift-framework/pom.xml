@@ -33,6 +33,14 @@
 
     <modules>
         <module>snowdrift-common</module>
+        <module>snowdrift-cache</module>
+        <module>snowdrift-log</module>
+        <module>snowdrift-mq</module>
+        <module>snowdrift-oss</module>
+        <module>snowdrift-security</module>
+        <module>snowdrift-schedule</module>
+        <module>snowdrift-web</module>
+        <module>snowdrift-context</module>
     </modules>
 
 </project>

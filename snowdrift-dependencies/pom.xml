@@ -215,6 +215,22 @@
                 <artifactId>ip2region</artifactId>
                 <version>${ip2region.version}</version>
             </dependency>
+            <!-- Snowdrift Framework -->
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-context</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-log</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
