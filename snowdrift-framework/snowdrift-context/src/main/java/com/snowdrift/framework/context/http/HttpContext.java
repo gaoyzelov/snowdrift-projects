@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * HttpContext
@@ -41,4 +42,8 @@ public class HttpContext implements Serializable {
      * IP地址
      */
     private String ipAddr;
+    /**
+     * 请求参数
+     */
+    private Map<String, String> paramMap;
 }

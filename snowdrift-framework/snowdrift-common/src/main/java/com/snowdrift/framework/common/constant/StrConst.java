@@ -60,4 +60,9 @@ public final class StrConst {
      * 任意
      */
     public static final String ANY = "*";
+
+    /**
+     * 未知
+     */
+    public static final String UNKNOWN = "unknown";
 }

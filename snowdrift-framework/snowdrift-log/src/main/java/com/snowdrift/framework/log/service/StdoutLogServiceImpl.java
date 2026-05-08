@@ -24,11 +24,11 @@ public class StdoutLogServiceImpl implements ILogService {
 
     @Override
     public void saveLoginLog(LoginLogCreateDTO loginLogCreateDTO) {
-        log.info("[登录日志]：{}", JSON.toJSONString(loginLogCreateDTO));
+        log.info("[登录日志]：{}", loginLogCreateDTO);
     }
 
     @Override
     public void saveOperateLog(OperateLogCreateDTO operateLogCreateDTO) {
-        log.info("[操作日志]：{}", JSON.toJSONString(operateLogCreateDTO));
+        log.info("[操作日志]：{}", operateLogCreateDTO);
     }
 }

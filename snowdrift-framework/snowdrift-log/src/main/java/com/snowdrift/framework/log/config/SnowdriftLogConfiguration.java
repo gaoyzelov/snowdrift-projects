@@ -1,6 +1,8 @@
 package com.snowdrift.framework.log.config;
 
 import com.mzt.logapi.service.ILogRecordService;
+import com.snowdrift.framework.log.aspect.ApiLogAspect;
+import com.snowdrift.framework.log.aspect.LoginLogAspect;
 import com.snowdrift.framework.log.service.ILogService;
 import com.snowdrift.framework.log.service.LogRecordServiceImpl;
 import com.snowdrift.framework.log.service.StdoutLogServiceImpl;
@@ -30,5 +32,15 @@ public class SnowdriftLogConfiguration {
     @Primary
     public ILogRecordService logRecordService() {
         return new LogRecordServiceImpl();
+    }
+
+    @Bean
+    public ApiLogAspect apiLogAspect() {
+        return new ApiLogAspect();
+    }
+
+    @Bean
+    public LoginLogAspect loginLogAspect() {
+        return new LoginLogAspect();
     }
 }

@@ -38,27 +38,27 @@ public class Result<T> implements Serializable {
     private long timestamp;
 
     public static <T> Result<T> ok() {
-        return create(ResultCode.SUCCESS.code(), ResultCode.SUCCESS.msg(),null);
+        return create(ResultCode.OK.code(), ResultCode.OK.msg(),null);
     }
 
     public static <T> Result<T> ok(T data) {
-        return create(ResultCode.SUCCESS.code(), ResultCode.SUCCESS.msg(),data);
+        return create(ResultCode.OK.code(), ResultCode.OK.msg(),data);
     }
 
     public static <T> Result<T> ok(String msg, T data) {
-        return create(ResultCode.SUCCESS.code(), msg,data);
+        return create(ResultCode.OK.code(), msg,data);
     }
 
     public static <T> Result<T> err() {
-        return create(ResultCode.BAD_REQUEST.code(), ResultCode.BAD_REQUEST.msg(),null);
+        return create(ResultCode.ERR.code(), ResultCode.ERR.msg(),null);
     }
 
     public static <T> Result<T> err(String msg) {
-        return create(ResultCode.BAD_REQUEST.code(), msg,null);
+        return create(ResultCode.ERR.code(), msg,null);
     }
 
     public static <T> Result<T> err(String msg, T data) {
-        return create(ResultCode.BAD_REQUEST.code(), msg,data);
+        return create(ResultCode.ERR.code(), msg,data);
     }
 
     public static <T> Result<T> err(ResultCode resultCode) {

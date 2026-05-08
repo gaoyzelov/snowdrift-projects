@@ -1,0 +1,2 @@
+com.snowdrift.framework.web.config.SnowdriftWebConfiguration
+com.snowdrift.framework.web.config.JacksonConfiguration

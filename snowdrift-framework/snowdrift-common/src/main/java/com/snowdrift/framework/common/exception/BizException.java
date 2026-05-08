@@ -22,12 +22,12 @@ public class BizException extends RuntimeException {
 
     public BizException() {
         super();
-        this.code = ResultCode.BAD_REQUEST.code();
+        this.code = ResultCode.ERR.code();
     }
 
     public BizException(String message) {
         super(message);
-        this.code = ResultCode.BAD_REQUEST.code();
+        this.code = ResultCode.ERR.code();
     }
 
     public BizException(ResultCode resultCode){
@@ -42,17 +42,17 @@ public class BizException extends RuntimeException {
 
     public BizException(String message, Throwable cause) {
         super(message, cause);
-        this.code = ResultCode.BAD_REQUEST.code();
+        this.code = ResultCode.ERR.code();
     }
 
     public BizException(Throwable cause) {
         super(cause);
-        this.code = ResultCode.BAD_REQUEST.code();
+        this.code = ResultCode.ERR.code();
     }
 
     protected BizException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
-        this.code = ResultCode.BAD_REQUEST.code();
+        this.code = ResultCode.ERR.code();
     }
 
     @Override

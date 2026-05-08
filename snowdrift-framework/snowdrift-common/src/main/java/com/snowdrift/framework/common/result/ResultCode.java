@@ -9,8 +9,9 @@ package com.snowdrift.framework.common.result;
  */
 public record ResultCode(int code,String msg) {
 
-    // ========== 成功状态码 ==========
-    public static final ResultCode SUCCESS = new ResultCode(200, "成功");
+    // ========== 通用状态码 ==========
+    public static final ResultCode OK = new ResultCode(1, "成功");
+    public static final ResultCode ERR = new ResultCode(0, "失败");
 
     // ========== 客户端错误 4xx ==========
     public static final ResultCode BAD_REQUEST = new ResultCode(400, "请求参数错误");

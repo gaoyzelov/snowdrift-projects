@@ -26,7 +26,7 @@ public @interface ApiLog {
     /**
      * 是否保存参数
      */
-    boolean saveArgs() default true;
+    boolean saveParams() default true;
 
     /**
      * 是否保存返回结果
