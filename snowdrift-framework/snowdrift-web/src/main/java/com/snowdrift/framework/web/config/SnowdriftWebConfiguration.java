@@ -1,7 +1,9 @@
 package com.snowdrift.framework.web.config;
 
 import com.snowdrift.framework.common.util.DateTimeUtil;
+import com.snowdrift.framework.web.handler.WebExceptionHandler;
 import org.springframework.boot.web.servlet.ServletComponentScan;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
@@ -34,7 +36,9 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
                 .maxAge(3600);
     }
 
-
+    /**
+     * 日期时间格式化
+     */
     @Override
     public void addFormatters(FormatterRegistry registry) {
         // 日期时间格式化
@@ -43,5 +47,13 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
         dateTimeRegistrar.setTimeFormatter(DateTimeUtil.TIME_FORMATTER);
         dateTimeRegistrar.setDateTimeFormatter(DateTimeUtil.DATETIME_FORMATTER);
         dateTimeRegistrar.registerFormatters(registry);
+    }
+
+    /**
+     * 统一异常处理
+     */
+    @Bean
+    public WebExceptionHandler webExceptionHandler() {
+        return new WebExceptionHandler();
     }
 }

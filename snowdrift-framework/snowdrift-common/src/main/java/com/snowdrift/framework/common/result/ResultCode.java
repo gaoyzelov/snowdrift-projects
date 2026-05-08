@@ -20,6 +20,7 @@ public record ResultCode(int code,String msg) {
     public static final ResultCode NOT_FOUND = new ResultCode(404, "资源不存在");
     public static final ResultCode METHOD_NOT_ALLOWED = new ResultCode(405, "不支持的请求方法");
     public static final ResultCode CONFLICT = new ResultCode(409, "资源冲突");
+    public static final ResultCode PAYLOAD_TOO_LARGE = new ResultCode(413, "请求体过大");
     public static final ResultCode UNSUPPORTED_MEDIA_TYPE = new ResultCode(415, "不支持的媒体类型");
     public static final ResultCode TOO_MANY_REQUESTS = new ResultCode(429, "请求过于频繁");
 

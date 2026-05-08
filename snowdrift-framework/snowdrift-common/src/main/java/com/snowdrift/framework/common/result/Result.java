@@ -53,6 +53,10 @@ public class Result<T> implements Serializable {
         return create(ResultCode.ERR.code(), ResultCode.ERR.msg(),null);
     }
 
+    public static <T> Result<T> err(Integer code, String msg) {
+        return create(code, msg,null);
+    }
+
     public static <T> Result<T> err(String msg) {
         return create(ResultCode.ERR.code(), msg,null);
     }
