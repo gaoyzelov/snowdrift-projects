@@ -12,7 +12,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,7 +25,6 @@ import java.time.LocalTime;
  * @description Jackson 配置类
  * @since 1.0.0
  */
-@Configuration
 @AutoConfiguration(after = JacksonAutoConfiguration.class)
 public class JacksonConfiguration {
 

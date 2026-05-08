@@ -1,7 +1,6 @@
 package com.snowdrift.framework.log.aspect;
 
 import com.alibaba.fastjson2.JSON;
-import com.alibaba.fastjson2.JSONObject;
 import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.result.ResultCode;
 import com.snowdrift.framework.common.util.DateTimeUtil;
@@ -16,9 +15,11 @@ import com.snowdrift.framework.log.util.LogTraceUtil;
 import jakarta.annotation.Resource;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.http.Part;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.StopWatch;
 import org.aspectj.lang.JoinPoint;
@@ -30,7 +31,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.Reader;
 import java.util.*;
+import java.util.regex.Pattern;
 
 /**
  * ApiLogAspect
@@ -141,63 +144,65 @@ public class ApiLogAspect {
         if (!apiLogAnno.saveParams() || (ArrayUtils.isEmpty(args) && MapUtils.isEmpty(paramMap))) {
             return StrConst.EMPTY;
         }
-        Map<String, Object> combined = new LinkedHashMap<>();
-        if (ArrayUtils.isNotEmpty(args)) {
-            Arrays.stream(args)
-                    .map(this::transToMap)
-                    .filter(MapUtils::isNotEmpty)
-                    .forEach(combined::putAll);
-        }
-        if (MapUtils.isNotEmpty(paramMap)) {
-            combined.putAll(paramMap);
-        }
-        // 应用脱敏
-        if (MapUtils.isNotEmpty(combined) && ArrayUtils.isNotEmpty(apiLogAnno.mask())) {
-            applyMask(combined, apiLogAnno.mask());
-        }
-        try {
-            return JSON.toJSONString(combined);
-        } catch (Exception e) {
-            log.error("JSON序列化请求参数失败", e);
-        }
-        return StrConst.EMPTY;
-    }
-
-    /**
-     * 转换参数为Map
-     *
-     * @param arg 方法参数
-     * @return 参数Map
-     */
-    private Map<String, Object> transToMap(Object arg) {
-        if (Objects.isNull(arg) ||
-                arg instanceof ServletRequest ||
-                arg instanceof ServletResponse ||
-                arg instanceof InputStream ||
-                arg instanceof OutputStream ||
-                arg instanceof MultipartFile) {
-            return Collections.emptyMap();
-        }
-        try {
-            return JSONObject.from(arg).to(Map.class);
-        } catch (Exception e) {
-            log.info("参数解析异常", e);
-        }
-        return Collections.emptyMap();
-    }
-
-    /**
-     * 应用脱敏处理
-     *
-     * @param map        原始数据
-     * @param maskFields 需要脱敏的字段
-     */
-    private void applyMask(Map<String, Object> map, String[] maskFields) {
-        for (String field : maskFields) {
-            if (map.containsKey(field)) {
-                map.put(field, "******");
+        boolean hasArgs = ArrayUtils.isNotEmpty(args);
+        boolean hasParams = MapUtils.isNotEmpty(paramMap);
+        String json;
+        if (hasArgs && hasParams) {
+            Map<String, Object> combined = new LinkedHashMap<>();
+            Object[] filtered = filterArgs(args);
+            if (ArrayUtils.isNotEmpty(filtered)) {
+                combined.put("args", filtered);
             }
+            combined.put("params", paramMap);
+            json = safeSerialize(combined);
+        } else if (hasParams) {
+            json = safeSerialize(paramMap);
+        } else {
+            Object[] filtered = filterArgs(args);
+            if (ArrayUtils.isEmpty(filtered)) {
+                return StrConst.EMPTY;
+            }
+            json = safeSerialize(filtered);
         }
+        if (ArrayUtils.isNotEmpty(apiLogAnno.mask())) {
+            return applyMask(json, apiLogAnno.mask());
+        }
+        return json;
+    }
+
+    /**
+     * 过滤不可序列化的参数类型（Servlet对象、流、文件上传等）
+     */
+    private Object[] filterArgs(Object[] args) {
+        return Arrays.stream(args)
+                .filter(Objects::nonNull)
+                .filter(arg -> !(arg instanceof ServletRequest))
+                .filter(arg -> !(arg instanceof ServletResponse))
+                .filter(arg -> !(arg instanceof InputStream))
+                .filter(arg -> !(arg instanceof OutputStream))
+                .filter(arg -> !(arg instanceof Reader))
+                .filter(arg -> !(arg instanceof MultipartFile))
+                .filter(arg -> !(arg instanceof Part))
+                .toArray();
+    }
+
+    /**
+     * 对 JSON 字符串做深度脱敏，正则匹配任意嵌套层级的指定字段
+     *
+     * @param json       JSON 字符串
+     * @param maskFields 需要脱敏的字段名
+     * @return 脱敏后的 JSON 字符串
+     */
+    private String applyMask(String json, String[] maskFields) {
+        if (StringUtils.isBlank(json)){
+            return json;
+        }
+        for (String field : maskFields) {
+            json = json.replaceAll(
+                    "(?i)\"" + Pattern.quote(field) + "\"\\s*:\\s*(\"[^\"]*\"|[^\\s,\\[\\]{}]+)",
+                    "\"" + field + "\":\"******\"");
+        }
+        return json;
     }
 
     /**
@@ -211,11 +216,19 @@ public class ApiLogAspect {
         if (!apiLogAnno.saveResult() || Objects.isNull(result)) {
             return StrConst.EMPTY;
         }
-        try {
-            return JSON.toJSONString(result);
-        } catch (Exception e) {
-            log.error("JSON序列化请求结果失败", e);
-        }
-        return StrConst.EMPTY;
+       return safeSerialize(result);
     }
+
+    /**
+     * 安全 JSON 序列化
+     */
+    private String safeSerialize(Object obj) {
+        try {
+            return JSON.toJSONString(obj);
+        } catch (Exception e) {
+            log.error("请求参数序列化失败", e);
+            return StrConst.EMPTY;
+        }
+    }
+
 }
