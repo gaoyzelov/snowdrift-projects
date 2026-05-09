@@ -43,7 +43,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(BizException.class)
     public Result<Void> handleBizException(BizException e) {
         log.warn("业务异常: {}", e.getMessage(), e);
-        // 尝试使用国际化消息
+        // 尝试使用国际化消息（如果 msg 是国际化 key）
         String message = I18nUtil.getMessage(e.getMessage());
         return Result.err(e.getCode(), message);
     }
@@ -127,6 +127,16 @@ public class WebExceptionHandler {
         String message = I18nUtil.getMessage("file.size.exceeded", maxSizeStr);
         log.warn("文件上传大小超限: {}", message);
         return Result.err(ResultCode.PAYLOAD_TOO_LARGE.code(), message);
+    }
+
+    /**
+     * 将 ResultCode 的 msg 转换为国际化消息
+     *
+     * @param resultCode 结果码
+     * @return 国际化后的消息
+     */
+    private String getI18nMessage(ResultCode resultCode) {
+        return I18nUtil.getMessage(resultCode.msg());
     }
 
     /**
