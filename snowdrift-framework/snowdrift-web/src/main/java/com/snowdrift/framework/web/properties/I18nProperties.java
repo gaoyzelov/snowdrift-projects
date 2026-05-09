@@ -36,12 +36,6 @@ public class I18nProperties implements Serializable {
     private String defaultLocale = "zh_CN";
 
     /**
-     * 请求头名称（优先级高）
-     */
-    @NotBlank
-    private String headerName = "Accept-Language";
-
-    /**
      * 参数名（优先级低，请求头不存在时使用）
      */
     @NotBlank

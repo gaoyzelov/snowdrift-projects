@@ -1,7 +1,9 @@
 package com.snowdrift.framework.web.i18n;
 
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.util.AssertUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.i18n.LocaleContextHolder;
 
 import java.util.Locale;
@@ -108,22 +110,31 @@ public final class I18nUtil {
     /**
      * 解析语言字符串为 Locale 对象
      *
-     * @param language 语言字符串（如：zh_CN, en_US）
+     * @param language 语言字符串（如：zh_CN, en_US, zh-CN）
      * @return Locale 对象
      */
     public static Locale parseLocale(String language) {
-        if (language == null || language.trim().isEmpty()) {
-            return Locale.SIMPLIFIED_CHINESE;
+        // 处理格式
+        Locale locale = Locale.CHINA;
+        if (StringUtils.isBlank(language)) {
+            return locale;
         }
-        
-        String[] parts = language.split("[_-]");
-        if (parts.length == 1) {
-            return new Locale(parts[0]);
-        } else if (parts.length == 2) {
-            return new Locale(parts[0], parts[1]);
-        } else {
-            return new Locale(parts[0], parts[1], parts[2]);
+        try {
+            if (language.contains(StrConst.UNDERLINE)) {
+                // 下划线
+                String[] arr = language.split(StrConst.UNDERLINE);
+                locale = new Locale(arr[0], arr[1]);
+            } else if (language.contains(StrConst.MIDLINE)) {
+                //
+                String[] arr = language.split(StrConst.MIDLINE);
+                locale = new Locale(arr[0], arr[1]);
+            } else {
+                locale = new Locale(language);
+            }
+        } catch (Exception e) {
+            log.error("语言字符串格式错误：{}", language, e);
         }
+        return locale;
     }
 
     /**

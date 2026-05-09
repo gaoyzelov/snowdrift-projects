@@ -1,0 +1,49 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: snowdrift-sample
+  
+  # 文件上传配置
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+# Snowdrift 配置
+snowdrift:
+  # OSS 配置
+  oss:
+    default-config-key: local-default
+    configs:
+      local-default:
+        oss-type: local
+        endpoint: D:/data/snowdrift-oss/sample  # 本地存储路径（Windows）
+        # endpoint: /opt/data/snowdrift-oss/sample  # 本地存储路径（Linux）
+        domain: http://localhost:8081/files  # 访问域名
+        bucket: default
+        enabled: true
+        is-default: true
+  
+  # 国际化配置
+  i18n:
+    cache-seconds: 300
+  
+  # 静态资源映射
+  resource:
+    enabled: true
+    mappings:
+      - path-pattern: /files/**
+        location: file:D:/data/snowdrift-oss/sample/
+        # location: file:/opt/data/snowdrift-oss/sample/  # Linux 路径
+        cache-period: 3600
+        use-cache-control: true
+
+# 日志配置
+logging:
+  level:
+    com.snowdrift: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

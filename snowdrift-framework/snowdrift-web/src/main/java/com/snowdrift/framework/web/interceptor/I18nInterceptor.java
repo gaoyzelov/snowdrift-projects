@@ -32,20 +32,15 @@ public class I18nInterceptor implements HandlerInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
-        // 1. 优先从请求头获取语言
-        String lang = request.getHeader(i18nProperties.getHeaderName());
+        // 1. 从参数获取
+        String lang = request.getParameter(i18nProperties.getParamName());
         
-        // 2. 如果请求头没有，从参数获取
-        if (StringUtils.isBlank(lang)) {
-            lang = request.getParameter(i18nProperties.getParamName());
-        }
-        
-        // 3. 如果都没有，使用默认语言
+        // 2. 如果都没有，使用默认语言
         if (StringUtils.isBlank(lang)) {
             lang = i18nProperties.getDefaultLocale();
         }
         
-        // 4. 验证是否支持该语言
+        // 3. 验证是否支持该语言
         Locale locale = I18nUtil.parseLocale(lang);
         if (isSupported(locale, i18nProperties.getSupportedLocales())) {
             LocaleContextHolder.setLocale(locale);
