@@ -3,6 +3,7 @@ package com.snowdrift.framework.web.handler;
 import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.common.result.Result;
 import com.snowdrift.framework.common.result.ResultCode;
+import com.snowdrift.framework.web.i18n.I18nUtil;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
@@ -42,7 +43,9 @@ public class WebExceptionHandler {
     @ExceptionHandler(BizException.class)
     public Result<Void> handleBizException(BizException e) {
         log.warn("业务异常: {}", e.getMessage(), e);
-        return Result.err(e.getCode(), e.getMessage());
+        // 尝试使用国际化消息
+        String message = I18nUtil.getMessage(e.getMessage());
+        return Result.err(e.getCode(), message);
     }
 
     /**
@@ -54,7 +57,9 @@ public class WebExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
         log.warn("参数校验失败: {}", message);
-        return Result.err(ResultCode.BAD_REQUEST.code(), "参数校验失败: " + message);
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("validation.failed", message);
+        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
     }
 
     /**
@@ -66,7 +71,9 @@ public class WebExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(", "));
         log.warn("参数绑定失败: {}", message);
-        return Result.err(ResultCode.BAD_REQUEST.code(), "参数绑定失败: " + message);
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("validation.bind.failed", message);
+        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
     }
 
     /**
@@ -79,7 +86,9 @@ public class WebExceptionHandler {
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining(", "));
         log.warn("约束违反: {}", message);
-        return Result.err(ResultCode.BAD_REQUEST.code(), "参数约束违反: " + message);
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("validation.constraint.violated", message);
+        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
     }
 
     /**
@@ -90,9 +99,10 @@ public class WebExceptionHandler {
         String paramName = e.getName();
         String requiredType = e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown";
         Object value = e.getValue();
-        String message = String.format("参数 '%s' 类型错误，期望类型: %s, 实际值: %s", paramName, requiredType, value);
-        log.warn("参数类型不匹配: {}", message);
-        return Result.err(ResultCode.BAD_REQUEST.code(), message);
+        log.warn("参数类型不匹配: paramName={}, requiredType={}, value={}", paramName, requiredType, value);
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("validation.type.mismatch", paramName, requiredType, value);
+        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
     }
 
     /**
@@ -100,16 +110,10 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Result<Void> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
-        String message = "请求数据格式错误";
-        // 尝试提取更详细的错误信息
-        if (e.getCause() != null) {
-            String causeMessage = e.getCause().getMessage();
-            if (causeMessage != null && causeMessage.contains("JSON parse error")) {
-                message = "JSON 格式错误，请检查请求体格式";
-            }
-        }
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("validation.json.parse.error");
         log.warn("请求数据解析失败: {}", e.getMessage());
-        return Result.err(ResultCode.BAD_REQUEST.code(), message);
+        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
     }
 
     /**
@@ -119,7 +123,8 @@ public class WebExceptionHandler {
     public Result<Void> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
         long maxSize = e.getMaxUploadSize();
         String maxSizeStr = formatFileSize(maxSize);
-        String message = String.format("文件大小超过限制，最大允许: %s", maxSizeStr);
+        // 使用国际化消息
+        String message = I18nUtil.getMessage("file.size.exceeded", maxSizeStr);
         log.warn("文件上传大小超限: {}", message);
         return Result.err(ResultCode.PAYLOAD_TOO_LARGE.code(), message);
     }
@@ -129,9 +134,10 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(NoResourceFoundException.class)
     public Result<Void> handleNoResourceFoundException(NoResourceFoundException e) {
-        String message = String.format("请求的资源不存在: %s", e.getResourcePath());
-        log.warn("资源不存在: {}", message);
-        return Result.err(ResultCode.NOT_FOUND.code(), message);
+        log.warn("资源不存在: {}", e.getResourcePath());
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("common.not.found");
+        return Result.err(ResultCode.NOT_FOUND.code(), i18nMessage);
     }
 
     /**
@@ -139,10 +145,10 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public Result<Void> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
-        String supportedMethods = String.join(", ", e.getSupportedHttpMethods().toString());
-        String message = String.format("不支持的请求方法: %s，支持的方法: %s", e.getMethod(), supportedMethods);
-        log.warn("请求方法不支持: {}", message);
-        return Result.err(ResultCode.METHOD_NOT_ALLOWED.code(), message);
+        log.warn("请求方法不支持: {}", e.getMethod());
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("common.method.not.allowed");
+        return Result.err(ResultCode.METHOD_NOT_ALLOWED.code(), i18nMessage);
     }
 
     /**
@@ -150,10 +156,10 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public Result<Void> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
-        String message = String.format("不支持的媒体类型: %s，支持的类型: %s", 
-                e.getContentType(), e.getSupportedMediaTypes());
-        log.warn("媒体类型不支持: {}", message);
-        return Result.err(ResultCode.UNSUPPORTED_MEDIA_TYPE.code(), message);
+        log.warn("媒体类型不支持: {}", e.getContentType());
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("common.media.type.not.supported");
+        return Result.err(ResultCode.UNSUPPORTED_MEDIA_TYPE.code(), i18nMessage);
     }
 
     /**
@@ -161,9 +167,10 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public Result<Void> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
-        String message = String.format("缺少必填参数: %s (类型: %s)", e.getParameterName(), e.getParameterType());
-        log.warn("缺少请求参数: {}", message);
-        return Result.err(ResultCode.BAD_REQUEST.code(), message);
+        log.warn("缺少请求参数: {}", e.getParameterName());
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("validation.parameter.missing", e.getParameterName());
+        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
     }
 
     /**
@@ -171,9 +178,10 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(MissingPathVariableException.class)
     public Result<Void> handleMissingPathVariableException(MissingPathVariableException e) {
-        String message = String.format("缺少路径变量: %s", e.getVariableName());
-        log.warn("缺少路径变量: {}", message);
-        return Result.err(ResultCode.BAD_REQUEST.code(), message);
+        log.warn("缺少路径变量: {}", e.getVariableName());
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("validation.path.variable.missing", e.getVariableName());
+        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
     }
 
     /**
@@ -181,9 +189,10 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(MissingServletRequestPartException.class)
     public Result<Void> handleMissingServletRequestPartException(MissingServletRequestPartException e) {
-        String message = String.format("缺少请求部分: %s", e.getRequestPartName());
-        log.warn("缺少请求部分: {}", message);
-        return Result.err(ResultCode.BAD_REQUEST.code(), message);
+        log.warn("缺少请求部分: {}", e.getRequestPartName());
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("validation.request.part.missing", e.getRequestPartName());
+        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
     }
 
     /**
@@ -192,7 +201,9 @@ public class WebExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
         log.warn("非法参数: {}", e.getMessage());
-        return Result.err(ResultCode.BAD_REQUEST.code(), "非法参数: " + e.getMessage());
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("common.illegal.argument", e.getMessage());
+        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
     }
 
     /**
@@ -201,7 +212,9 @@ public class WebExceptionHandler {
     @ExceptionHandler(NullPointerException.class)
     public Result<Void> handleNullPointerException(NullPointerException e) {
         log.error("空指针异常", e);
-        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), "系统内部错误，请联系管理员");
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("common.internal.error");
+        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), i18nMessage);
     }
 
     /**
@@ -210,7 +223,9 @@ public class WebExceptionHandler {
     @ExceptionHandler(Exception.class)
     public Result<Void> handleException(Exception e) {
         log.error("系统异常: {}", e.getMessage(), e);
-        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), "系统异常，请稍后重试");
+        // 使用国际化消息
+        String i18nMessage = I18nUtil.getMessage("common.error");
+        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), i18nMessage);
     }
 
     /**
