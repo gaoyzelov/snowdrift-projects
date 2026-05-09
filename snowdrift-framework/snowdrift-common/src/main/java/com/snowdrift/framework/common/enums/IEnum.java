@@ -13,14 +13,14 @@ import java.util.Optional;
  * @description 通用枚举接口
  * @since 1.0.0
  */
-public interface IEnum {
+public interface IEnum<E> {
 
     /**
      * 获取枚举值
      * 
      * @return code
      */
-    Integer getCode();
+    E getCode();
 
     /**
      * 获取枚举描述
@@ -36,7 +36,7 @@ public interface IEnum {
      * @param code      枚举值
      * @return 枚举对象
      */
-    static <T extends IEnum> Optional<T> getByCode(Class<T> enumClass, Integer code) {
+    static <T extends IEnum<E>,E> Optional<T> getByCode(Class<T> enumClass, E code) {
         T[] enumConstants = enumClass.getEnumConstants();
         for (T enumConstant : enumConstants) {
             if (Objects.equals(enumConstant.getCode(), code)) {
@@ -53,7 +53,7 @@ public interface IEnum {
      * @param note      枚举描述
      * @return 枚举对象
      */
-    static <T extends IEnum> Optional<T> getByNote(Class<T> enumClass, String note) {
+    static <T extends IEnum<E>,E> Optional<T> getByNote(Class<T> enumClass, String note) {
         T[] enumConstants = enumClass.getEnumConstants();
         for (T enumConstant : enumConstants) {
             if (StringUtils.equals(enumConstant.getNote(), note)) {

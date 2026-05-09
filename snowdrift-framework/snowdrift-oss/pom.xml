@@ -10,5 +10,11 @@
     </parent>
 
     <artifactId>snowdrift-oss</artifactId>
+    <packaging>pom</packaging>
+    <description>Snowdrift OSS Module</description>
+
+    <modules>
+        <module>snowdrift-oss-core</module>
+    </modules>
 
 </project>

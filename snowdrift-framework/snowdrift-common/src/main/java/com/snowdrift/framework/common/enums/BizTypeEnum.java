@@ -12,7 +12,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum BizTypeEnum implements IEnum {
+public enum BizTypeEnum implements IEnum<Integer> {
 
     INSERT(0, "新增"),
     UPDATE(1, "修改"),

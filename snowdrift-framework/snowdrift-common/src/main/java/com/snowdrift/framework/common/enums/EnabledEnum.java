@@ -13,7 +13,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum EnabledEnum implements IEnum {
+public enum EnabledEnum implements IEnum<Integer> {
 
     ENABLED(1, "启用"),
     DISABLED(0, "禁用");
