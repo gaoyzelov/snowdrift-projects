@@ -21,16 +21,17 @@
         :root {
             --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warm-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
             --text-primary: #1a202c;
             --text-secondary: #4a5568;
             --text-light: #718096;
-            --bg-light: #f7fafc;
+            --bg-light: #f8fafc;
             --bg-white: #ffffff;
-            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
-            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
-            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
-            --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.08);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.1);
+            --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.12);
         }
 
         html {
@@ -117,7 +118,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--primary-gradient);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
             position: relative;
             overflow: hidden;
         }
@@ -127,14 +128,14 @@
             position: absolute;
             width: 200%;
             height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
-            background-size: 50px 50px;
-            animation: move 20s linear infinite;
+            background: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: move 25s linear infinite;
         }
 
         @keyframes move {
             0% { transform: translate(0, 0); }
-            100% { transform: translate(50px, 50px); }
+            100% { transform: translate(60px, 60px); }
         }
 
         .hero-content {
@@ -264,9 +265,10 @@
         }
 
         .feature-card:hover {
-            transform: translateY(-5px);
-            box-shadow: var(--shadow-lg);
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-xl);
             border-color: #667eea;
+            background: white;
         }
 
         .feature-icon {
@@ -306,8 +308,9 @@
         }
 
         .module-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
             box-shadow: var(--shadow-xl);
+            border: 2px solid #667eea;
         }
 
         .module-header {
@@ -427,6 +430,99 @@
 
         .quick-start .section-subtitle {
             color: rgba(255, 255, 255, 0.9);
+        }
+
+        /* Star CTA Section */
+        .star-cta {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 50%, #fa709a 100%);
+            padding: 5rem 2rem;
+            color: white;
+        }
+
+        .star-content {
+            text-align: center;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        .star-icon {
+            font-size: 4rem;
+            margin-bottom: 1.5rem;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .star-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .star-description {
+            font-size: 1.2rem;
+            margin-bottom: 2.5rem;
+            opacity: 0.95;
+            line-height: 1.8;
+        }
+
+        .star-buttons {
+            display: flex;
+            gap: 1.5rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .star-btn {
+            padding: 1.2rem 2.5rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.8rem;
+            border: none;
+            cursor: pointer;
+        }
+
+        .star-btn.primary {
+            background: white;
+            color: #f5576c;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .star-btn.primary:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .star-btn.secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .star-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        .copy-success {
+            margin-top: 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .copy-success.show {
+            opacity: 1;
         }
 
         .start-steps {
@@ -638,20 +734,50 @@
                 </div>
 
                 <div class="feature-card fade-in">
-                    <div class="feature-icon">📝</div>
-                    <h3 class="feature-title">日志记录</h3>
+                    <div class="feature-icon">⭐</div>
+                    <h3 class="feature-title">开源共建</h3>
                     <p class="feature-description">
-                        支持 API 日志和登录日志记录，基于 AOP 实现，通过注解灵活配置，便于审计和问题追踪
+                        项目完全开源，采用 Apache 2.0 协议，欢迎提交 Issue 和 PR，一起参与建设，让脚手架更加完善
                     </p>
                 </div>
 
                 <div class="feature-card fade-in">
-                    <div class="feature-icon">🏗️</div>
-                    <h3 class="feature-title">模块化架构</h3>
+                    <div class="feature-icon">📚</div>
+                    <h3 class="feature-title">代码规范</h3>
                     <p class="feature-description">
-                        Maven 多模块设计，职责清晰分离，包含 common、web、oss、log 等核心模块，便于按需引入和扩展
+                        严格遵循命名规范和设计模式，统一的代码风格，完善的注释文档，便于团队协作和后期维护
                     </p>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Star CTA Section -->
+    <section class="star-cta">
+        <div class="container">
+            <div class="star-content fade-in">
+                <div class="star-icon">⭐</div>
+                <h2 class="star-title">如果这个项目对你有帮助</h2>
+                <p class="star-description">
+                    欢迎给项目点个 Star ⭐️，这是对我最大的鼓励！<br>
+                    你的支持是我持续更新维护的动力 🚀
+                </p>
+                <div class="star-buttons">
+                    <a href="https://github.com/gaoyzelov/snowdrift-projects" target="_blank" class="star-btn primary">
+                        <svg viewBox="0 0 16 16" width="20" height="20">
+                            <path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 1.2.27.36-.1.73-.16 1.1-.16.38 0 .75.06 1.1.16.53-.48 1.2-.27 1.2-.27.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"></path>
+                        </svg>
+                        <span>前往 GitHub 点 Star</span>
+                    </a>
+                    <button class="star-btn secondary" onclick="copyRepoUrl()">
+                        <svg viewBox="0 0 16 16" width="18" height="18">
+                            <path fill="currentColor" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"></path>
+                            <path fill="currentColor" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"></path>
+                        </svg>
+                        <span>复制仓库地址</span>
+                    </button>
+                </div>
+                <div id="copySuccess" class="copy-success">✅ 已复制到剪贴板！</div>
             </div>
         </div>
     </section>
@@ -1000,6 +1126,47 @@
                 }
             });
         });
+
+        // Copy repository URL
+        function copyRepoUrl() {
+            const repoUrl = 'https://github.com/gaoyzelov/snowdrift-projects';
+            
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(repoUrl).then(() => {
+                    showCopySuccess();
+                }).catch(err => {
+                    console.error('复制失败:', err);
+                    fallbackCopy(repoUrl);
+                });
+            } else {
+                fallbackCopy(repoUrl);
+            }
+        }
+
+        function fallbackCopy(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed';
+            textarea.style.opacity = '0';
+            document.body.appendChild(textarea);
+            textarea.select();
+            try {
+                document.execCommand('copy');
+                showCopySuccess();
+            } catch (err) {
+                console.error('复制失败:', err);
+                alert('复制失败，请手动复制：' + text);
+            }
+            document.body.removeChild(textarea);
+        }
+
+        function showCopySuccess() {
+            const successEl = document.getElementById('copySuccess');
+            successEl.classList.add('show');
+            setTimeout(() => {
+                successEl.classList.remove('show');
+            }, 3000);
+        }
     </script>
 </body>
 </html>
