@@ -1,0 +1,1005 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snowdrift - Spring Cloud 微服务脚手架</title>
+    <meta name="description" content="Snowdrift 是一个基于 Spring Boot 3.5 + Spring Cloud 2025 的现代化微服务脚手架，提供插件化对象存储、完整国际化支持、统一异常处理等企业级功能。">
+    <meta name="keywords" content="Snowdrift, Spring Boot, Spring Cloud, 微服务, 脚手架, Java, Gaoyzelov">
+    <meta name="author" content="Gaoyzelov">
+    
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --text-primary: #1a202c;
+            --text-secondary: #4a5568;
+            --text-light: #718096;
+            --bg-light: #f7fafc;
+            --bg-white: #ffffff;
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.15);
+            --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: var(--bg-light);
+        }
+
+        /* Navigation */
+        nav {
+            position: fixed;
+            top: 0;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-sm);
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+
+        nav.scrolled {
+            box-shadow: var(--shadow-md);
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .nav-logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 2rem;
+            list-style: none;
+        }
+
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-secondary);
+            font-weight: 500;
+            transition: color 0.3s ease;
+            position: relative;
+        }
+
+        .nav-links a:hover {
+            color: #667eea;
+        }
+
+        .nav-links a::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 0;
+            height: 2px;
+            background: var(--primary-gradient);
+            transition: width 0.3s ease;
+        }
+
+        .nav-links a:hover::after {
+            width: 100%;
+        }
+
+        /* Hero Section */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--primary-gradient);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: move 20s linear infinite;
+        }
+
+        @keyframes move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .hero-content {
+            text-align: center;
+            color: white;
+            position: relative;
+            z-index: 1;
+            padding: 2rem;
+        }
+
+        .hero-icon {
+            font-size: 5rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.95;
+        }
+
+        .hero-description {
+            font-size: 1.1rem;
+            max-width: 600px;
+            margin: 0 auto 2rem;
+            opacity: 0.9;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: white;
+            color: #667eea;
+            box-shadow: var(--shadow-lg);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid white;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-3px);
+        }
+
+        /* Section Common Styles */
+        section {
+            padding: 5rem 2rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            background: var(--primary-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 1.1rem;
+            color: var(--text-light);
+            margin-bottom: 3rem;
+        }
+
+        /* Features Section */
+        .features {
+            background: var(--bg-white);
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .feature-card {
+            padding: 2rem;
+            border-radius: 20px;
+            background: var(--bg-light);
+            transition: all 0.3s ease;
+            border: 2px solid transparent;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+            border-color: #667eea;
+        }
+
+        .feature-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .feature-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            color: var(--text-primary);
+        }
+
+        .feature-description {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* Architecture Section */
+        .architecture {
+            background: var(--bg-light);
+        }
+
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+        }
+
+        .module-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+        }
+
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .module-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .module-icon {
+            font-size: 2.5rem;
+        }
+
+        .module-name {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .module-status {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-top: 0.5rem;
+        }
+
+        .status-completed {
+            background: linear-gradient(135deg, #d4fc79 0%, #96e6a1 100%);
+            color: #2d5016;
+        }
+
+        .status-development {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            color: #8b4513;
+        }
+
+        .module-description {
+            color: var(--text-secondary);
+            margin: 1rem 0;
+            line-height: 1.8;
+        }
+
+        .module-features {
+            list-style: none;
+            margin-top: 1rem;
+        }
+
+        .module-features li {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            position: relative;
+            padding-left: 1.5rem;
+        }
+
+        .module-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        /* Tech Stack Section */
+        .tech-stack {
+            background: var(--bg-white);
+        }
+
+        .tech-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .tech-category {
+            background: var(--bg-light);
+            border-radius: 15px;
+            padding: 2rem;
+        }
+
+        .tech-category-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .tech-list {
+            list-style: none;
+        }
+
+        .tech-list li {
+            padding: 0.5rem 0;
+            color: var(--text-secondary);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .tech-version {
+            color: var(--text-light);
+            font-size: 0.9rem;
+        }
+
+        /* Quick Start Section */
+        .quick-start {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .quick-start .section-title {
+            background: white;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .quick-start .section-subtitle {
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .start-steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .step-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .step-number {
+            font-size: 3rem;
+            font-weight: 800;
+            opacity: 0.3;
+            margin-bottom: 1rem;
+        }
+
+        .step-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-description {
+            opacity: 0.9;
+            line-height: 1.8;
+        }
+
+        .code-block {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 1.5rem;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        .code-block code {
+            color: #e2e8f0;
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        footer {
+            background: #1a202c;
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-links a:hover {
+            color: white;
+        }
+
+        .footer-divider {
+            height: 1px;
+            background: rgba(255, 255, 255, 0.1);
+            margin: 2rem 0;
+        }
+
+        .footer-info {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 0.9rem;
+        }
+
+        .footer-info a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero-subtitle {
+                font-size: 1.2rem;
+            }
+
+            .nav-links {
+                display: none;
+            }
+
+            .section-title {
+                font-size: 2rem;
+            }
+
+            .features-grid,
+            .modules-grid,
+            .tech-grid,
+            .start-steps {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Scroll Animation */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.6s ease;
+        }
+
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">❄️ Snowdrift</div>
+            <ul class="nav-links">
+                <li><a href="#features">核心特色</a></li>
+                <li><a href="#architecture">模块架构</a></li>
+                <li><a href="#tech-stack">技术栈</a></li>
+                <li><a href="#quick-start">快速开始</a></li>
+                <li><a href="https://github.com/gaoyzelov/snowdrift-projects" target="_blank">GitHub</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-icon">❄️</div>
+            <h1>Snowdrift</h1>
+            <p class="hero-subtitle">Spring Cloud 微服务脚手架</p>
+            <p class="hero-description">
+                基于 Spring Boot 3.5 + Spring Cloud 2025 的现代化企业级脚手架<br>
+                提供插件化对象存储、完整国际化支持、统一异常处理等核心功能
+            </p>
+            <div class="hero-buttons">
+                <a href="https://github.com/gaoyzelov/snowdrift-projects" target="_blank" class="btn btn-primary">
+                    🚀 GitHub 仓库
+                </a>
+                <a href="#quick-start" class="btn btn-secondary">
+                    📖 快速开始
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title fade-in">核心特色</h2>
+            <p class="section-subtitle fade-in">精心设计的企业级功能，助力快速开发</p>
+            
+            <div class="features-grid">
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🔌</div>
+                    <h3 class="feature-title">插件化 OSS 存储</h3>
+                    <p class="feature-description">
+                        基于策略模式和工厂模式设计，支持本地存储、MinIO、阿里云 OSS 等多种存储方式，可动态切换和热更新配置
+                    </p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🌍</div>
+                    <h3 class="feature-title">完整国际化支持</h3>
+                    <p class="feature-description">
+                        内置 I18n 国际化方案，所有异常消息和系统提示支持多语言，自动解析浏览器语言偏好，支持中英文切换
+                    </p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">⚠️</div>
+                    <h3 class="feature-title">统一异常处理</h3>
+                    <p class="feature-description">
+                        全局异常拦截器覆盖 15+ 种异常类型，统一返回格式，所有异常消息支持国际化，提供友好的错误提示
+                    </p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🔐</div>
+                    <h3 class="feature-title">上下文管理</h3>
+                    <p class="feature-description">
+                        提供 HTTP 上下文和安全上下文管理，自动捕获请求信息（IP、User-Agent 等），支持用户信息线程隔离存储
+                    </p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">📝</div>
+                    <h3 class="feature-title">日志记录</h3>
+                    <p class="feature-description">
+                        支持 API 日志和登录日志记录，基于 AOP 实现，通过注解灵活配置，便于审计和问题追踪
+                    </p>
+                </div>
+
+                <div class="feature-card fade-in">
+                    <div class="feature-icon">🏗️</div>
+                    <h3 class="feature-title">模块化架构</h3>
+                    <p class="feature-description">
+                        Maven 多模块设计，职责清晰分离，包含 common、web、oss、log 等核心模块，便于按需引入和扩展
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Architecture Section -->
+    <section id="architecture" class="architecture">
+        <div class="container">
+            <h2 class="section-title fade-in">模块架构</h2>
+            <p class="section-subtitle fade-in">清晰的模块划分，便于理解和扩展</p>
+            
+            <div class="modules-grid">
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-icon">📦</div>
+                        <div>
+                            <div class="module-name">snowdrift-common</div>
+                            <span class="module-status status-completed">已完成</span>
+                        </div>
+                    </div>
+                    <p class="module-description">
+                        通用基础模块，提供项目所需的核心工具类和基础设施
+                    </p>
+                    <ul class="module-features">
+                        <li>统一返回结果封装（Result）</li>
+                        <li>业务异常基类（BizException）</li>
+                        <li>11 个常用工具类</li>
+                        <li>通用枚举和常量定义</li>
+                    </ul>
+                </div>
+
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-icon">🌐</div>
+                        <div>
+                            <div class="module-name">snowdrift-web</div>
+                            <span class="module-status status-completed">已完成</span>
+                        </div>
+                    </div>
+                    <p class="module-description">
+                        Web 配置模块，提供完整的 Web 层基础设施
+                    </p>
+                    <ul class="module-features">
+                        <li>全局异常处理器</li>
+                        <li>国际化支持（I18n）</li>
+                        <li>HTTP 上下文过滤器</li>
+                        <li>JSON 序列化配置</li>
+                        <li>静态资源映射</li>
+                    </ul>
+                </div>
+
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-icon">☁️</div>
+                        <div>
+                            <div class="module-name">snowdrift-oss</div>
+                            <span class="module-status status-completed">已完成</span>
+                        </div>
+                    </div>
+                    <p class="module-description">
+                        对象存储模块，插件化设计支持多种存储方式
+                    </p>
+                    <ul class="module-features">
+                        <li>统一操作接口（IOssService）</li>
+                        <li>策略工厂管理（OssStrategyFactory）</li>
+                        <li>本地存储实现（Local）</li>
+                        <li>支持分片上传</li>
+                        <li>支持热更新配置</li>
+                    </ul>
+                </div>
+
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-icon">📋</div>
+                        <div>
+                            <div class="module-name">snowdrift-log</div>
+                            <span class="module-status status-completed">已完成</span>
+                        </div>
+                    </div>
+                    <p class="module-description">
+                        日志记录模块，基于 AOP 实现灵活的日志功能
+                    </p>
+                    <ul class="module-features">
+                        <li>API 日志注解（@ApiLog）</li>
+                        <li>登录日志注解（@LoginLog）</li>
+                        <li>日志服务接口</li>
+                        <li>异步日志处理</li>
+                    </ul>
+                </div>
+
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-icon">🔒</div>
+                        <div>
+                            <div class="module-name">snowdrift-security</div>
+                            <span class="module-status status-development">开发中</span>
+                        </div>
+                    </div>
+                    <p class="module-description">
+                        安全模块，集成认证和授权功能（计划集成 Sa-Token）
+                    </p>
+                    <ul class="module-features">
+                        <li>用户认证</li>
+                        <li>权限校验</li>
+                        <li>安全上下文管理</li>
+                    </ul>
+                </div>
+
+                <div class="module-card fade-in">
+                    <div class="module-header">
+                        <div class="module-icon">⚡</div>
+                        <div>
+                            <div class="module-name">snowdrift-cache</div>
+                            <span class="module-status status-development">开发中</span>
+                        </div>
+                    </div>
+                    <p class="module-description">
+                        缓存模块，提供分布式缓存解决方案（计划集成 Redisson + JetCache）
+                    </p>
+                    <ul class="module-features">
+                        <li>分布式缓存</li>
+                        <li>缓存注解支持</li>
+                        <li>分布式锁</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Tech Stack Section -->
+    <section id="tech-stack" class="tech-stack">
+        <div class="container">
+            <h2 class="section-title fade-in">技术栈</h2>
+            <p class="section-subtitle fade-in">采用主流技术栈，保证稳定性和可维护性</p>
+            
+            <div class="tech-grid">
+                <div class="tech-category fade-in">
+                    <h3 class="tech-category-title">核心框架</h3>
+                    <ul class="tech-list">
+                        <li>
+                            <span>Spring Boot</span>
+                            <span class="tech-version">3.5.14</span>
+                        </li>
+                        <li>
+                            <span>Spring Cloud</span>
+                            <span class="tech-version">2025.0.2</span>
+                        </li>
+                        <li>
+                            <span>Spring Cloud Alibaba</span>
+                            <span class="tech-version">2025.0.0.0</span>
+                        </li>
+                        <li>
+                            <span>Java</span>
+                            <span class="tech-version">17</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tech-category fade-in">
+                    <h3 class="tech-category-title">数据存储</h3>
+                    <ul class="tech-list">
+                        <li>
+                            <span>MyBatis-Plus</span>
+                            <span class="tech-version">3.5.15</span>
+                        </li>
+                        <li>
+                            <span>Druid</span>
+                            <span class="tech-version">1.2.28</span>
+                        </li>
+                        <li>
+                            <span>Redisson</span>
+                            <span class="tech-version">4.3.0</span>
+                        </li>
+                        <li>
+                            <span>JetCache</span>
+                            <span class="tech-version">2.7.8</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tech-category fade-in">
+                    <h3 class="tech-category-title">安全认证</h3>
+                    <ul class="tech-list">
+                        <li>
+                            <span>Sa-Token</span>
+                            <span class="tech-version">1.45.0</span>
+                        </li>
+                        <li>
+                            <span>Jasypt</span>
+                            <span class="tech-version">4.0.4</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tech-category fade-in">
+                    <h3 class="tech-category-title">工具组件</h3>
+                    <ul class="tech-list">
+                        <li>
+                            <span>Hutool</span>
+                            <span class="tech-version">5.8.44</span>
+                        </li>
+                        <li>
+                            <span>MapStruct</span>
+                            <span class="tech-version">1.6.3</span>
+                        </li>
+                        <li>
+                            <span>Knife4j</span>
+                            <span class="tech-version">4.5.0</span>
+                        </li>
+                        <li>
+                            <span>FastJSON2</span>
+                            <span class="tech-version">2.0.61</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tech-category fade-in">
+                    <h3 class="tech-category-title">对象存储</h3>
+                    <ul class="tech-list">
+                        <li>
+                            <span>MinIO</span>
+                            <span class="tech-version">9.0.0</span>
+                        </li>
+                        <li>
+                            <span>阿里云 OSS</span>
+                            <span class="tech-version">0.4.0</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="tech-category fade-in">
+                    <h3 class="tech-category-title">任务调度</h3>
+                    <ul class="tech-list">
+                        <li>
+                            <span>XXL-Job</span>
+                            <span class="tech-version">3.3.2</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Start Section -->
+    <section id="quick-start" class="quick-start">
+        <div class="container">
+            <h2 class="section-title fade-in">快速开始</h2>
+            <p class="section-subtitle fade-in">三步即可启动项目</p>
+            
+            <div class="start-steps">
+                <div class="step-card fade-in">
+                    <div class="step-number">01</div>
+                    <h3 class="step-title">克隆项目</h3>
+                    <p class="step-description">从 GitHub 克隆项目到本地</p>
+                    <div class="code-block">
+                        <code>git clone https://github.com/gaoyzelov/snowdrift-projects.git</code>
+                    </div>
+                </div>
+
+                <div class="step-card fade-in">
+                    <div class="step-number">02</div>
+                    <h3 class="step-title">编译构建</h3>
+                    <p class="step-description">使用 Maven 编译项目</p>
+                    <div class="code-block">
+                        <code>mvn clean install</code>
+                    </div>
+                </div>
+
+                <div class="step-card fade-in">
+                    <div class="step-number">03</div>
+                    <h3 class="step-title">运行测试</h3>
+                    <p class="step-description">启动 sample 模块进行测试</p>
+                    <div class="code-block">
+                        <code>cd snowdrift-sample<br>mvn spring-boot:run</code>
+                    </div>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 3rem;">
+                <a href="https://github.com/gaoyzelov/snowdrift-projects" target="_blank" class="btn btn-primary" style="font-size: 1.1rem; padding: 1.2rem 2.5rem;">
+                    🚀 前往 GitHub 查看完整文档
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-links">
+                <a href="https://github.com/gaoyzelov/snowdrift-projects" target="_blank">GitHub 仓库</a>
+                <a href="https://github.com/gaoyzelov" target="_blank">作者主页</a>
+                <a href="#features">核心特色</a>
+                <a href="#architecture">模块架构</a>
+                <a href="#tech-stack">技术栈</a>
+            </div>
+            
+            <div class="footer-divider"></div>
+            
+            <div class="footer-info">
+                <p>Copyright © 2026 <a href="https://github.com/gaoyzelov" target="_blank">Gaoyzelov</a>. All Rights Reserved.</p>
+                <p style="margin-top: 0.5rem;">基于 <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License 2.0</a> 开源协议</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        // Navbar scroll effect
+        window.addEventListener('scroll', () => {
+            const navbar = document.getElementById('navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Fade-in animation on scroll
+        const observerOptions = {
+            threshold: 0.1,
+            rootMargin: '0px 0px -50px 0px'
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.fade-in').forEach(el => {
+            observer.observe(el);
+        });
+
+        // Smooth scroll for navigation links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+</body>
+</html>
