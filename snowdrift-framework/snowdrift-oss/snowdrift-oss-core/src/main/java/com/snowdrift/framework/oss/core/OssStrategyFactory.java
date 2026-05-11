@@ -2,6 +2,7 @@ package com.snowdrift.framework.oss.core;
 
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.exception.OssException;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
@@ -28,7 +29,16 @@ public class OssStrategyFactory {
     
     /**
      * 默认配置标识
+     * -- SETTER --
+     *  设置默认配置标识
+     *  <p>
+     *  设置默认 OSS 实例的配置标识
+     *  调用 getDefaultService() 时会返回该标识对应的实例
+     *
+     * @param defaultConfigKey 默认配置标识
+
      */
+    @Setter
     private String defaultConfigKey = "default";
     
     /**
@@ -120,19 +130,7 @@ public class OssStrategyFactory {
     public Map<String, IOssService> getAllServices() {
         return new ConcurrentHashMap<>(serviceMap);
     }
-    
-    /**
-     * 设置默认配置标识
-     * <p>
-     * 设置默认 OSS 实例的配置标识
-     * 调用 getDefaultService() 时会返回该标识对应的实例
-     *
-     * @param defaultConfigKey 默认配置标识
-     */
-    public void setDefaultConfigKey(String defaultConfigKey) {
-        this.defaultConfigKey = defaultConfigKey;
-    }
-    
+
     /**
      * 根据配置动态创建并注册 OSS 实例
      * <p>

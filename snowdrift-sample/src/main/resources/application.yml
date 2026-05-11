@@ -16,16 +16,26 @@ spring:
 snowdrift:
   # OSS 配置
   oss:
-    default-config-key: local-default
+    default-config-key: minio
     configs:
-      local-default:
+      local:
         oss-type: local
+        enabled: true
         endpoint: D:/data/snowdrift-oss/sample  # 本地存储路径（Windows）
         # endpoint: /opt/data/snowdrift-oss/sample  # 本地存储路径（Linux）
         domain: http://localhost:8081/files  # 访问域名
         bucket: default
+      minio:
+        oss-type: minio
         enabled: true
-        is-default: true
+        endpoint: http://192.168.1.220:9002  # MinIO 服务地址
+        access-key: minioadmin           # MinIO Access Key
+        secret-key: minioadmin           # MinIO Secret Key
+        domain: http://192.168.1.220:9002    # MinIO 访问域名
+        bucket: snowdrift-test           # Bucket 名称（会自动创建）
+        path-prefix: sample/             # 路径前缀
+        private-bucket: false            # 是否为私有 Bucket
+        signature-expiry: 60             # 签名 URL 有效期（分钟）
   
   # 国际化配置
   i18n:

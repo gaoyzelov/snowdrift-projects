@@ -16,6 +16,7 @@
     <modules>
         <module>snowdrift-oss-core</module>
         <module>snowdrift-oss-local</module>
+        <module>snowdrift-oss-minio</module>
     </modules>
 
 </project>

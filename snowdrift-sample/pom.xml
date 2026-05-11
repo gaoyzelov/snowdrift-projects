@@ -32,5 +32,10 @@
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-oss-local</artifactId>
         </dependency>
+        <!-- MinIO OSS 支持 -->
+        <dependency>
+            <groupId>com.snowdrift</groupId>
+            <artifactId>snowdrift-oss-minio</artifactId>
+        </dependency>
     </dependencies>
 </project>
