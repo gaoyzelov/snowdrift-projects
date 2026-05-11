@@ -2,7 +2,6 @@ package com.snowdrift.framework.oss.core;
 
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.exception.OssException;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
@@ -28,24 +27,33 @@ public class OssStrategyFactory {
     private final Map<String, IOssService> serviceMap = new ConcurrentHashMap<>();
     
     /**
-     * 默认配置标识
-     * -- SETTER --
-     *  设置默认配置标识
-     *  <p>
-     *  设置默认 OSS 实例的配置标识
-     *  调用 getDefaultService() 时会返回该标识对应的实例
+     * 默认配置标识（使用 volatile 保证可见性）
+     */
+    private volatile String defaultConfigKey = "default";
+    
+    /**
+     * 设置默认配置标识
+     * <p>
+     * 设置默认 OSS 实例的配置标识
+     * 调用 getDefaultService() 时会返回该标识对应的实例
      *
      * @param defaultConfigKey 默认配置标识
-
      */
-    @Setter
-    private String defaultConfigKey = "default";
+    public void setDefaultConfigKey(String defaultConfigKey) {
+        this.defaultConfigKey = defaultConfigKey;
+    }
+    
+    /**
+     * 获取默认配置标识
+     *
+     * @return 默认配置标识
+     */
+    public String getDefaultConfigKey() {
+        return defaultConfigKey;
+    }
     
     /**
      * 注册 OSS 实例
-     * <p>
-     * 将 OSS Service 实例注册到工厂中，后续可通过 configKey 获取
-     * 如果 configKey 已存在，会覆盖旧实例
      *
      * @param configKey 配置标识，如 default、backup 等，不能为空
      * @param service   OSS Service 实例，不能为空
@@ -137,12 +145,14 @@ public class OssStrategyFactory {
      * 使用 ServiceCreator 创建 OSS Service 实例并注册到工厂
      * 适用于从数据库或其他配置源动态加载 OSS 配置的场景
      * 如果配置标记为默认配置，会自动更新默认配置标识
+     * <p>
+     * 注意：该方法使用 synchronized 保证线程安全，避免并发注册时的竞态条件
      *
      * @param config         OSS 配置信息
      * @param serviceCreator Service 创建器，用于创建具体的 OSS Service 实例
      * @throws OssException 当 config 为空时抛出
      */
-    public void registerFromConfig(OssConfigDTO config, ServiceCreator serviceCreator) {
+    public synchronized void registerFromConfig(OssConfigDTO config, ServiceCreator serviceCreator) {
         if (config == null) {
             throw new OssException("oss.config.null");
         }
@@ -166,12 +176,14 @@ public class OssStrategyFactory {
      * <p>
      * 先移除旧的 OSS Service 实例，再根据新配置创建并注册新实例
      * 适用于运行时动态更新 OSS 配置的场景，无需重启应用
+     * <p>
+     * 注意：该方法使用同步锁保证线程安全，避免 reload 期间其他线程获取到不存在的实例
      *
      * @param configKey      配置标识
      * @param config         新的 OSS 配置信息
      * @param serviceCreator Service 创建器
      */
-    public void reload(String configKey, OssConfigDTO config, ServiceCreator serviceCreator) {
+    public synchronized void reload(String configKey, OssConfigDTO config, ServiceCreator serviceCreator) {
         // 移除旧实例
         remove(configKey);
         
