@@ -24,6 +24,9 @@ public class SnowdriftOssConfiguration {
     
     /**
      * 注册 OSS 策略工厂
+     * <p>
+     * 创建并注册 OssStrategyFactory Bean
+     * OssStrategyFactory 自带 @PreDestroy 方法，会在应用关闭时自动释放所有 OSS 客户端资源
      */
     @Bean
     @ConditionalOnMissingBean(OssStrategyFactory.class)

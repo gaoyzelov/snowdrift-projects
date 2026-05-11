@@ -413,6 +413,18 @@ public class MinioOssServiceImpl implements IOssService {
     }
 
     /**
+     * 关闭 MinIO 客户端，释放资源
+     * <p>
+     * MinIO Client 由 SDK 内部管理连接池，无需手动关闭
+     * 该方法在应用关闭时由 OssStrategyFactory 统一调用
+     * 此处仅做日志记录，便于追踪资源生命周期
+     */
+    @Override
+    public void close() {
+        log.info("MinIO 客户端无需手动关闭: configKey={}, bucket={}", config.getConfigKey(), config.getBucket());
+    }
+
+    /**
      * 构建完整的 objectKey
      *
      * @param objectKey 原始 objectKey

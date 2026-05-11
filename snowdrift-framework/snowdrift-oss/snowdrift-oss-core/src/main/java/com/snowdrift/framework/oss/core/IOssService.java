@@ -16,7 +16,7 @@ import java.util.List;
  * @description 定义所有 OSS 存储的统一操作接口，屏蔽底层差异
  * @since 1.0.0
  */
-public interface IOssService {
+public interface IOssService extends AutoCloseable{
     
     // ========== 基础操作 ==========
     

@@ -2,6 +2,7 @@ package com.snowdrift.framework.oss.core;
 
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.exception.OssException;
+import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
@@ -209,5 +210,33 @@ public class OssStrategyFactory {
          * @return OSS Service 实例
          */
         IOssService create(OssConfigDTO config);
+    }
+
+    /**
+     * 应用关闭时释放所有 OSS 客户端资源
+     * <p>
+     * 在 Spring 容器销毁前调用，遍历所有已注册的 OSS Service 实例
+     * 调用其 close() 方法释放底层连接资源（如 HTTP 连接池等）
+     * 单个实例关闭失败不会影响其他实例的关闭
+     */
+    @PreDestroy
+    public void destroy() {
+        if (serviceMap.isEmpty()) {
+            log.debug("无 OSS 实例需要关闭");
+            return;
+        }
+
+        log.info("开始关闭所有 OSS 客户端，共 {} 个实例", serviceMap.size());
+        
+        serviceMap.forEach((configKey, service) -> {
+            try {
+                service.close();
+                log.info("OSS 客户端已关闭: configKey={}, type={}", configKey, service.getType());
+            } catch (Exception e) {
+                log.error("关闭 OSS 客户端失败: configKey={}, type={}", configKey, service.getType(), e);
+            }
+        });
+        
+        log.info("所有 OSS 客户端关闭完成");
     }
 }

@@ -36,6 +36,19 @@ snowdrift:
         path-prefix: sample/             # 路径前缀
         private-bucket: false            # 是否为私有 Bucket
         signature-expiry: 60             # 签名 URL 有效期（分钟）
+      aliyun:
+        oss-type: aliyun                    # 存储类型：阿里云 OSS
+        endpoint: oss-cn-hangzhou.aliyuncs.com  # OSS Endpoint（不同区域不同）
+        access-key: your-access-key-id      # AccessKey ID
+        secret-key: your-access-key-secret  # AccessKey Secret
+        domain: https://cdn.example.com     # 访问域名（CDN/公网）
+        bucket: snowdrift-test              # Bucket 名称
+        path-prefix: sample/                # 路径前缀
+        private-bucket: false               # 是否为私有 Bucket
+        signature-expiry: 60                # 签名 URL 有效期（分钟）
+        enabled: true                       # 是否启用
+        is-default: true                    # 是否为默认配置
+        remark: 阿里云 OSS 默认配置
   
   # 国际化配置
   i18n:

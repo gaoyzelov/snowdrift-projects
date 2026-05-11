@@ -286,6 +286,18 @@ public class LocalOssServiceImpl implements IOssService {
     }
 
     /**
+     * 关闭本地存储 OSS 客户端
+     * <p>
+     * 本地存储基于文件系统，无需释放连接池等资源
+     * 该方法在应用关闭时由 OssStrategyFactory 统一调用
+     * 此处仅做日志记录，便于追踪资源生命周期
+     */
+    @Override
+    public void close() {
+        log.info("本地存储无需关闭: configKey={}, root={}", config.getConfigKey(), storageRoot);
+    }
+
+    /**
      * 构建完整的 objectKey
      * <p>
      * 根据配置的 pathPrefix 构建完整的 objectKey
