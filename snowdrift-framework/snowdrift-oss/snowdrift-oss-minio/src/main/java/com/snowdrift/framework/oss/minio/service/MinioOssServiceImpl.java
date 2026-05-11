@@ -1,6 +1,6 @@
 package com.snowdrift.framework.oss.minio.service;
 
-import com.snowdrift.framework.oss.core.IOssService;
+import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
@@ -24,27 +24,12 @@ import java.util.concurrent.TimeUnit;
  * @since 1.0.0
  */
 @Slf4j
-public class MinioOssServiceImpl implements IOssService {
-
-    /**
-     * OSS 配置
-     */
-    private final OssConfigDTO config;
+public class MinioOssServiceImpl extends AbstractOssService {
 
     /**
      * MinIO 客户端
      */
     private final MinioClient minioClient;
-
-    /**
-     * 访问域名
-     */
-    private final String domain;
-
-    /**
-     * 是否为私有 Bucket
-     */
-    private final Boolean privateBucket;
 
     /**
      * 构造函数
@@ -53,9 +38,7 @@ public class MinioOssServiceImpl implements IOssService {
      * @throws OssException 当配置为空或 MinIO 客户端初始化失败时抛出
      */
     public MinioOssServiceImpl(OssConfigDTO config) {
-        this.config = config;
-        this.domain = config.getDomain();
-        this.privateBucket = config.getPrivateBucket();
+        super(config);
 
         // 验证必要配置
         String endpoint = config.getEndpoint();
@@ -263,7 +246,7 @@ public class MinioOssServiceImpl implements IOssService {
     @Override
     public String getUrl(String objectKey, Duration expiry) {
         String bucket = config.getBucket();
-        String key = objectKey;
+        String key = normalizeObjectKey(objectKey);
 
         try {
             // 如果是私有 Bucket，生成预签名 URL
@@ -393,26 +376,6 @@ public class MinioOssServiceImpl implements IOssService {
     }
 
     /**
-     * 获取 Bucket 名称
-     *
-     * @return Bucket 名称
-     */
-    @Override
-    public String getBucket() {
-        return config.getBucket();
-    }
-
-    /**
-     * 获取配置标识
-     *
-     * @return 配置标识
-     */
-    @Override
-    public String getConfigKey() {
-        return config.getConfigKey();
-    }
-
-    /**
      * 关闭 MinIO 客户端，释放资源
      * <p>
      * MinIO Client 由 SDK 内部管理连接池，无需手动关闭
@@ -422,24 +385,5 @@ public class MinioOssServiceImpl implements IOssService {
     @Override
     public void close() {
         log.info("MinIO 客户端无需手动关闭: configKey={}, bucket={}", config.getConfigKey(), config.getBucket());
-    }
-
-    /**
-     * 构建完整的 objectKey
-     *
-     * @param objectKey 原始 objectKey
-     * @return 完整的 objectKey（包含路径前缀）
-     * @throws OssException 当 objectKey 为空时抛出
-     */
-    private String buildObjectKey(String objectKey) {
-        if (StringUtils.isBlank(objectKey)) {
-            throw new OssException("oss.object.key.empty");
-        }
-
-        String prefix = config.getPathPrefix();
-        if (StringUtils.isNotBlank(prefix)) {
-            return prefix.endsWith("/") ? prefix + objectKey : prefix + "/" + objectKey;
-        }
-        return objectKey;
     }
 }

@@ -46,7 +46,7 @@ public class SnowdriftOssLocalConfiguration {
             OssInstanceProperties properties = entry.getValue();
 
             // 只注册本地存储类型
-            if (OssTypeEnum.LOCAL == properties.getOssType()) {
+            if (OssTypeEnum.LOCAL == properties.getOssType() && properties.getEnabled()) {
                 registerLocalService(configKey, properties);
             }
         }

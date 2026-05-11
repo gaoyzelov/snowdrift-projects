@@ -16,7 +16,7 @@ spring:
 snowdrift:
   # OSS 配置
   oss:
-    default-config-key: minio
+    default-config-key: qiniu
     configs:
       local:
         oss-type: local
@@ -37,6 +37,7 @@ snowdrift:
         private-bucket: false            # 是否为私有 Bucket
         signature-expiry: 60             # 签名 URL 有效期（分钟）
       aliyun:
+        enabled: false                       # 是否启用
         oss-type: aliyun                    # 存储类型：阿里云 OSS
         endpoint: oss-cn-hangzhou.aliyuncs.com  # OSS Endpoint（不同区域不同）
         access-key: your-access-key-id      # AccessKey ID
@@ -46,9 +47,20 @@ snowdrift:
         path-prefix: sample/                # 路径前缀
         private-bucket: false               # 是否为私有 Bucket
         signature-expiry: 60                # 签名 URL 有效期（分钟）
-        enabled: true                       # 是否启用
-        is-default: true                    # 是否为默认配置
         remark: 阿里云 OSS 默认配置
+      qiniu:
+        enabled: true                       # 是否启用
+        oss-type: qiniu                     # 存储类型：七牛云 Kodo
+        access-key: ZIN-2fmqPOMOUmxQYQYDRw2rwA3JfKWc7vTEZ6sR         # 七牛云 AccessKey
+        secret-key: 31x330xknWjdms1Qkr7Wl9_IeLS6fZUvu1zxRauZ         # 七牛云 SecretKey
+        domain: http://teurjrk6q.hn-bkt.clouddn.com    # CDN 域名（七牛云必须配置）
+        bucket: snowdrift-test            # 空间名称
+        region: z2                        # 区域（auto=自动识别）
+        path-prefix: sample/                # 路径前缀
+        private-bucket: true               # 是否为私有空间
+        upload-token-expire: 30             # 上传凭证有效期（分钟）
+        signature-expiry: 60                # 下载签名有效期（分钟）
+        remark: 七牛云 Kodo 配置示例
   
   # 国际化配置
   i18n:

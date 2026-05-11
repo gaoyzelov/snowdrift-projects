@@ -5,7 +5,7 @@ import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
 import com.aliyun.oss.model.ObjectMetadata;
-import com.snowdrift.framework.oss.core.IOssService;
+import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
@@ -29,27 +29,12 @@ import java.util.List;
  * @since 1.0.0
  */
 @Slf4j
-public class AliyunOssServiceImpl implements IOssService {
-
-    /**
-     * OSS 配置
-     */
-    private final OssConfigDTO config;
+public class AliyunOssServiceImpl extends AbstractOssService {
 
     /**
      * 阿里云 OSS 客户端
      */
     private final OSS ossClient;
-
-    /**
-     * 访问域名（公网/CDN）
-     */
-    private final String domain;
-
-    /**
-     * 是否为私有 Bucket
-     */
-    private final Boolean privateBucket;
 
     /**
      * 构造函数
@@ -61,9 +46,7 @@ public class AliyunOssServiceImpl implements IOssService {
      * @throws OssException 当配置为空或 OSS 客户端初始化失败时抛出
      */
     public AliyunOssServiceImpl(OssConfigDTO config) {
-        this.config = config;
-        this.domain = config.getDomain();
-        this.privateBucket = config.getPrivateBucket();
+        super(config);
 
         String endpoint = config.getEndpoint();
         String accessKey = config.getAccessKey();
@@ -402,36 +385,6 @@ public class AliyunOssServiceImpl implements IOssService {
     }
 
     /**
-     * 获取存储类型
-     *
-     * @return OSS 存储类型枚举（ALIYUN）
-     */
-    @Override
-    public OssTypeEnum getType() {
-        return OssTypeEnum.ALIYUN;
-    }
-
-    /**
-     * 获取 Bucket 名称
-     *
-     * @return Bucket 名称
-     */
-    @Override
-    public String getBucket() {
-        return config.getBucket();
-    }
-
-    /**
-     * 获取配置标识
-     *
-     * @return 配置标识（如 default、backup 等）
-     */
-    @Override
-    public String getConfigKey() {
-        return config.getConfigKey();
-    }
-
-    /**
      * 关闭阿里云 OSS 客户端，释放资源
      * <p>
      * 关闭 OSS 客户端，释放底层 HTTP 连接池等资源
@@ -451,41 +404,12 @@ public class AliyunOssServiceImpl implements IOssService {
     }
 
     /**
-     * 构建对象 Key（添加路径前缀）
-     * <p>
-     * 将原始 objectKey 规范化并添加配置的路径前缀
+     * 获取存储类型
      *
-     * @param objectKey 原始对象 Key，不能为空
-     * @return 完整的对象 Key（包含路径前缀）
+     * @return OssTypeEnum.ALIYUN
      */
-    private String buildObjectKey(String objectKey) {
-        String key = normalizeObjectKey(objectKey);
-        String prefix = config.getPathPrefix();
-
-        if (StringUtils.isNotBlank(prefix)) {
-            String prefixPath = prefix.endsWith("/") ? prefix : prefix + "/";
-            return prefixPath + key;
-        }
-        return key;
-    }
-
-    /**
-     * 规范化对象 Key
-     * <p>
-     * 移除开头的斜杠，将反斜杠替换为正斜杠
-     *
-     * @param objectKey 对象 Key，不能为空
-     * @return 规范化后的对象 Key
-     * @throws OssException 当 objectKey 为空时抛出
-     */
-    private String normalizeObjectKey(String objectKey) {
-        if (StringUtils.isBlank(objectKey)) {
-            throw new OssException("oss.object.key.empty");
-        }
-
-        String key = objectKey.startsWith("/") ? objectKey.substring(1) : objectKey;
-        key = key.replace("\\", "/");
-
-        return key;
+    @Override
+    public OssTypeEnum getType() {
+        return OssTypeEnum.ALIYUN;
     }
 }

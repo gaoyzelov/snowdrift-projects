@@ -42,5 +42,25 @@
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-oss-aliyun</artifactId>
         </dependency>
+        <!-- 七牛云 Kodo 支持 -->
+        <dependency>
+            <groupId>com.snowdrift</groupId>
+            <artifactId>snowdrift-oss-qiniu</artifactId>
+        </dependency>
     </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>${maven.compiler.source}</source>
+                    <target>${maven.compiler.target}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <parameters>true</parameters>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

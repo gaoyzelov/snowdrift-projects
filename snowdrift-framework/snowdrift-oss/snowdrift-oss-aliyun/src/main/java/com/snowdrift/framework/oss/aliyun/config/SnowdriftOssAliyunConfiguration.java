@@ -48,7 +48,7 @@ public class SnowdriftOssAliyunConfiguration {
             OssInstanceProperties properties = entry.getValue();
 
             // 只注册阿里云 OSS 类型
-            if (OssTypeEnum.ALIYUN == properties.getOssType()) {
+            if (OssTypeEnum.ALIYUN == properties.getOssType() && properties.getEnabled()) {
                 registerAliyunService(configKey, properties);
             }
         }

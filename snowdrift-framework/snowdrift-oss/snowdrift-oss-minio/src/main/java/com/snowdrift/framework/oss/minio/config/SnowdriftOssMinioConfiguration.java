@@ -46,7 +46,7 @@ public class SnowdriftOssMinioConfiguration {
             OssInstanceProperties properties = entry.getValue();
 
             // 只注册 MinIO 存储类型
-            if (OssTypeEnum.MINIO == properties.getOssType()) {
+            if (OssTypeEnum.MINIO == properties.getOssType() && properties.getEnabled()) {
                 registerMinioService(configKey, properties);
             }
         }

@@ -50,6 +50,7 @@
         <minio.version>9.0.0</minio.version>
         <aliyun-sdk-oss.version>3.18.4</aliyun-sdk-oss.version>
         <cos_api.version>5.6.269</cos_api.version>
+        <qiniu-java-sdk.version>7.19.0</qiniu-java-sdk.version>
         <swagger-annotations.version>2.2.19</swagger-annotations.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
         <lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
@@ -236,6 +237,12 @@
                 <artifactId>cos_api</artifactId>
                 <version>${cos_api.version}</version>
             </dependency>
+            <!-- Qiniu OSS-->
+            <dependency>
+                <groupId>com.qiniu</groupId>
+                <artifactId>qiniu-java-sdk</artifactId>
+                <version>${qiniu-java-sdk.version}</version>
+            </dependency>
             <!-- Snowdrift Framework -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
@@ -275,6 +282,11 @@
             <dependency>
                 <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-oss-aliyun</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-oss-qiniu</artifactId>
                 <version>${revision}</version>
             </dependency>
         </dependencies>

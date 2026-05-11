@@ -1,6 +1,6 @@
 package com.snowdrift.framework.oss.local.service;
 
-import com.snowdrift.framework.oss.core.IOssService;
+import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
@@ -28,22 +28,12 @@ import java.util.List;
  * @since 1.0.0
  */
 @Slf4j
-public class LocalOssServiceImpl implements IOssService {
-
-    /**
-     * OSS 配置
-     */
-    private final OssConfigDTO config;
+public class LocalOssServiceImpl extends AbstractOssService {
 
     /**
      * 存储根目录
      */
     private final Path storageRoot;
-
-    /**
-     * 访问域名
-     */
-    private final String domain;
 
     /**
      * 构造函数
@@ -55,19 +45,24 @@ public class LocalOssServiceImpl implements IOssService {
      * @throws OssException 当 endpoint 为空或目录创建失败时抛出
      */
     public LocalOssServiceImpl(OssConfigDTO config) {
-        this.config = config;
-        this.domain = config.getDomain();
+        super(config);
 
-        // 初始化存储根目录
+        // 验证必要配置
         String endpoint = config.getEndpoint();
         if (StringUtils.isBlank(endpoint)) {
             throw new OssException("oss.local.endpoint.empty");
+        }
+        if (StringUtils.isBlank(config.getBucket())) {
+            throw new OssException("oss.local.bucket.empty");
+        }
+        if (StringUtils.isBlank(domain)) {
+            throw new OssException("oss.local.domain.empty");
         }
 
         this.storageRoot = Paths.get(endpoint);
         initializeStorageDirectory();
 
-        log.info("本地存储初始化完成: root={}, domain={}", storageRoot, domain);
+        log.info("本地存储初始化完成: root={}, domain={}, bucket={}", storageRoot, domain, config.getBucket());
     }
 
     /**
@@ -261,31 +256,6 @@ public class LocalOssServiceImpl implements IOssService {
     }
 
     /**
-     * 获取 Bucket 名称
-     * <p>
-     * 返回配置的 Bucket 名称
-     * 本地存储的 Bucket 仅为标识，不对应实际目录
-     *
-     * @return Bucket 名称
-     */
-    @Override
-    public String getBucket() {
-        return config.getBucket();
-    }
-
-    /**
-     * 获取配置标识
-     * <p>
-     * 返回当前 OSS 实例的配置标识
-     *
-     * @return 配置标识
-     */
-    @Override
-    public String getConfigKey() {
-        return config.getConfigKey();
-    }
-
-    /**
      * 关闭本地存储 OSS 客户端
      * <p>
      * 本地存储基于文件系统，无需释放连接池等资源
@@ -295,27 +265,5 @@ public class LocalOssServiceImpl implements IOssService {
     @Override
     public void close() {
         log.info("本地存储无需关闭: configKey={}, root={}", config.getConfigKey(), storageRoot);
-    }
-
-    /**
-     * 构建完整的 objectKey
-     * <p>
-     * 根据配置的 pathPrefix 构建完整的 objectKey
-     * 如果配置了路径前缀，会将前缀添加到 objectKey 前面
-     *
-     * @param objectKey 原始 objectKey
-     * @return 完整的 objectKey（包含路径前缀）
-     * @throws OssException 当 objectKey 为空时抛出
-     */
-    private String buildObjectKey(String objectKey) {
-        if (StringUtils.isBlank(objectKey)) {
-            throw new OssException("oss.object.key.empty");
-        }
-
-        String prefix = config.getPathPrefix();
-        if (StringUtils.isNotBlank(prefix)) {
-            return prefix.endsWith("/") ? prefix + objectKey : prefix + "/" + objectKey;
-        }
-        return objectKey;
     }
 }
