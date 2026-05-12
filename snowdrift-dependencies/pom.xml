@@ -289,6 +289,11 @@
                 <artifactId>snowdrift-oss-qiniu</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-oss-tencent</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

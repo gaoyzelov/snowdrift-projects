@@ -2,6 +2,7 @@ package com.snowdrift.framework.oss.core;
 
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.exception.OssException;
+import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -138,5 +139,18 @@ public abstract class AbstractOssService implements IOssService {
         key = key.replace("\\", "/");
 
         return key;
+    }
+
+    /**
+     * 构建访问 URL
+     * <p>
+     * 使用 OssUrlBuilder 统一处理 URL 拼接逻辑
+     * 自动处理域名末尾的斜杠问题
+     *
+     * @param objectKey 对象 Key（已包含 path-prefix）
+     * @return 完整的访问 URL
+     */
+    protected String buildUrl(String objectKey) {
+        return OssUrlBuilder.buildUrl(domain, objectKey);
     }
 }

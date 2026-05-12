@@ -8,6 +8,7 @@ import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.exception.OssException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.lang.NonNull;
 
 
 import java.io.IOException;
@@ -95,38 +96,31 @@ public class LocalOssServiceImpl extends AbstractOssService {
      * @throws OssException 当请求为空、文件流为空或保存失败时抛出
      */
     @Override
-    public OssResult upload(OssUploadRequest request) {
-        if (request == null) {
-            throw new OssException("oss.upload.request.null");
-        }
-        if (request.getInputStream() == null) {
-            throw new OssException("oss.upload.inputstream.null");
-        }
+    public OssResult upload(@NonNull OssUploadRequest request) {
+        // 校验请求参数
+        request.validate();
 
         String objectKey = buildObjectKey(request.getObjectKey());
         Path targetPath = storageRoot.resolve(objectKey);
 
-        try {
+        try (InputStream inputStream = request.getInputStream()) {
             // 确保父目录存在
             Path parentDir = targetPath.getParent();
             if (parentDir != null && !Files.exists(parentDir)) {
                 Files.createDirectories(parentDir);
             }
-
-            // 复制文件
-            long fileSize = Files.copy(request.getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-
-            // 构建返回结果
-            OssResult result = OssResult.builder()
-                    .objectKey(objectKey)
-                    .url(getUrl(objectKey, null))
-                    .bucket(config.getBucket())
-                    .size(fileSize)
-                    .build();
-
-            log.info("文件上传成功: objectKey={}, size={}", objectKey, fileSize);
-            return result;
-
+                long fileSize = Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+                
+                // 构建返回结果
+                OssResult result = OssResult.builder()
+                        .objectKey(objectKey)
+                        .url(getUrl(objectKey, null))
+                        .bucket(config.getBucket())
+                        .size(fileSize)
+                        .build();
+                
+                log.debug("文件上传成功: objectKey={}, size={}", objectKey, fileSize);
+                return result;
         } catch (IOException e) {
             log.error("文件上传失败: objectKey={}", objectKey, e);
             throw new OssException("oss.upload.failed", new Object[]{e.getMessage()});
@@ -144,7 +138,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
      * @throws OssException 当文件不存在或读取失败时抛出
      */
     @Override
-    public InputStream download(String objectKey) {
+    public InputStream download(@NonNull String objectKey) {
         Path filePath = storageRoot.resolve(buildObjectKey(objectKey));
 
         if (!Files.exists(filePath)) {
@@ -169,13 +163,13 @@ public class LocalOssServiceImpl extends AbstractOssService {
      * @throws OssException 当删除失败时抛出
      */
     @Override
-    public void delete(String objectKey) {
+    public void delete(@NonNull String objectKey) {
         Path filePath = storageRoot.resolve(buildObjectKey(objectKey));
 
         try {
             if (Files.exists(filePath)) {
                 Files.delete(filePath);
-                log.info("文件删除成功: objectKey={}", objectKey);
+                log.debug("文件删除成功: objectKey={}", objectKey);
             }
         } catch (IOException e) {
             log.error("文件删除失败: objectKey={}", objectKey, e);
@@ -215,7 +209,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
      * @return true 如果文件存在，false 如果文件不存在
      */
     @Override
-    public boolean exists(String objectKey) {
+    public boolean exists(@NonNull String objectKey) {
         Path filePath = storageRoot.resolve(buildObjectKey(objectKey));
         return Files.exists(filePath);
     }
@@ -232,11 +226,10 @@ public class LocalOssServiceImpl extends AbstractOssService {
      * @return 文件访问 URL
      */
     @Override
-    public String getUrl(String objectKey, Duration expiry) {
+    public String getUrl(@NonNull String objectKey, Duration expiry) {
         // 如果配置了域名，使用域名
         if (StringUtils.isNotBlank(domain)) {
-            String url = domain.endsWith("/") ? domain : domain + "/";
-            return url + objectKey;
+            return buildUrl(objectKey);
         }
 
         // 否则返回本地文件路径

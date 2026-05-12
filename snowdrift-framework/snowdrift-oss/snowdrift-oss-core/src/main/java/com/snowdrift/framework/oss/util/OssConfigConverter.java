@@ -62,6 +62,7 @@ public class OssConfigConverter {
         }
         
         OssInstanceProperties properties = new OssInstanceProperties();
+        // 注意：OssInstanceProperties 没有 configKey 字段，因此不设置
         properties.setOssType(config.getOssType());
         properties.setEndpoint(config.getEndpoint());
         properties.setAccessKey(config.getAccessKey());

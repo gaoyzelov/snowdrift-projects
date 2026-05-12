@@ -6,9 +6,11 @@ import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.exception.OssException;
+import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import io.minio.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.lang.NonNull;
 
 import java.io.InputStream;
 import java.time.Duration;
@@ -103,24 +105,20 @@ public class MinioOssServiceImpl extends AbstractOssService {
      * @throws OssException 当请求为空、文件流为空或上传失败时抛出
      */
     @Override
-    public OssResult upload(OssUploadRequest request) {
-        if (request == null) {
-            throw new OssException("oss.upload.request.null");
-        }
-        if (request.getInputStream() == null) {
-            throw new OssException("oss.upload.inputstream.null");
-        }
+    public OssResult upload(@NonNull OssUploadRequest request) {
+        // 校验请求参数
+        request.validate();
 
         String objectKey = buildObjectKey(request.getObjectKey());
         String bucket = config.getBucket();
 
-        try {
+        try (InputStream inputStream = request.getInputStream()) {
             // 上传文件到 MinIO
             minioClient.putObject(
                     PutObjectArgs.builder()
                             .bucket(bucket)
                             .object(objectKey)
-                            .stream(request.getInputStream(), request.getSize() != null ? request.getSize() : -1, 10 * 1024 * 1024L) // 10MB part size
+                            .stream(inputStream, request.getSize() != null ? request.getSize() : -1, 10 * 1024 * 1024L) // 10MB part size
                             .contentType(request.getContentType())
                             .build()
             );
@@ -133,9 +131,8 @@ public class MinioOssServiceImpl extends AbstractOssService {
                     .size(request.getSize())
                     .build();
 
-            log.info("文件上传成功: bucket={}, objectKey={}, size={}", bucket, objectKey, request.getSize());
+            log.debug("文件上传成功: bucket={}, objectKey={}, size={}", bucket, objectKey, request.getSize());
             return result;
-
         } catch (Exception e) {
             log.error("文件上传失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.upload.failed", new Object[]{e.getMessage()});
@@ -150,7 +147,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
      * @throws OssException 当文件不存在或下载失败时抛出
      */
     @Override
-    public InputStream download(String objectKey) {
+    public InputStream download(@NonNull String objectKey) {
         String bucket = config.getBucket();
         String key = buildObjectKey(objectKey);
 
@@ -174,7 +171,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
      * @throws OssException 当删除失败时抛出
      */
     @Override
-    public void delete(String objectKey) {
+    public void delete(@NonNull String objectKey) {
         String bucket = config.getBucket();
         String key = buildObjectKey(objectKey);
 
@@ -185,7 +182,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
                             .object(key)
                             .build()
             );
-            log.info("文件删除成功: bucket={}, objectKey={}", bucket, key);
+            log.debug("文件删除成功: bucket={}, objectKey={}", bucket, key);
         } catch (Exception e) {
             log.error("文件删除失败: bucket={}, objectKey={}", bucket, key, e);
             throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
@@ -219,7 +216,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
      * @return true 如果文件存在，false 如果文件不存在
      */
     @Override
-    public boolean exists(String objectKey) {
+    public boolean exists(@NonNull String objectKey) {
         String bucket = config.getBucket();
         String key = buildObjectKey(objectKey);
 
@@ -244,7 +241,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
      * @return 文件访问 URL
      */
     @Override
-    public String getUrl(String objectKey, Duration expiry) {
+    public String getUrl(@NonNull String objectKey, Duration expiry) {
         String bucket = config.getBucket();
         String key = normalizeObjectKey(objectKey);
 
@@ -264,14 +261,11 @@ public class MinioOssServiceImpl extends AbstractOssService {
 
             // 如果配置了域名，使用域名
             if (StringUtils.isNotBlank(domain)) {
-                String url = domain.endsWith("/") ? domain : domain + "/";
-                return url + key;
+                return buildUrl(key);
             }
 
             // 否则返回 MinIO 直接访问 URL
-            String endpoint = config.getEndpoint();
-            String endpointUrl = endpoint.endsWith("/") ? endpoint : endpoint + "/";
-            return endpointUrl + bucket + "/" + key;
+            return OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, key);
 
         } catch (Exception e) {
             log.error("生成文件访问 URL 失败: bucket={}, objectKey={}", bucket, key, e);
@@ -287,7 +281,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
      * @return Upload ID，用于后续分片上传和合并
      */
     @Override
-    public String initiateMultipartUpload(String objectKey, String contentType) {
+    public String initiateMultipartUpload(@NonNull String objectKey, String contentType) {
         String bucket = config.getBucket();
         String key = buildObjectKey(objectKey);
 
@@ -295,7 +289,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
             // MinIO 的 Java SDK 没有直接的 initiateMultipartUpload 方法
             // 这里返回一个占位符，实际分片上传通过 putObject 自动处理
             // 如果需要手动控制分片，需要使用更低层的 API
-            log.info("MinIO 分片上传初始化: bucket={}, objectKey={}", bucket, key);
+            log.debug("MinIO 分片上传初始化: bucket={}, objectKey={}", bucket, key);
             return key; // 使用 objectKey 作为 uploadId 的标识
         } catch (Exception e) {
             log.error("分片上传初始化失败: bucket={}, objectKey={}", bucket, key, e);
@@ -306,15 +300,15 @@ public class MinioOssServiceImpl extends AbstractOssService {
     /**
      * 生成分片上传预签名 URL
      *
-     * @param objectKey   对象键，文件标识
-     * @param uploadId    Upload ID
-     * @param partNumber  分片编号，从 1 开始递增
-     * @param expiry      URL 有效期，过期后该 URL 不可用
+     * @param objectKey  对象键，文件标识
+     * @param uploadId   Upload ID
+     * @param partNumber 分片编号，从 1 开始递增
+     * @param expiry     URL 有效期，过期后该 URL 不可用
      * @return 分片上传预签名 URL
      */
     @Override
     public String generatePresignedUploadUrlForChunk(String objectKey, String uploadId,
-                                                      int partNumber, Duration expiry) {
+                                                     int partNumber, Duration expiry) {
         String bucket = config.getBucket();
         String key = buildObjectKey(objectKey);
         Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getChunkUploadUrlExpire());
@@ -345,7 +339,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
     public void completeMultipartUpload(String objectKey, String uploadId, List<?> parts) {
         // MinIO 的 Java SDK 通过 putObject 自动处理分片上传和合并
         // 这里不需要手动实现
-        log.info("MinIO 分片上传完成: objectKey={}", objectKey);
+        log.debug("MinIO 分片上传完成: objectKey={}", objectKey);
     }
 
     /**
@@ -359,7 +353,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
         // 如果文件已上传，删除它
         try {
             delete(objectKey);
-            log.info("取消分片上传并清理文件: objectKey={}", objectKey);
+            log.debug("取消分片上传并清理文件: objectKey={}", objectKey);
         } catch (Exception e) {
             log.warn("取消分片上传清理失败: objectKey={}", objectKey, e);
         }

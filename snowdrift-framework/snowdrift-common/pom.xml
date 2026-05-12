@@ -18,6 +18,11 @@
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
         </dependency>
+        <!-- Jakarta Validation API -->
+        <dependency>
+            <groupId>jakarta.validation</groupId>
+            <artifactId>jakarta.validation-api</artifactId>
+        </dependency>
         <!-- FastJson2 -->
         <dependency>
             <groupId>com.alibaba.fastjson2</groupId>

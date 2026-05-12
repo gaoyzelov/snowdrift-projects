@@ -19,6 +19,7 @@
         <module>snowdrift-oss-minio</module>
         <module>snowdrift-oss-aliyun</module>
         <module>snowdrift-oss-qiniu</module>
+        <module>snowdrift-oss-tencent</module>
     </modules>
 
 </project>

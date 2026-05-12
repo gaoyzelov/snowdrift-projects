@@ -17,8 +17,10 @@ import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.exception.OssException;
+import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.lang.NonNull;
 
 import java.io.InputStream;
 import java.time.Duration;
@@ -93,7 +95,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             // 初始化 Bucket 管理器
             this.bucketManager = new BucketManager(auth, configuration);
 
-            log.info("七牛云 OSS 客户端初始化成功: bucket={}, domain={}, region={}", 
+            log.info("七牛云 OSS 客户端初始化成功: bucket={}, domain={}, region={}",
                     config.getBucket(), domain, region != null ? region : "auto");
         } catch (Exception e) {
             throw new OssException("oss.qiniu.client.init.failed", new Object[]{e.getMessage()});
@@ -111,22 +113,19 @@ public class QiniuOssServiceImpl extends AbstractOssService {
      * @throws OssException 当 request 为空、文件流为空或上传失败时抛出
      */
     @Override
-    public OssResult upload(OssUploadRequest request) {
-        if (request == null) {
-            throw new OssException("oss.upload.request.null");
-        }
-        if (request.getInputStream() == null) {
-            throw new OssException("oss.upload.inputstream.null");
-        }
+    public OssResult upload(@NonNull OssUploadRequest request) {
+        // 校验请求参数
+        request.validate();
 
         String objectKey = buildObjectKey(request.getObjectKey());
         String bucket = config.getBucket();
+
         // 生成上传 Token（expires 参数是秒）
-//        String uploadToken = auth.uploadToken(bucket, objectKey, config.getUploadTokenExpire() * 60L, null);
-        String uploadToken = auth.uploadToken(bucket);
-        try {
+        Long expireSeconds = config.getUploadTokenExpire() != null ? config.getUploadTokenExpire() * 60L : 3600L;
+        String uploadToken = auth.uploadToken(bucket, objectKey, expireSeconds, null);
+        try (InputStream inputStream = request.getInputStream()) {
             // 读取文件流为字节数组
-            byte[] fileBytes = request.getInputStream().readAllBytes();
+            byte[] fileBytes = inputStream.readAllBytes();
 
             // 上传文件
             Response response = uploadManager.put(fileBytes, objectKey, uploadToken);
@@ -135,7 +134,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             DefaultPutRet putRet = JSON.parseObject(
                     response.bodyString(), DefaultPutRet.class);
 
-            log.info("文件上传成功: bucket={}, objectKey={}, hash={}, size={}", 
+            log.debug("文件上传成功: bucket={}, objectKey={}, hash={}, size={}",
                     bucket, putRet.key, putRet.hash, request.getSize());
 
             return OssResult.builder()
@@ -162,7 +161,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
      * @throws OssException 当文件不存在或下载失败时抛出
      */
     @Override
-    public InputStream download(String objectKey) {
+    public InputStream download(@NonNull String objectKey) {
         String bucket = config.getBucket();
         String key = normalizeObjectKey(objectKey);
 
@@ -193,13 +192,13 @@ public class QiniuOssServiceImpl extends AbstractOssService {
      * @throws OssException 当删除失败时抛出
      */
     @Override
-    public void delete(String objectKey) {
+    public void delete(@NonNull String objectKey) {
         String bucket = config.getBucket();
         String key = normalizeObjectKey(objectKey);
 
         try {
             bucketManager.delete(bucket, key);
-            log.info("文件删除成功: bucket={}, objectKey={}", bucket, key);
+            log.debug("文件删除成功: bucket={}, objectKey={}", bucket, key);
         } catch (QiniuException e) {
             // 如果文件不存在（612 错误码），不抛出异常
             if (e.code() == 612) {
@@ -244,7 +243,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
      * @throws OssException 当检查失败时抛出
      */
     @Override
-    public boolean exists(String objectKey) {
+    public boolean exists(@NonNull String objectKey) {
         String bucket = config.getBucket();
         String key = normalizeObjectKey(objectKey);
 
@@ -274,7 +273,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
      * @throws OssException 当生成 URL 失败时抛出
      */
     @Override
-    public String getUrl(String objectKey, Duration expiry) {
+    public String getUrl(@NonNull String objectKey, Duration expiry) {
         String key = normalizeObjectKey(objectKey);
 
         if (Boolean.TRUE.equals(privateBucket)) {
@@ -284,8 +283,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
         }
 
         // 公开空间：直接返回 CDN 域名 + objectKey
-        String domainUrl = domain.endsWith("/") ? domain : domain + "/";
-        return domainUrl + key;
+        return buildUrl(key);
     }
 
     /**
@@ -309,10 +307,10 @@ public class QiniuOssServiceImpl extends AbstractOssService {
      * <p>
      * 七牛云不支持分片上传
      *
-     * @param objectKey   对象键，文件标识
-     * @param uploadId    Upload ID
-     * @param partNumber  分片编号
-     * @param expiry      URL 有效期
+     * @param objectKey  对象键，文件标识
+     * @param uploadId   Upload ID
+     * @param partNumber 分片编号
+     * @param expiry     URL 有效期
      * @return 分片上传预签名 URL
      * @throws UnsupportedOperationException 七牛云不支持此操作
      */
@@ -379,8 +377,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
      * @return 下载 URL
      */
     private String getDownloadUrl(String objectKey) {
-        String domainUrl = domain.endsWith("/") ? domain : domain + "/";
-        String url = domainUrl + objectKey;
+        String url = OssUrlBuilder.buildUrl(domain, objectKey);
 
         if (Boolean.TRUE.equals(privateBucket)) {
             // 私有空间生成下载凭证

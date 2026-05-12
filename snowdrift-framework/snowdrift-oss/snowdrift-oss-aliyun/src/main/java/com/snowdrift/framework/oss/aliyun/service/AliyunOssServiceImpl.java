@@ -11,8 +11,10 @@ import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.exception.OssException;
+import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.lang.NonNull;
 
 import java.io.InputStream;
 import java.net.URL;
@@ -84,27 +86,22 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      * @throws OssException 当 request 为空、文件流为空或上传失败时抛出
      */
     @Override
-    public OssResult upload(OssUploadRequest request) {
-        if (request == null) {
-            throw new OssException("oss.upload.request.null");
-        }
-        if (request.getInputStream() == null) {
-            throw new OssException("oss.upload.inputstream.null");
-        }
+    public OssResult upload(@NonNull OssUploadRequest request) {
+        // 校验请求参数
+        request.validate();
 
         String objectKey = buildObjectKey(request.getObjectKey());
         String bucket = config.getBucket();
 
-        try {
+        try (InputStream inputStream = request.getInputStream()) {
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(request.getSize());
             if (StringUtils.isNotBlank(request.getContentType())) {
                 metadata.setContentType(request.getContentType());
             }
 
-            ossClient.putObject(bucket, objectKey, request.getInputStream(), metadata);
-
-            log.info("文件上传成功: bucket={}, objectKey={}, size={}", bucket, objectKey, request.getSize());
+            ossClient.putObject(bucket, objectKey, inputStream, metadata);
+            log.debug("文件上传成功: bucket={}, objectKey={}, size={}", bucket, objectKey, request.getSize());
 
             return OssResult.builder()
                     .objectKey(objectKey)
@@ -129,7 +126,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      * @throws OssException 当文件不存在或下载失败时抛出
      */
     @Override
-    public InputStream download(String objectKey) {
+    public InputStream download(@NonNull String objectKey) {
         String bucket = config.getBucket();
         String key = normalizeObjectKey(objectKey);
 
@@ -151,13 +148,13 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      * @throws OssException 当删除失败时抛出
      */
     @Override
-    public void delete(String objectKey) {
+    public void delete(@NonNull String objectKey) {
         String bucket = config.getBucket();
         String key = normalizeObjectKey(objectKey);
 
         try {
             ossClient.deleteObject(bucket, key);
-            log.info("文件删除成功: bucket={}, objectKey={}", bucket, key);
+            log.debug("文件删除成功: bucket={}, objectKey={}", bucket, key);
         } catch (Exception e) {
             log.error("文件删除失败: bucket={}, objectKey={}", bucket, key, e);
             throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
@@ -197,7 +194,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      * @throws OssException 当检查失败时抛出
      */
     @Override
-    public boolean exists(String objectKey) {
+    public boolean exists(@NonNull String objectKey) {
         String bucket = config.getBucket();
         String key = normalizeObjectKey(objectKey);
 
@@ -222,7 +219,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      * @throws OssException 当生成 URL 失败时抛出
      */
     @Override
-    public String getUrl(String objectKey, Duration expiry) {
+    public String getUrl(@NonNull String objectKey, Duration expiry) {
         String bucket = config.getBucket();
         String key = normalizeObjectKey(objectKey);
 
@@ -238,17 +235,10 @@ public class AliyunOssServiceImpl extends AbstractOssService {
         }
 
         if (StringUtils.isNotBlank(domain)) {
-            String domainUrl = domain.endsWith("/") ? domain : domain + "/";
-            return domainUrl + key;
+            return buildUrl(key);
         }
 
-        String endpoint = config.getEndpoint();
-        if (endpoint.startsWith("http://")) {
-            endpoint = endpoint.substring(7);
-        } else if (endpoint.startsWith("https://")) {
-            endpoint = endpoint.substring(8);
-        }
-        return "https://" + bucket + "." + endpoint + "/" + key;
+        return OssUrlBuilder.buildVirtualHostUrl(bucket, config.getEndpoint(), key);
     }
 
     /**
@@ -263,23 +253,23 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      * @throws OssException 当初始化失败时抛出
      */
     @Override
-    public String initiateMultipartUpload(String objectKey, String contentType) {
+    public String initiateMultipartUpload(@NonNull String objectKey, String contentType) {
         String bucket = config.getBucket();
         String key = buildObjectKey(objectKey);
 
         try {
             com.aliyun.oss.model.InitiateMultipartUploadRequest request =
                     new com.aliyun.oss.model.InitiateMultipartUploadRequest(bucket, key);
-            
+
             if (StringUtils.isNotBlank(contentType)) {
                 ObjectMetadata metadata = new ObjectMetadata();
                 metadata.setContentType(contentType);
                 request.setObjectMetadata(metadata);
             }
-            
+
             com.aliyun.oss.model.InitiateMultipartUploadResult result = ossClient.initiateMultipartUpload(request);
 
-            log.info("初始化分片上传成功: bucket={}, objectKey={}, uploadId={}", bucket, key, result.getUploadId());
+            log.debug("初始化分片上传成功: bucket={}, objectKey={}, uploadId={}", bucket, key, result.getUploadId());
             return result.getUploadId();
         } catch (Exception e) {
             log.error("初始化分片上传失败: bucket={}, objectKey={}", bucket, key, e);
@@ -293,10 +283,10 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      * 为指定分片生成预签名上传 URL
      * 前端可直接使用该 URL 上传分片，无需经过应用服务器
      *
-     * @param objectKey   对象键，文件标识，不能为空
-     * @param uploadId    Upload ID，由 initiateMultipartUpload 返回，不能为空
-     * @param partNumber  分片编号，从 1 开始递增
-     * @param expiry      URL 有效期，过期后该 URL 不可用
+     * @param objectKey  对象键，文件标识，不能为空
+     * @param uploadId   Upload ID，由 initiateMultipartUpload 返回，不能为空
+     * @param partNumber 分片编号，从 1 开始递增
+     * @param expiry     URL 有效期，过期后该 URL 不可用
      * @return 分片上传预签名 URL
      * @throws OssException 当生成 URL 失败时抛出
      */
@@ -314,11 +304,11 @@ public class AliyunOssServiceImpl extends AbstractOssService {
 
         URL url = ossClient.generatePresignedUrl(request);
         String presignedUrl = url.toString();
-        
+
         // 手动添加分片上传参数
         String separator = presignedUrl.contains("?") ? "&" : "?";
         presignedUrl += separator + "partNumber=" + partNumber + "&uploadId=" + uploadId;
-        
+
         return presignedUrl;
     }
 
@@ -350,7 +340,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
                     new com.aliyun.oss.model.CompleteMultipartUploadRequest(bucket, key, uploadId, partETags);
             ossClient.completeMultipartUpload(request);
 
-            log.info("完成分片上传成功: bucket={}, objectKey={}, uploadId={}", bucket, key, uploadId);
+            log.debug("完成分片上传成功: bucket={}, objectKey={}, uploadId={}", bucket, key, uploadId);
         } catch (Exception e) {
             log.error("完成分片上传失败: bucket={}, objectKey={}, uploadId={}", bucket, key, uploadId, e);
             throw new OssException("oss.multipart.complete.failed", new Object[]{e.getMessage()});
@@ -377,7 +367,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
                     new com.aliyun.oss.model.AbortMultipartUploadRequest(bucket, key, uploadId);
             ossClient.abortMultipartUpload(request);
 
-            log.info("取消分片上传成功: bucket={}, objectKey={}, uploadId={}", bucket, key, uploadId);
+            log.debug("取消分片上传成功: bucket={}, objectKey={}, uploadId={}", bucket, key, uploadId);
         } catch (Exception e) {
             log.error("取消分片上传失败: bucket={}, objectKey={}, uploadId={}", bucket, key, uploadId, e);
             throw new OssException("oss.multipart.abort.failed", new Object[]{e.getMessage()});

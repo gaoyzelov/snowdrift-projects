@@ -54,6 +54,14 @@ public enum OssTypeEnum implements IEnum<String> {
     private final String note;
     
     /**
+     *
+     * @return 类型标识
+     */
+    public String getCode() {
+        return code;
+    }
+    
+    /**
      * 根据 code 获取枚举
      */
     public static Optional<OssTypeEnum> getByCode(String code) {

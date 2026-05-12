@@ -107,13 +107,23 @@ public class OssStrategyFactory {
      * 移除 OSS 实例
      * <p>
      * 从工厂中移除指定配置标识的 OSS Service 实例
+     * 移除前会先调用 close() 释放资源（如 HTTP 连接池）
      * 如果 configKey 不存在，不会抛出异常
      *
      * @param configKey 配置标识
      */
     public void remove(String configKey) {
-        serviceMap.remove(configKey);
-        log.info("移除 OSS 实例: configKey={}", configKey);
+        IOssService service = serviceMap.remove(configKey);
+        if (service != null) {
+            try {
+                service.close();
+                log.info("移除并关闭 OSS 实例: configKey={}, type={}", configKey, service.getType());
+            } catch (Exception e) {
+                log.warn("关闭 OSS 实例失败: configKey={}", configKey, e);
+            }
+        } else {
+            log.warn("移除 OSS 实例失败，实例不存在: configKey={}", configKey);
+        }
     }
     
     /**
@@ -178,20 +188,48 @@ public class OssStrategyFactory {
      * 先移除旧的 OSS Service 实例，再根据新配置创建并注册新实例
      * 适用于运行时动态更新 OSS 配置的场景，无需重启应用
      * <p>
-     * 注意：该方法使用同步锁保证线程安全，避免 reload 期间其他线程获取到不存在的实例
+     * 注意：该方法使用同步锁保证线程安全，在同一个锁内完成移除和注册，
+     * 避免 reload 期间其他线程获取到不存在的实例
      *
      * @param configKey      配置标识
      * @param config         新的 OSS 配置信息
      * @param serviceCreator Service 创建器
      */
     public synchronized void reload(String configKey, OssConfigDTO config, ServiceCreator serviceCreator) {
+        if (config == null) {
+            throw new OssException("oss.config.null");
+        }
+        
+        // 关闭旧实例
+        IOssService oldService = serviceMap.get(configKey);
+        if (oldService != null) {
+            try {
+                oldService.close();
+                log.info("关闭旧 OSS 实例: configKey={}", configKey);
+            } catch (Exception e) {
+                log.warn("关闭旧 OSS 实例失败: configKey={}", configKey, e);
+            }
+        }
+        
         // 移除旧实例
-        remove(configKey);
+        serviceMap.remove(configKey);
         
-        // 注册新实例
-        registerFromConfig(config, serviceCreator);
+        // 注册新实例（在同步块内）
+        if (Boolean.TRUE.equals(config.getEnabled())) {
+            IOssService newService = serviceCreator.create(config);
+            serviceMap.put(config.getConfigKey(), newService);
+            log.info("注册新 OSS 实例: configKey={}, type={}", config.getConfigKey(), newService.getType());
+            
+            // 如果是默认配置，更新默认标识
+            if (Boolean.TRUE.equals(config.getIsDefault())) {
+                setDefaultConfigKey(config.getConfigKey());
+                log.info("设置默认 OSS 配置: configKey={}", config.getConfigKey());
+            }
+        } else {
+            log.warn("OSS 配置未启用，跳过注册: configKey={}", configKey);
+        }
         
-        log.info("热更新 OSS 配置: configKey={}", configKey);
+        log.info("热更新 OSS 配置完成: configKey={}", configKey);
     }
     
     /**
