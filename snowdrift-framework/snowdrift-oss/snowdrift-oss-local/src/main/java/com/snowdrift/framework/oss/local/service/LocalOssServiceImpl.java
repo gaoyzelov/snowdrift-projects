@@ -4,12 +4,11 @@ import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
-import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.exception.OssException;
+import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
-
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,7 +17,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.Duration;
-import java.util.List;
 
 /**
  * 本地存储 OSS Service 实现
@@ -45,25 +43,19 @@ public class LocalOssServiceImpl extends AbstractOssService {
      * @param config OSS 配置信息，包含 endpoint、domain、pathPrefix 等
      * @throws OssException 当 endpoint 为空或目录创建失败时抛出
      */
-    public LocalOssServiceImpl(OssConfigDTO config) {
+    public LocalOssServiceImpl(@NonNull OssConfigDTO config) {
         super(config);
-
         // 验证必要配置
         String endpoint = config.getEndpoint();
+
         if (StringUtils.isBlank(endpoint)) {
             throw new OssException("oss.local.endpoint.empty");
-        }
-        if (StringUtils.isBlank(config.getBucket())) {
-            throw new OssException("oss.local.bucket.empty");
-        }
-        if (StringUtils.isBlank(domain)) {
-            throw new OssException("oss.local.domain.empty");
         }
 
         this.storageRoot = Paths.get(endpoint);
         initializeStorageDirectory();
 
-        log.info("本地存储初始化完成: root={}, domain={}, bucket={}", storageRoot, domain, config.getBucket());
+        log.info("本地存储初始化完成: root={}", storageRoot);
     }
 
     /**
@@ -109,18 +101,17 @@ public class LocalOssServiceImpl extends AbstractOssService {
             if (parentDir != null && !Files.exists(parentDir)) {
                 Files.createDirectories(parentDir);
             }
-                long fileSize = Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
-                
-                // 构建返回结果
-                OssResult result = OssResult.builder()
-                        .objectKey(objectKey)
-                        .url(getUrl(objectKey, null))
-                        .bucket(config.getBucket())
-                        .size(fileSize)
-                        .build();
-                
-                log.debug("文件上传成功: objectKey={}, size={}", objectKey, fileSize);
-                return result;
+            long fileSize = Files.copy(inputStream, targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+            // 构建返回结果
+            OssResult result = OssResult.builder()
+                    .objectKey(objectKey)
+                    .url(getUrl(objectKey, null))
+                    .size(fileSize)
+                    .build();
+
+            log.debug("文件上传成功: objectKey={}, size={}", objectKey, fileSize);
+            return result;
         } catch (IOException e) {
             log.error("文件上传失败: objectKey={}", objectKey, e);
             throw new OssException("oss.upload.failed", new Object[]{e.getMessage()});
@@ -139,7 +130,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public InputStream download(@NonNull String objectKey) {
-        Path filePath = storageRoot.resolve(buildObjectKey(objectKey));
+        Path filePath = storageRoot.resolve(objectKey);
 
         if (!Files.exists(filePath)) {
             throw new OssException("oss.file.not.exists", new Object[]{objectKey});
@@ -164,7 +155,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public void delete(@NonNull String objectKey) {
-        Path filePath = storageRoot.resolve(buildObjectKey(objectKey));
+        Path filePath = storageRoot.resolve(objectKey);
 
         try {
             if (Files.exists(filePath)) {
@@ -178,29 +169,6 @@ public class LocalOssServiceImpl extends AbstractOssService {
     }
 
     /**
-     * 批量删除本地文件
-     * <p>
-     * 批量删除多个文件，内部会逐个删除
-     * 如果某个文件删除失败，会记录警告日志但继续删除其他文件
-     *
-     * @param objectKeys 对象键列表，要删除的文件标识集合
-     */
-    @Override
-    public void deleteBatch(List<String> objectKeys) {
-        if (objectKeys == null || objectKeys.isEmpty()) {
-            return;
-        }
-
-        for (String objectKey : objectKeys) {
-            try {
-                delete(objectKey);
-            } catch (Exception e) {
-                log.warn("批量删除文件失败: objectKey={}", objectKey, e);
-            }
-        }
-    }
-
-    /**
      * 判断本地文件是否存在
      * <p>
      * 检查指定 objectKey 的文件是否存在于本地文件系统中
@@ -210,7 +178,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public boolean exists(@NonNull String objectKey) {
-        Path filePath = storageRoot.resolve(buildObjectKey(objectKey));
+        Path filePath = storageRoot.resolve(objectKey);
         return Files.exists(filePath);
     }
 
@@ -226,26 +194,14 @@ public class LocalOssServiceImpl extends AbstractOssService {
      * @return 文件访问 URL
      */
     @Override
-    public String getUrl(@NonNull String objectKey, Duration expiry) {
+    public String getUrl(String objectKey, Duration expiry) {
         // 如果配置了域名，使用域名
-        if (StringUtils.isNotBlank(domain)) {
-            return buildUrl(objectKey);
+        if (StringUtils.isNotBlank(config.getDomain())) {
+            return OssUrlBuilder.buildUrl(config.getDomain(), objectKey);
         }
 
         // 否则返回本地文件路径
         return storageRoot.resolve(objectKey).toUri().toString();
-    }
-
-    /**
-     * 获取存储类型
-     * <p>
-     * 返回本地存储类型枚举
-     *
-     * @return OssTypeEnum.LOCAL
-     */
-    @Override
-    public OssTypeEnum getType() {
-        return OssTypeEnum.LOCAL;
     }
 
     /**

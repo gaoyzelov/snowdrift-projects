@@ -20,11 +20,11 @@ snowdrift:
     configs:
       local:
         oss-type: local
-        enabled: true
-        endpoint: D:/data/snowdrift-oss/sample  # 本地存储路径（Windows）
+        enabled: false
+        endpoint: D:/data/snowdrift-oss  # 本地存储路径（Windows）
         # endpoint: /opt/data/snowdrift-oss/sample  # 本地存储路径（Linux）
         domain: http://localhost:8081/files  # 访问域名
-        bucket: default
+        path-prefix: sample/
       minio:
         oss-type: minio
         enabled: true
@@ -34,7 +34,6 @@ snowdrift:
         domain: http://192.168.1.220:9002    # MinIO 访问域名
         bucket: snowdrift-test           # Bucket 名称（会自动创建）
         path-prefix: sample/             # 路径前缀
-        private-bucket: false            # 是否为私有 Bucket
         signature-expiry: 60             # 签名 URL 有效期（分钟）
       aliyun:
         enabled: false                       # 是否启用
@@ -71,8 +70,8 @@ snowdrift:
     enabled: true
     mappings:
       - path-pattern: /files/**
-        location: file:D:/data/snowdrift-oss/sample/
-        # location: file:/opt/data/snowdrift-oss/sample/  # Linux 路径
+        location: file:D:/data/snowdrift-oss
+        # location: file:/opt/data/snowdrift-oss  # Linux 路径
         cache-period: 3600
         use-cache-control: true
 

@@ -10,7 +10,10 @@ import com.snowdrift.framework.oss.util.OssConfigConverter;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 /**
  * MinIO 存储自动配置类
@@ -35,13 +38,13 @@ public class SnowdriftOssMinioConfiguration {
      */
     @PostConstruct
     public void registerMinioOssService() {
-        if (ossProperties.getConfigs() == null || ossProperties.getConfigs().isEmpty()) {
+        if (MapUtils.isEmpty(ossProperties.getConfigs())) {
             log.debug("未配置 OSS 实例，跳过 MinIO 存储注册");
             return;
         }
 
         // 遍历所有配置，注册 MinIO 存储类型
-        for (var entry : ossProperties.getConfigs().entrySet()) {
+        for (Map.Entry<String, OssInstanceProperties> entry : ossProperties.getConfigs().entrySet()) {
             String configKey = entry.getKey();
             OssInstanceProperties properties = entry.getValue();
 
@@ -63,8 +66,7 @@ public class SnowdriftOssMinioConfiguration {
             // 转换为 DTO
             OssConfigDTO config = OssConfigConverter.fromProperties(properties, configKey);
             // 创建并注册 Service
-            MinioOssServiceImpl service = new MinioOssServiceImpl(config);
-            ossStrategyFactory.register(configKey, service);
+            ossStrategyFactory.register(configKey, new MinioOssServiceImpl(config));
 
             log.info("MinIO 存储实例注册成功: configKey={}, endpoint={}, bucket={}",
                     configKey, properties.getEndpoint(), properties.getBucket());

@@ -3,6 +3,7 @@ package com.snowdrift.framework.oss.dto;
 import com.snowdrift.framework.oss.exception.OssException;
 import lombok.Builder;
 import lombok.Data;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.InputStream;
 import java.util.Map;
@@ -61,7 +62,7 @@ public class OssUploadRequest {
         if (this.inputStream == null) {
             throw new OssException("oss.upload.inputstream.null");
         }
-        if (this.objectKey == null || this.objectKey.trim().isEmpty()) {
+        if (StringUtils.isBlank(this.objectKey)) {
             throw new OssException("oss.object.key.empty");
         }
         if (this.size != null && this.size < 0) {

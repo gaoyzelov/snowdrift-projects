@@ -4,7 +4,6 @@ import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.enums.UrlStyleEnum;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
@@ -49,21 +48,18 @@ public class OssInstanceProperties implements Serializable {
     private OssTypeEnum ossType;
 
     /**
-     * 上传 Endpoint（内网）
+     * 上传 Endpoint
      */
-    @NotBlank(message = "上传 Endpoint 不能为空")
     private String endpoint;
 
     /**
      * Access Key
      */
-    @NotBlank(message = "Access Key 不能为空")
     private String accessKey;
 
     /**
      * Secret Key
      */
-    @NotBlank(message = "Secret Key 不能为空")
     private String secretKey;
 
     /**
@@ -74,7 +70,6 @@ public class OssInstanceProperties implements Serializable {
     /**
      * Bucket 名称
      */
-    @NotBlank(message = "Bucket 名称不能为空")
     private String bucket;
 
     /**

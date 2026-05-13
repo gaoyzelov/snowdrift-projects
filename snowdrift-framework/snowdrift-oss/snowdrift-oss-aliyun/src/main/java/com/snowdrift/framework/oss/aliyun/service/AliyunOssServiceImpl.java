@@ -1,6 +1,5 @@
 package com.snowdrift.framework.oss.aliyun.service;
 
-import com.aliyun.oss.HttpMethod;
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
@@ -9,7 +8,6 @@ import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
-import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
@@ -20,7 +18,6 @@ import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Date;
-import java.util.List;
 
 /**
  * 阿里云 OSS Service 实现
@@ -53,7 +50,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
         String endpoint = config.getEndpoint();
         String accessKey = config.getAccessKey();
         String secretKey = config.getSecretKey();
-
+        String bucket = config.getBucket();
         if (StringUtils.isBlank(endpoint)) {
             throw new OssException("oss.aliyun.endpoint.empty");
         }
@@ -63,13 +60,13 @@ public class AliyunOssServiceImpl extends AbstractOssService {
         if (StringUtils.isBlank(secretKey)) {
             throw new OssException("oss.aliyun.secretKey.empty");
         }
-        if (StringUtils.isBlank(config.getBucket())) {
+        if (StringUtils.isBlank(bucket)) {
             throw new OssException("oss.aliyun.bucket.empty");
         }
 
         try {
             this.ossClient = new OSSClientBuilder().build(endpoint, accessKey, secretKey);
-            log.info("阿里云 OSS 客户端初始化成功: endpoint={}, bucket={}", endpoint, config.getBucket());
+            log.info("阿里云 OSS 客户端初始化成功: endpoint={}, bucket={}", endpoint, bucket);
         } catch (Exception e) {
             throw new OssException("oss.aliyun.client.init.failed", new Object[]{e.getMessage()});
         }
@@ -91,7 +88,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
         request.validate();
 
         String objectKey = buildObjectKey(request.getObjectKey());
-        String bucket = config.getBucket();
+        String bucket = super.getBucket();
 
         try (InputStream inputStream = request.getInputStream()) {
             ObjectMetadata metadata = new ObjectMetadata();
@@ -127,13 +124,12 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      */
     @Override
     public InputStream download(@NonNull String objectKey) {
-        String bucket = config.getBucket();
-        String key = normalizeObjectKey(objectKey);
+        String bucket = super.getBucket();
 
         try {
-            return ossClient.getObject(bucket, key).getObjectContent();
+            return ossClient.getObject(bucket, objectKey).getObjectContent();
         } catch (Exception e) {
-            log.error("文件下载失败: bucket={}, objectKey={}", bucket, key, e);
+            log.error("文件下载失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.download.failed", new Object[]{e.getMessage()});
         }
     }
@@ -149,38 +145,13 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      */
     @Override
     public void delete(@NonNull String objectKey) {
-        String bucket = config.getBucket();
-        String key = normalizeObjectKey(objectKey);
-
+        String bucket = super.getBucket();
         try {
-            ossClient.deleteObject(bucket, key);
-            log.debug("文件删除成功: bucket={}, objectKey={}", bucket, key);
+            ossClient.deleteObject(bucket, objectKey);
+            log.debug("文件删除成功: bucket={}, objectKey={}", bucket, objectKey);
         } catch (Exception e) {
-            log.error("文件删除失败: bucket={}, objectKey={}", bucket, key, e);
+            log.error("文件删除失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
-        }
-    }
-
-    /**
-     * 批量删除阿里云 OSS 文件
-     * <p>
-     * 批量删除多个文件，内部会逐个删除
-     * 如果某个文件删除失败，会记录警告日志但继续删除其他文件
-     *
-     * @param objectKeys 对象键列表，要删除的文件标识集合
-     */
-    @Override
-    public void deleteBatch(List<String> objectKeys) {
-        if (objectKeys == null || objectKeys.isEmpty()) {
-            return;
-        }
-
-        for (String objectKey : objectKeys) {
-            try {
-                delete(objectKey);
-            } catch (Exception e) {
-                log.warn("批量删除文件失败: objectKey={}", objectKey, e);
-            }
         }
     }
 
@@ -195,13 +166,12 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      */
     @Override
     public boolean exists(@NonNull String objectKey) {
-        String bucket = config.getBucket();
-        String key = normalizeObjectKey(objectKey);
+        String bucket = super.getBucket();
 
         try {
-            return ossClient.doesObjectExist(bucket, key);
+            return ossClient.doesObjectExist(bucket, objectKey);
         } catch (Exception e) {
-            log.error("检查文件存在性失败: bucket={}, objectKey={}", bucket, key, e);
+            log.error("检查文件存在性失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.exists.check.failed", new Object[]{e.getMessage()});
         }
     }
@@ -220,158 +190,25 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      */
     @Override
     public String getUrl(@NonNull String objectKey, Duration expiry) {
-        String bucket = config.getBucket();
-        String key = normalizeObjectKey(objectKey);
-
-        if (Boolean.TRUE.equals(privateBucket)) {
+        String bucket = super.getBucket();
+        // 如果是私有 Bucket，生成预签名 URL
+        if (Boolean.TRUE.equals(config.getPrivateBucket())) {
             Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getSignatureExpiry());
             Date expiration = new Date(System.currentTimeMillis() + validDuration.toMillis());
 
-            GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucket, key);
+            GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucket, objectKey);
             request.setExpiration(expiration);
 
             URL url = ossClient.generatePresignedUrl(request);
             return url.toString();
         }
 
-        if (StringUtils.isNotBlank(domain)) {
-            return buildUrl(key);
+        // 如果配置了域名，使用域名访问
+        if (StringUtils.isNotBlank(config.getDomain())) {
+            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(),bucket, objectKey);
         }
 
-        return OssUrlBuilder.buildVirtualHostUrl(bucket, config.getEndpoint(), key);
-    }
-
-    /**
-     * 初始化分片上传
-     * <p>
-     * 开始一个分片上传任务，返回 Upload ID
-     * 后续使用该 Upload ID 上传各个分片
-     *
-     * @param objectKey   对象键，文件标识，不能为空
-     * @param contentType 文件 MIME 类型，如 image/jpeg、video/mp4 等，可为 null
-     * @return Upload ID，用于后续分片上传和合并
-     * @throws OssException 当初始化失败时抛出
-     */
-    @Override
-    public String initiateMultipartUpload(@NonNull String objectKey, String contentType) {
-        String bucket = config.getBucket();
-        String key = buildObjectKey(objectKey);
-
-        try {
-            com.aliyun.oss.model.InitiateMultipartUploadRequest request =
-                    new com.aliyun.oss.model.InitiateMultipartUploadRequest(bucket, key);
-
-            if (StringUtils.isNotBlank(contentType)) {
-                ObjectMetadata metadata = new ObjectMetadata();
-                metadata.setContentType(contentType);
-                request.setObjectMetadata(metadata);
-            }
-
-            com.aliyun.oss.model.InitiateMultipartUploadResult result = ossClient.initiateMultipartUpload(request);
-
-            log.debug("初始化分片上传成功: bucket={}, objectKey={}, uploadId={}", bucket, key, result.getUploadId());
-            return result.getUploadId();
-        } catch (Exception e) {
-            log.error("初始化分片上传失败: bucket={}, objectKey={}", bucket, key, e);
-            throw new OssException("oss.multipart.init.failed", new Object[]{e.getMessage()});
-        }
-    }
-
-    /**
-     * 生成分片上传预签名 URL
-     * <p>
-     * 为指定分片生成预签名上传 URL
-     * 前端可直接使用该 URL 上传分片，无需经过应用服务器
-     *
-     * @param objectKey  对象键，文件标识，不能为空
-     * @param uploadId   Upload ID，由 initiateMultipartUpload 返回，不能为空
-     * @param partNumber 分片编号，从 1 开始递增
-     * @param expiry     URL 有效期，过期后该 URL 不可用
-     * @return 分片上传预签名 URL
-     * @throws OssException 当生成 URL 失败时抛出
-     */
-    @Override
-    public String generatePresignedUploadUrlForChunk(String objectKey, String uploadId, int partNumber, Duration expiry) {
-        String bucket = config.getBucket();
-        String key = buildObjectKey(objectKey);
-
-        Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getChunkUploadUrlExpire());
-        Date expiration = new Date(System.currentTimeMillis() + validDuration.toMillis());
-
-        GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucket, key);
-        request.setExpiration(expiration);
-        request.setMethod(HttpMethod.PUT);
-
-        URL url = ossClient.generatePresignedUrl(request);
-        String presignedUrl = url.toString();
-
-        // 手动添加分片上传参数
-        String separator = presignedUrl.contains("?") ? "&" : "?";
-        presignedUrl += separator + "partNumber=" + partNumber + "&uploadId=" + uploadId;
-
-        return presignedUrl;
-    }
-
-    /**
-     * 合并分片
-     * <p>
-     * 所有分片上传完成后，调用此方法合并分片为完整文件
-     * 合并成功后，分片会被自动清理
-     *
-     * @param objectKey 对象键，文件标识，不能为空
-     * @param uploadId  Upload ID，由 initiateMultipartUpload 返回，不能为空
-     * @param parts     分片列表，包含每个分片的信息（PartETag），不能为空
-     * @throws OssException 当合并失败时抛出
-     */
-    @Override
-    public void completeMultipartUpload(String objectKey, String uploadId, List<?> parts) {
-        String bucket = config.getBucket();
-        String key = buildObjectKey(objectKey);
-
-        try {
-            java.util.List<com.aliyun.oss.model.PartETag> partETags = new java.util.ArrayList<>();
-            for (Object part : parts) {
-                if (part instanceof com.aliyun.oss.model.PartETag) {
-                    partETags.add((com.aliyun.oss.model.PartETag) part);
-                }
-            }
-
-            com.aliyun.oss.model.CompleteMultipartUploadRequest request =
-                    new com.aliyun.oss.model.CompleteMultipartUploadRequest(bucket, key, uploadId, partETags);
-            ossClient.completeMultipartUpload(request);
-
-            log.debug("完成分片上传成功: bucket={}, objectKey={}, uploadId={}", bucket, key, uploadId);
-        } catch (Exception e) {
-            log.error("完成分片上传失败: bucket={}, objectKey={}, uploadId={}", bucket, key, uploadId, e);
-            throw new OssException("oss.multipart.complete.failed", new Object[]{e.getMessage()});
-        }
-    }
-
-    /**
-     * 取消分片上传
-     * <p>
-     * 取消正在进行的分片上传任务，并删除所有已上传的分片
-     * 应在用户上传失败或主动取消时调用，避免产生孤儿分片
-     *
-     * @param objectKey 对象键，文件标识，不能为空
-     * @param uploadId  Upload ID，由 initiateMultipartUpload 返回，不能为空
-     * @throws OssException 当取消失败时抛出
-     */
-    @Override
-    public void abortMultipartUpload(String objectKey, String uploadId) {
-        String bucket = config.getBucket();
-        String key = buildObjectKey(objectKey);
-
-        try {
-            com.aliyun.oss.model.AbortMultipartUploadRequest request =
-                    new com.aliyun.oss.model.AbortMultipartUploadRequest(bucket, key, uploadId);
-            ossClient.abortMultipartUpload(request);
-
-            log.debug("取消分片上传成功: bucket={}, objectKey={}, uploadId={}", bucket, key, uploadId);
-        } catch (Exception e) {
-            log.error("取消分片上传失败: bucket={}, objectKey={}, uploadId={}", bucket, key, uploadId, e);
-            throw new OssException("oss.multipart.abort.failed", new Object[]{e.getMessage()});
-        }
+        return OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, objectKey);
     }
 
     /**
@@ -391,15 +228,5 @@ public class AliyunOssServiceImpl extends AbstractOssService {
                 log.error("关闭阿里云 OSS 客户端失败: configKey={}", config.getConfigKey(), e);
             }
         }
-    }
-
-    /**
-     * 获取存储类型
-     *
-     * @return OssTypeEnum.ALIYUN
-     */
-    @Override
-    public OssTypeEnum getType() {
-        return OssTypeEnum.ALIYUN;
     }
 }

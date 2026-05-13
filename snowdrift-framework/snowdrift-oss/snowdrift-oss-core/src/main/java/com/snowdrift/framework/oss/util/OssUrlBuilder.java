@@ -1,5 +1,6 @@
 package com.snowdrift.framework.oss.util;
 
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.oss.exception.OssException;
 import org.apache.commons.lang3.StringUtils;
 
@@ -14,14 +15,12 @@ import org.apache.commons.lang3.StringUtils;
  * @description OSS URL 构建工具
  * @since 1.0.0
  */
-public class OssUrlBuilder {
+public final class OssUrlBuilder {
 
     /**
      * 私有构造函数，防止实例化
      */
-    private OssUrlBuilder() {
-        throw new UnsupportedOperationException("Utility class");
-    }
+    private OssUrlBuilder() {}
 
     /**
      * 构建域名 URL
@@ -51,7 +50,7 @@ public class OssUrlBuilder {
         String normalizedDomain = removeTrailingSlash(domain);
         String normalizedKey = removeLeadingSlash(objectKey);
 
-        return normalizedDomain + "/" + normalizedKey;
+        return normalizedDomain + StrConst.SLASH + normalizedKey;
     }
 
     /**

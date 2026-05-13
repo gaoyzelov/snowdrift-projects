@@ -14,7 +14,7 @@ public final class StrConst {
     /**
      * URI分隔符
      */
-    public static final String DELIMITER = "/";
+    public static final String SLASH = "/";
 
     /**
      * 空字符串

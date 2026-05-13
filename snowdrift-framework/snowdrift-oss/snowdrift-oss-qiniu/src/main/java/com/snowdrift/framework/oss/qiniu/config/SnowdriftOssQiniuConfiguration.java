@@ -7,12 +7,14 @@ import com.snowdrift.framework.oss.properties.OssInstanceProperties;
 import com.snowdrift.framework.oss.properties.OssProperties;
 import com.snowdrift.framework.oss.qiniu.service.QiniuOssServiceImpl;
 import com.snowdrift.framework.oss.util.OssConfigConverter;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Configuration;
 
-import jakarta.annotation.PostConstruct;
+import java.util.Map;
 
 /**
  * 七牛云 OSS 自动配置类
@@ -40,12 +42,12 @@ public class SnowdriftOssQiniuConfiguration {
      */
     @PostConstruct
     public void registerQiniuOssService() {
-        if (ossProperties.getConfigs() == null || ossProperties.getConfigs().isEmpty()) {
+        if (MapUtils.isEmpty(ossProperties.getConfigs())) {
             log.debug("未配置 OSS 实例，跳过七牛云 OSS 注册");
             return;
         }
 
-        for (java.util.Map.Entry<String, OssInstanceProperties> entry : ossProperties.getConfigs().entrySet()) {
+        for (Map.Entry<String, OssInstanceProperties> entry : ossProperties.getConfigs().entrySet()) {
             String configKey = entry.getKey();
             OssInstanceProperties properties = entry.getValue();
 
@@ -66,8 +68,8 @@ public class SnowdriftOssQiniuConfiguration {
     private void registerQiniuService(String configKey, OssInstanceProperties properties) {
         try {
             OssConfigDTO config = OssConfigConverter.fromProperties(properties, configKey);
-            QiniuOssServiceImpl service = new QiniuOssServiceImpl(config);
-            ossStrategyFactory.register(configKey, service);
+            // 注册服务
+            ossStrategyFactory.register(configKey, new QiniuOssServiceImpl(config));
 
             log.info("七牛云 OSS 实例注册成功: configKey={}, bucket={}, domain={}",
                     configKey, properties.getBucket(), properties.getDomain());

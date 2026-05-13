@@ -1,6 +1,7 @@
 package com.snowdrift.framework.oss.properties;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
@@ -27,6 +28,7 @@ public class OssProperties {
     /**
      * 默认配置标识
      */
+    @NotBlank(message = "默认配置标识不能为空")
     private String defaultConfigKey = "default";
     
     /**

@@ -1,5 +1,8 @@
 package com.snowdrift.sample;
 
+import com.snowdrift.framework.oss.core.OssStrategyFactory;
+import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -11,8 +14,12 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  * @description 示例应用启动类
  * @since 1.0.0
  */
+@Slf4j
 @SpringBootApplication
-public class SampleApplication {
+public class SampleApplication{
+
+    @Resource
+    private OssStrategyFactory ossStrategyFactory;
 
     public static void main(String[] args) {
         SpringApplication.run(SampleApplication.class, args);

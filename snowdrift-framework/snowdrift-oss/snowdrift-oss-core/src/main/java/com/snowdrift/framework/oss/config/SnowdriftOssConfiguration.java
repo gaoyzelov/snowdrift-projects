@@ -35,10 +35,8 @@ public class SnowdriftOssConfiguration {
         OssStrategyFactory factory = new OssStrategyFactory();
         // 设置默认配置标识
         factory.setDefaultConfigKey(ossProperties.getDefaultConfigKey());
-        
         log.info("OSS 策略工厂初始化完成，默认配置: {}", ossProperties.getDefaultConfigKey());
         log.info("已配置的 OSS 实例: {}", ossProperties.getConfigs().keySet());
-        
         return factory;
     }
 }

@@ -9,6 +9,7 @@ import com.snowdrift.framework.oss.tencent.service.TencentOssServiceImpl;
 import com.snowdrift.framework.oss.util.OssConfigConverter;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Configuration;
 
@@ -40,7 +41,7 @@ public class SnowdriftOssTencentConfiguration {
      */
     @PostConstruct
     public void registerTencentOssService() {
-        if (ossProperties.getConfigs() == null || ossProperties.getConfigs().isEmpty()) {
+        if (MapUtils.isEmpty(ossProperties.getConfigs())) {
             log.debug("未配置 OSS 实例，跳过腾讯云 COS 注册");
             return;
         }
@@ -66,8 +67,8 @@ public class SnowdriftOssTencentConfiguration {
     private void registerTencentService(String configKey, OssInstanceProperties properties) {
         try {
             OssConfigDTO config = OssConfigConverter.fromProperties(properties, configKey);
-            TencentOssServiceImpl service = new TencentOssServiceImpl(config);
-            ossStrategyFactory.register(configKey, service);
+            // 注册服务
+            ossStrategyFactory.register(configKey, new TencentOssServiceImpl(config));
 
             log.info("腾讯云 COS OSS 实例注册成功: configKey={}, bucket={}, domain={}",
                     configKey, properties.getBucket(), properties.getDomain());

@@ -4,7 +4,6 @@ import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
-import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import io.minio.*;
@@ -14,7 +13,6 @@ import org.springframework.lang.NonNull;
 
 import java.io.InputStream;
 import java.time.Duration;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,6 +44,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
         String endpoint = config.getEndpoint();
         String accessKey = config.getAccessKey();
         String secretKey = config.getSecretKey();
+        String bucket = config.getBucket();
 
         if (StringUtils.isBlank(endpoint)) {
             throw new OssException("oss.minio.endpoint.empty");
@@ -56,6 +55,9 @@ public class MinioOssServiceImpl extends AbstractOssService {
         if (StringUtils.isBlank(secretKey)) {
             throw new OssException("oss.minio.secret.key.empty");
         }
+        if (StringUtils.isBlank(bucket)) {
+            throw new OssException("oss.minio.bucket.empty");
+        }
 
         // 初始化 MinIO 客户端
         try {
@@ -65,9 +67,9 @@ public class MinioOssServiceImpl extends AbstractOssService {
                     .build();
 
             // 确保 Bucket 存在
-            ensureBucketExists(config.getBucket());
+            ensureBucketExists(bucket);
 
-            log.info("MinIO 存储初始化完成: endpoint={}, bucket={}", endpoint, config.getBucket());
+            log.info("MinIO 存储初始化完成: endpoint={}, bucket={}", endpoint, bucket);
         } catch (Exception e) {
             log.error("MinIO 客户端初始化失败", e);
             throw new OssException("oss.minio.client.init.failed", new Object[]{e.getMessage()});
@@ -110,7 +112,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
         request.validate();
 
         String objectKey = buildObjectKey(request.getObjectKey());
-        String bucket = config.getBucket();
+        String bucket = super.getBucket();
 
         try (InputStream inputStream = request.getInputStream()) {
             // 上传文件到 MinIO
@@ -148,18 +150,16 @@ public class MinioOssServiceImpl extends AbstractOssService {
      */
     @Override
     public InputStream download(@NonNull String objectKey) {
-        String bucket = config.getBucket();
-        String key = buildObjectKey(objectKey);
-
+        String bucket = super.getBucket();
         try {
             return minioClient.getObject(
                     GetObjectArgs.builder()
                             .bucket(bucket)
-                            .object(key)
+                            .object(objectKey)
                             .build()
             );
         } catch (Exception e) {
-            log.error("文件下载失败: bucket={}, objectKey={}", bucket, key, e);
+            log.error("文件下载失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.download.failed", new Object[]{e.getMessage()});
         }
     }
@@ -172,40 +172,19 @@ public class MinioOssServiceImpl extends AbstractOssService {
      */
     @Override
     public void delete(@NonNull String objectKey) {
-        String bucket = config.getBucket();
-        String key = buildObjectKey(objectKey);
+        String bucket = super.getBucket();
 
         try {
             minioClient.removeObject(
                     RemoveObjectArgs.builder()
                             .bucket(bucket)
-                            .object(key)
+                            .object(objectKey)
                             .build()
             );
-            log.debug("文件删除成功: bucket={}, objectKey={}", bucket, key);
+            log.debug("文件删除成功: bucket={}, objectKey={}", bucket, objectKey);
         } catch (Exception e) {
-            log.error("文件删除失败: bucket={}, objectKey={}", bucket, key, e);
+            log.error("文件删除失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
-        }
-    }
-
-    /**
-     * 批量删除 MinIO 文件
-     *
-     * @param objectKeys 对象键列表，要删除的文件标识集合
-     */
-    @Override
-    public void deleteBatch(List<String> objectKeys) {
-        if (objectKeys == null || objectKeys.isEmpty()) {
-            return;
-        }
-
-        for (String objectKey : objectKeys) {
-            try {
-                delete(objectKey);
-            } catch (Exception e) {
-                log.warn("批量删除文件失败: objectKey={}", objectKey, e);
-            }
         }
     }
 
@@ -217,14 +196,12 @@ public class MinioOssServiceImpl extends AbstractOssService {
      */
     @Override
     public boolean exists(@NonNull String objectKey) {
-        String bucket = config.getBucket();
-        String key = buildObjectKey(objectKey);
-
+        String bucket = super.getBucket();
         try {
             minioClient.statObject(
                     StatObjectArgs.builder()
                             .bucket(bucket)
-                            .object(key)
+                            .object(objectKey)
                             .build()
             );
             return true;
@@ -242,131 +219,33 @@ public class MinioOssServiceImpl extends AbstractOssService {
      */
     @Override
     public String getUrl(@NonNull String objectKey, Duration expiry) {
-        String bucket = config.getBucket();
-        String key = normalizeObjectKey(objectKey);
-
+        String bucket = super.getBucket();
         try {
             // 如果是私有 Bucket，生成预签名 URL
-            if (Boolean.TRUE.equals(privateBucket)) {
+            if (Boolean.TRUE.equals(config.getPrivateBucket())) {
                 Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getSignatureExpiry());
                 return minioClient.getPresignedObjectUrl(
                         GetPresignedObjectUrlArgs.builder()
                                 .method(Http.Method.GET)
                                 .bucket(bucket)
-                                .object(key)
+                                .object(objectKey)
                                 .expiry((int) validDuration.toMinutes(), TimeUnit.MINUTES)
                                 .build()
                 );
             }
 
             // 如果配置了域名，使用域名
-            if (StringUtils.isNotBlank(domain)) {
-                return buildUrl(key);
+            if (StringUtils.isNotBlank(config.getDomain())) {
+                return OssUrlBuilder.buildPathStyleUrl(config.getDomain(),bucket, objectKey);
             }
 
             // 否则返回 MinIO 直接访问 URL
-            return OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, key);
+            return OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, objectKey);
 
         } catch (Exception e) {
-            log.error("生成文件访问 URL 失败: bucket={}, objectKey={}", bucket, key, e);
+            log.error("生成文件访问 URL 失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.url.generate.failed", new Object[]{e.getMessage()});
         }
-    }
-
-    /**
-     * 初始化分片上传
-     *
-     * @param objectKey   对象键，文件标识
-     * @param contentType 文件 MIME 类型，如 image/jpeg、video/mp4 等
-     * @return Upload ID，用于后续分片上传和合并
-     */
-    @Override
-    public String initiateMultipartUpload(@NonNull String objectKey, String contentType) {
-        String bucket = config.getBucket();
-        String key = buildObjectKey(objectKey);
-
-        try {
-            // MinIO 的 Java SDK 没有直接的 initiateMultipartUpload 方法
-            // 这里返回一个占位符，实际分片上传通过 putObject 自动处理
-            // 如果需要手动控制分片，需要使用更低层的 API
-            log.debug("MinIO 分片上传初始化: bucket={}, objectKey={}", bucket, key);
-            return key; // 使用 objectKey 作为 uploadId 的标识
-        } catch (Exception e) {
-            log.error("分片上传初始化失败: bucket={}, objectKey={}", bucket, key, e);
-            throw new OssException("oss.multipart.init.failed", new Object[]{e.getMessage()});
-        }
-    }
-
-    /**
-     * 生成分片上传预签名 URL
-     *
-     * @param objectKey  对象键，文件标识
-     * @param uploadId   Upload ID
-     * @param partNumber 分片编号，从 1 开始递增
-     * @param expiry     URL 有效期，过期后该 URL 不可用
-     * @return 分片上传预签名 URL
-     */
-    @Override
-    public String generatePresignedUploadUrlForChunk(String objectKey, String uploadId,
-                                                     int partNumber, Duration expiry) {
-        String bucket = config.getBucket();
-        String key = buildObjectKey(objectKey);
-        Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getChunkUploadUrlExpire());
-
-        try {
-            return minioClient.getPresignedObjectUrl(
-                    GetPresignedObjectUrlArgs.builder()
-                            .method(Http.Method.PUT)
-                            .bucket(bucket)
-                            .object(key)
-                            .expiry((int) validDuration.toMinutes(), java.util.concurrent.TimeUnit.MINUTES)
-                            .build()
-            );
-        } catch (Exception e) {
-            log.error("生成分片上传 URL 失败: bucket={}, objectKey={}, partNumber={}", bucket, key, partNumber, e);
-            throw new OssException("oss.multipart.url.generate.failed", new Object[]{e.getMessage()});
-        }
-    }
-
-    /**
-     * 合并分片
-     *
-     * @param objectKey 对象键，文件标识
-     * @param uploadId  Upload ID
-     * @param parts     分片列表，包含每个分片的信息
-     */
-    @Override
-    public void completeMultipartUpload(String objectKey, String uploadId, List<?> parts) {
-        // MinIO 的 Java SDK 通过 putObject 自动处理分片上传和合并
-        // 这里不需要手动实现
-        log.debug("MinIO 分片上传完成: objectKey={}", objectKey);
-    }
-
-    /**
-     * 取消分片上传
-     *
-     * @param objectKey 对象键，文件标识
-     * @param uploadId  Upload ID
-     */
-    @Override
-    public void abortMultipartUpload(String objectKey, String uploadId) {
-        // 如果文件已上传，删除它
-        try {
-            delete(objectKey);
-            log.debug("取消分片上传并清理文件: objectKey={}", objectKey);
-        } catch (Exception e) {
-            log.warn("取消分片上传清理失败: objectKey={}", objectKey, e);
-        }
-    }
-
-    /**
-     * 获取存储类型
-     *
-     * @return OssTypeEnum.MINIO
-     */
-    @Override
-    public OssTypeEnum getType() {
-        return OssTypeEnum.MINIO;
     }
 
     /**

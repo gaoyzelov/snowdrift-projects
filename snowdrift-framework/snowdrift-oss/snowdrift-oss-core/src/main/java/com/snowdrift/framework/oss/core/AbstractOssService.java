@@ -1,9 +1,11 @@
 package com.snowdrift.framework.oss.core;
 
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
+import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.exception.OssException;
-import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
@@ -28,16 +30,6 @@ public abstract class AbstractOssService implements IOssService {
     protected final OssConfigDTO config;
 
     /**
-     * 访问域名
-     */
-    protected final String domain;
-
-    /**
-     * 是否为私有 Bucket
-     */
-    protected final Boolean privateBucket;
-
-    /**
      * 构造函数
      * <p>
      * 初始化公共配置字段
@@ -46,8 +38,6 @@ public abstract class AbstractOssService implements IOssService {
      */
     protected AbstractOssService(OssConfigDTO config) {
         this.config = config;
-        this.domain = config.getDomain();
-        this.privateBucket = config.getPrivateBucket();
     }
 
     /**
@@ -60,7 +50,7 @@ public abstract class AbstractOssService implements IOssService {
      */
     @Override
     public void deleteBatch(List<String> objectKeys) {
-        if (objectKeys == null || objectKeys.isEmpty()) {
+        if (CollectionUtils.isEmpty(objectKeys)) {
             return;
         }
 
@@ -99,6 +89,18 @@ public abstract class AbstractOssService implements IOssService {
     }
 
     /**
+     * 获取 OSS 类型
+     * <p>
+     * 返回当前 OSS Service 的类型（如 Aliyun、Qiniu 等）
+     *
+     * @return OSS 类型
+     */
+    @Override
+    public OssTypeEnum getType() {
+        return config.getOssType();
+    }
+
+    /**
      * 构建完整的 objectKey
      * <p>
      * 将原始 objectKey 规范化并添加配置的路径前缀
@@ -112,7 +114,7 @@ public abstract class AbstractOssService implements IOssService {
         String prefix = config.getPathPrefix();
 
         if (StringUtils.isNotBlank(prefix)) {
-            String prefixPath = prefix.endsWith("/") ? prefix : prefix + "/";
+            String prefixPath = prefix.endsWith(StrConst.SLASH) ? prefix : prefix + StrConst.SLASH;
             return prefixPath + key;
         }
         return key;
@@ -134,23 +136,10 @@ public abstract class AbstractOssService implements IOssService {
         }
 
         // 移除开头的斜杠
-        String key = objectKey.startsWith("/") ? objectKey.substring(1) : objectKey;
+        String key = objectKey.startsWith(StrConst.SLASH) ? objectKey.substring(1) : objectKey;
         // 将 Windows 反斜杠替换为正斜杠
-        key = key.replace("\\", "/");
+        key = key.replace("\\", StrConst.SLASH);
 
         return key;
-    }
-
-    /**
-     * 构建访问 URL
-     * <p>
-     * 使用 OssUrlBuilder 统一处理 URL 拼接逻辑
-     * 自动处理域名末尾的斜杠问题
-     *
-     * @param objectKey 对象 Key（已包含 path-prefix）
-     * @return 完整的访问 URL
-     */
-    protected String buildUrl(String objectKey) {
-        return OssUrlBuilder.buildUrl(domain, objectKey);
     }
 }

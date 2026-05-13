@@ -10,6 +10,7 @@ import com.snowdrift.framework.oss.util.OssConfigConverter;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Map;
@@ -37,7 +38,7 @@ public class SnowdriftOssAliyunConfiguration {
      */
     @PostConstruct
     public void registerAliyunOssService() {
-        if (ossProperties.getConfigs() == null || ossProperties.getConfigs().isEmpty()) {
+        if (MapUtils.isEmpty(ossProperties.getConfigs())) {
             log.debug("未配置 OSS 实例，跳过阿里云 OSS 注册");
             return;
         }
@@ -65,8 +66,7 @@ public class SnowdriftOssAliyunConfiguration {
             // 转换为 DTO
             OssConfigDTO config = OssConfigConverter.fromProperties(properties, configKey);
             // 创建并注册 Service
-            AliyunOssServiceImpl service = new AliyunOssServiceImpl(config);
-            ossStrategyFactory.register(configKey, service);
+            ossStrategyFactory.register(configKey, new AliyunOssServiceImpl(config));
 
             log.info("阿里云 OSS 实例注册成功: configKey={}, endpoint={}, bucket={}",
                     configKey, properties.getEndpoint(), properties.getBucket());

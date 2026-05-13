@@ -10,7 +10,10 @@ import com.snowdrift.framework.oss.util.OssConfigConverter;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
 
 /**
  * 本地存储自动配置类
@@ -35,13 +38,13 @@ public class SnowdriftOssLocalConfiguration {
      */
     @PostConstruct
     public void registerLocalOssService() {
-        if (ossProperties.getConfigs() == null || ossProperties.getConfigs().isEmpty()) {
+        if (MapUtils.isEmpty(ossProperties.getConfigs())) {
             log.debug("未配置 OSS 实例，跳过本地存储注册");
             return;
         }
 
         // 遍历所有配置，注册本地存储类型
-        for (var entry : ossProperties.getConfigs().entrySet()) {
+        for (Map.Entry<String, OssInstanceProperties> entry : ossProperties.getConfigs().entrySet()) {
             String configKey = entry.getKey();
             OssInstanceProperties properties = entry.getValue();
 
@@ -63,8 +66,7 @@ public class SnowdriftOssLocalConfiguration {
             // 转换为 DTO
             OssConfigDTO config = OssConfigConverter.fromProperties(properties, configKey);
             // 创建并注册 Service
-            LocalOssServiceImpl service = new LocalOssServiceImpl(config);
-            ossStrategyFactory.register(configKey, service);
+            ossStrategyFactory.register(configKey, new LocalOssServiceImpl(config));
             
             log.info("本地存储实例注册成功: configKey={}, endpoint={}", configKey, properties.getEndpoint());
         } catch (Exception e) {

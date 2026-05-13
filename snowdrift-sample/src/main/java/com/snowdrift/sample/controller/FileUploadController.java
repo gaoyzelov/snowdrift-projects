@@ -41,8 +41,9 @@ public class FileUploadController {
 
             // 构建上传请求
             OssUploadRequest request = OssUploadRequest.builder()
-                    .objectKey("uploads/" + System.currentTimeMillis() + "_" + file.getOriginalFilename())
+                    .objectKey(System.currentTimeMillis() + "_" + file.getOriginalFilename())
                     .inputStream(file.getInputStream())
+                    .size(file.getSize())
                     .contentType(file.getContentType())
                     .build();
 

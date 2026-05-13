@@ -3,6 +3,7 @@ package com.snowdrift.framework.oss.core;
 import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.enums.OssTypeEnum;
+import lombok.NonNull;
 
 import java.io.InputStream;
 import java.time.Duration;
@@ -16,7 +17,7 @@ import java.util.List;
  * @description 定义所有 OSS 存储的统一操作接口，屏蔽底层差异
  * @since 1.0.0
  */
-public interface IOssService extends AutoCloseable{
+public interface IOssService extends AutoCloseable {
     
     // ========== 基础操作 ==========
     
@@ -30,7 +31,7 @@ public interface IOssService extends AutoCloseable{
      * @return 上传结果，包含 objectKey、URL、文件大小等信息
      * @throws com.snowdrift.framework.oss.exception.OssException 上传失败时抛出
      */
-    OssResult upload(OssUploadRequest request);
+    OssResult upload(@NonNull OssUploadRequest request);
     
     /**
      * 下载文件
