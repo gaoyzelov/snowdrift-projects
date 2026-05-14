@@ -2,6 +2,7 @@ package com.snowdrift.framework.oss.aliyun.service;
 
 import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
+import com.aliyun.oss.model.DeleteObjectsRequest;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
 import com.aliyun.oss.model.ObjectMetadata;
 import com.snowdrift.framework.oss.core.AbstractOssService;
@@ -11,6 +12,8 @@ import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 
@@ -18,6 +21,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 阿里云 OSS Service 实现
@@ -155,6 +159,33 @@ public class AliyunOssServiceImpl extends AbstractOssService {
     }
 
     /**
+     * 从阿里云 OSS 批量删除文件
+     * <p>
+     * 根据 objectKey 列表从阿里云 OSS 批量删除文件
+     * 如果文件不存在，不会抛出异常
+     *
+     * @param objectKeys 对象键列表，要删除的文件标识，不能为空
+     * @throws OssException 当删除失败时抛出
+     */
+    @Override
+    public void deleteBatch(List<String> objectKeys) {
+        if (CollectionUtils.isEmpty(objectKeys)) {
+            return;
+        }
+        String bucket = super.getBucket();
+        ListUtils.partition(objectKeys, 1000).forEach(partitionKeys -> {
+            try {
+                DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucket).withKeys(partitionKeys);
+                ossClient.deleteObjects(deleteObjectsRequest);
+                log.debug("文件批量删除成功: bucket={}", bucket);
+            }catch (Exception e) {
+                log.error("文件批量删除失败: bucket={}", bucket, e);
+                throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+            }
+        });
+    }
+
+    /**
      * 判断文件是否存在于阿里云 OSS
      * <p>
      * 检查指定 objectKey 的文件是否存在于阿里云 OSS 中
@@ -192,7 +223,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
 
         // 如果配置了域名，使用域名访问
         if (StringUtils.isNotBlank(config.getDomain())) {
-            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(),bucket, objectKey);
+            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
         }
 
         // 如果是私有 Bucket，生成预签名 URL

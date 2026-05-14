@@ -5,6 +5,7 @@ import com.qcloud.cos.ClientConfig;
 import com.qcloud.cos.auth.BasicCOSCredentials;
 import com.qcloud.cos.auth.COSCredentials;
 import com.qcloud.cos.exception.CosServiceException;
+import com.qcloud.cos.exception.MultiObjectDeleteException;
 import com.qcloud.cos.model.*;
 import com.qcloud.cos.region.Region;
 import com.snowdrift.framework.oss.core.AbstractOssService;
@@ -14,12 +15,15 @@ import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 腾讯云 COS OSS Service 实现
@@ -189,6 +193,39 @@ public class TencentOssServiceImpl extends AbstractOssService {
     }
 
     /**
+     * 从腾讯云 COS 批量删除文件
+     * <p>
+     * 根据 objectKey 列表从腾讯云删除文件
+     * 如果文件不存在，不会抛出异常
+     *
+     * @param objectKeys 对象键列表，要删除的文件标识，不能为空
+     * @throws OssException 当删除失败时抛出
+     */
+    @Override
+    public void deleteBatch(List<String> objectKeys) {
+        if (CollectionUtils.isEmpty(objectKeys)) {
+            return;
+        }
+        String bucket = super.getBucket();
+        ListUtils.partition(objectKeys, 1000).forEach(partitionKeys -> {
+            try {
+                List<DeleteObjectsRequest.KeyVersion> keys = partitionKeys.stream().map(DeleteObjectsRequest.KeyVersion::new).toList();
+                DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucket).withKeys(keys);
+                cosClient.deleteObjects(deleteObjectsRequest);
+                log.debug("文件批量删除成功: bucket={}", bucket);
+            } catch (MultiObjectDeleteException e) {
+                for (MultiObjectDeleteException.DeleteError error : e.getErrors()) {
+                    log.error("文件批量删除失败: bucket={}, objectKey={}, error={}", bucket, error.getKey(), error.getMessage());
+                }
+                throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+            } catch (Exception e) {
+                log.error("文件批量删除失败: bucket={}", bucket, e);
+                throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+            }
+        });
+    }
+
+    /**
      * 判断文件是否存在于腾讯云 COS
      * <p>
      * 检查指定 objectKey 的文件是否存在于腾讯云中
@@ -223,12 +260,12 @@ public class TencentOssServiceImpl extends AbstractOssService {
     @Override
     public String getUrl(@NonNull String objectKey, Duration expiry) {
         String bucket = super.getBucket();
-        
+
         // 如果配置了域名，使用域名
         if (StringUtils.isNotBlank(config.getDomain())) {
             return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
         }
-        
+
         // 公开 Bucket：直接返回域名 + objectKey
         String url = OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, objectKey);
         if (Boolean.TRUE.equals(config.getPrivateBucket())) {

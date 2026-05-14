@@ -7,12 +7,17 @@ import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import io.minio.*;
+import io.minio.messages.DeleteRequest;
+import io.minio.messages.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 
 import java.io.InputStream;
 import java.time.Duration;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -117,7 +122,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
                     PutObjectArgs.builder()
                             .bucket(bucket)
                             .object(objectKey)
-                            .stream(inputStream, request.getSize() != null ? request.getSize() : -1, 10 * 1024 * 1024L) // 10MB part size
+                            .stream(inputStream, request.getSize() != null ? request.getSize() : -1, config.getChunkSize()) // 10MB part size
                             .contentType(request.getContentType())
                             .build()
             );
@@ -183,6 +188,42 @@ public class MinioOssServiceImpl extends AbstractOssService {
             log.error("文件删除失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
         }
+    }
+
+    /**
+     * 从 MinIO 批量删除文件
+     *
+     * @param objectKeys 对象键列表，要删除的文件标识列表
+     * @throws OssException 当删除失败时抛出
+     */
+    @Override
+    public void deleteBatch(List<String> objectKeys) {
+        if (CollectionUtils.isEmpty(objectKeys)) {
+            return;
+        }
+        String bucket = super.getBucket();
+        ListUtils.partition(objectKeys,1000).forEach(partitionKeys -> {
+            try {
+                List<DeleteRequest.Object> objects = partitionKeys.stream().map(DeleteRequest.Object::new).toList();
+                Iterable<Result<DeleteResult.Error>> resultIterable = minioClient.removeObjects(
+                        RemoveObjectsArgs.builder()
+                                .bucket(bucket)
+                                .objects(objects)
+                                .build()
+                );
+                if (resultIterable.iterator().hasNext()) {
+                    for (Result<DeleteResult.Error> result : resultIterable) {
+                        DeleteResult.Error error = result.get();
+                        log.error("文件批量删除失败: bucket={}, objectKey={}, error={}", bucket, error.objectName(), error.message());
+                    }
+                } else {
+                    log.debug("文件批量删除成功: bucket={}", bucket);
+                }
+            } catch (Exception e) {
+                log.error("文件批量删除失败: bucket={}", bucket, e);
+                throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+            }
+        });
     }
 
     /**
@@ -255,11 +296,11 @@ public class MinioOssServiceImpl extends AbstractOssService {
      */
     @Override
     public void close() {
-        if (minioClient != null){
+        if (minioClient != null) {
             try {
                 minioClient.close();
                 log.info("MinIO 客户端已关闭: configKey={}, bucket={}", config.getConfigKey(), config.getBucket());
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.error("MinIO 客户端关闭失败: configKey={}, bucket={}", config.getConfigKey(), config.getBucket(), e);
             }
         }

@@ -88,9 +88,9 @@ public class OssConfigDTO {
     // ========== 分片上传配置 ==========
     
     /**
-     * 分片大小（字节，默认 5MB）
+     * 分片大小（字节，默认 10MB）
      */
-    private Long chunkSize = 5 * 1024 * 1024L;
+    private Long chunkSize = 10 * 1024 * 1024L;
     
     // ========== 过期时间配置 ==========
     
