@@ -51,8 +51,9 @@ public class TencentOssServiceImpl extends AbstractOssService {
 
         String accessKey = config.getAccessKey();
         String secretKey = config.getSecretKey();
-        String region = config.getRegion();
         String domain = config.getDomain();
+        String bucket = config.getBucket();
+        String region = config.getRegion();
 
         if (StringUtils.isBlank(accessKey)) {
             throw new OssException("oss.tencent.accessKey.empty");
@@ -60,7 +61,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
         if (StringUtils.isBlank(secretKey)) {
             throw new OssException("oss.tencent.secretKey.empty");
         }
-        if (StringUtils.isBlank(config.getBucket())) {
+        if (StringUtils.isBlank(bucket)) {
             throw new OssException("oss.tencent.bucket.empty");
         }
         if (StringUtils.isBlank(domain)) {
@@ -79,9 +80,6 @@ public class TencentOssServiceImpl extends AbstractOssService {
 
             // 创建 COS 客户端
             this.cosClient = new COSClient(cred, clientConfig);
-
-            log.info("腾讯云 COS 客户端初始化成功: bucket={}, domain={}, region={}",
-                    config.getBucket(), domain, region);
         } catch (Exception e) {
             throw new OssException("oss.tencent.client.init.failed", new Object[]{e.getMessage()});
         }

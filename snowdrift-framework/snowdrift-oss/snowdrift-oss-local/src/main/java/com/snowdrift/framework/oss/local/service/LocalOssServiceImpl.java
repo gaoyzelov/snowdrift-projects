@@ -54,8 +54,6 @@ public class LocalOssServiceImpl extends AbstractOssService {
 
         this.storageRoot = Paths.get(endpoint);
         initializeStorageDirectory();
-
-        log.info("本地存储初始化完成: root={}", storageRoot);
     }
 
     /**

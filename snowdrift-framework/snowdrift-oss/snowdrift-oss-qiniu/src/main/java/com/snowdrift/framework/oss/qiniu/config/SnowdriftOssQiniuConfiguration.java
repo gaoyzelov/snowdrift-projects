@@ -71,8 +71,8 @@ public class SnowdriftOssQiniuConfiguration {
             // 注册服务
             ossStrategyFactory.register(configKey, new QiniuOssServiceImpl(config));
 
-            log.info("七牛云 OSS 实例注册成功: configKey={}, bucket={}, domain={}",
-                    configKey, properties.getBucket(), properties.getDomain());
+            log.info("七牛云 OSS 实例注册成功: configKey={}, domain={}, bucket={}",
+                    configKey, properties.getDomain(),properties.getBucket());
         } catch (Exception e) {
             log.error("七牛云 OSS 实例注册失败: configKey={}", configKey, e);
         }

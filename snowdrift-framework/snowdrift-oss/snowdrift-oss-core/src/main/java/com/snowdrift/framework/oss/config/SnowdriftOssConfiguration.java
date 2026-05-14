@@ -1,6 +1,5 @@
 package com.snowdrift.framework.oss.config;
 
-import com.snowdrift.framework.common.util.AssertUtil;
 import com.snowdrift.framework.oss.core.OssStrategyFactory;
 import com.snowdrift.framework.oss.properties.OssProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -31,12 +30,10 @@ public class SnowdriftOssConfiguration {
     @Bean
     @ConditionalOnMissingBean(OssStrategyFactory.class)
     public OssStrategyFactory ossStrategyFactory(OssProperties ossProperties) {
-        AssertUtil.notBlank(ossProperties.getDefaultConfigKey(), "OSS默认配置标识不能为空");
         OssStrategyFactory factory = new OssStrategyFactory();
         // 设置默认配置标识
         factory.setDefaultConfigKey(ossProperties.getDefaultConfigKey());
         log.info("OSS 策略工厂初始化完成，默认配置: {}", ossProperties.getDefaultConfigKey());
-        log.info("已配置的 OSS 实例: {}", ossProperties.getConfigs().keySet());
         return factory;
     }
 }

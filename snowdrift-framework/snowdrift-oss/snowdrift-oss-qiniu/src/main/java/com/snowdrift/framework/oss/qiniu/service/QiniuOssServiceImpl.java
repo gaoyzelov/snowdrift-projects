@@ -94,9 +94,6 @@ public class QiniuOssServiceImpl extends AbstractOssService {
 
             // 初始化 Bucket 管理器
             this.bucketManager = new BucketManager(auth, configuration);
-
-            log.info("七牛云 OSS 客户端初始化成功: bucket={}, domain={}, region={}",
-                    config.getBucket(), domain, StringUtils.isNotBlank(region) ? region : "auto");
         } catch (Exception e) {
             throw new OssException("oss.qiniu.client.init.failed", new Object[]{e.getMessage()});
         }

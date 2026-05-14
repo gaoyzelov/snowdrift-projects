@@ -66,7 +66,6 @@ public class AliyunOssServiceImpl extends AbstractOssService {
 
         try {
             this.ossClient = new OSSClientBuilder().build(endpoint, accessKey, secretKey);
-            log.info("阿里云 OSS 客户端初始化成功: endpoint={}, bucket={}", endpoint, bucket);
         } catch (Exception e) {
             throw new OssException("oss.aliyun.client.init.failed", new Object[]{e.getMessage()});
         }

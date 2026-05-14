@@ -68,10 +68,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
 
             // 确保 Bucket 存在
             ensureBucketExists(bucket);
-
-            log.info("MinIO 存储初始化完成: endpoint={}, bucket={}", endpoint, bucket);
         } catch (Exception e) {
-            log.error("MinIO 客户端初始化失败", e);
             throw new OssException("oss.minio.client.init.failed", new Object[]{e.getMessage()});
         }
     }
