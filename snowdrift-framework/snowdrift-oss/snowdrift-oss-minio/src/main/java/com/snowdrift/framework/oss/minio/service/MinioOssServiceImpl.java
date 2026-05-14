@@ -50,10 +50,10 @@ public class MinioOssServiceImpl extends AbstractOssService {
             throw new OssException("oss.minio.endpoint.empty");
         }
         if (StringUtils.isBlank(accessKey)) {
-            throw new OssException("oss.minio.access.key.empty");
+            throw new OssException("oss.minio.accessKey.empty");
         }
         if (StringUtils.isBlank(secretKey)) {
-            throw new OssException("oss.minio.secret.key.empty");
+            throw new OssException("oss.minio.secretKey.empty");
         }
         if (StringUtils.isBlank(bucket)) {
             throw new OssException("oss.minio.bucket.empty");

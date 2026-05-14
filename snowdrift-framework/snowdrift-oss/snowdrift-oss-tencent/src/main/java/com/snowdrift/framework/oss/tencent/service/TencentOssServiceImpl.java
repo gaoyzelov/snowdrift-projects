@@ -151,7 +151,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
             return cosObject.getObjectContent();
         } catch (CosServiceException e) {
             if (e.getStatusCode() == 404) {
-                throw new OssException("oss.file.not.exists", new Object[]{objectKey});
+                throw new OssException("oss.tencent.object.not.found", new Object[]{objectKey});
             }
             log.error("文件下载失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.download.failed", new Object[]{e.getMessage()});
@@ -223,14 +223,25 @@ public class TencentOssServiceImpl extends AbstractOssService {
     @Override
     public String getUrl(@NonNull String objectKey, Duration expiry) {
         String bucket = super.getBucket();
+        
+        // 如果配置了域名，使用域名
+        if (StringUtils.isNotBlank(config.getDomain())) {
+            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
+        }
+        
         // 公开 Bucket：直接返回域名 + objectKey
-        String url = OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
+        String url = OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, objectKey);
         if (Boolean.TRUE.equals(config.getPrivateBucket())) {
             // 私有 Bucket：生成预签名 URL
             GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucket, objectKey);
             Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getSignatureExpiry());
             request.setExpiration(new Date(System.currentTimeMillis() + validDuration.toMillis()));
-            return cosClient.generatePresignedUrl(request).toString();
+            try {
+                return cosClient.generatePresignedUrl(request).toString();
+            } catch (Exception e) {
+                log.error("生成文件访问 URL 失败: bucket={}, objectKey={}", bucket, objectKey, e);
+                throw new OssException("oss.url.generate.failed", new Object[]{e.getMessage()});
+            }
         }
         return url;
     }

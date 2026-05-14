@@ -131,7 +131,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
         Path filePath = storageRoot.resolve(objectKey);
 
         if (!Files.exists(filePath)) {
-            throw new OssException("oss.file.not.exists", new Object[]{objectKey});
+            throw new OssException("oss.local.file.not.found", new Object[]{objectKey});
         }
 
         try {
