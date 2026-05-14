@@ -4,8 +4,12 @@ import com.snowdrift.framework.oss.exception.OssException;
 import lombok.Builder;
 import lombok.Data;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.lang.NonNull;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.util.Map;
 
 /**
@@ -49,7 +53,22 @@ public class OssUploadRequest {
      * 元数据（可选）
      */
     private Map<String, String> metadata;
-    
+
+    /**
+     * 从文件创建上传请求
+     *
+     * @param file 文件
+     * @return 上传请求
+     */
+    public static OssUploadRequest from(@NonNull File file) throws IOException {
+        return OssUploadRequest.builder()
+                .objectKey(file.getName())
+                .inputStream(Files.newInputStream(file.toPath()))
+                .size(file.length())
+                .contentType(null)
+                .build();
+    }
+
     /**
      * 校验上传请求参数的合法性
      * <p>
@@ -59,11 +78,11 @@ public class OssUploadRequest {
      * @throws OssException 当参数不合法时抛出
      */
     public void validate() {
-        if (this.inputStream == null) {
-            throw new OssException("oss.upload.inputstream.empty");
-        }
         if (StringUtils.isBlank(this.objectKey)) {
             throw new OssException("oss.object.key.empty");
+        }
+        if (this.inputStream == null) {
+            throw new OssException("oss.upload.inputstream.empty");
         }
         if (this.size != null && this.size < 0) {
             throw new OssException("oss.upload.size.invalid", new Object[]{this.size});

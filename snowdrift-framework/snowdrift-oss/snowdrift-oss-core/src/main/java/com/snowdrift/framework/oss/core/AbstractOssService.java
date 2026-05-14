@@ -9,6 +9,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
+import java.util.UUID;
 
 /**
  * OSS Service 抽象基类
@@ -103,21 +104,35 @@ public abstract class AbstractOssService implements IOssService {
     /**
      * 构建完整的 objectKey
      * <p>
-     * 将原始 objectKey 规范化并添加配置的路径前缀
+     * 将原始 objectKey 规范化，保留原始路径，仅将文件名替换为 UUID 生成的随机文件名
+     * 并添加配置的路径前缀
      *
      * @param objectKey 原始对象 Key，不能为空
-     * @return 完整的对象 Key（包含路径前缀）
+     * @return 完整的对象 Key（路径前缀 + 原始路径 + UUID文件名.扩展名）
      * @throws OssException 当 objectKey 为空时抛出
      */
     protected String buildObjectKey(String objectKey) {
-        String key = normalizeObjectKey(objectKey);
+        // 规范化 objectKey
+        String normalizedKey = normalizeObjectKey(objectKey);
+        StringBuilder newObjectKey = new StringBuilder();
+        // 分离文件扩展名
+        String extension = StringUtils.substringAfterLast(normalizedKey, StrConst.DOT);
+        // 生成 UUID
+        String uuid = UUID.randomUUID().toString().replace(StrConst.MIDLINE, StrConst.EMPTY);
+        // 拼接路径：原始路径 + UUID文件名
+        if (normalizedKey.indexOf(StrConst.SLASH) > 0) {
+            String path = StringUtils.substringBeforeLast(normalizedKey, StrConst.SLASH);
+            newObjectKey.append(path).append(StrConst.SLASH);
+        }
+        newObjectKey.append(uuid).append(StrConst.DOT).append(extension);
         String prefix = config.getPathPrefix();
 
         if (StringUtils.isNotBlank(prefix)) {
             String prefixPath = prefix.endsWith(StrConst.SLASH) ? prefix : prefix + StrConst.SLASH;
-            return prefixPath + key;
+            return prefixPath + newObjectKey;
         }
-        return key;
+
+        return newObjectKey.toString();
     }
 
     /**
