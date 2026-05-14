@@ -60,7 +60,7 @@ public class OssUploadRequest {
      */
     public void validate() {
         if (this.inputStream == null) {
-            throw new OssException("oss.upload.inputstream.null");
+            throw new OssException("oss.upload.inputstream.empty");
         }
         if (StringUtils.isBlank(this.objectKey)) {
             throw new OssException("oss.object.key.empty");

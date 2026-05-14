@@ -17,10 +17,14 @@ import org.apache.commons.lang3.StringUtils;
  */
 public final class OssUrlBuilder {
 
+    private static final String HTTP = "http://";
+    private static final String HTTPS = "https://";
+
     /**
      * 私有构造函数，防止实例化
      */
-    private OssUrlBuilder() {}
+    private OssUrlBuilder() {
+    }
 
     /**
      * 构建域名 URL
@@ -30,9 +34,9 @@ public final class OssUrlBuilder {
      * <p>
      * 示例：
      * - buildUrl("https://cdn.example.com", "images/photo.jpg")
-     *   → "https://cdn.example.com/images/photo.jpg"
+     * → "https://cdn.example.com/images/photo.jpg"
      * - buildUrl("http://localhost:8080/files/", "/avatar.png")
-     *   → "http://localhost:8080/files/avatar.png"
+     * → "http://localhost:8080/files/avatar.png"
      *
      * @param domain    域名，不能为空
      * @param objectKey 对象键，不能为空
@@ -61,9 +65,9 @@ public final class OssUrlBuilder {
      * <p>
      * 示例：
      * - buildVirtualHostUrl("my-bucket", "oss-cn-hangzhou.aliyuncs.com", "images/photo.jpg")
-     *   → "https://my-bucket.oss-cn-hangzhou.aliyuncs.com/images/photo.jpg"
+     * → "https://my-bucket.oss-cn-hangzhou.aliyuncs.com/images/photo.jpg"
      * - buildVirtualHostUrl("my-bucket", "http://cos.ap-beijing.myqcloud.com", "avatar.png")
-     *   → "https://my-bucket.cos.ap-beijing.myqcloud.com/avatar.png"
+     * → "https://my-bucket.cos.ap-beijing.myqcloud.com/avatar.png"
      *
      * @param bucket    Bucket 名称，不能为空
      * @param endpoint  端点（可包含或不包含协议），不能为空
@@ -87,7 +91,7 @@ public final class OssUrlBuilder {
         normalizedEndpoint = removeTrailingSlash(normalizedEndpoint);
         String normalizedKey = removeLeadingSlash(objectKey);
 
-        return "https://" + bucket + "." + normalizedEndpoint + "/" + normalizedKey;
+        return HTTPS + bucket + StrConst.DOT + normalizedEndpoint + StrConst.SLASH + normalizedKey;
     }
 
     /**
@@ -98,7 +102,7 @@ public final class OssUrlBuilder {
      * <p>
      * 示例：
      * - buildPathStyleUrl("http://localhost:9000", "my-bucket", "images/photo.jpg")
-     *   → "http://localhost:9000/my-bucket/images/photo.jpg"
+     * → "http://localhost:9000/my-bucket/images/photo.jpg"
      *
      * @param endpoint  端点（必须包含协议），不能为空
      * @param bucket    Bucket 名称，不能为空
@@ -120,7 +124,7 @@ public final class OssUrlBuilder {
         String normalizedEndpoint = removeTrailingSlash(endpoint);
         String normalizedKey = removeLeadingSlash(objectKey);
 
-        return normalizedEndpoint + "/" + bucket + "/" + normalizedKey;
+        return normalizedEndpoint + StrConst.SLASH + bucket + StrConst.SLASH + normalizedKey;
     }
 
     /**
@@ -130,10 +134,10 @@ public final class OssUrlBuilder {
      * @return 移除末尾斜杠后的字符串
      */
     private static String removeTrailingSlash(String str) {
-        if (str == null) {
-            return null;
+        if (StringUtils.isBlank(str)) {
+            return StrConst.EMPTY;
         }
-        return str.endsWith("/") ? str.substring(0, str.length() - 1) : str;
+        return str.endsWith(StrConst.SLASH) ? str.substring(0, str.length() - 1) : str;
     }
 
     /**
@@ -143,10 +147,10 @@ public final class OssUrlBuilder {
      * @return 移除开头斜杠后的字符串
      */
     private static String removeLeadingSlash(String str) {
-        if (str == null) {
-            return null;
+        if (StringUtils.isBlank(str)) {
+            return StrConst.EMPTY;
         }
-        return str.startsWith("/") ? str.substring(1) : str;
+        return str.startsWith(StrConst.SLASH) ? str.substring(1) : str;
     }
 
     /**
@@ -156,13 +160,13 @@ public final class OssUrlBuilder {
      * @return 移除协议后的字符串
      */
     private static String removeProtocol(String str) {
-        if (str == null) {
-            return null;
+        if (StringUtils.isBlank(str)) {
+            return StrConst.EMPTY;
         }
-        if (str.startsWith("http://")) {
+        if (str.startsWith(HTTP)) {
             return str.substring(7);
         }
-        if (str.startsWith("https://")) {
+        if (str.startsWith(HTTPS)) {
             return str.substring(8);
         }
         return str;

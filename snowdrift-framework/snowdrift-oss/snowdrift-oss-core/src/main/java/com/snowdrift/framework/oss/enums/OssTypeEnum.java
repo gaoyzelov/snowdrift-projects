@@ -1,6 +1,7 @@
 package com.snowdrift.framework.oss.enums;
 
 import com.snowdrift.framework.common.enums.IEnum;
+import com.snowdrift.framework.oss.exception.OssException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -54,14 +55,6 @@ public enum OssTypeEnum implements IEnum<String> {
     private final String note;
     
     /**
-     *
-     * @return 类型标识
-     */
-    public String getCode() {
-        return code;
-    }
-    
-    /**
      * 根据 code 获取枚举
      */
     public static Optional<OssTypeEnum> getByCode(String code) {
@@ -73,6 +66,6 @@ public enum OssTypeEnum implements IEnum<String> {
      */
     public static OssTypeEnum fromCode(String code) {
         return getByCode(code).orElseThrow(() -> 
-            new IllegalArgumentException("未知的 OSS 类型: " + code));
+            new OssException("未知的 OSS 类型: " + code));
     }
 }

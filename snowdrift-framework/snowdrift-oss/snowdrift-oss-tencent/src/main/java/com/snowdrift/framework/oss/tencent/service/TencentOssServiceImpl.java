@@ -223,6 +223,8 @@ public class TencentOssServiceImpl extends AbstractOssService {
     @Override
     public String getUrl(@NonNull String objectKey, Duration expiry) {
         String bucket = super.getBucket();
+        // 公开 Bucket：直接返回域名 + objectKey
+        String url = OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
         if (Boolean.TRUE.equals(config.getPrivateBucket())) {
             // 私有 Bucket：生成预签名 URL
             GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucket, objectKey);
@@ -230,9 +232,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
             request.setExpiration(new Date(System.currentTimeMillis() + validDuration.toMillis()));
             return cosClient.generatePresignedUrl(request).toString();
         }
-
-        // 公开 Bucket：直接返回域名 + objectKey
-        return OssUrlBuilder.buildPathStyleUrl(config.getDomain(),bucket, objectKey);
+        return url;
     }
 
     /**

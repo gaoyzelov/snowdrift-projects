@@ -203,6 +203,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
             );
             return true;
         } catch (Exception e) {
+            log.error("文件存在检查失败: bucket={}, objectKey={}", bucket, objectKey, e);
             return false;
         }
     }
@@ -217,10 +218,16 @@ public class MinioOssServiceImpl extends AbstractOssService {
     @Override
     public String getUrl(@NonNull String objectKey, Duration expiry) {
         String bucket = super.getBucket();
-        try {
-            // 如果是私有 Bucket，生成预签名 URL
-            if (Boolean.TRUE.equals(config.getPrivateBucket())) {
-                Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getSignatureExpiry());
+
+        // 如果配置了域名，使用域名
+        if (StringUtils.isNotBlank(config.getDomain())) {
+            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
+        }
+
+        // 如果是私有 Bucket，生成预签名 URL
+        if (Boolean.TRUE.equals(config.getPrivateBucket())) {
+            Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getSignatureExpiry());
+            try {
                 return minioClient.getPresignedObjectUrl(
                         GetPresignedObjectUrlArgs.builder()
                                 .method(Http.Method.GET)
@@ -229,31 +236,32 @@ public class MinioOssServiceImpl extends AbstractOssService {
                                 .expiry((int) validDuration.toMinutes(), TimeUnit.MINUTES)
                                 .build()
                 );
+            } catch (Exception e) {
+                log.error("生成文件访问 URL 失败: bucket={}, objectKey={}", bucket, objectKey, e);
+                throw new OssException("oss.url.generate.failed", new Object[]{e.getMessage()});
             }
-
-            // 如果配置了域名，使用域名
-            if (StringUtils.isNotBlank(config.getDomain())) {
-                return OssUrlBuilder.buildPathStyleUrl(config.getDomain(),bucket, objectKey);
-            }
-
-            // 否则返回 MinIO 直接访问 URL
-            return OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, objectKey);
-
-        } catch (Exception e) {
-            log.error("生成文件访问 URL 失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.url.generate.failed", new Object[]{e.getMessage()});
         }
+
+        // 否则返回 MinIO 直接访问 URL
+        return OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, objectKey);
+
     }
 
     /**
      * 关闭 MinIO 客户端，释放资源
      * <p>
-     * MinIO Client 由 SDK 内部管理连接池，无需手动关闭
      * 该方法在应用关闭时由 OssStrategyFactory 统一调用
      * 此处仅做日志记录，便于追踪资源生命周期
      */
     @Override
     public void close() {
-        log.info("MinIO 客户端无需手动关闭: configKey={}, bucket={}", config.getConfigKey(), config.getBucket());
+        if (minioClient != null){
+            try {
+                minioClient.close();
+                log.info("MinIO 客户端已关闭: configKey={}, bucket={}", config.getConfigKey(), config.getBucket());
+            }catch (Exception e){
+                log.error("MinIO 客户端关闭失败: configKey={}, bucket={}", config.getConfigKey(), config.getBucket(), e);
+            }
+        }
     }
 }

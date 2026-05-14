@@ -176,8 +176,13 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public boolean exists(@NonNull String objectKey) {
-        Path filePath = storageRoot.resolve(objectKey);
-        return Files.exists(filePath);
+        try {
+            Path filePath = storageRoot.resolve(objectKey);
+            return Files.exists(filePath);
+        }catch (Exception e){
+            log.error("检查文件存在性失败: objectKey={}", objectKey, e);
+            throw new OssException("oss.exists.check.failed", new Object[]{e.getMessage()});
+        }
     }
 
     /**
@@ -211,6 +216,6 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public void close() {
-        log.info("本地存储无需关闭: configKey={}, root={}", config.getConfigKey(), storageRoot);
+        log.info("本地存储无需关闭: configKey={}, endpoint={}", config.getConfigKey(), storageRoot);
     }
 }
