@@ -30,7 +30,7 @@ public class HttpContextFilter implements Filter {
                 String ip = IpUtil.getIp(httpRequest);
                 HttpContext context = HttpContext.builder()
                         .ip(ip)
-                        .ipAddr(IpUtil.getIpAddr(ip, StrConst.SPACE))
+                        .ipLocation(IpUtil.getIpLocation(ip, StrConst.SPACE))
                         .userAgent(ServletUtil.getUserAgent(httpRequest))
                         .uri(httpRequest.getRequestURI())
                         .method(httpRequest.getMethod())

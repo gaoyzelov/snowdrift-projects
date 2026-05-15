@@ -41,7 +41,7 @@ public class HttpContext implements Serializable {
     /**
      * IP地址
      */
-    private String ipAddr;
+    private String ipLocation;
     /**
      * 请求参数
      */

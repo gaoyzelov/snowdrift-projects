@@ -1,6 +1,10 @@
 package com.snowdrift.framework.context.security;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
+import com.snowdrift.framework.common.util.AssertUtil;
+import org.apache.commons.lang3.StringUtils;
+
+import java.util.Objects;
 
 /**
  * SecurityContextHolder
@@ -20,6 +24,7 @@ public class SecurityContextHolder {
      * @param context 安全上下文
      */
     public static void setContext(SecurityContext context) {
+        AssertUtil.notNull(context, "security.context.null");
         SECURITY_CONTEXT_HOLDER.set(context);
     }
 
@@ -29,7 +34,12 @@ public class SecurityContextHolder {
      * @return SecurityContext
      */
     public static SecurityContext getContext() {
-        return SECURITY_CONTEXT_HOLDER.get();
+        SecurityContext ctx = SECURITY_CONTEXT_HOLDER.get();
+        if (Objects.isNull(ctx)) {
+            ctx = createEmptyContext();
+            SECURITY_CONTEXT_HOLDER.set(ctx);
+        }
+        return ctx;
     }
 
     /**
@@ -37,5 +47,66 @@ public class SecurityContextHolder {
      */
     public static void clear() {
         SECURITY_CONTEXT_HOLDER.remove();
+    }
+
+    /**
+     * 创建一个空的安全上下文
+     *
+     * @return SecurityContext
+     */
+    public static SecurityContext createEmptyContext() {
+        return SecurityContext.builder().build();
+    }
+
+    /**
+     * 获取当前用户ID
+     *
+     * @return 用户ID，未登录时返回 null
+     */
+    public static Long getUserId() {
+        return getContext().getUserId();
+    }
+
+    /**
+     * 获取当前租户ID
+     *
+     * @return 租户ID，未登录时返回 null
+     */
+    public static Long getTenantId() {
+        return getContext().getTenantId();
+    }
+
+    /**
+     * 获取登录账号
+     *
+     * @return 登录账号，未设置时返回 null
+     */
+    public static String getUsername() {
+        SecurityContext ctx = getContext();
+        return ctx.getUsername();
+    }
+
+    /**
+     * 获取显示名称
+     *
+     * @return 显示名称，未设置时返回 null
+     */
+    public static String getNickname() {
+        SecurityContext ctx = getContext();
+        return ctx.getNickname();
+    }
+
+    /**
+     * 获取操作者显示名称（优先昵称，用于日志展示）
+     *
+     * @return 操作者名称，未设置时返回 null
+     */
+    public static String getOperatorName() {
+        SecurityContext ctx = getContext();
+        String nickname = ctx.getNickname();
+        if (StringUtils.isNotBlank(nickname)) {
+            return nickname;
+        }
+        return ctx.getUsername();
     }
 }

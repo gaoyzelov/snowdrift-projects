@@ -95,7 +95,11 @@ public class ApiLogAspect {
         if (apiLogAnno == null || !apiLogAnno.enable()) {
             return;
         }
+        // 请求信息
         HttpContext httpContext = HttpContextHolder.getContext();
+        // 用户信息
+        SecurityContext securityContext = SecurityContextHolder.getContext();
+        // API 日志初始化
         ApiLogCreateDTO apiLogDTO = ApiLogCreateDTO.builder()
                 .traceId(LogTraceUtil.getTraceId())
                 .appName(appName)
@@ -104,21 +108,16 @@ public class ApiLogAspect {
                 .summary(apiLogAnno.summary())
                 .method(httpContext.getMethod())
                 .uri(httpContext.getUri())
-                .ip(httpContext.getIp())
                 .requestParams(getRequestParams(apiLogAnno, joinPoint.getArgs(), httpContext.getParamMap()))
-                .responseBody(getResponseBody(apiLogAnno, result))
+                .ip(httpContext.getIp())
                 .ua(httpContext.getUserAgent())
+                .responseBody(getResponseBody(apiLogAnno, result))
                 .duration(stopWatch.getDuration().toMillis())
+                .userId(securityContext.getUserId())
+                .tenantId(securityContext.getTenantId())
+                .operator(securityContext.getNickname())
                 .operateTime(DateTimeUtil.timestampToLocalDateTime(stopWatch.getStartInstant().toEpochMilli()))
                 .build();
-
-        // 保存用户信息
-        SecurityContext securityContext = SecurityContextHolder.getContext();
-        if (securityContext != null) {
-            apiLogDTO.setUserId(securityContext.getUserId());
-            apiLogDTO.setTenantId(securityContext.getTenantId());
-            apiLogDTO.setOperator(securityContext.getNickname());
-        }
 
         // 判断是否存在异常
         if (Objects.nonNull(exception)) {
@@ -194,7 +193,7 @@ public class ApiLogAspect {
      * @return 脱敏后的 JSON 字符串
      */
     private String applyMask(String json, String[] maskFields) {
-        if (StringUtils.isBlank(json)){
+        if (StringUtils.isBlank(json)) {
             return json;
         }
         for (String field : maskFields) {
@@ -216,7 +215,7 @@ public class ApiLogAspect {
         if (!apiLogAnno.saveResult() || Objects.isNull(result)) {
             return StrConst.EMPTY;
         }
-       return safeSerialize(result);
+        return safeSerialize(result);
     }
 
     /**

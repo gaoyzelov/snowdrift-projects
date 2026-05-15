@@ -32,7 +32,7 @@ public class LoginLogCreateDTO implements Serializable {
     /**
      * 用户 IP 地址
      */
-    private String ipAddr;
+    private String ipLocation;
 
     /**
      * 浏览器 UA

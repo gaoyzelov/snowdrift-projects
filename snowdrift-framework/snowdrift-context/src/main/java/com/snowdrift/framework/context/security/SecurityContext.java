@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 
 import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -18,38 +19,46 @@ import java.util.Map;
 @Builder
 public class SecurityContext implements Serializable {
 
+    // =================== 基础信息 ========================
     /**
      * 用户ID
      */
     private Long userId;
 
     /**
-     * 用户类型
-     */
-    private Integer userType;
-
-    /**
-     * 用户名
+     * 账号
      */
     private String username;
 
     /**
-     * 用户昵称
+     * 昵称
      */
     private String nickname;
 
+    // =================== 组织信息 ========================
     /**
-     * 部门ID
+     * 组织ID
      */
-    private Long deptId;
+    private Long orgId;
 
     /**
      * 租户ID
      */
     private Long tenantId;
 
+    // ========== 授权信息（RBAC）==========
+    /**
+     * 角色Key列表
+     */
+    private List<String> roleKeys;
+    /**
+     * 权限标识列表
+     */
+    private List<String> permissions;
+
+    // =================== 扩展信息 ========================
     /**
      * 属性
      */
-    private Map<String, String> attributes;
+    private Map<String, Object> attributes;
 }

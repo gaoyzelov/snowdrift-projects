@@ -70,14 +70,17 @@ public class LoginLogAspect {
         if (loginLogAnno == null || !loginLogAnno.enable()) {
             return;
         }
+        // 请求信息
         HttpContext context = HttpContextHolder.getContext();
+        // 登录日志初始化
         LoginLogCreateDTO loginLogDTO = LoginLogCreateDTO.builder()
                 .username(getUsername(joinPoint))
                 .ip(context.getIp())
-                .ipAddr(context.getIpAddr())
+                .ipLocation(context.getIpLocation())
                 .ua(context.getUserAgent())
                 .loginTime(LocalDateTime.now())
                 .build();
+
         // 判断是否存在登录异常
         if (Objects.nonNull(exception)) {
             loginLogDTO.setStatus(ResultCode.ERR.code());

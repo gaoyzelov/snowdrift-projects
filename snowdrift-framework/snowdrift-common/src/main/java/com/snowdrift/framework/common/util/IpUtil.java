@@ -95,7 +95,7 @@ public final class IpUtil {
      * @return 解析IP地址，返回完整地域信息数组
      */
     public static String[] parseIp(String ip) {
-        if (searcher == null || !isValidIp(ip)) {
+        if (searcher == null || !isValidIp(ip) || isInternalIp(ip)) {
             return new String[]{"", "", "", "", ""};
         }
         try {
@@ -114,7 +114,7 @@ public final class IpUtil {
      * @param delimiter 分隔符
      * @return IP地址
      */
-    public static String getIpAddr(String ip, String delimiter) {
+    public static String getIpLocation(String ip, String delimiter) {
         String[] info = parseIp(ip);
         delimiter = StringUtils.isBlank(delimiter) ? StrConst.SPACE : delimiter;
         // 过滤无意义的"0"和内网IP标识

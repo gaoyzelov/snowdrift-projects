@@ -1,5 +1,7 @@
 package com.snowdrift.framework.web.config;
 
+import com.snowdrift.framework.context.http.HttpContext;
+import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.web.properties.AsyncProperties;
@@ -53,25 +55,25 @@ public class AsyncConfiguration implements AsyncConfigurer {
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return (ex, method, params) -> {
-            log.error("异步执行方法: {}, 参数: {}, 发生异常", 
-                    method.getName(), 
+            log.error("异步执行方法: {}, 参数: {}, 发生异常",
+                    method.getName(),
                     Arrays.toString(params),
                     ex);
         };
     }
 
-    public TaskDecorator taskDecorator(){
+    public TaskDecorator taskDecorator() {
         return runnable -> {
-            final SecurityContext context = SecurityContextHolder.getContext();
+            final HttpContext httpContext = HttpContextHolder.getContext();
+            final SecurityContext securityContext = SecurityContextHolder.getContext();
             return () -> {
                 try {
-                    // 只有当主线程有上下文时才设置
-                    if (context != null) {
-                        SecurityContextHolder.setContext(context);
-                    }
+                    HttpContextHolder.setContext(httpContext);
+                    SecurityContextHolder.setContext(securityContext);
                     runnable.run();
                 } finally {
                     // 清理上下文，避免内存泄漏
+                    HttpContextHolder.clear();
                     SecurityContextHolder.clear();
                 }
             };
