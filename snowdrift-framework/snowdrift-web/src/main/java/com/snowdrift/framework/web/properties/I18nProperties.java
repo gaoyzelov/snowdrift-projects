@@ -9,6 +9,7 @@ import org.springframework.validation.annotation.Validated;
 
 import java.io.Serializable;
 import java.util.List;
+import java.util.Set;
 
 /**
  * I18nProperties
@@ -58,8 +59,8 @@ public class I18nProperties implements Serializable {
     /**
      * 资源文件基础名称
      */
-    @NotBlank
-    private String basename = "i18n/messages";
+    @NotEmpty
+    private Set<String> baseNames = Set.of("i18n/web-messages", "i18n/oss-messages");
 
     /**
      * 编码格式

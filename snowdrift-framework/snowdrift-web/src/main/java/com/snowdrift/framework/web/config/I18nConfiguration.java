@@ -39,7 +39,7 @@ public class I18nConfiguration implements WebMvcConfigurer {
     @Bean
     public MessageSource messageSource() {
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
-        messageSource.setBasename(i18nProperties.getBasename());
+        messageSource.addBasenames(i18nProperties.getBaseNames().toArray(String[]::new));
         messageSource.setDefaultEncoding(i18nProperties.getEncoding());
         messageSource.setUseCodeAsDefaultMessage(i18nProperties.getUseCodeAsDefaultMessage());
         // 缓存配置：-1 表示永不缓存（开发环境），正数表示缓存秒数（生产环境）
