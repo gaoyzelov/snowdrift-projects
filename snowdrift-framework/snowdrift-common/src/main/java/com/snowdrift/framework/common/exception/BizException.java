@@ -20,6 +20,8 @@ public class BizException extends RuntimeException {
      */
     private final Integer code;
 
+    private Object[] args;
+
     public BizException() {
         super();
         this.code = ResultCode.ERR.code();
@@ -28,6 +30,12 @@ public class BizException extends RuntimeException {
     public BizException(String message) {
         super(message);
         this.code = ResultCode.ERR.code();
+    }
+
+    public BizException(String message, Object[] args) {
+        super(message);
+        this.code = ResultCode.ERR.code();
+        this.args = args;
     }
 
     public BizException(ResultCode resultCode){
