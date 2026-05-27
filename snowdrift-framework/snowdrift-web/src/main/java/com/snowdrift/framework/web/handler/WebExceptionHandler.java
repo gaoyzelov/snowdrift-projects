@@ -130,16 +130,6 @@ public class WebExceptionHandler {
     }
 
     /**
-     * 将 ResultCode 的 msg 转换为国际化消息
-     *
-     * @param resultCode 结果码
-     * @return 国际化后的消息
-     */
-    private String getI18nMessage(ResultCode resultCode) {
-        return I18nUtil.getMessage(resultCode.msg());
-    }
-
-    /**
      * 资源不存在异常处理（404）
      */
     @ExceptionHandler(NoResourceFoundException.class)
