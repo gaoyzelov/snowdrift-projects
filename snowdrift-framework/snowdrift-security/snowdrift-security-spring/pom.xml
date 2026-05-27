@@ -9,9 +9,9 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-security-satoken</artifactId>
-    <name>snowdrift-security-satoken</name>
-    <description>Snowdrift Security Module for Sa-Token</description>
+    <artifactId>snowdrift-security-spring</artifactId>
+    <name>snowdrift-security-spring</name>
+    <description>Snowdrift Security Module for Spring Security</description>
 
     <dependencies>
         <!-- Snowdrift Security Core -->
@@ -24,20 +24,21 @@
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-web</artifactId>
         </dependency>
-        <!-- Sa-Token Spring Boot Starter -->
+        <!-- Spring Boot Starter Security -->
         <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-spring-boot3-starter</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
+        <!-- Spring Boot Starter Redis -->
         <dependency>
-            <groupId>cn.dev33</groupId>
-            <artifactId>sa-token-redis-template</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-data-redis</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <!-- Caffeine Cache -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
         </dependency>
     </dependencies>
 </project>

@@ -14,6 +14,7 @@
     <modules>
         <module>snowdrift-security-core</module>
         <module>snowdrift-security-satoken</module>
+        <module>snowdrift-security-spring</module>
     </modules>
     <packaging>pom</packaging>
 </project>

@@ -1,6 +1,7 @@
 package com.snowdrift.framework.security.service;
 
 import com.snowdrift.framework.context.security.SecurityContext;
+import com.snowdrift.framework.security.model.TokenInfo;
 
 /**
  * 安全服务顶层抽象接口
@@ -15,6 +16,18 @@ import com.snowdrift.framework.context.security.SecurityContext;
  * @since 1.0.0
  */
 public interface ISecurityService {
+
+    /**
+     * 登录：生成 Token，将 SecurityContext 写入会话存储，返回 TokenInfo
+     * <p>
+     * 业务 Controller 在校验完用户名密码等凭证后，构造好 {@link SecurityContext}
+     * （含用户信息、角色、权限），调用此方法完成登录。
+     * </p>
+     *
+     * @param context 安全上下文（由业务层填充用户/角色/权限信息）
+     * @return 统一的 Token 响应模型
+     */
+    TokenInfo login(SecurityContext context);
 
     /**
      * 当前请求是否已通过认证（已登录）
@@ -57,4 +70,9 @@ public interface ISecurityService {
      * @return true 拥有该权限
      */
     boolean hasPermission(String permission);
+
+    /**
+     * 登出：使当前会话失效，清除登录状态
+     */
+    void logout();
 }

@@ -21,15 +21,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@ConfigurationProperties(prefix = "snowdrift.security")
+@ConfigurationProperties(prefix = "snowdrift.security.sa-token")
 public class SaTokenSecurityProperties extends SecurityProperties {
-
-    /**
-     * Token 过期时间（秒）
-     * 默认 24 小时
-     */
-    @NotNull
-    private long timeout = 86400;
 
     /**
      * Token 活跃超时时间（秒）

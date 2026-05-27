@@ -35,6 +35,12 @@ public class SecurityProperties {
     private String headerName = "Authorization";
 
     /**
+     * Token 过期时间（秒），默认 24 小时
+     */
+    @NotNull
+    private long timeout = 86400;
+
+    /**
      * Token 前缀（拼接在 Token 值之前，中间用空格分隔）
      * <p>
      * 如 Bearer Token 格式：{@code Authorization: Bearer <token>}

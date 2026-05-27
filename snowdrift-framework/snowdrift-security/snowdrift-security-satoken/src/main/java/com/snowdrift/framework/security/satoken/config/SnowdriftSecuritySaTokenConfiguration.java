@@ -8,34 +8,47 @@ import com.snowdrift.framework.security.satoken.listener.TokenStateListener;
 import com.snowdrift.framework.security.satoken.properties.SaTokenSecurityProperties;
 import com.snowdrift.framework.security.satoken.service.SaTokenSecurityServiceImpl;
 import com.snowdrift.framework.security.service.ISecurityService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.util.ClassUtils;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import jakarta.annotation.PostConstruct;
 
 /**
  * Sa-Token 安全模块自动配置
  * <p>
- * 以 {@code snowdrift.security.*} 为唯一配置入口，创建并接管 {@link SaTokenConfig}。
- * 通过 {@code snowdrift.security.enabled} 控制整个安全模块的开关。
+ * 以 {@code snowdrift.security.sa-token.*} 为配置入口，创建并接管 {@link SaTokenConfig}。
+ * 通过 {@code snowdrift.security.sa-token.enabled} 控制整个安全模块的开关。
  * </p>
  *
  * @author 83674
  * @date 2026/5/15
  * @since 1.0.0
  */
+@Slf4j
 @Configuration
 @EnableConfigurationProperties(SaTokenSecurityProperties.class)
-@ConditionalOnProperty(prefix = "snowdrift.security", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "snowdrift.security.sa-token", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SnowdriftSecuritySaTokenConfiguration implements WebMvcConfigurer {
 
     private final SaTokenSecurityProperties securityProperties;
 
     public SnowdriftSecuritySaTokenConfiguration(SaTokenSecurityProperties securityProperties) {
         this.securityProperties = securityProperties;
+    }
+
+    @PostConstruct
+    void checkConflict() {
+        if (ClassUtils.isPresent("com.snowdrift.framework.security.spring.properties.SpringSecurityProperties", null)) {
+            log.warn("[Snowdrift Security] 检测到 snowdrift-security-satoken 和 snowdrift-security-spring 同时存在，" +
+                    "请通过 snowdrift.security.sa-token.enabled 或 snowdrift.security.spring.enabled 禁用其中一个模块");
+        }
     }
 
     /**
