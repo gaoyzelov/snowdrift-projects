@@ -12,23 +12,28 @@
     <artifactId>snowdrift-log</artifactId>
 
     <dependencies>
+        <!-- Snowdrift Context -->
         <dependency>
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-context</artifactId>
         </dependency>
+        <!-- Bizlog SDK -->
         <dependency>
             <groupId>io.github.mouzt</groupId>
             <artifactId>bizlog-sdk</artifactId>
         </dependency>
+        <!-- Spring Web -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
             <scope>provided</scope>
         </dependency>
+        <!-- Spring Boot Starter AOP -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
         </dependency>
+        <!-- Spring Boot Starter Logging -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-logging</artifactId>

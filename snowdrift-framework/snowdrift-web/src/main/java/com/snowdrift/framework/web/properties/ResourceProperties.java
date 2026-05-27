@@ -1,5 +1,8 @@
 package com.snowdrift.framework.web.properties;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
@@ -15,17 +18,21 @@ import java.util.List;
  * @since 1.0.0
  */
 @Data
+@Valid
 @ConfigurationProperties(prefix = "snowdrift.resource")
 public class ResourceProperties {
 
     /**
      * 是否启用静态资源映射
      */
+    @NotNull
     private Boolean enabled = false;
 
     /**
      * 静态资源映射列表
      */
+    @NotNull
+    @Valid
     private List<ResourceMapping> mappings = new ArrayList<>();
 
     /**
@@ -38,6 +45,7 @@ public class ResourceProperties {
          * 访问路径前缀
          * 示例：/files/**
          */
+        @NotBlank
         private String pathPattern;
 
         /**
@@ -45,6 +53,7 @@ public class ResourceProperties {
          * 示例：file:D:/data/oss-storage/
          * 示例：file:/opt/oss-storage/
          */
+        @NotBlank
         private String location;
 
         /**
@@ -53,11 +62,13 @@ public class ResourceProperties {
          * -1: 使用默认缓存
          * >0: 缓存指定秒数
          */
+        @NotNull
         private Integer cachePeriod = 3600;
 
         /**
          * 是否使用缓存控制
          */
+        @NotNull
         private Boolean useCacheControl = true;
     }
 }

@@ -12,10 +12,10 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum BoolEnum implements IEnum<Integer> {
+public enum YesNoEnum implements IEnum<Integer> {
 
-    FALSE(0, "否"),
-    TRUE(1, "是");
+    NO(0, "否"),
+    YES(1, "是");
 
     private final Integer code;
 

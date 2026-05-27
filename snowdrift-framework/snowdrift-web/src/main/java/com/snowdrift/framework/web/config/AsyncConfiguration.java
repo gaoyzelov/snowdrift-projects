@@ -4,6 +4,7 @@ import com.snowdrift.framework.context.http.HttpContext;
 import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
+import com.snowdrift.framework.log.util.LogTraceUtil;
 import com.snowdrift.framework.web.properties.AsyncProperties;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +54,10 @@ public class AsyncConfiguration implements AsyncConfigurer {
         return executor;
     }
 
+    /**
+     * 异步执行异常处理
+     * @return AsyncUncaughtExceptionHandler
+     */
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
         return (ex, method, params) -> {
@@ -63,14 +68,20 @@ public class AsyncConfiguration implements AsyncConfigurer {
         };
     }
 
+    /**
+     * 任务装饰器
+     * @return TaskDecorator
+     */
     public TaskDecorator taskDecorator() {
         return runnable -> {
             final HttpContext httpContext = HttpContextHolder.getContext();
             final SecurityContext securityContext = SecurityContextHolder.getContext();
+            final String traceId = LogTraceUtil.getTraceId();
             return () -> {
                 try {
                     HttpContextHolder.setContext(httpContext);
                     SecurityContextHolder.setContext(securityContext);
+                    LogTraceUtil.setTraceId(traceId);
                     runnable.run();
                 } finally {
                     // 清理上下文，避免内存泄漏

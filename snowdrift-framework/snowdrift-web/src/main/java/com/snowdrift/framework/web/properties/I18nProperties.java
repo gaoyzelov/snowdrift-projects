@@ -3,9 +3,9 @@ package com.snowdrift.framework.web.properties;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.validation.annotation.Validated;
 
 import java.io.Serializable;
 import java.util.List;
@@ -21,13 +21,13 @@ import java.util.Set;
  */
 @Data
 @Valid
-@Validated
 @ConfigurationProperties(prefix = "snowdrift.i18n")
 public class I18nProperties implements Serializable {
 
     /**
      * 是否开启国际化
      */
+    @NotNull
     private Boolean enabled = Boolean.TRUE;
 
     /**
@@ -48,6 +48,7 @@ public class I18nProperties implements Serializable {
      * 0 表示每次都需要重新加载
      * 正数表示缓存指定秒数（生产环境推荐，如：3600）
      */
+    @NotNull
     private Integer cacheSeconds = -1;
 
     /**
@@ -71,5 +72,6 @@ public class I18nProperties implements Serializable {
     /**
      * 是否使用代码作为默认消息
      */
+    @NotNull
     private Boolean useCodeAsDefaultMessage = Boolean.TRUE;
 }

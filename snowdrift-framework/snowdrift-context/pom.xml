@@ -12,10 +12,12 @@
     <artifactId>snowdrift-context</artifactId>
 
     <dependencies>
+        <!-- Snowdrift Common -->
         <dependency>
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-common</artifactId>
         </dependency>
+        <!-- TTL -->
         <dependency>
             <groupId>com.alibaba</groupId>
             <artifactId>transmittable-thread-local</artifactId>

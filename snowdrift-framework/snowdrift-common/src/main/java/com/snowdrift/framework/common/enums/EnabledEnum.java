@@ -15,8 +15,8 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum EnabledEnum implements IEnum<Integer> {
 
-    ENABLED(1, "启用"),
-    DISABLED(0, "禁用");
+    DISABLED(0, "禁用"),
+    ENABLED(1, "启用");
 
     private final Integer code;
     private final String note;
