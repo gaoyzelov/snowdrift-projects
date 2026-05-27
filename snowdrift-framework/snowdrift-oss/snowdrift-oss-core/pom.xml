@@ -14,7 +14,7 @@
     <description>Snowdrift OSS Core Module</description>
 
     <dependencies>
-        <!-- Common -->
+        <!--Snowdrift Common -->
         <dependency>
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-common</artifactId>
