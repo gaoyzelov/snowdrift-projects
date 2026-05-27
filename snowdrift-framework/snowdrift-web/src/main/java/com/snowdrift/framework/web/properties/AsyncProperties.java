@@ -10,10 +10,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.io.Serializable;
 
 /**
+ * AsyncProperties
  *
  * @author 83674
  * @date 2026/5/8-15:29
- * @description
+ * @description 异步配置
  * @since 1.0.0
  */
 @Data

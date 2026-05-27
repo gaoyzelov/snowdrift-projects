@@ -24,14 +24,15 @@ import java.util.concurrent.ThreadPoolExecutor;
  * AsyncConfiguration
  *
  * @author 83674
- * @version v1.0.0
  * @date 2024/8/19 11:24
+ * @description 异步配置类
+ * @since 1.0.0
  */
 @Slf4j
 @EnableAsync
 @Configuration
 @EnableConfigurationProperties(AsyncProperties.class)
-@ConditionalOnProperty(prefix = "async", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "snowdrift.async", name = "enabled", havingValue = "true")
 public class AsyncConfiguration implements AsyncConfigurer {
 
     @Resource
