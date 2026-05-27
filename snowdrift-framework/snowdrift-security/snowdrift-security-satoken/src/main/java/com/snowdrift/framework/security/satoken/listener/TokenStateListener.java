@@ -1,0 +1,97 @@
+package com.snowdrift.framework.security.satoken.listener;
+
+import cn.dev33.satoken.listener.SaTokenListener;
+import cn.dev33.satoken.stp.StpUtil;
+import cn.dev33.satoken.stp.parameter.SaLoginParameter;
+import com.snowdrift.framework.context.security.SecurityContextHolder;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Token 状态监听器
+ * <p>
+ * 监听 Sa-Token 框架的登录、登出、被踢、被顶、封禁、续期等事件，
+ * 统一处理日志记录与上下文清理。
+ * </p>
+ *
+ * @author 83674
+ * @date 2026/5/27
+ * @since 1.0.0
+ */
+@Slf4j
+public class TokenStateListener implements SaTokenListener {
+
+    @Override
+    public void doLogin(String loginType, Object loginId, String tokenValue, SaLoginParameter loginParameter) {
+        log.info("[登录事件] loginType={}, loginId={}, token={}", loginType, loginId, maskToken(tokenValue));
+    }
+
+    @Override
+    public void doLogout(String loginType, Object loginId, String tokenValue) {
+        log.info("[登出事件] loginType={}, loginId={}, token={}", loginType, loginId, maskToken(tokenValue));
+        // 清除请求线程中的安全上下文，防止残留数据被后续复用
+        SecurityContextHolder.clear();
+    }
+
+    @Override
+    public void doKickout(String loginType, Object loginId, String tokenValue) {
+        log.warn("[被踢下线] loginType={}, loginId={}, token={}", loginType, loginId, maskToken(tokenValue));
+        // 删除 Token 映射，使其立即失效
+        StpUtil.getStpLogic().deleteTokenToIdMapping(tokenValue);
+        SecurityContextHolder.clear();
+    }
+
+    @Override
+    public void doReplaced(String loginType, Object loginId, String tokenValue) {
+        log.warn("[被顶下线] loginType={}, loginId={}, token={}", loginType, loginId, maskToken(tokenValue));
+        // 删除 Token 映射，使其立即失效
+        StpUtil.getStpLogic().deleteTokenToIdMapping(tokenValue);
+        SecurityContextHolder.clear();
+    }
+
+    @Override
+    public void doDisable(String loginType, Object loginId, String service, int level, long disableTime) {
+        log.warn("[账号封禁] loginType={}, loginId={}, service={}, level={}, disableTime={}s",
+                loginType, loginId, service, level, disableTime);
+    }
+
+    @Override
+    public void doUntieDisable(String loginType, Object loginId, String service) {
+        log.info("[账号解封] loginType={}, loginId={}, service={}", loginType, loginId, service);
+    }
+
+    @Override
+    public void doOpenSafe(String loginType, String tokenValue, String service, long safeTime) {
+
+    }
+
+    @Override
+    public void doCloseSafe(String loginType, String tokenValue, String service) {
+
+    }
+
+    @Override
+    public void doCreateSession(String id) {
+
+    }
+
+    @Override
+    public void doLogoutSession(String id) {
+
+    }
+
+    @Override
+    public void doRenewTimeout(String loginType, Object loginId, String tokenValue, long timeout) {
+        log.info("[Token 续期] loginType={}, loginId={}, token={}, newTimeout={}s",
+                loginType, loginId, maskToken(tokenValue), timeout);
+    }
+
+    /**
+     * Token 脱敏：只保留前 8 位，其余用 *** 替换，避免日志中泄露完整 Token
+     */
+    private String maskToken(String tokenValue) {
+        if (tokenValue == null || tokenValue.length() <= 8) {
+            return tokenValue == null ? "null" : tokenValue.substring(0, 4) + "***";
+        }
+        return tokenValue.substring(0, 8) + "***";
+    }
+}

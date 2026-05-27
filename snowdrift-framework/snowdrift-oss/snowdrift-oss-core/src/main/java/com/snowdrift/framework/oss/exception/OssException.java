@@ -1,7 +1,6 @@
 package com.snowdrift.framework.oss.exception;
 
 import com.snowdrift.framework.common.exception.BizException;
-import com.snowdrift.framework.common.result.ResultCode;
 
 /**
  * OSS 异常
@@ -14,36 +13,12 @@ import com.snowdrift.framework.common.result.ResultCode;
  */
 public class OssException extends BizException {
 
-    public OssException() {
-        super();
-    }
-
     public OssException(String message) {
         super(message);
     }
 
     public OssException(String message, Object[] args) {
         super(message, args);
-    }
-
-    public OssException(ResultCode resultCode) {
-        super(resultCode);
-    }
-
-    public OssException(Integer code, String message) {
-        super(code, message);
-    }
-
-    public OssException(String message, Throwable cause) {
-        super(message, cause);
-    }
-
-    public OssException(Throwable cause) {
-        super(cause);
-    }
-
-    protected OssException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
-        super(message, cause, enableSuppression, writableStackTrace);
     }
 
 }
