@@ -1,18 +1,19 @@
 package com.snowdrift.framework.security.spring.filter;
 
+import com.snowdrift.framework.common.util.DesensitizeUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.security.properties.SecurityProperties;
-import com.snowdrift.framework.security.spring.store.TokenStore;
-import com.snowdrift.framework.common.util.DesensitizeUtil;
 import com.snowdrift.framework.security.spring.util.SpringSecurityHelper;
+import com.snowdrift.framework.security.store.TokenStore;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.util.AntPathMatcher;
-import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -36,8 +37,6 @@ import java.io.IOException;
 @Slf4j
 public class SecurityContextFilter extends OncePerRequestFilter {
 
-    public static final String TOKEN_ATTRIBUTE = SecurityContextFilter.class.getName() + ".TOKEN";
-
     private final SecurityProperties securityProperties;
     private final TokenStore tokenStore;
     private final AntPathMatcher pathMatcher = new AntPathMatcher();
@@ -60,7 +59,7 @@ public class SecurityContextFilter extends OncePerRequestFilter {
 
             // 2. 从请求头提取 Token
             String token = extractToken(request);
-            if (!StringUtils.hasText(token)) {
+            if (StringUtils.isBlank(token)) {
                 filterChain.doFilter(request, response);
                 return;
             }
@@ -73,17 +72,14 @@ public class SecurityContextFilter extends OncePerRequestFilter {
                 return;
             }
 
-            // 4. 将 Token 暂存到 request attribute，供 logout 时获取
-            request.setAttribute(TOKEN_ATTRIBUTE, token);
-
-            // 5. 写入框架的 SecurityContextHolder（供业务代码通过 SecurityContextHolder.getContext() 获取）
+            // 4. 写入框架的 SecurityContextHolder（供业务代码通过 SecurityContextHolder.getContext() 获取）
             SecurityContextHolder.setContext(sc);
 
             // 5. 构建 Spring Security 的 Authentication（供 @PreAuthorize 等注解鉴权使用）
             SpringSecurityHelper.setSpringSecurityAuthentication(sc);
         } catch (Exception e) {
             log.error("SecurityContextFilter 执行异常: {}", e.getMessage(), e);
-            throw new ServletException(e);
+            throw new SecurityException(e);
         }
         try {
             filterChain.doFilter(request, response);
@@ -98,7 +94,7 @@ public class SecurityContextFilter extends OncePerRequestFilter {
      * 判断当前请求路径是否需要跳过认证
      */
     private boolean isExcludedPath(String path) {
-        if (securityProperties.getExcludePathPatterns() == null) {
+        if (CollectionUtils.isEmpty(securityProperties.getExcludePathPatterns())) {
             return false;
         }
         for (String pattern : securityProperties.getExcludePathPatterns()) {
@@ -115,11 +111,11 @@ public class SecurityContextFilter extends OncePerRequestFilter {
      */
     private String extractToken(HttpServletRequest request) {
         String header = request.getHeader(securityProperties.getHeaderName());
-        if (!StringUtils.hasText(header)) {
+        if (org.apache.commons.lang3.StringUtils.isBlank(header)) {
             return null;
         }
         String prefix = securityProperties.getPrefix();
-        if (StringUtils.hasText(prefix) && header.startsWith(prefix)) {
+        if (StringUtils.isNotBlank(prefix) && header.startsWith(prefix)) {
             return header.substring(prefix.length()).trim();
         }
         // 无前缀时直接返回

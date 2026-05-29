@@ -7,27 +7,23 @@ import com.snowdrift.framework.security.spring.handler.SpringSecurityExceptionHa
 import com.snowdrift.framework.security.spring.properties.SpringSecurityProperties;
 import com.snowdrift.framework.security.spring.service.SpringSecurityServiceImpl;
 import com.snowdrift.framework.security.spring.store.InMemoryTokenStore;
-import com.snowdrift.framework.security.spring.store.RedisTokenStore;
-import com.snowdrift.framework.security.spring.store.TokenStore;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import com.snowdrift.framework.security.store.TokenStore;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.util.ClassUtils;
-
-import jakarta.annotation.PostConstruct;
-import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.util.ClassUtils;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.util.List;
@@ -104,17 +100,7 @@ public class SnowdriftSecuritySpringConfiguration {
     }
 
     /**
-     * Redis TokenStore（容器中存在 StringRedisTemplate 时自动生效）
-     */
-    @Bean
-    @ConditionalOnBean(StringRedisTemplate.class)
-    @ConditionalOnMissingBean(TokenStore.class)
-    public TokenStore redisTokenStore(StringRedisTemplate redisTemplate) {
-        return new RedisTokenStore(redisTemplate, securityProperties.getHeaderName());
-    }
-
-    /**
-     * 内存 TokenStore（无 Redis 时兜底）
+     * 内存 TokenStore
      */
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)

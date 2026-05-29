@@ -1,17 +1,15 @@
 package com.snowdrift.framework.security.spring.store;
 
-import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
-import com.snowdrift.framework.common.util.DesensitizeUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
+import com.snowdrift.framework.security.store.TokenStore;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 基于内存的 {@link TokenStore} 默认实现
  * <p>
- * 使用 Caffeine Cache 存储 Token 映射，自动过期 + 最大容量保护。
+ * 使用 ConcurrentHashMap 存储 Token 映射，get 时惰性检查过期。
  * 生产环境建议启用 Redis（引入 {@code spring-boot-starter-data-redis} 即可自动切换）。
  * </p>
  *
@@ -22,39 +20,40 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class InMemoryTokenStore implements TokenStore {
 
-    private static final int MAX_SIZE = 10000;
-
     private final long defaultTimeoutSeconds;
-    private final Cache<String, SecurityContext> cache;
+    private final ConcurrentHashMap<String, TokenEntry> map = new ConcurrentHashMap<>();
 
     public InMemoryTokenStore(long defaultTimeoutSeconds) {
         this.defaultTimeoutSeconds = defaultTimeoutSeconds;
-        this.cache = Caffeine.newBuilder()
-                .maximumSize(MAX_SIZE)
-                .expireAfterWrite(defaultTimeoutSeconds, TimeUnit.SECONDS)
-                .build();
     }
 
     @Override
     public void put(String token, SecurityContext context, long timeout) {
         long ttl = timeout > 0 ? timeout : defaultTimeoutSeconds;
-        cache.policy().expireVariably()
-                .ifPresent(p -> p.put(token, context, ttl, TimeUnit.SECONDS));
-        log.trace("内存 TokenStore 写入: token={}, expireIn={}s", mask(token), ttl);
+        long expireAt = System.currentTimeMillis() + ttl * 1000;
+        map.put(token, new TokenEntry(context, expireAt));
+        log.trace("内存 TokenStore 写入: token={}, expireIn={}s", token, ttl);
     }
 
     @Override
     public SecurityContext get(String token) {
-        return cache.getIfPresent(token);
+        TokenEntry entry = map.get(token);
+        if (entry == null) {
+            return null;
+        }
+        if (entry.expireAt < System.currentTimeMillis()) {
+            map.remove(token);
+            return null;
+        }
+        return entry.context;
     }
 
     @Override
     public void remove(String token) {
-        cache.invalidate(token);
-        log.trace("内存 TokenStore 移除: token={}", mask(token));
+        map.remove(token);
+        log.trace("内存 TokenStore 移除: token={}", token);
     }
 
-    private String mask(String token) {
-        return DesensitizeUtil.process(token, "(?<=.{8}).+", "***");
+    private record TokenEntry(SecurityContext context, long expireAt) {
     }
 }

@@ -1,7 +1,9 @@
 package com.snowdrift.framework.security.spring.util;
 
 import com.snowdrift.framework.context.security.SecurityContext;
+import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -25,12 +27,12 @@ public final class SpringSecurityHelper {
      * 确保 @PreAuthorize 注解能在当前请求中生效
      */
     public static void setSpringSecurityAuthentication(SecurityContext sc) {
-        List<org.springframework.security.core.GrantedAuthority> authorities = new ArrayList<>();
-        if (sc.getRoleKeys() != null) {
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        if (CollectionUtils.isNotEmpty(sc.getRoleKeys())) {
             sc.getRoleKeys().forEach(role ->
                     authorities.add(new SimpleGrantedAuthority("ROLE_" + role)));
         }
-        if (sc.getPermissions() != null) {
+        if (CollectionUtils.isNotEmpty(sc.getPermissions())) {
             sc.getPermissions().forEach(perm ->
                     authorities.add(new SimpleGrantedAuthority(perm)));
         }

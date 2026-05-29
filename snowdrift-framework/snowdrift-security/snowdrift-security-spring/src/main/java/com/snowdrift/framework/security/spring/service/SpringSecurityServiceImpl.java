@@ -5,14 +5,14 @@ import com.snowdrift.framework.security.exception.SecurityException;
 import com.snowdrift.framework.security.model.TokenInfo;
 import com.snowdrift.framework.security.service.ISecurityService;
 import com.snowdrift.framework.security.spring.properties.SpringSecurityProperties;
-import com.snowdrift.framework.security.spring.filter.SecurityContextFilter;
-import com.snowdrift.framework.security.spring.store.TokenStore;
 import com.snowdrift.framework.security.spring.util.SpringSecurityHelper;
+import com.snowdrift.framework.security.store.TokenStore;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 
 /**
@@ -54,7 +54,13 @@ public class SpringSecurityServiceImpl implements ISecurityService {
             throw new SecurityException("security.context.null");
         }
         String tokenValue = UUID.randomUUID().toString().replace("-", "");
-
+        // 存储token信息
+        Map<String, Object> attributes = context.getAttributes();
+        if (attributes == null) {
+            attributes = new HashMap<>();
+            context.setAttributes(attributes);
+        }
+        attributes.put("token", tokenValue);
         tokenStore.put(tokenValue, context, securityProperties.getTimeout());
         SpringSecurityHelper.setSpringSecurityAuthentication(context);
 
@@ -68,8 +74,8 @@ public class SpringSecurityServiceImpl implements ISecurityService {
 
     @Override
     public boolean isAuthenticated() {
-        return SecurityContextHolder.getContext().getAuthentication() != null
-                && SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication != null && authentication.isAuthenticated();
     }
 
     @Override
@@ -81,13 +87,12 @@ public class SpringSecurityServiceImpl implements ISecurityService {
 
     @Override
     public SecurityContext getContext() {
-        org.springframework.security.core.Authentication auth =
-                SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
             return null;
         }
         // SecurityContext 作为 details 存储在 Authentication 中（由 SecurityContextFilter 设置）
-        Object details = auth.getDetails();
+        Object details = authentication.getDetails();
         if (details instanceof SecurityContext sc) {
             return sc;
         }
@@ -96,37 +101,36 @@ public class SpringSecurityServiceImpl implements ISecurityService {
 
     @Override
     public void logout() {
-        ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-        if (attrs != null) {
-            String token = (String) attrs.getRequest().getAttribute(SecurityContextFilter.TOKEN_ATTRIBUTE);
-            if (token != null) {
-                tokenStore.remove(token);
+        SecurityContext context = getContext();
+        if (context != null) {
+            Map<String, Object> attributes = context.getAttributes();
+            if (attributes != null) {
+                Object token = attributes.get("token");
+                if (token != null) {
+                    tokenStore.remove(token.toString());
+                }
             }
         }
-        SecurityContextHolder.clearContext();
-        com.snowdrift.framework.context.security.SecurityContextHolder.clear();
     }
 
     @Override
     public boolean hasRole(String role) {
         String roleAuthority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
-        org.springframework.security.core.Authentication auth =
-                SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
             return false;
         }
-        return auth.getAuthorities().stream()
+        return authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals(roleAuthority));
     }
 
     @Override
     public boolean hasPermission(String permission) {
-        org.springframework.security.core.Authentication auth =
-                SecurityContextHolder.getContext().getAuthentication();
-        if (auth == null) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null) {
             return false;
         }
-        return auth.getAuthorities().stream()
+        return authentication.getAuthorities().stream()
                 .anyMatch(a -> a.getAuthority().equals(permission));
     }
 
