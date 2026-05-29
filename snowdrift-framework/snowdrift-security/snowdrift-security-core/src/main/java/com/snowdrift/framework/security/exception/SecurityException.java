@@ -20,5 +20,4 @@ public class SecurityException extends BizException {
     public SecurityException(String message, Object[] args) {
         super(message, args);
     }
-
 }

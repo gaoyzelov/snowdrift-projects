@@ -4,8 +4,8 @@ import com.snowdrift.framework.common.util.DesensitizeUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.security.properties.SecurityProperties;
+import com.snowdrift.framework.security.spring.store.TokenStore;
 import com.snowdrift.framework.security.spring.util.SpringSecurityHelper;
-import com.snowdrift.framework.security.store.TokenStore;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -77,9 +77,9 @@ public class SecurityContextFilter extends OncePerRequestFilter {
 
             // 5. 构建 Spring Security 的 Authentication（供 @PreAuthorize 等注解鉴权使用）
             SpringSecurityHelper.setSpringSecurityAuthentication(sc);
-        } catch (Exception e) {
+        } catch (Exception e){
             log.error("SecurityContextFilter 执行异常: {}", e.getMessage(), e);
-            throw new SecurityException(e);
+            throw e;
         }
         try {
             filterChain.doFilter(request, response);
@@ -111,7 +111,7 @@ public class SecurityContextFilter extends OncePerRequestFilter {
      */
     private String extractToken(HttpServletRequest request) {
         String header = request.getHeader(securityProperties.getHeaderName());
-        if (org.apache.commons.lang3.StringUtils.isBlank(header)) {
+        if (StringUtils.isBlank(header)) {
             return null;
         }
         String prefix = securityProperties.getPrefix();

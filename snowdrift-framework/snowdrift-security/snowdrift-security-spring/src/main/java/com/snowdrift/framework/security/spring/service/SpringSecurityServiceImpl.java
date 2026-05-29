@@ -6,7 +6,7 @@ import com.snowdrift.framework.security.model.TokenInfo;
 import com.snowdrift.framework.security.service.ISecurityService;
 import com.snowdrift.framework.security.spring.properties.SpringSecurityProperties;
 import com.snowdrift.framework.security.spring.util.SpringSecurityHelper;
-import com.snowdrift.framework.security.store.TokenStore;
+import com.snowdrift.framework.security.spring.store.TokenStore;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;

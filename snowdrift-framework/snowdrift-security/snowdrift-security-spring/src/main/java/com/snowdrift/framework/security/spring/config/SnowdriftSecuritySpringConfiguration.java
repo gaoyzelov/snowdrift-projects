@@ -7,7 +7,7 @@ import com.snowdrift.framework.security.spring.handler.SpringSecurityExceptionHa
 import com.snowdrift.framework.security.spring.properties.SpringSecurityProperties;
 import com.snowdrift.framework.security.spring.service.SpringSecurityServiceImpl;
 import com.snowdrift.framework.security.spring.store.InMemoryTokenStore;
-import com.snowdrift.framework.security.store.TokenStore;
+import com.snowdrift.framework.security.spring.store.TokenStore;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;

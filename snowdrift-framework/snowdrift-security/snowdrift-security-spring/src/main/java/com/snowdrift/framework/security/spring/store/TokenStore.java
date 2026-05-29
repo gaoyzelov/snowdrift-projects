@@ -1,4 +1,4 @@
-package com.snowdrift.framework.security.store;
+package com.snowdrift.framework.security.spring.store;
 
 import com.snowdrift.framework.context.security.SecurityContext;
 

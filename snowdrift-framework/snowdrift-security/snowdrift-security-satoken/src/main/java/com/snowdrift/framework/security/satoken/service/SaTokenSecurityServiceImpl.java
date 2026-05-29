@@ -50,7 +50,7 @@ public class SaTokenSecurityServiceImpl implements ISecurityService {
                 .tokenValue(tokenValue)
                 .tokenName(securityProperties.getHeaderName())
                 .prefix(securityProperties.getPrefix())
-                .expiresIn(StpUtil.getTokenTimeout())
+                .expiresIn(securityProperties.getTimeout())
                 .build();
     }
 
@@ -69,7 +69,7 @@ public class SaTokenSecurityServiceImpl implements ISecurityService {
         try {
             return StpUtil.getTokenSession().getModel(CONTEXT_KEY, SecurityContext.class, null);
         } catch (Exception e) {
-            log.warn("获取安全上下文失败: {}", e.getMessage());
+            log.warn("获取安全上下文失败: {}", e.getMessage(), e);
             return null;
         }
     }
