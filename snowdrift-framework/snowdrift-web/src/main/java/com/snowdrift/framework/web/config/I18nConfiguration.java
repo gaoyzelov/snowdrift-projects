@@ -1,12 +1,12 @@
 package com.snowdrift.framework.web.config;
 
+import com.snowdrift.framework.web.i18n.I18nMessageSource;
 import com.snowdrift.framework.web.i18n.I18nMessageSourceImpl;
 import com.snowdrift.framework.web.i18n.I18nUtil;
-import com.snowdrift.framework.web.i18n.I18nMessageSource;
 import com.snowdrift.framework.web.interceptor.I18nInterceptor;
 import com.snowdrift.framework.web.properties.I18nProperties;
 import jakarta.annotation.Resource;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
@@ -25,7 +25,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @description 国际化配置类
  * @since 1.0.0
  */
-@AutoConfigureBefore(WebMvcAutoConfiguration.class)
+@AutoConfiguration(before = WebMvcAutoConfiguration.class)
 @ConditionalOnProperty(prefix = "snowdrift.i18n", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(I18nProperties.class)
 public class I18nConfiguration implements WebMvcConfigurer {

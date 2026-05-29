@@ -9,10 +9,6 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-cache</artifactId>
+    <artifactId>snowdrift-plugin</artifactId>
     <packaging>pom</packaging>
-    <description>Snowdrift Cache Module</description>
-    <modules>
-        <module>snowdrift-cache-redis</module>
-    </modules>
 </project>

@@ -187,7 +187,7 @@ public final class IpUtil {
         AssertUtil.notBlank(ip, "IP地址不能为空");
         try {
             InetAddress address = InetAddress.getByName(ip);
-            return address.isSiteLocalAddress();
+            return address.isLoopbackAddress() || address.isSiteLocalAddress() || address.isLinkLocalAddress();
         } catch (UnknownHostException e) {
             log.error("IP地址有误：{}", ip, e);
             throw new BizException("IP地址有误");

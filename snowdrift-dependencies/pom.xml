@@ -299,6 +299,16 @@
                 <artifactId>snowdrift-security-core</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-security-satoken</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-security-spring</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

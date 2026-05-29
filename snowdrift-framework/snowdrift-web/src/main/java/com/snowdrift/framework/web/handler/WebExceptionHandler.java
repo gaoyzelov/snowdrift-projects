@@ -43,8 +43,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(BizException.class)
     public Result<Void> handleBizException(BizException e) {
         log.warn("业务异常: {}", e.getMessage(), e);
-        // 尝试使用国际化消息（如果 msg 是国际化 key）
-        String message = I18nUtil.getMessage(e.getMessage(),e.getArgs());
+        String message = I18nUtil.getMessage(e.getRawMessage(), e.getArgs());
         return Result.err(e.getCode(), message);
     }
 

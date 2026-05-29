@@ -70,4 +70,8 @@ public class BizException extends RuntimeException {
         }
         return super.getMessage();
     }
+
+    public String getRawMessage() {
+        return super.getMessage();
+    }
 }

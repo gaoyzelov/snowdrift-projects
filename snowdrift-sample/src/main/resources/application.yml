@@ -20,14 +20,14 @@ snowdrift:
     configs:
       local:
         oss-type: local
-        enabled: false
+        enabled: true
         endpoint: D:/data/snowdrift-oss  # 本地存储路径（Windows）
         # endpoint: /opt/data/snowdrift-oss/sample  # 本地存储路径（Linux）
         domain: http://localhost:8081/files  # 访问域名
         path-prefix: sample/
       minio:
         oss-type: minio
-        enabled: true
+        enabled: false
         endpoint: http://192.168.1.220:9002  # MinIO 服务地址
         access-key: minioadmin           # MinIO Access Key
         secret-key: minioadmin           # MinIO Secret Key
@@ -74,6 +74,10 @@ snowdrift:
         # location: file:/opt/data/snowdrift-oss  # Linux 路径
         cache-period: 3600
         use-cache-control: true
+  security:
+    sa-token:
+      enabled: true
+      header-name: Authorization
 
 # 日志配置
 logging:

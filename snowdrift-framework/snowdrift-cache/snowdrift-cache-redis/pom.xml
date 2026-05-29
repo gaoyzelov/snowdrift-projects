@@ -5,14 +5,10 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.snowdrift</groupId>
-        <artifactId>snowdrift-framework</artifactId>
+        <artifactId>snowdrift-cache</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-cache</artifactId>
-    <packaging>pom</packaging>
-    <description>Snowdrift Cache Module</description>
-    <modules>
-        <module>snowdrift-cache-redis</module>
-    </modules>
+    <artifactId>snowdrift-cache-redis</artifactId>
+
 </project>

@@ -30,6 +30,10 @@
         </dependency>
         <dependency>
             <groupId>com.snowdrift</groupId>
+            <artifactId>snowdrift-security-satoken</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-oss-local</artifactId>
         </dependency>
         <!-- MinIO OSS 支持 -->
