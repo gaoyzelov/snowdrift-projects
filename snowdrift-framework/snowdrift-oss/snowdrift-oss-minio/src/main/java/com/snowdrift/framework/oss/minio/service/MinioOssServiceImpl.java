@@ -7,6 +7,7 @@ import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import io.minio.*;
+import io.minio.errors.ErrorResponseException;
 import io.minio.messages.DeleteRequest;
 import io.minio.messages.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
@@ -243,9 +244,15 @@ public class MinioOssServiceImpl extends AbstractOssService {
                             .build()
             );
             return true;
+        } catch (ErrorResponseException e) {
+            // 404 表示文件不存在，其余为服务端异常
+            if ("NoSuchKey".equals(e.errorResponse().code()) ||
+                    "NotFound".equals(e.errorResponse().code())) {
+                return false;
+            }
+            throw new OssException("oss.exists.check.failed", new Object[]{objectKey}, e);
         } catch (Exception e) {
-            log.error("文件存在检查失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            return false;
+            throw new OssException("oss.exists.check.failed", new Object[]{objectKey}, e);
         }
     }
 

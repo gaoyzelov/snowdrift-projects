@@ -180,9 +180,14 @@ public final class SnowflakeUtil {
     }
 
     /**
-     * 获取实例
+     * 获取实例（使用默认 workerId=0, datacenterId=0）
+     * <p>
+     * <b>注意：</b>多节点/多JVM部署时，使用此方法创建的实例会产生重复ID。
+     * 分布式环境下请使用 {@link #getInstance(long, long)} 为每个节点显式指定
+     * 不同的 workerId 和 datacenterId。
+     * </p>
      *
-     * @return SnowflakeIdWorker
+     * @return SnowflakeUtil 实例
      */
     public static SnowflakeUtil getInstance() {
         return new SnowflakeUtil();

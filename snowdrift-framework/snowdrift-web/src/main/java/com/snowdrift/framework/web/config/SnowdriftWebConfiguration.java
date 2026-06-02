@@ -2,6 +2,7 @@ package com.snowdrift.framework.web.config;
 
 import com.snowdrift.framework.common.util.DateTimeUtil;
 import com.snowdrift.framework.web.handler.WebExceptionHandler;
+import com.snowdrift.framework.web.properties.CorsProperties;
 import com.snowdrift.framework.web.properties.ResourceProperties;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +14,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
-import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -29,23 +29,31 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @Slf4j
 @Configuration
 @ServletComponentScan(basePackages = "com.snowdrift.framework.web.filter")
-@EnableConfigurationProperties(ResourceProperties.class)
+@EnableConfigurationProperties({ResourceProperties.class, CorsProperties.class})
 public class SnowdriftWebConfiguration implements WebMvcConfigurer {
 
     @Resource
     private ResourceProperties resourceProperties;
 
+    @Resource
+    private CorsProperties corsProperties;
+
     /**
      * CORS 跨域配置
+     * <p>
+     * 通过 {@code snowdrift.web.cors.enabled=true} 启用，默认关闭。
+     * 生产环境请显式配置允许的源、方法和请求头，避免使用通配符 *。
+     * </p>
      */
     @Override
+    @ConditionalOnProperty(prefix = "snowdrift.web.cors", name = "enabled", havingValue = "true")
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                .allowedOriginPatterns(CorsConfiguration.ALL)
-                .allowedMethods(CorsConfiguration.ALL)
-                .allowedHeaders(CorsConfiguration.ALL)
-                .allowCredentials(true)
-                .maxAge(3600);
+        registry.addMapping(corsProperties.getPath())
+                .allowedOriginPatterns(corsProperties.getAllowedOrigins().toArray(String[]::new))
+                .allowedMethods(corsProperties.getAllowedMethods().toArray(String[]::new))
+                .allowedHeaders(corsProperties.getAllowedHeaders().toArray(String[]::new))
+                .allowCredentials(corsProperties.isAllowCredentials())
+                .maxAge(corsProperties.getMaxAge());
     }
 
     /**

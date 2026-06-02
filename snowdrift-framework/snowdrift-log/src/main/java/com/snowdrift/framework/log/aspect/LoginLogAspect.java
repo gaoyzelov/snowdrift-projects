@@ -2,6 +2,7 @@ package com.snowdrift.framework.log.aspect;
 
 import com.alibaba.fastjson2.JSONObject;
 import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.common.result.Result;
 import com.snowdrift.framework.common.result.ResultCode;
 import com.snowdrift.framework.context.http.HttpContext;
 import com.snowdrift.framework.context.http.HttpContextHolder;
@@ -41,7 +42,7 @@ public class LoginLogAspect {
     @AfterReturning(pointcut = "@annotation(loginLogAnno)", returning = "result")
     public void afterReturning(JoinPoint joinPoint, LoginLog loginLogAnno, Object result) {
         try {
-            handleLoginLog(joinPoint, loginLogAnno, null);
+            handleLoginLog(joinPoint, loginLogAnno, null, result);
         } catch (Exception e) {
             log.error("记录登录日志异常", e);
         }
@@ -53,7 +54,7 @@ public class LoginLogAspect {
     @AfterThrowing(pointcut = "@annotation(loginLogAnno)", throwing = "exception")
     public void afterThrowing(JoinPoint joinPoint, LoginLog loginLogAnno, Exception exception) {
         try {
-            handleLoginLog(joinPoint, loginLogAnno, exception);
+            handleLoginLog(joinPoint, loginLogAnno, exception, null);
         } catch (Exception e) {
             log.error("记录登录日志异常", e);
         }
@@ -65,8 +66,9 @@ public class LoginLogAspect {
      * @param joinPoint    切点
      * @param loginLogAnno 登录注解
      * @param exception    异常信息
+     * @param result       登录方法返回值
      */
-    private void handleLoginLog(JoinPoint joinPoint, LoginLog loginLogAnno, Exception exception) {
+    private void handleLoginLog(JoinPoint joinPoint, LoginLog loginLogAnno, Exception exception, Object result) {
         if (loginLogAnno == null || !loginLogAnno.enable()) {
             return;
         }
@@ -85,6 +87,10 @@ public class LoginLogAspect {
         if (Objects.nonNull(exception)) {
             loginLogDTO.setStatus(ResultCode.ERR.code());
             loginLogDTO.setMsg(exception.getMessage());
+        } else if (result instanceof Result<?> r && ResultCode.OK.code() != r.getCode()) {
+            // 方法正常返回但业务结果为失败时，记录为登录失败
+            loginLogDTO.setStatus(r.getCode());
+            loginLogDTO.setMsg(r.getMsg());
         } else {
             loginLogDTO.setStatus(ResultCode.OK.code());
             loginLogDTO.setMsg("登录成功");

@@ -23,7 +23,7 @@ import java.util.HexFormat;
 import java.util.List;
 
 /**
- * CryptoUtil
+ * EncryptUtil
  *
  * @author 83674
  * @date 2026/3/27-13:05

@@ -1,5 +1,7 @@
 package com.snowdrift.framework.security.spring.config;
 
+import com.snowdrift.framework.common.result.Result;
+import com.snowdrift.framework.common.util.ServletUtil;
 import com.snowdrift.framework.security.service.ISecurityService;
 import com.snowdrift.framework.security.spring.auth.AnonymousAccessScanner;
 import com.snowdrift.framework.security.spring.filter.SecurityContextFilter;
@@ -8,7 +10,8 @@ import com.snowdrift.framework.security.spring.properties.SpringSecurityProperti
 import com.snowdrift.framework.security.spring.service.SpringSecurityServiceImpl;
 import com.snowdrift.framework.security.spring.store.InMemoryTokenStore;
 import com.snowdrift.framework.security.spring.store.TokenStore;
-import jakarta.annotation.PostConstruct;
+import com.snowdrift.framework.web.i18n.I18nUtil;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -23,7 +26,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.util.ClassUtils;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.util.List;
@@ -43,7 +45,8 @@ import java.util.List;
 @Configuration
 @EnableMethodSecurity
 @EnableConfigurationProperties(SpringSecurityProperties.class)
-@ConditionalOnProperty(prefix = "snowdrift.security.spring", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "snowdrift.security.spring", name = "enabled", havingValue = "true")
+@ConditionalOnMissingBean(type = "cn.dev33.satoken.config.SaTokenConfig")
 public class SnowdriftSecuritySpringConfiguration {
 
     private final SpringSecurityProperties securityProperties;
@@ -52,19 +55,12 @@ public class SnowdriftSecuritySpringConfiguration {
         this.securityProperties = securityProperties;
     }
 
-    @PostConstruct
-    void checkConflict() {
-        if (ClassUtils.isPresent("com.snowdrift.framework.security.satoken.properties.SaTokenSecurityProperties", null)) {
-            log.warn("[Snowdrift Security] 检测到 snowdrift-security-satoken 和 snowdrift-security-spring 同时存在，" +
-                    "请通过 snowdrift.security.sa-token.enabled 或 snowdrift.security.spring.enabled 禁用其中一个模块");
-        }
-    }
-
     /**
      * 配置 Spring Security 过滤器链
      * <p>
      * 禁用 CSRF（REST API 场景），会话管理设为无状态，
      * 排除路径放行，其余请求由 {@link SecurityContextFilter} 桥接认证。
+     * 认证/鉴权异常返回 JSON 格式的 {@link Result} 响应（401 / 403）。
      * </p>
      */
     @Bean
@@ -90,6 +86,16 @@ public class SnowdriftSecuritySpringConfiguration {
                     auth.anyRequest().authenticated();
                 })
                 .addFilterBefore(securityContextFilter, UsernamePasswordAuthenticationFilter.class)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint((request, response, e) ->
+                                ServletUtil.writeJsonResponse(response, HttpServletResponse.SC_UNAUTHORIZED,
+                                        Result.err(HttpServletResponse.SC_UNAUTHORIZED,
+                                                I18nUtil.getMessage("security.not.authenticated"))))
+                        .accessDeniedHandler((request, response, e) ->
+                                ServletUtil.writeJsonResponse(response, HttpServletResponse.SC_FORBIDDEN,
+                                        Result.err(HttpServletResponse.SC_FORBIDDEN,
+                                                I18nUtil.getMessage("security.permission.denied"))))
+                )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable);

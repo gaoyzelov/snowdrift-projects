@@ -65,10 +65,10 @@ public class ApiLogAspect {
     public Object around(ProceedingJoinPoint joinPoint, ApiLog apiLogAnno) throws Throwable {
         StopWatch stopWatch = StopWatch.createStarted();
         Object result = null;
-        Exception exception = null;
+        Throwable exception = null;
         try {
             result = joinPoint.proceed();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             exception = e;
             throw e;
         } finally {
@@ -91,7 +91,7 @@ public class ApiLogAspect {
      * @param exception  异常
      * @param stopWatch  计时器
      */
-    private void handleApiLog(JoinPoint joinPoint, ApiLog apiLogAnno, Object result, Exception exception, StopWatch stopWatch) {
+    private void handleApiLog(JoinPoint joinPoint, ApiLog apiLogAnno, Object result, Throwable exception, StopWatch stopWatch) {
         if (apiLogAnno == null || !apiLogAnno.enable()) {
             return;
         }

@@ -6,7 +6,14 @@ import com.snowdrift.framework.context.security.SecurityContext;
  * Token 存储抽象接口
  * <p>
  * 屏蔽底层存储差异（内存 / Redis），提供统一的 Token ↔ SecurityContext 映射存取能力。
- * 存在 {@code StringRedisTemplate} Bean 时自动使用 Redis 实现，否则降级为内存存储。
+ * </p>
+ * <p>
+ * <b>当前实现：</b>仅提供 {@link InMemoryTokenStore}（基于 ConcurrentHashMap），适用于单节点开发调试。
+ * <br>
+ * <b>待实现：</b>RedisTokenStore，分布式环境下通过 {@code StringRedisTemplate} 存取 Token。
+ * <br>
+ * <b>注意：</b>Sa-Token 模块（snowdrift-security-satoken）自带 Redis 集成插件，
+ * 引入 {@code sa-token-dao-redis-jackson} 依赖即可启用，无需此接口。
  * </p>
  *
  * @author 83674

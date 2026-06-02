@@ -98,7 +98,7 @@ public final class AssertUtil {
     }
 
     /**
-     * 断言条件为假
+     * 断言条件为真
      *
      * @param predicate 断言条件
      * @param message   错误信息

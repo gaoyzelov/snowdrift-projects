@@ -309,6 +309,18 @@
                 <artifactId>snowdrift-security-spring</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- 缓存模块 -->
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-cache-redis</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <!-- 插件模块 -->
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-plugin</artifactId>
+                <version>${revision}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

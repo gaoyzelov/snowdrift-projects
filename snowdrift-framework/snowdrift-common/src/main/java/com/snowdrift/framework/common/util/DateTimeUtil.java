@@ -299,7 +299,7 @@ public final class DateTimeUtil {
      */
     public static String getDateString(LocalDate date, String format) {
         AssertUtil.notNull(date, "日期不能为空");
-        AssertUtil.notNull(format, "格式不能为空");
+        AssertUtil.notBlank(format, "格式不能为空");
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(format);
         return date.format(formatter);
     }
@@ -321,7 +321,7 @@ public final class DateTimeUtil {
      * @param pattern 日期格式图案
      */
     public static LocalDate parseLocalDate(String dateStr, String pattern) {
-        AssertUtil.notNull(dateStr, "日期不能为空");
+        AssertUtil.notBlank(dateStr, "日期不能为空");
         AssertUtil.notNull(pattern, "格式不能为空");
         try {
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern);
@@ -339,7 +339,7 @@ public final class DateTimeUtil {
      * @param formatter 预定义的 DateTimeFormatter
      */
     public static LocalDate parseLocalDate(String dateStr, DateTimeFormatter formatter) {
-        AssertUtil.notNull(dateStr, "日期不能为空");
+        AssertUtil.notBlank(dateStr, "日期不能为空");
         AssertUtil.notNull(formatter, "格式化器不能为空");
         try {
             return LocalDate.parse(dateStr, formatter);
@@ -355,7 +355,7 @@ public final class DateTimeUtil {
      * @param dateStr 日期字符串
      */
     public static LocalDate parseLocalDate(String dateStr) {
-        AssertUtil.notNull(dateStr, "日期不能为空");
+        AssertUtil.notBlank(dateStr, "日期不能为空");
         return parseLocalDate(dateStr, DATE_FORMATTER);
     }
 
@@ -377,6 +377,7 @@ public final class DateTimeUtil {
      * @param end   结束日期
      */
     public static boolean isBetween(LocalDate date, LocalDate start, LocalDate end) {
+        AssertUtil.notNull(date, "日期不能为空");
         AssertUtil.notNull(start, "开始日期不能为空");
         AssertUtil.notNull(end, "结束日期不能为空");
         return !date.isBefore(start) && !date.isAfter(end);

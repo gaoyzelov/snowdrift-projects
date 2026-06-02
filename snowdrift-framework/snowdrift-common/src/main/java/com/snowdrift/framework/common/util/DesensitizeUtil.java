@@ -45,7 +45,7 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(password)) {
             return StrConst.EMPTY;
         }
-        return RegExUtils.replaceAll(password, "(\\w+)", "**********");
+        return RegExUtils.replaceAll(password, "(\\S+)", "**********");
     }
 
     /**
@@ -138,7 +138,12 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(address)) {
             return StrConst.EMPTY;
         }
-        return address.substring(0, Math.min(address.length(), 6)) + "********";
+        int keepLen = Math.min(address.length(), 6);
+        if (keepLen <= 3) {
+            // 地址过短，全部掩码
+            return "********";
+        }
+        return address.substring(0, keepLen) + "********";
     }
 
     /**

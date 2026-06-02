@@ -68,7 +68,7 @@ public class SaTokenSecurityServiceImpl implements ISecurityService {
     public SecurityContext getContext() {
         try {
             return StpUtil.getTokenSession().getModel(CONTEXT_KEY, SecurityContext.class, null);
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn("获取安全上下文失败: {}", e.getMessage(), e);
             return null;
         }

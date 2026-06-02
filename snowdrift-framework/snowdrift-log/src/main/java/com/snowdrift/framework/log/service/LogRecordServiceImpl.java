@@ -8,6 +8,7 @@ import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.log.dto.OperateLogCreateDTO;
 import com.snowdrift.framework.log.util.LogTraceUtil;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
 import java.util.Objects;
@@ -20,6 +21,7 @@ import java.util.Objects;
  * @description 操作日志记录服务实现类，需启用{@link com.mzt.logapi.starter.annotation.EnableLogRecord}
  * @since 1.0.0
  */
+@Slf4j
 public class LogRecordServiceImpl implements ILogRecordService {
 
     @Resource
@@ -29,7 +31,7 @@ public class LogRecordServiceImpl implements ILogRecordService {
     public void record(LogRecord logRecord) {
         OperateLogCreateDTO operateLogDTO = OperateLogCreateDTO.builder()
                 .traceId(LogTraceUtil.getTraceId())
-                .bizId(Long.parseLong(logRecord.getBizNo()))
+                .bizId(parseBizId(logRecord.getBizNo()))
                 .bizModule(logRecord.getType())
                 .bizType(logRecord.getSubType())
                 .content(logRecord.getAction())
@@ -53,5 +55,17 @@ public class LogRecordServiceImpl implements ILogRecordService {
     @Override
     public List<LogRecord> queryLogByBizNo(String bizNo, String type, String subType) {
         throw new UnsupportedOperationException();
+    }
+
+    /**
+     * 安全解析业务 ID
+     */
+    private static Long parseBizId(String bizNo) {
+        try {
+            return Long.parseLong(bizNo);
+        } catch (NumberFormatException e) {
+            log.warn("业务号无法解析为 Long: {}", bizNo);
+            return null;
+        }
     }
 }

@@ -1,10 +1,14 @@
 package com.snowdrift.framework.common.util;
 
+import com.alibaba.fastjson2.JSON;
 import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.common.result.Result;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;
 
-
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -62,5 +66,20 @@ public final class ServletUtil {
             params.put(entry.getKey(), StringUtils.join(entry.getValue(), StrConst.COMMA));
         }
         return params;
+    }
+
+    /**
+     * 写入 JSON 响应
+     *
+     * @param response 响应对象
+     * @param status   HTTP 状态码
+     * @param result   响应体
+     * @throws IOException IO异常
+     */
+    public static void writeJsonResponse(HttpServletResponse response, int status, Result<?> result) throws IOException {
+        response.setStatus(status);
+        response.setContentType("application/json");
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.getWriter().write(JSON.toJSONString(result));
     }
 }

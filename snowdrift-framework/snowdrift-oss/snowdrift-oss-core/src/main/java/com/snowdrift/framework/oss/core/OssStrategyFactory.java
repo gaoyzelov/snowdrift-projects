@@ -1,9 +1,14 @@
 package com.snowdrift.framework.oss.core;
 
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
+import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.exception.OssException;
+import com.snowdrift.framework.oss.properties.OssInstanceProperties;
+import com.snowdrift.framework.oss.properties.OssProperties;
+import com.snowdrift.framework.oss.util.OssConfigConverter;
 import jakarta.annotation.PreDestroy;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.MapUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.Map;
@@ -182,6 +187,38 @@ public class OssStrategyFactory {
         }
     }
     
+    /**
+     * 从 OssProperties 批量注册指定类型的 OSS 实例
+     * <p>
+     * 遍历配置中的所有实例，过滤出匹配目标类型的启用配置，
+     * 转换为 OssConfigDTO 后通过 ServiceCreator 创建并注册到工厂。
+     * 各存储类型实现模块（MinIO、阿里云等）在 @PostConstruct 中调用此方法即可。
+     * </p>
+     *
+     * @param ossProperties   OSS 配置（YAML 或数据库来源）
+     * @param targetType      目标存储类型
+     * @param serviceCreator  Service 创建器
+     */
+    public void registerFromProperties(OssProperties ossProperties, OssTypeEnum targetType,
+                                        ServiceCreator serviceCreator) {
+        if (MapUtils.isEmpty(ossProperties.getConfigs())) {
+            log.debug("未配置 OSS 实例，跳过 {} 存储注册", targetType.getNote());
+            return;
+        }
+
+        ossProperties.getConfigs().forEach((configKey, props) -> {
+            if (targetType == props.getOssType() && props.getEnabled()) {
+                try {
+                    OssConfigDTO config = OssConfigConverter.fromProperties(props, configKey);
+                    register(configKey, serviceCreator.create(config));
+                    log.info("{} 存储实例注册成功: configKey={}", targetType.getNote(), configKey);
+                } catch (Exception e) {
+                    log.error("{} 存储实例注册失败: configKey={}", targetType.getNote(), configKey, e);
+                }
+            }
+        });
+    }
+
     /**
      * 重新加载配置（热更新）
      * <p>

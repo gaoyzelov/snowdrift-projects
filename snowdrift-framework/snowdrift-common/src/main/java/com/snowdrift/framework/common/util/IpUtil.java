@@ -25,8 +25,6 @@ import java.util.List;
 @Slf4j
 public final class IpUtil {
 
-    private static final String UNKNOWN = "unknown";
-
     /**
      * IP 查询器，启动加载到内存中
      */
@@ -52,14 +50,14 @@ public final class IpUtil {
      */
     public static String getIp(HttpServletRequest request) {
         if (request == null) {
-            return UNKNOWN;
+            return StrConst.UNKNOWN;
         }
         // 请求头
         String[] headers = {"X-Forwarded-For", "X-Real-IP", "Proxy-Client-IP", "WL-Proxy-Client-IP", "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR"};
         String ip;
         for (String header : headers) {
             ip = request.getHeader(header);
-            if (StringUtils.isNotBlank(ip) && !StringUtils.endsWithIgnoreCase(ip, UNKNOWN)) {
+            if (StringUtils.isNotBlank(ip) && !StringUtils.endsWithIgnoreCase(ip, StrConst.UNKNOWN)) {
                 return getMultistageReverseProxyIp(ip);
             }
         }
@@ -78,7 +76,7 @@ public final class IpUtil {
         if (StringUtils.isNotBlank(ip) && StringUtils.indexOf(ip, StrConst.COMMA) > 0) {
             String[] ips = StringUtils.split(ip, StrConst.COMMA);
             for (String subIp : ips) {
-                if (StringUtils.isNotBlank(subIp) && !StringUtils.endsWithIgnoreCase(subIp, UNKNOWN)) {
+                if (StringUtils.isNotBlank(subIp) && !StringUtils.endsWithIgnoreCase(subIp, StrConst.UNKNOWN)) {
                     ip = subIp;
                     break;
                 }

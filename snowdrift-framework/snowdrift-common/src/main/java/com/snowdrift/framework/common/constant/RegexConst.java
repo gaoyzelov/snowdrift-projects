@@ -12,7 +12,7 @@ public class RegexConst {
     // 地址
     public static final String URL = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
 
-    // 身份证好
+    // 身份证号
     public static final String CARD_NO = "^[1-9]\\d{5}(19|20)\\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\\d{3}[Xx\\d]$";
 
     // 移动电话

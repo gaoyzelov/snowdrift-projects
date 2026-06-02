@@ -18,7 +18,8 @@ import java.util.Locale;
  * @author 83674
  * @date 2026/5/9
  * @description 国际化语言拦截器
- *              优先级：请求头 > 参数 > 默认语言
+ *              优先级：URL 参数（默认 lang） > 默认语言
+ *              通过 LocaleContextHolder 设置当前请求的语言环境，在 afterCompletion 中清理
  * @since 1.0.0
  */
 @Slf4j
