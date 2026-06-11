@@ -4,6 +4,7 @@ import com.snowdrift.framework.common.constant.StrConst;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.Duration;
+import java.util.Objects;
 
 /**
  * 缓存服务抽象基类
@@ -19,14 +20,9 @@ import java.time.Duration;
 public abstract class AbstractCacheService implements ICacheService {
 
     /**
-     * 原始 key 前缀，子类构造器中赋值
+     * key 前缀（已含分隔符 ":"），通过 {@link #setKeyPrefix(String)} 赋值
      */
     protected String keyPrefix = StrConst.EMPTY;
-
-    /**
-     * 含分隔符的完整前缀（如 "cache:"），由 {@link #resolveKeyPrefix()} 计算
-     */
-    protected String resolvedPrefix = StrConst.EMPTY;
 
     /**
      * 默认 TTL，null 表示永不过期
@@ -48,22 +44,31 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     /**
-     * 拼接 key 前缀（使用 resolvedPrefix，含分隔符）
+     * 拼接 key 前缀
      */
     protected String buildKey(String key) {
-        return resolvedPrefix + key;
+        return keyPrefix + key;
     }
 
     /**
-     * 根据 keyPrefix 计算含分隔符的完整前缀，子类构造器中调用
+     * 设置 key 前缀，自动补充分隔符 ":"
+     *
+     * @param prefix 原始前缀
      */
-    protected void resolveKeyPrefix() {
-        if (StringUtils.isBlank(keyPrefix)) {
-            this.resolvedPrefix = StrConst.EMPTY;
-        } else {
-            this.resolvedPrefix = keyPrefix.endsWith(StrConst.COLON)
-                    ? keyPrefix
-                    : keyPrefix + StrConst.COLON;
+    protected void setKeyPrefix(String prefix) {
+        if (StringUtils.isNotBlank(prefix)) {
+            this.keyPrefix = prefix.endsWith(StrConst.COLON) ? prefix : prefix + StrConst.COLON;
+        }
+    }
+
+    /**
+     * 设置默认 TTL
+     *
+     * @param defaultTtl 默认过期时间
+     */
+    protected void setDefaultTtl(Duration defaultTtl) {
+        if (Objects.nonNull(defaultTtl)) {
+            this.defaultTtl = defaultTtl;
         }
     }
 

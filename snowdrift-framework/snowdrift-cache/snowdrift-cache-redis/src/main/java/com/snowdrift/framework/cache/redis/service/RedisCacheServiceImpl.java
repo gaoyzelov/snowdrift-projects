@@ -2,7 +2,6 @@ package com.snowdrift.framework.cache.redis.service;
 
 import com.snowdrift.framework.cache.AbstractCacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
-import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.util.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.Cursor;
@@ -12,7 +11,6 @@ import org.springframework.data.redis.core.ScanOptions;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -37,9 +35,8 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
         AssertUtil.notNull(redisTemplate, "cache.redis.template.required");
 
         this.redisTemplate = redisTemplate;
-        this.keyPrefix = Objects.toString(properties.getKeyPrefix(), StrConst.EMPTY);
-        this.defaultTtl = properties.getDefaultTtl();
-        resolveKeyPrefix();
+        setKeyPrefix(properties.getKeyPrefix());
+        setDefaultTtl(properties.getDefaultTtl());
     }
 
     // =================== ICacheService 实现 ===================
@@ -127,8 +124,8 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
             while (cursor.hasNext()) {
                 String key = cursor.next();
                 // 去掉 key 前缀
-                if (StringUtils.isNotBlank(resolvedPrefix) && key.startsWith(resolvedPrefix)) {
-                    result.add(key.substring(resolvedPrefix.length()));
+                if (StringUtils.isNotBlank(keyPrefix) && key.startsWith(keyPrefix)) {
+                    result.add(key.substring(keyPrefix.length()));
                 } else {
                     result.add(key);
                 }

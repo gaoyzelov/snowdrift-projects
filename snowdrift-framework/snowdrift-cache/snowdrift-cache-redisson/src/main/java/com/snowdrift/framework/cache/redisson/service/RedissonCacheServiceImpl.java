@@ -2,19 +2,15 @@ package com.snowdrift.framework.cache.redisson.service;
 
 import com.snowdrift.framework.cache.AbstractCacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
-import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.util.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RBucket;
-import org.redisson.api.RKeys;
 import org.redisson.api.RedissonClient;
+import org.redisson.api.options.KeysScanOptions;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 /**
  * Redisson 缓存实现
@@ -36,9 +32,8 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
         AssertUtil.notNull(redissonClient, "cache.redisson.client.required");
 
         this.redissonClient = redissonClient;
-        this.keyPrefix = Objects.toString(properties.getKeyPrefix(), StrConst.EMPTY);
-        this.defaultTtl = properties.getDefaultTtl();
-        resolveKeyPrefix();
+        setKeyPrefix(properties.getKeyPrefix());
+        setDefaultTtl(properties.getDefaultTtl());
     }
 
     // =================== ICacheService 实现 ===================
@@ -61,7 +56,7 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
         Duration effectiveTtl = effectiveTtl(ttl);
         RBucket<Object> bucket = redissonClient.getBucket(buildKey(key));
         if (effectiveTtl != null) {
-            bucket.set(value, effectiveTtl.toMillis(), TimeUnit.MILLISECONDS);
+            bucket.set(value, effectiveTtl);
         } else {
             bucket.set(value);
         }
@@ -74,9 +69,9 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
         Duration effectiveTtl = effectiveTtl(ttl);
         RBucket<Object> bucket = redissonClient.getBucket(buildKey(key));
         if (effectiveTtl != null) {
-            return bucket.trySet(value, effectiveTtl.toMillis(), TimeUnit.MILLISECONDS);
+            return bucket.setIfAbsent(value, effectiveTtl);
         }
-        return bucket.trySet(value);
+        return bucket.setIfAbsent(value);
     }
 
     @Override
@@ -114,18 +109,18 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
     public long getExpire(String key) {
         AssertUtil.notBlank(key, "cache.key.required");
         long remain = redissonClient.getBucket(buildKey(key)).remainTimeToLive();
-        return remain > 0 ? TimeUnit.MILLISECONDS.toSeconds(remain) : remain;
+        return remain > 0 ? Duration.ofMillis(remain).toSeconds() : remain;
     }
 
     @Override
     public Set<String> keys(String pattern) {
         AssertUtil.notBlank(pattern, "cache.pattern.required");
-        RKeys rKeys = redissonClient.getKeys();
-        Iterable<String> iterable = rKeys.getKeysByPattern(buildKey(pattern));
+        KeysScanOptions options = KeysScanOptions.defaults().pattern(buildKey(pattern));
+        Iterable<String> iterable = redissonClient.getKeys().getKeys(options);
         Set<String> result = new java.util.HashSet<>();
         for (String k : iterable) {
-            if (StringUtils.isNotBlank(resolvedPrefix) && k.startsWith(resolvedPrefix)) {
-                result.add(k.substring(resolvedPrefix.length()));
+            if (StringUtils.isNotBlank(keyPrefix) && k.startsWith(keyPrefix)) {
+                result.add(k.substring(keyPrefix.length()));
             } else {
                 result.add(k);
             }
