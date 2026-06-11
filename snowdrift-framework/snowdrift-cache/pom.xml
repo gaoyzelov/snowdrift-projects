@@ -13,6 +13,9 @@
     <packaging>pom</packaging>
     <description>Snowdrift Cache Module</description>
     <modules>
+        <module>snowdrift-cache-core</module>
+        <module>snowdrift-cache-caffeine</module>
         <module>snowdrift-cache-redis</module>
+        <module>snowdrift-cache-redisson</module>
     </modules>
 </project>

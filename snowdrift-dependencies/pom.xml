@@ -312,6 +312,21 @@
             <!-- 缓存模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-cache-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-cache-caffeine</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-cache-redisson</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-cache-redis</artifactId>
                 <version>${revision}</version>
             </dependency>

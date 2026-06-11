@@ -42,6 +42,11 @@ public final class StrConst {
     public static final String COMMA = ",";
 
     /**
+     * 井号
+     */
+    public static final String HASH = "#";
+
+    /**
      * 空格
      */
     public static final String SPACE = " ";

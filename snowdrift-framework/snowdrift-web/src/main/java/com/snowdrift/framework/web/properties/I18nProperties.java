@@ -61,7 +61,7 @@ public class I18nProperties implements Serializable {
      * 资源文件基础名称
      */
     @NotEmpty
-    private Set<String> baseNames = Set.of("i18n/web-messages", "i18n/oss-messages", "i18n/security-messages");
+    private Set<String> baseNames = Set.of("i18n/web-messages", "i18n/oss-messages", "i18n/security-messages", "i18n/cache-messages");
 
     /**
      * 编码格式

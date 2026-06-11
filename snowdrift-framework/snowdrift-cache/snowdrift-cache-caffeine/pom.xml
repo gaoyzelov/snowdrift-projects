@@ -9,8 +9,8 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-cache-redis</artifactId>
-    <description>Snowdrift Cache Redis — 基于 RedisTemplate 的缓存实现</description>
+    <artifactId>snowdrift-cache-caffeine</artifactId>
+    <description>Snowdrift Cache Caffeine — 基于 Caffeine 的本地缓存实现</description>
 
     <dependencies>
         <dependency>
@@ -18,8 +18,12 @@
             <artifactId>snowdrift-cache-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
         </dependency>
     </dependencies>
 </project>

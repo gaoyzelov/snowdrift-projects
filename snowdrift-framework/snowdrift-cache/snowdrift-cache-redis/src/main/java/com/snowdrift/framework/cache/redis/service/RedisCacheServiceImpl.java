@@ -1,0 +1,139 @@
+package com.snowdrift.framework.cache.redis.service;
+
+import com.snowdrift.framework.cache.AbstractCacheService;
+import com.snowdrift.framework.cache.config.CacheProperties;
+import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.common.util.AssertUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.redis.core.Cursor;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
+
+import java.time.Duration;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
+/**
+ * Redis 缓存实现
+ * <p>
+ * 基于 {@link RedisTemplate}{@code <String, Object>}，序列化由 RedisTemplate 的 Jackson 序列化器统一处理，
+ * 不经过 {@link AbstractCacheService} 的 serialize/deserialize 方法，避免二次序列化。
+ * </p>
+ *
+ * @author 83674
+ * @date 2026/6/2
+ * @since 1.0.0
+ */
+public class RedisCacheServiceImpl extends AbstractCacheService {
+
+    private final RedisTemplate<String, Object> redisTemplate;
+
+    public RedisCacheServiceImpl(CacheProperties properties, RedisTemplate<String, Object> redisTemplate) {
+        AssertUtil.notNull(properties, "cache.config.required");
+        AssertUtil.notNull(redisTemplate, "cache.redis.template.required");
+
+        this.redisTemplate = redisTemplate;
+        this.keyPrefix = Objects.toString(properties.getKeyPrefix(), StrConst.EMPTY);
+        this.defaultTtl = properties.getDefaultTtl();
+        resolveKeyPrefix();
+    }
+
+    // =================== ICacheService 实现 ===================
+
+    @Override
+    public <T> T get(String key, Class<T> type) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        return type.cast(redisTemplate.opsForValue().get(buildKey(key)));
+    }
+
+    @Override
+    public void put(String key, Object value, Duration ttl) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        AssertUtil.notNull(value, "cache.value.required");
+        Duration effectiveTtl = effectiveTtl(ttl);
+        String realKey = buildKey(key);
+        if (effectiveTtl != null) {
+            redisTemplate.opsForValue().set(realKey, value, effectiveTtl);
+        } else {
+            redisTemplate.opsForValue().set(realKey, value);
+        }
+    }
+
+    @Override
+    public boolean putIfAbsent(String key, Object value, Duration ttl) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        AssertUtil.notNull(value, "cache.value.required");
+        Duration effectiveTtl = effectiveTtl(ttl);
+        String realKey = buildKey(key);
+        Boolean result;
+        if (effectiveTtl != null) {
+            result = redisTemplate.opsForValue().setIfAbsent(realKey, value, effectiveTtl);
+        } else {
+            result = redisTemplate.opsForValue().setIfAbsent(realKey, value);
+        }
+        return Boolean.TRUE.equals(result);
+    }
+
+    @Override
+    public boolean delete(String key) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        return Boolean.TRUE.equals(redisTemplate.delete(buildKey(key)));
+    }
+
+    @Override
+    public long delete(Collection<String> keys) {
+        AssertUtil.notNull(keys, "cache.keys.required");
+        if (keys.isEmpty()) {
+            return 0;
+        }
+        Set<String> realKeys = keys.stream()
+                .map(this::buildKey)
+                .collect(Collectors.toSet());
+        Long count = redisTemplate.delete(realKeys);
+        return count != null ? count : 0;
+    }
+
+    @Override
+    public boolean exists(String key) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        return Boolean.TRUE.equals(redisTemplate.hasKey(buildKey(key)));
+    }
+
+    @Override
+    public boolean expire(String key, Duration ttl) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        AssertUtil.notNull(ttl, "cache.ttl.required");
+        return Boolean.TRUE.equals(redisTemplate.expire(buildKey(key), ttl));
+    }
+
+    @Override
+    public long getExpire(String key) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        Long expire = redisTemplate.getExpire(buildKey(key), TimeUnit.SECONDS);
+        return expire != null ? expire : -2;
+    }
+
+    @Override
+    public Set<String> keys(String pattern) {
+        AssertUtil.notBlank(pattern, "cache.pattern.required");
+        String realPattern = buildKey(pattern);
+        Set<String> result = new HashSet<>();
+        ScanOptions options = ScanOptions.scanOptions().match(realPattern).count(200).build();
+        try (Cursor<String> cursor = redisTemplate.scan(options)) {
+            while (cursor.hasNext()) {
+                String key = cursor.next();
+                // 去掉 key 前缀
+                if (StringUtils.isNotBlank(resolvedPrefix) && key.startsWith(resolvedPrefix)) {
+                    result.add(key.substring(resolvedPrefix.length()));
+                } else {
+                    result.add(key);
+                }
+            }
+        }
+        return result;
+    }
+}
