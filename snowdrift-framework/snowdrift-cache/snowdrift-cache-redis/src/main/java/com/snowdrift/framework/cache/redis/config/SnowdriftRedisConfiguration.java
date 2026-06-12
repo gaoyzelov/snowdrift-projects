@@ -9,6 +9,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
@@ -37,6 +38,7 @@ import org.springframework.data.redis.serializer.RedisSerializer;
 @AutoConfigureAfter(RedisAutoConfiguration.class)
 @ConditionalOnBean(RedisConnectionFactory.class)
 @ConditionalOnMissingBean(ICacheService.class)
+@ConditionalOnProperty(name = "snowdrift.cache.type", havingValue = "redis")
 public class SnowdriftRedisConfiguration implements CachingConfigurer {
 
     private final CacheProperties cacheProperties;
@@ -66,7 +68,7 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
     @Bean
     public CacheManager cacheManager() {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
-                .entryTtl(cacheProperties.getDefaultTtl())
+                .entryTtl(cacheProperties.getKeyTtl())
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(RedisSerializer.string()))
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jackson2JsonRedisSerializer()))
                 .disableCachingNullValues();

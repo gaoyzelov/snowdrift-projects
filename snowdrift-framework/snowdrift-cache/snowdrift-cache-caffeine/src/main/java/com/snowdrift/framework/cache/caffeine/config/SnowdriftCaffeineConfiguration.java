@@ -7,6 +7,7 @@ import com.snowdrift.framework.cache.config.CacheProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -31,6 +32,7 @@ import java.util.concurrent.TimeUnit;
         "com.snowdrift.framework.cache.redisson.config.SnowdriftRedissonConfiguration"
 })
 @ConditionalOnMissingBean(ICacheService.class)
+@ConditionalOnProperty(name = "snowdrift.cache.type", havingValue = "caffeine")
 public class SnowdriftCaffeineConfiguration implements CachingConfigurer {
 
     private final CacheProperties cacheProperties;
@@ -46,8 +48,8 @@ public class SnowdriftCaffeineConfiguration implements CachingConfigurer {
     @Bean
     public CacheManager cacheManager() {
         Caffeine<Object, Object> caffeine = Caffeine.newBuilder()
-                .maximumSize(cacheProperties.getCaffeine().getMaxSize())
-                .expireAfterWrite(cacheProperties.getCaffeine().getTtl().toMillis(), TimeUnit.MILLISECONDS);
+                .maximumSize(cacheProperties.getMaxSize())
+                .expireAfterWrite(cacheProperties.getKeyTtl().toMillis(), TimeUnit.MILLISECONDS);
         CaffeineCacheManager manager = new CaffeineCacheManager();
         manager.setCaffeine(caffeine);
         return manager;
