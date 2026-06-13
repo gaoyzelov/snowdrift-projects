@@ -6,6 +6,7 @@ import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.snowdrift.framework.common.exception.BizException;
 
 /**
  * 缓存序列化器
@@ -50,7 +51,7 @@ public final class CacheSerializer {
         try {
             return INSTANCE.writeValueAsString(value);
         } catch (Exception e) {
-            throw new RuntimeException("cache.serialize.failed", e);
+            throw new BizException("cache.serialize.failed", e);
         }
     }
 
@@ -64,7 +65,7 @@ public final class CacheSerializer {
         try {
             return INSTANCE.readValue(json, type);
         } catch (Exception e) {
-            throw new RuntimeException("cache.deserialize.failed", e);
+            throw new BizException("cache.deserialize.failed", e);
         }
     }
 

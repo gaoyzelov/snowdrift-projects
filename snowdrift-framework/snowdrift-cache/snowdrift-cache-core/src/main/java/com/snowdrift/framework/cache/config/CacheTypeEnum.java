@@ -45,15 +45,4 @@ public enum CacheTypeEnum implements IEnum<String> {
     public static Optional<CacheTypeEnum> getByCode(String code) {
         return IEnum.getByCode(CacheTypeEnum.class, code);
     }
-
-    /**
-     * 根据 code 获取枚举，找不到时抛出异常
-     *
-     * @param code 枚举值
-     * @return 枚举对象
-     */
-    public static CacheTypeEnum fromCode(String code) {
-        return getByCode(code)
-                .orElseThrow(() -> new IllegalArgumentException("Unknown cache type: " + code));
-    }
 }

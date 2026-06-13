@@ -11,7 +11,6 @@ import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
@@ -30,9 +29,7 @@ import java.util.List;
  * @date 2026/6/2
  * @since 1.0.0
  */
-@AutoConfiguration
-@ConditionalOnMissingBean(ICacheService.class)
-@AutoConfigureBefore(name = "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration")
+@AutoConfiguration(beforeName = "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration")
 @ConditionalOnProperty(name = "snowdrift.cache.type", havingValue = "redisson")
 public class SnowdriftRedissonConfiguration {
 
@@ -119,6 +116,7 @@ public class SnowdriftRedissonConfiguration {
     }
 
     @Bean
+    @ConditionalOnMissingBean(ICacheService.class)
     public ICacheService redissonCacheService(CacheProperties cacheProperties,
                                                RedissonClient redissonClient) {
         return new RedissonCacheServiceImpl(cacheProperties, redissonClient);

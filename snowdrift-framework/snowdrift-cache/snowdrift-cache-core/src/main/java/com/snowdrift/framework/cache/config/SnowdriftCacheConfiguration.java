@@ -7,6 +7,7 @@ import com.snowdrift.framework.cache.aspect.RepeatSubmitAspect;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 
 /**
@@ -22,6 +23,7 @@ import org.springframework.context.annotation.Bean;
  * @since 1.0.0
  */
 @AutoConfiguration
+@EnableCaching
 @EnableConfigurationProperties(CacheProperties.class)
 public class SnowdriftCacheConfiguration {
 
@@ -38,6 +40,7 @@ public class SnowdriftCacheConfiguration {
      * 重复提交防护 AOP 切面
      */
     @Bean
+    @ConditionalOnBean(ICacheService.class)
     public RepeatSubmitAspect repeatSubmitAspect(ICacheService cacheService) {
         return new RepeatSubmitAspect(cacheService);
     }

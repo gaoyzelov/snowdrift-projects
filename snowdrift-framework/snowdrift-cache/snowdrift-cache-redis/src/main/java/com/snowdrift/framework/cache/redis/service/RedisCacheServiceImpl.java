@@ -36,7 +36,7 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
 
         this.redisTemplate = redisTemplate;
         setKeyPrefix(properties.getKeyPrefix());
-        setDefaultTtl(properties.getDefaultTtl());
+        setDefaultTtl(properties.getKeyTtl());
     }
 
     // =================== ICacheService 实现 ===================

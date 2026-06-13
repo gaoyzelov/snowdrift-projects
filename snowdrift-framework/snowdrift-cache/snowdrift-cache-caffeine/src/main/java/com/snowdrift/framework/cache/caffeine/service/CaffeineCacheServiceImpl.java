@@ -35,13 +35,12 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
 
     public CaffeineCacheServiceImpl(CacheProperties properties) {
         AssertUtil.notNull(properties, "cache.config.required");
-        CacheProperties.CaffeineConfig config = properties.getCaffeine();
         setKeyPrefix(properties.getKeyPrefix());
-        setDefaultTtl(config.getTtl());
+        setDefaultTtl(properties.getKeyTtl());
 
         this.cache = Caffeine.newBuilder()
-                .maximumSize(config.getMaxSize())
-                .expireAfterWrite(config.getTtl())
+                .maximumSize(properties.getMaxSize())
+                .expireAfterWrite(properties.getKeyTtl())
                 .build();
     }
 
@@ -126,19 +125,18 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
     @Override
     public Set<String> keys(String pattern) {
         AssertUtil.notBlank(pattern, "cache.pattern.required");
-        String matchPattern = pattern;
-        if (StringUtils.isNotBlank(keyPrefix) && matchPattern.startsWith(keyPrefix)) {
-            matchPattern = matchPattern.substring(keyPrefix.length());
-        }
-        final String finalPattern = matchPattern;
+        // 将用户 pattern 补上前缀，与内部存储的完整 key 对齐，只在最后输出时去掉前缀
+        String realPattern = StringUtils.isNotBlank(keyPrefix) && !pattern.startsWith(keyPrefix)
+                ? keyPrefix + pattern
+                : pattern;
         return cache.asMap().keySet().stream()
+                .filter(k -> matchWildcard(k, realPattern))
                 .map(k -> {
                     if (StringUtils.isNotBlank(keyPrefix) && k.startsWith(keyPrefix)) {
                         return k.substring(keyPrefix.length());
                     }
                     return k;
                 })
-                .filter(k -> matchWildcard(k, finalPattern))
                 .collect(Collectors.toSet());
     }
 

@@ -6,7 +6,6 @@ import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
 import com.snowdrift.framework.cache.redis.service.RedisCacheServiceImpl;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -14,6 +13,7 @@ import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -34,10 +34,8 @@ import org.springframework.data.redis.serializer.RedisSerializer;
  * @date 2026/6/2
  * @since 1.0.0
  */
-@AutoConfiguration
-@AutoConfigureAfter(RedisAutoConfiguration.class)
+@AutoConfiguration(after = RedisAutoConfiguration.class)
 @ConditionalOnBean(RedisConnectionFactory.class)
-@ConditionalOnMissingBean(ICacheService.class)
 @ConditionalOnProperty(name = "snowdrift.cache.type", havingValue = "redis")
 public class SnowdriftRedisConfiguration implements CachingConfigurer {
 
@@ -52,7 +50,7 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
     }
 
     @Bean
-    @ConditionalOnMissingBean(name = "redisTemplate")
+    @Primary
     public RedisTemplate<String, Object> redisTemplate() {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
@@ -78,6 +76,7 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
     }
 
     @Bean
+    @ConditionalOnMissingBean(ICacheService.class)
     public ICacheService redisCacheService(RedisTemplate<String, Object> redisTemplate) {
         return new RedisCacheServiceImpl(cacheProperties, redisTemplate);
     }

@@ -18,12 +18,6 @@ import java.time.Duration;
 public class CacheProperties {
 
     /**
-     * 是否启用安全模块
-     */
-    @NotNull
-    private boolean enabled = true;
-
-    /**
      * 缓存类型（caffeine / redis / redisson），不配置则根据类路径自动检测
      */
     private CacheTypeEnum type;
@@ -36,6 +30,7 @@ public class CacheProperties {
     /**
      * 全局默认 TTL
      */
+    @NotNull
     private Duration keyTtl = Duration.ofMinutes(30);
 
     /**

@@ -5,7 +5,6 @@ import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.caffeine.service.CaffeineCacheServiceImpl;
 import com.snowdrift.framework.cache.config.CacheProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
@@ -26,12 +25,10 @@ import java.util.concurrent.TimeUnit;
  * @date 2026/6/2
  * @since 1.0.0
  */
-@AutoConfiguration
-@AutoConfigureAfter(name = {
+@AutoConfiguration(afterName = {
         "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration",
         "com.snowdrift.framework.cache.redisson.config.SnowdriftRedissonConfiguration"
 })
-@ConditionalOnMissingBean(ICacheService.class)
 @ConditionalOnProperty(name = "snowdrift.cache.type", havingValue = "caffeine")
 public class SnowdriftCaffeineConfiguration implements CachingConfigurer {
 
@@ -56,6 +53,7 @@ public class SnowdriftCaffeineConfiguration implements CachingConfigurer {
     }
 
     @Bean
+    @ConditionalOnMissingBean(ICacheService.class)
     public ICacheService caffeineCacheService() {
         return new CaffeineCacheServiceImpl(cacheProperties);
     }
