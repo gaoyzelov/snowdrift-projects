@@ -49,7 +49,7 @@ public class SecurityProperties {
      * </p>
      */
     @NotNull
-    private long activeTimeout = 1800;
+    private Long activeTimeout = 1800L;
 
     /**
      * Token 前缀（拼接在 Token 值之前，中间用空格分隔）

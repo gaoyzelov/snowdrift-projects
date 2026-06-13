@@ -125,7 +125,7 @@ public final class I18nUtil {
                 String[] arr = language.split(StrConst.UNDERLINE);
                 locale = new Locale(arr[0], arr[1]);
             } else if (language.contains(StrConst.MIDLINE)) {
-                //
+                // 中划线
                 String[] arr = language.split(StrConst.MIDLINE);
                 locale = new Locale(arr[0], arr[1]);
             } else {

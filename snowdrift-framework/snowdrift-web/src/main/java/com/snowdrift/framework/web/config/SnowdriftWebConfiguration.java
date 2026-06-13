@@ -11,7 +11,6 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
-import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
 import org.springframework.format.FormatterRegistry;
@@ -30,7 +29,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Slf4j
 @AutoConfiguration
-@ServletComponentScan(basePackages = "com.snowdrift.framework.web.filter")
 @EnableConfigurationProperties({ResourceProperties.class, CorsProperties.class})
 public class SnowdriftWebConfiguration implements WebMvcConfigurer {
 

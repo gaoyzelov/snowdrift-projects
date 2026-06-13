@@ -24,5 +24,5 @@ public @interface LoginLog {
     /**
      * 账号字段
      */
-    String accountFiled() default "username";
+    String accountField() default "username";
 }

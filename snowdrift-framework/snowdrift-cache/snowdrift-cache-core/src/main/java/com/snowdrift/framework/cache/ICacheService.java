@@ -42,7 +42,7 @@ public interface ICacheService {
      *
      * @param key   缓存键
      * @param value 缓存值
-     * @param ttl   过期时间，null 表示永不过期
+     * @param ttl   过期时间，null 表示使用全局默认 TTL
      */
     void put(String key, Object value, Duration ttl);
 
@@ -60,7 +60,7 @@ public interface ICacheService {
      *
      * @param key   缓存键
      * @param value 缓存值
-     * @param ttl   过期时间，null 表示永不过期
+     * @param ttl   过期时间，null 表示使用全局默认 TTL
      * @return true=设置成功（key 之前不存在），false=key 已存在
      */
     boolean putIfAbsent(String key, Object value, Duration ttl);

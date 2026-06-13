@@ -9,11 +9,11 @@ import com.snowdrift.framework.security.satoken.properties.SaTokenSecurityProper
 import com.snowdrift.framework.security.satoken.service.SaTokenSecurityServiceImpl;
 import com.snowdrift.framework.security.service.ISecurityService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -30,7 +30,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @since 1.0.0
  */
 @Slf4j
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties(SaTokenSecurityProperties.class)
 @ConditionalOnProperty(prefix = "snowdrift.security.sa-token", name = "enabled", havingValue = "true")
 @ConditionalOnMissingBean(type = "org.springframework.security.web.SecurityFilterChain")

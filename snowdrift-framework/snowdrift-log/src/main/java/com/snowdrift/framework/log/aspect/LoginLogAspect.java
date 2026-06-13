@@ -78,7 +78,7 @@ public class LoginLogAspect {
         HttpContext context = HttpContextHolder.getContext();
         // 登录日志初始化
         LoginLogCreateDTO loginLogDTO = LoginLogCreateDTO.builder()
-                .username(getUsername(joinPoint,loginLogAnno.account()))
+                .username(getUsername(joinPoint,loginLogAnno.accountField()))
                 .ip(context.getIp())
                 .ipLocation(context.getIpLocation())
                 .ua(context.getUserAgent())
