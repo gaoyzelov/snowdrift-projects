@@ -2,10 +2,7 @@ package com.snowdrift.framework.web.filter;
 
 import com.snowdrift.framework.log.util.LogTraceUtil;
 import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 
 import java.io.IOException;
 
@@ -16,8 +13,6 @@ import java.io.IOException;
  * @description 日志链路追踪过滤器，生成 TraceId 并写入响应头 X-Trace-Id
  * @since 1.0.0
  */
-@Order(Ordered.HIGHEST_PRECEDENCE)
-@WebFilter(urlPatterns = "/*")
 public class LogTraceFilter implements Filter {
 
     private static final String TRACE_HEADER = "X-Trace-Id";

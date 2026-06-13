@@ -6,7 +6,6 @@ import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.log.util.LogTraceUtil;
 import com.snowdrift.framework.web.properties.AsyncProperties;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -36,8 +35,12 @@ import java.util.concurrent.ThreadPoolExecutor;
 @ConditionalOnProperty(prefix = "snowdrift.async", name = "enabled", havingValue = "true")
 public class AsyncConfiguration implements AsyncConfigurer {
 
-    @Resource
-    private AsyncProperties asyncProperties;
+    private final AsyncProperties asyncProperties;
+
+    public AsyncConfiguration(AsyncProperties asyncProperties) {
+        this.asyncProperties = asyncProperties;
+    }
+
 
     @Override
     public Executor getAsyncExecutor() {

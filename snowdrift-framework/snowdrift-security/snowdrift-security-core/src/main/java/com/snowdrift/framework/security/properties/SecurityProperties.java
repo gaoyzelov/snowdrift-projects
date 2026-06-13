@@ -26,7 +26,7 @@ public class SecurityProperties {
      * 是否启用安全模块
      */
     @NotNull
-    private boolean enabled = true;
+    private Boolean enabled = true;
 
     /**
      * Token 所在的请求头名称
@@ -38,7 +38,7 @@ public class SecurityProperties {
      * Token 过期时间（秒），默认 24 小时
      */
     @NotNull
-    private long timeout = 86400;
+    private Long timeout = 86400L;
 
     /**
      * Token 前缀（拼接在 Token 值之前，中间用空格分隔）

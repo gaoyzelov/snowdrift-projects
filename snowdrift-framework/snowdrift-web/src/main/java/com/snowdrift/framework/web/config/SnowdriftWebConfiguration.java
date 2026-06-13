@@ -1,17 +1,20 @@
 package com.snowdrift.framework.web.config;
 
 import com.snowdrift.framework.common.util.DateTimeUtil;
+import com.snowdrift.framework.web.filter.HttpContextFilter;
+import com.snowdrift.framework.web.filter.LogTraceFilter;
 import com.snowdrift.framework.web.handler.WebExceptionHandler;
 import com.snowdrift.framework.web.properties.CorsProperties;
 import com.snowdrift.framework.web.properties.ResourceProperties;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.format.datetime.standard.DateTimeFormatterRegistrar;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
@@ -27,16 +30,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @since 1.0.0
  */
 @Slf4j
-@Configuration
+@AutoConfiguration
 @ServletComponentScan(basePackages = "com.snowdrift.framework.web.filter")
 @EnableConfigurationProperties({ResourceProperties.class, CorsProperties.class})
 public class SnowdriftWebConfiguration implements WebMvcConfigurer {
 
-    @Resource
-    private ResourceProperties resourceProperties;
+    private final ResourceProperties resourceProperties;
 
-    @Resource
-    private CorsProperties corsProperties;
+    private final CorsProperties corsProperties;
+
+    public SnowdriftWebConfiguration(ResourceProperties resourceProperties, CorsProperties corsProperties) {
+        this.resourceProperties = resourceProperties;
+        this.corsProperties = corsProperties;
+    }
 
     /**
      * CORS 跨域配置
@@ -46,8 +52,10 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
      * </p>
      */
     @Override
-    @ConditionalOnProperty(prefix = "snowdrift.web.cors", name = "enabled", havingValue = "true")
     public void addCorsMappings(CorsRegistry registry) {
+        if (!corsProperties.isEnabled()){
+            return;
+        }
         registry.addMapping(corsProperties.getPath())
                 .allowedOriginPatterns(corsProperties.getAllowedOrigins().toArray(String[]::new))
                 .allowedMethods(corsProperties.getAllowedMethods().toArray(String[]::new))
@@ -92,5 +100,29 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
     @Bean
     public WebExceptionHandler webExceptionHandler() {
         return new WebExceptionHandler();
+    }
+
+    /**
+     * HTTP 上下文过滤器
+     * @return HTTP 上下文过滤器
+     */
+    @Bean
+    public FilterRegistrationBean<HttpContextFilter> httpContextFilter() {
+        FilterRegistrationBean<HttpContextFilter> httpContextFilterRegistrationBean = new FilterRegistrationBean<>(new HttpContextFilter());
+        httpContextFilterRegistrationBean.addUrlPatterns("/*");
+        httpContextFilterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
+        return httpContextFilterRegistrationBean;
+    }
+
+    /**
+     * 日志跟踪过滤器
+     * @return 日志跟踪过滤器
+     */
+    @Bean
+    public FilterRegistrationBean<LogTraceFilter> logTraceFilter() {
+        FilterRegistrationBean<LogTraceFilter> logTraceFilterRegistrationBean = new FilterRegistrationBean<>(new LogTraceFilter());
+        logTraceFilterRegistrationBean.addUrlPatterns("/*");
+        logTraceFilterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        return logTraceFilterRegistrationBean;
     }
 }

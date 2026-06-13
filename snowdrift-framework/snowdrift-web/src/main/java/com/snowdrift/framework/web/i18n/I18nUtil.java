@@ -115,7 +115,7 @@ public final class I18nUtil {
      */
     public static Locale parseLocale(String language) {
         // 处理格式
-        Locale locale = Locale.CHINA;
+        Locale locale = Locale.getDefault();
         if (StringUtils.isBlank(language)) {
             return locale;
         }

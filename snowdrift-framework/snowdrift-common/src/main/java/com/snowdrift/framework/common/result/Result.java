@@ -42,39 +42,39 @@ public class Result<T> implements Serializable {
     private long timestamp;
 
     public static <T> Result<T> ok() {
-        return create(ResultCode.OK.code(), ResultCode.OK.msg(),null);
+        return create(ResultCode.OK.code(), ResultCode.OK.msg(), null);
     }
 
     public static <T> Result<T> ok(T data) {
-        return create(ResultCode.OK.code(), ResultCode.OK.msg(),data);
+        return create(ResultCode.OK.code(), ResultCode.OK.msg(), data);
     }
 
     public static <T> Result<T> ok(String msg, T data) {
-        return create(ResultCode.OK.code(), msg,data);
+        return create(ResultCode.OK.code(), msg, data);
     }
 
     public static <T> Result<T> err() {
-        return create(ResultCode.ERR.code(), ResultCode.ERR.msg(),null);
+        return create(ResultCode.ERR.code(), ResultCode.ERR.msg(), null);
     }
 
     public static <T> Result<T> err(Integer code, String msg) {
-        return create(code, msg,null);
+        return create(code, msg, null);
     }
 
     public static <T> Result<T> err(String msg) {
-        return create(ResultCode.ERR.code(), msg,null);
+        return create(ResultCode.ERR.code(), msg, null);
     }
 
     public static <T> Result<T> err(String msg, T data) {
-        return create(ResultCode.ERR.code(), msg,data);
+        return create(ResultCode.ERR.code(), msg, data);
     }
 
     public static <T> Result<T> err(ResultCode resultCode) {
-        return create(resultCode.code(), resultCode.msg(),null);
+        return create(resultCode.code(), resultCode.msg(), null);
     }
 
     public static <T> Result<T> err(ResultCode resultCode, T data) {
-        return create(resultCode.code(), resultCode.msg(),data);
+        return create(resultCode.code(), resultCode.msg(), data);
     }
 
     public static <T> Result<T> create(Integer code, String msg, T data) {

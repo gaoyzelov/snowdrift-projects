@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.snowdrift.framework.cache.CacheSerializer;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
+import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
+import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
 import com.snowdrift.framework.cache.redis.service.RedisCacheServiceImpl;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -12,6 +14,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
+import org.springframework.cache.interceptor.CacheErrorHandler;
+import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
@@ -73,6 +77,24 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
                 .build();
+    }
+
+    /**
+     * 缓存异常降级处理器，缓存故障时不阻断主流程
+     */
+    @Override
+    @Bean
+    public CacheErrorHandler errorHandler() {
+        return new SnowdriftCachingErrorHandler();
+    }
+
+    /**
+     * 统一缓存 Key 生成器，格式：[prefix:]ClassName#methodName[:params...]
+     */
+    @Override
+    @Bean
+    public KeyGenerator keyGenerator() {
+        return new SnowdriftKeyGenerator(cacheProperties.getKeyPrefix());
     }
 
     @Bean

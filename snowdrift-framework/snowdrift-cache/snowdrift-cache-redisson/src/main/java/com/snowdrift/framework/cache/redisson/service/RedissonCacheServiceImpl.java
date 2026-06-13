@@ -33,7 +33,7 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
 
         this.redissonClient = redissonClient;
         setKeyPrefix(properties.getKeyPrefix());
-        setDefaultTtl(properties.getDefaultTtl());
+        setDefaultTtl(properties.getKeyTtl());
     }
 
     // =================== ICacheService 实现 ===================

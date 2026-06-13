@@ -6,10 +6,10 @@ import com.snowdrift.framework.log.aspect.LoginLogAspect;
 import com.snowdrift.framework.log.service.ILogService;
 import com.snowdrift.framework.log.service.LogRecordServiceImpl;
 import com.snowdrift.framework.log.service.StdoutLogServiceImpl;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 /**
@@ -20,7 +20,7 @@ import org.springframework.context.annotation.Primary;
  * @description 日志配置
  * @since 1.0.0
  */
-@Configuration
+@AutoConfiguration
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SnowdriftLogConfiguration {
 
@@ -37,8 +37,8 @@ public class SnowdriftLogConfiguration {
     }
 
     @Bean
-    public ApiLogAspect apiLogAspect() {
-        return new ApiLogAspect();
+    public ApiLogAspect apiLogAspect(ILogService logService) {
+        return new ApiLogAspect(logService);
     }
 
     @Bean

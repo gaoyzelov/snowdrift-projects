@@ -8,8 +8,6 @@ import com.snowdrift.framework.context.http.HttpContextHolder;
 import jakarta.servlet.*;
 import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 
 import java.io.IOException;
 
@@ -20,7 +18,6 @@ import java.io.IOException;
  * @description Http请求上下文过滤器
  * @since 1.0.0
  */
-@Order(Ordered.HIGHEST_PRECEDENCE + 1)
 @WebFilter(urlPatterns = "/*")
 public class HttpContextFilter implements Filter {
     @Override

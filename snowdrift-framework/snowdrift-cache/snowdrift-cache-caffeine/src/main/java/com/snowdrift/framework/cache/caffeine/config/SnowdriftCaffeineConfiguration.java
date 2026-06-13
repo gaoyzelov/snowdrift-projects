@@ -4,12 +4,16 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.caffeine.service.CaffeineCacheServiceImpl;
 import com.snowdrift.framework.cache.config.CacheProperties;
+import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
+import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
+import org.springframework.cache.interceptor.CacheErrorHandler;
+import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 
 import java.util.concurrent.TimeUnit;
@@ -50,6 +54,24 @@ public class SnowdriftCaffeineConfiguration implements CachingConfigurer {
         CaffeineCacheManager manager = new CaffeineCacheManager();
         manager.setCaffeine(caffeine);
         return manager;
+    }
+
+    /**
+     * 缓存异常降级处理器，缓存故障时不阻断主流程
+     */
+    @Override
+    @Bean
+    public CacheErrorHandler errorHandler() {
+        return new SnowdriftCachingErrorHandler();
+    }
+
+    /**
+     * 统一缓存 Key 生成器，格式：[prefix:]ClassName#methodName[:params...]
+     */
+    @Override
+    @Bean
+    public KeyGenerator keyGenerator() {
+        return new SnowdriftKeyGenerator(cacheProperties.getKeyPrefix());
     }
 
     @Bean

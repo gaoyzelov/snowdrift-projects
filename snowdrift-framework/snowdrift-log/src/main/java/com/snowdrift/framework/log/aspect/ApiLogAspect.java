@@ -12,7 +12,6 @@ import com.snowdrift.framework.log.annotation.ApiLog;
 import com.snowdrift.framework.log.dto.ApiLogCreateDTO;
 import com.snowdrift.framework.log.service.ILogService;
 import com.snowdrift.framework.log.util.LogTraceUtil;
-import jakarta.annotation.Resource;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
 import jakarta.servlet.http.Part;
@@ -32,7 +31,10 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.util.*;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -47,11 +49,14 @@ import java.util.regex.Pattern;
 @Aspect
 public class ApiLogAspect {
 
-    @Resource
-    private ILogService logService;
+    private final ILogService logService;
 
     @Value("${spring.application.name:unknown}")
     private String appName;
+
+    public ApiLogAspect(ILogService logService) {
+        this.logService = logService;
+    }
 
     /**
      * 环绕通知
