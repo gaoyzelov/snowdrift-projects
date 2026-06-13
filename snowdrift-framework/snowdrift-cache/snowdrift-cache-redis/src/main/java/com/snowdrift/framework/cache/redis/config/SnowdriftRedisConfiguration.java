@@ -16,7 +16,6 @@ import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.interceptor.CacheErrorHandler;
 import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -51,8 +50,7 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
         this.connectionFactory = connectionFactory;
     }
 
-    @Bean
-    @Primary
+    @Bean(name = "objectRedisTemplate")
     public RedisTemplate<String, Object> redisTemplate() {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
@@ -97,8 +95,8 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
 
     @Bean
     @ConditionalOnMissingBean(ICacheService.class)
-    public ICacheService redisCacheService(RedisTemplate<String, Object> redisTemplate) {
-        return new RedisCacheServiceImpl(cacheProperties, redisTemplate);
+    public ICacheService redisCacheService(RedisTemplate<String, Object> objectRedisTemplate) {
+        return new RedisCacheServiceImpl(cacheProperties, objectRedisTemplate);
     }
 
     /**

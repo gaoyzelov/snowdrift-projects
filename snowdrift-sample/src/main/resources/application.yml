@@ -11,7 +11,11 @@ spring:
       enabled: true
       max-file-size: 100MB
       max-request-size: 100MB
-
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
 # Snowdrift 配置
 snowdrift:
   # OSS 配置

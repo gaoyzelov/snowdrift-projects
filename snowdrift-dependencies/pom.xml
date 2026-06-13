@@ -135,13 +135,13 @@
                 <scope>import</scope>
             </dependency>
             <!-- JetCache -->
-            <dependency>
-                <groupId>com.alicp.jetcache</groupId>
-                <artifactId>jetcache-bom</artifactId>
-                <version>${jetcache.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>com.alicp.jetcache</groupId>-->
+<!--                <artifactId>jetcache-bom</artifactId>-->
+<!--                <version>${jetcache.version}</version>-->
+<!--                <type>pom</type>-->
+<!--                <scope>import</scope>-->
+<!--            </dependency>-->
             <!-- Map Struct -->
             <dependency>
                 <groupId>org.mapstruct</groupId>

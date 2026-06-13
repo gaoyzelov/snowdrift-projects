@@ -30,6 +30,10 @@
         </dependency>
         <dependency>
             <groupId>com.snowdrift</groupId>
+            <artifactId>snowdrift-log</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-security-satoken</artifactId>
         </dependency>
         <dependency>
@@ -50,6 +54,10 @@
         <dependency>
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-oss-qiniu</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.snowdrift</groupId>
+            <artifactId>snowdrift-cache-redisson</artifactId>
         </dependency>
     </dependencies>
 
