@@ -7,7 +7,6 @@ import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.security.annotation.AnonymousAccess;
 import com.snowdrift.framework.security.exception.SecurityException;
 import com.snowdrift.framework.security.service.ISecurityService;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.web.method.HandlerMethod;
@@ -60,12 +59,7 @@ public class SecurityInterceptor extends SaInterceptor {
             }
 
             // 3. 调用安全服务校验登录状态
-            try {
-                securityService.checkLogin();
-            } catch (Exception e) {
-                // 将 Sa-Token 的未登录异常统一转为框架的 SecurityException
-                throw new SecurityException("security.not.authenticated");
-            }
+            securityService.checkLogin();
 
             // 4. 从会话中捞出 SecurityContext 并放入 ThreadLocal，供后续业务代码使用
             SecurityContext sc = securityService.getContext();
@@ -78,7 +72,7 @@ public class SecurityInterceptor extends SaInterceptor {
     }
 
     @Override
-    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, @Nullable Exception ex) throws Exception {
+    public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
         // 请求结束后清理上下文，防止内存泄漏和跨请求数据污染
         SecurityContextHolder.clear();
     }

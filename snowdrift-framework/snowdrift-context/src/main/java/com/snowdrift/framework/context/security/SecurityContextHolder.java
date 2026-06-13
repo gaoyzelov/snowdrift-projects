@@ -1,6 +1,7 @@
 package com.snowdrift.framework.context.security;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
+import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.common.util.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -43,6 +44,19 @@ public class SecurityContextHolder {
     }
 
     /**
+     * 获取安全上下文
+     *
+     * @return SecurityContext
+     */
+    public static SecurityContext getRequiredContext() {
+        SecurityContext ctx = SECURITY_CONTEXT_HOLDER.get();
+        if (Objects.isNull(ctx)) {
+            throw new BizException("security.context.null");
+        }
+        return ctx;
+    }
+
+    /**
      * 清除安全上下文
      */
     public static void clear() {
@@ -64,7 +78,7 @@ public class SecurityContextHolder {
      * @return 用户ID，未登录时返回 null
      */
     public static Long getUserId() {
-        return getContext().getUserId();
+        return getRequiredContext().getUserId();
     }
 
     /**
@@ -73,7 +87,8 @@ public class SecurityContextHolder {
      * @return 租户ID，未登录时返回 null
      */
     public static Long getTenantId() {
-        return getContext().getTenantId();
+        return getRequiredContext().getTenantId();
+
     }
 
     /**
@@ -82,7 +97,7 @@ public class SecurityContextHolder {
      * @return 登录账号，未设置时返回 null
      */
     public static String getUsername() {
-        SecurityContext ctx = getContext();
+        SecurityContext ctx = getRequiredContext();
         return ctx.getUsername();
     }
 
@@ -92,7 +107,7 @@ public class SecurityContextHolder {
      * @return 显示名称，未设置时返回 null
      */
     public static String getNickname() {
-        SecurityContext ctx = getContext();
+        SecurityContext ctx = getRequiredContext();
         return ctx.getNickname();
     }
 
@@ -102,7 +117,7 @@ public class SecurityContextHolder {
      * @return 操作者名称，未设置时返回 null
      */
     public static String getOperatorName() {
-        SecurityContext ctx = getContext();
+        SecurityContext ctx = getRequiredContext();
         String nickname = ctx.getNickname();
         if (StringUtils.isNotBlank(nickname)) {
             return nickname;

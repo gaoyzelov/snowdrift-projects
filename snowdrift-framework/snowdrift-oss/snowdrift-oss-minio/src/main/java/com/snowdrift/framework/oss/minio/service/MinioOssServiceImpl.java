@@ -267,11 +267,6 @@ public class MinioOssServiceImpl extends AbstractOssService {
     public String getUrl(@NonNull String objectKey, Duration expiry) {
         String bucket = super.getBucket();
 
-        // 如果配置了域名，使用域名
-        if (StringUtils.isNotBlank(config.getDomain())) {
-            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
-        }
-
         // 如果是私有 Bucket，生成预签名 URL
         if (Boolean.TRUE.equals(config.getPrivateBucket())) {
             Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getSignatureExpiry());
@@ -288,6 +283,11 @@ public class MinioOssServiceImpl extends AbstractOssService {
                 log.error("生成文件访问 URL 失败: bucket={}, objectKey={}", bucket, objectKey, e);
                 throw new OssException("oss.url.generate.failed", new Object[]{e.getMessage()});
             }
+        }
+
+        // 如果配置了域名，使用域名
+        if (StringUtils.isNotBlank(config.getDomain())) {
+            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
         }
 
         // 否则返回 MinIO 直接访问 URL

@@ -56,6 +56,9 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
         return deserialize(value.toString(), type);
     }
 
+    /**
+     * Caffeine 不支持 per-key TTL，使用构造时统一配置的过期时间
+     */
     @Override
     public void put(String key, Object value, Duration ttl) {
         AssertUtil.notBlank(key, "cache.key.required");
@@ -63,6 +66,9 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
         cache.put(buildKey(key), serialize(value));
     }
 
+    /**
+     * Caffeine 不支持 per-key TTL，使用构造时统一配置的过期时间
+     */
     @Override
     public boolean putIfAbsent(String key, Object value, Duration ttl) {
         AssertUtil.notBlank(key, "cache.key.required");
@@ -102,24 +108,20 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     /**
-     * Caffeine 原生不支持 per-key TTL 修改，仅当 key 存在时返回 true
+     * Caffeine 原生不支持 per-key TTL
      */
     @Override
     public boolean expire(String key, Duration ttl) {
-        AssertUtil.notBlank(key, "cache.key.required");
-        AssertUtil.notNull(ttl, "cache.ttl.required");
-        return cache.getIfPresent(buildKey(key)) != null;
+        throw new UnsupportedOperationException();
     }
 
     /**
      * Caffeine 原生不支持查询剩余 TTL
      *
-     * @return -1=存在但无法获取 TTL，-2=不存在
      */
     @Override
     public long getExpire(String key) {
-        AssertUtil.notBlank(key, "cache.key.required");
-        return cache.getIfPresent(buildKey(key)) != null ? -1 : -2;
+        throw new UnsupportedOperationException();
     }
 
     @Override

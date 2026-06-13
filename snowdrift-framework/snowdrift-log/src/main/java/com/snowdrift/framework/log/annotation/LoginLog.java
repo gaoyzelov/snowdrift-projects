@@ -20,4 +20,9 @@ public @interface LoginLog {
      * 是否记录日志
      */
     boolean enable() default true;
+
+    /**
+     * 账号字段
+     */
+    String accountFiled() default "username";
 }

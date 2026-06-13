@@ -43,9 +43,6 @@ public abstract class AbstractOssService implements IOssService {
 
     /**
      * 批量删除文件
-     * <p>
-     * 批量删除多个文件，内部会逐个删除
-     * 如果某个文件删除失败，会记录警告日志但继续删除其他文件
      *
      * @param objectKeys 对象键列表，要删除的文件标识集合
      */

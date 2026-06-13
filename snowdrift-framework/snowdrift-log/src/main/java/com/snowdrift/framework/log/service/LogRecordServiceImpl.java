@@ -31,7 +31,7 @@ public class LogRecordServiceImpl implements ILogRecordService {
     public void record(LogRecord logRecord) {
         OperateLogCreateDTO operateLogDTO = OperateLogCreateDTO.builder()
                 .traceId(LogTraceUtil.getTraceId())
-                .bizId(parseBizId(logRecord.getBizNo()))
+                .bizId(logRecord.getBizNo())
                 .bizModule(logRecord.getType())
                 .bizType(logRecord.getSubType())
                 .content(logRecord.getAction())

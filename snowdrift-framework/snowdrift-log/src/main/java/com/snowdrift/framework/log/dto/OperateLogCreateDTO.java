@@ -28,7 +28,7 @@ public class OperateLogCreateDTO implements Serializable {
     /**
      * 操作对象ID
      */
-    private Long bizId;
+    private String bizId;
 
     /**
      * 操作模块

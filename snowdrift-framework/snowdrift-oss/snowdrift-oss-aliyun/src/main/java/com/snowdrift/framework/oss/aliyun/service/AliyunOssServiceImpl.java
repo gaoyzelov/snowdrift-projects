@@ -221,11 +221,6 @@ public class AliyunOssServiceImpl extends AbstractOssService {
     public String getUrl(@NonNull String objectKey, Duration expiry) {
         String bucket = super.getBucket();
 
-        // 如果配置了域名，使用域名访问
-        if (StringUtils.isNotBlank(config.getDomain())) {
-            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
-        }
-
         // 如果是私有 Bucket，生成预签名 URL
         if (Boolean.TRUE.equals(config.getPrivateBucket())) {
             Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getSignatureExpiry());
@@ -236,6 +231,11 @@ public class AliyunOssServiceImpl extends AbstractOssService {
 
             URL url = ossClient.generatePresignedUrl(request);
             return url.toString();
+        }
+
+        // 如果配置了域名，使用域名访问
+        if (StringUtils.isNotBlank(config.getDomain())) {
+            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
         }
 
         return OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, objectKey);

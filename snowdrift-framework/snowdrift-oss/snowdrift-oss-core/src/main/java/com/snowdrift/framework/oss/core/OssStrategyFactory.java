@@ -3,7 +3,6 @@ package com.snowdrift.framework.oss.core;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.exception.OssException;
-import com.snowdrift.framework.oss.properties.OssInstanceProperties;
 import com.snowdrift.framework.oss.properties.OssProperties;
 import com.snowdrift.framework.oss.util.OssConfigConverter;
 import jakarta.annotation.PreDestroy;
@@ -236,9 +235,10 @@ public class OssStrategyFactory {
         if (config == null) {
             throw new OssException("oss.config.null");
         }
-        
+
+        // 移除旧实例
+        IOssService oldService = serviceMap.remove(configKey);
         // 关闭旧实例
-        IOssService oldService = serviceMap.get(configKey);
         if (oldService != null) {
             try {
                 oldService.close();
@@ -248,9 +248,8 @@ public class OssStrategyFactory {
             }
         }
         
-        // 移除旧实例
-        serviceMap.remove(configKey);
-        
+
+
         // 注册新实例（在同步块内）
         if (Boolean.TRUE.equals(config.getEnabled())) {
             IOssService newService = serviceCreator.create(config);

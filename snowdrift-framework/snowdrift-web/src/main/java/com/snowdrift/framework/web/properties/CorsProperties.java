@@ -29,7 +29,7 @@ public class CorsProperties {
     /**
      * 允许的源（支持通配符），默认 *
      */
-    private List<String> allowedOrigins = List.of("*");
+    private List<String> allowedOriginPatterns = List.of("*");
 
     /**
      * 允许的请求方法，默认 GET,POST,PUT,DELETE,OPTIONS

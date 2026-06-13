@@ -57,7 +57,7 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
             return;
         }
         registry.addMapping(corsProperties.getPath())
-                .allowedOriginPatterns(corsProperties.getAllowedOrigins().toArray(String[]::new))
+                .allowedOriginPatterns(corsProperties.getAllowedOriginPatterns().toArray(String[]::new))
                 .allowedMethods(corsProperties.getAllowedMethods().toArray(String[]::new))
                 .allowedHeaders(corsProperties.getAllowedHeaders().toArray(String[]::new))
                 .allowCredentials(corsProperties.isAllowCredentials())

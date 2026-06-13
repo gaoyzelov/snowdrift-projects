@@ -261,15 +261,8 @@ public class TencentOssServiceImpl extends AbstractOssService {
     public String getUrl(@NonNull String objectKey, Duration expiry) {
         String bucket = super.getBucket();
 
-        // 如果配置了域名，使用域名
-        if (StringUtils.isNotBlank(config.getDomain())) {
-            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
-        }
-
-        // 公开 Bucket：直接返回域名 + objectKey
-        String url = OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, objectKey);
+        // 私有 Bucket：生成预签名 URL
         if (Boolean.TRUE.equals(config.getPrivateBucket())) {
-            // 私有 Bucket：生成预签名 URL
             GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucket, objectKey);
             Duration validDuration = expiry != null ? expiry : Duration.ofMinutes(config.getSignatureExpiry());
             request.setExpiration(new Date(System.currentTimeMillis() + validDuration.toMillis()));
@@ -280,7 +273,13 @@ public class TencentOssServiceImpl extends AbstractOssService {
                 throw new OssException("oss.url.generate.failed", new Object[]{e.getMessage()});
             }
         }
-        return url;
+
+        // 如果配置了域名，使用域名
+        if (StringUtils.isNotBlank(config.getDomain())) {
+            return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
+        }
+
+        return OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, objectKey);
     }
 
     /**

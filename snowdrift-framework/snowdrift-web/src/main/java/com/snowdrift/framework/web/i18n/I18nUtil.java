@@ -115,7 +115,7 @@ public final class I18nUtil {
      */
     public static Locale parseLocale(String language) {
         // 处理格式
-        Locale locale = Locale.getDefault();
+        Locale locale = null;
         if (StringUtils.isBlank(language)) {
             return locale;
         }

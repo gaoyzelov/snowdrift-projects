@@ -77,12 +77,12 @@ public class SecurityContextFilter extends OncePerRequestFilter {
 
             // 5. 构建 Spring Security 的 Authentication（供 @PreAuthorize 等注解鉴权使用）
             SpringSecurityHelper.setSpringSecurityAuthentication(sc);
+
+            // 6. 继续执行后续的过滤器链
+            filterChain.doFilter(request, response);
         } catch (Exception e){
             log.error("SecurityContextFilter 执行异常: {}", e.getMessage(), e);
             throw e;
-        }
-        try {
-            filterChain.doFilter(request, response);
         } finally {
             // 请求结束后清理，防止线程池复用时的数据污染
             SecurityContextHolder.clear();

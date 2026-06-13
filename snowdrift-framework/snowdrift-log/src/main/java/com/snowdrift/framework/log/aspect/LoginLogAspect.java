@@ -76,7 +76,7 @@ public class LoginLogAspect {
         HttpContext context = HttpContextHolder.getContext();
         // 登录日志初始化
         LoginLogCreateDTO loginLogDTO = LoginLogCreateDTO.builder()
-                .username(getUsername(joinPoint))
+                .username(getUsername(joinPoint,loginLogAnno.account()))
                 .ip(context.getIp())
                 .ipLocation(context.getIpLocation())
                 .ua(context.getUserAgent())
@@ -103,15 +103,19 @@ public class LoginLogAspect {
      * 获取登录用户名
      *
      * @param joinPoint 切点
+     * @param accountField 登录用户名字段
      * @return 用户名
      */
-    private String getUsername(JoinPoint joinPoint) {
+    private String getUsername(JoinPoint joinPoint, String accountField) {
         Object[] args = joinPoint.getArgs();
         if (ArrayUtils.isNotEmpty(args)) {
             for (Object arg : args) {
                 if (Objects.nonNull(arg)) {
                     try {
-                        return JSONObject.from(arg).getString("username", StrConst.UNKNOWN);
+                        JSONObject jsonObj = JSONObject.from(arg);
+                        if (jsonObj.containsKey(accountField)) {
+                            return jsonObj.getString(accountField);
+                        }
                     } catch (Exception e) {
                         log.error("获取登录用户信息失败", e);
                     }
