@@ -33,9 +33,27 @@ public interface ICacheService {
      *
      * @param key   缓存键
      * @param value 缓存值
+     */
+    void put(String key, Object value);
+
+
+    /**
+     * 设置缓存
+     *
+     * @param key   缓存键
+     * @param value 缓存值
      * @param ttl   过期时间，null 表示永不过期
      */
     void put(String key, Object value, Duration ttl);
+
+    /**
+     * 仅当 key 不存在时设置缓存
+     *
+     * @param key   缓存键
+     * @param value 缓存值
+     * @return true=设置成功（key 之前不存在），false=key 已存在
+     */
+    boolean putIfAbsent(String key, Object value);
 
     /**
      * 仅当 key 不存在时设置缓存

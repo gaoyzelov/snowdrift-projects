@@ -19,7 +19,7 @@ public class CorsProperties {
     /**
      * 是否启用 CORS 跨域支持，默认关闭
      */
-    private boolean enabled = false;
+    private Boolean enabled = false;
 
     /**
      * 允许的路径，默认 /**

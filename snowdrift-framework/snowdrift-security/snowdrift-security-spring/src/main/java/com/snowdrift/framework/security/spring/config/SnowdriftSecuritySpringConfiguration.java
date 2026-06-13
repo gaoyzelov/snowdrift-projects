@@ -111,7 +111,7 @@ public class SnowdriftSecuritySpringConfiguration {
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
     public TokenStore inMemoryTokenStore() {
-        return new InMemoryTokenStore(securityProperties.getTimeout());
+        return new InMemoryTokenStore(securityProperties.getTimeout(), securityProperties.getActiveTimeout());
     }
 
     /**

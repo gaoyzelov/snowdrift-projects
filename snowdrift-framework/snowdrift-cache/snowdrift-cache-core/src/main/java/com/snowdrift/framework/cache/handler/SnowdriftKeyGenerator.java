@@ -112,8 +112,8 @@ public class SnowdriftKeyGenerator implements KeyGenerator {
         try {
             MessageDigest md = MessageDigest.getInstance("SHA-256");
             byte[] bytes = md.digest(obj.toString().getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder(16);
-            for (int i = 0; i < 8 && i < bytes.length; i++) {
+            StringBuilder hex = new StringBuilder(32);
+            for (int i = 0; i < 16 && i < bytes.length; i++) {
                 hex.append(String.format("%02x", bytes[i]));
             }
             return hex.toString();

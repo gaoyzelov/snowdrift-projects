@@ -18,8 +18,8 @@ import java.util.Locale;
  * @author 83674
  * @date 2026/5/9
  * @description 国际化语言拦截器
- *              优先级：URL 参数（默认 lang） > 默认语言
- *              通过 LocaleContextHolder 设置当前请求的语言环境，在 afterCompletion 中清理
+ * 优先级：URL 参数（默认 lang） > 默认语言
+ * 通过 LocaleContextHolder 设置当前请求的语言环境，在 afterCompletion 中清理
  * @since 1.0.0
  */
 @Slf4j
@@ -35,22 +35,24 @@ public class I18nInterceptor implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         // 1. 从参数获取
         String lang = request.getParameter(i18nProperties.getParamName());
-        
+
         // 2. 如果都没有，使用默认语言
         if (StringUtils.isBlank(lang)) {
             lang = i18nProperties.getDefaultLocale();
         }
-        
+
         // 3. 验证是否支持该语言
         Locale locale = I18nUtil.parseLocale(lang);
         if (isSupported(locale, i18nProperties.getSupportedLocales())) {
             LocaleContextHolder.setLocale(locale);
             log.debug("设置语言环境: {}", locale);
+        } else if (isSupported(request.getLocale(), i18nProperties.getSupportedLocales())) {
+            LocaleContextHolder.setLocale(request.getLocale());
         } else {
             log.warn("不支持的语言环境: {}，使用默认语言", lang);
             LocaleContextHolder.setLocale(I18nUtil.parseLocale(i18nProperties.getDefaultLocale()));
         }
-        
+
         return true;
     }
 
@@ -70,6 +72,6 @@ public class I18nInterceptor implements HandlerInterceptor {
     private boolean isSupported(Locale locale, List<String> supportedLocales) {
         String localeStr = locale.toString();
         return supportedLocales.contains(localeStr) ||
-               supportedLocales.contains(locale.getLanguage());
+                supportedLocales.contains(locale.getLanguage());
     }
 }

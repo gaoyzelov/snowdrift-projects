@@ -285,6 +285,8 @@ public final class EncryptUtil {
      * @return 加密后的文本 (Base64格式符串)
      */
     public static String rsaEncrypt(String text, String pubKey) {
+        AssertUtil.notBlank(text, "待加密文本不能为空");
+        AssertUtil.notBlank(pubKey, "公钥不能为空");
         try {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             KeySpec keySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(pubKey));
@@ -306,6 +308,8 @@ public final class EncryptUtil {
      * @return 解密后的文本
      */
     public static String rsaDecrypt(String text, String priKey) {
+        AssertUtil.notBlank(text, "待解密文本不能为空");
+        AssertUtil.notBlank(priKey, "私钥不能为空");
         try {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             KeySpec keySpec = new PKCS8EncodedKeySpec(Base64.getDecoder().decode(priKey));

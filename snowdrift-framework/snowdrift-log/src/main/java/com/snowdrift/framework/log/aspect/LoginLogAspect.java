@@ -16,6 +16,7 @@ import org.aspectj.lang.JoinPoint;
 import org.aspectj.lang.annotation.AfterReturning;
 import org.aspectj.lang.annotation.AfterThrowing;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.annotation.Order;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -30,6 +31,7 @@ import java.util.Objects;
  */
 @Slf4j
 @Aspect
+@Order(100)
 public class LoginLogAspect {
 
     @Resource

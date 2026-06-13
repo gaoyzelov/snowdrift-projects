@@ -48,6 +48,13 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
     }
 
     @Override
+    public void put(String key, Object value) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        AssertUtil.notNull(value, "cache.value.required");
+        redisTemplate.opsForValue().set(buildKey(key), value);
+    }
+
+    @Override
     public void put(String key, Object value, Duration ttl) {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
@@ -58,6 +65,15 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
         } else {
             redisTemplate.opsForValue().set(realKey, value);
         }
+    }
+
+    @Override
+    public boolean putIfAbsent(String key, Object value) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        AssertUtil.notNull(value, "cache.value.required");
+        String realKey = buildKey(key);
+        Boolean result = redisTemplate.opsForValue().setIfAbsent(realKey, value);
+        return Boolean.TRUE.equals(result);
     }
 
     @Override

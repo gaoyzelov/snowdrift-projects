@@ -50,6 +50,14 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
     }
 
     @Override
+    public void put(String key, Object value) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        AssertUtil.notNull(value, "cache.value.required");
+        RBucket<Object> bucket = redissonClient.getBucket(buildKey(key));
+        bucket.set(value);
+    }
+
+    @Override
     public void put(String key, Object value, Duration ttl) {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
@@ -60,6 +68,14 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
         } else {
             bucket.set(value);
         }
+    }
+
+    @Override
+    public boolean putIfAbsent(String key, Object value) {
+        AssertUtil.notBlank(key, "cache.key.required");
+        AssertUtil.notNull(value, "cache.value.required");
+        RBucket<Object> bucket = redissonClient.getBucket(buildKey(key));
+        return bucket.setIfAbsent(value);
     }
 
     @Override

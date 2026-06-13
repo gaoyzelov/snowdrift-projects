@@ -3,6 +3,7 @@ package com.snowdrift.framework.cache.config;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.Duration;
 
@@ -14,13 +15,9 @@ import java.time.Duration;
  * @since 1.0.0
  */
 @Data
+@Validated
 @ConfigurationProperties(prefix = "snowdrift.cache")
 public class CacheProperties {
-
-    /**
-     * 缓存类型（caffeine / redis / redisson），不配置则根据类路径自动检测
-     */
-    private CacheTypeEnum type;
 
     /**
      * key 全局前缀

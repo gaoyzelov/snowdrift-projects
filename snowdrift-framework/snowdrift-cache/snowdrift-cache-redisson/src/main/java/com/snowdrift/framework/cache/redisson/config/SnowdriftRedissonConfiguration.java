@@ -11,8 +11,8 @@ import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.config.Config;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Bean;
 
@@ -30,7 +30,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @AutoConfiguration(beforeName = "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration")
-@ConditionalOnProperty(name = "snowdrift.cache.type", havingValue = "redisson")
+@ConditionalOnClass(org.redisson.api.RedissonClient.class)
 public class SnowdriftRedissonConfiguration {
 
     private static final String REDIS_URI_PREFIX = "redis://";

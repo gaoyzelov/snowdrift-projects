@@ -9,7 +9,6 @@ import com.snowdrift.framework.web.properties.ResourceProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.boot.web.servlet.ServletComponentScan;
@@ -53,7 +52,7 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
      */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        if (!corsProperties.isEnabled()){
+        if (!corsProperties.getEnabled()){
             return;
         }
         registry.addMapping(corsProperties.getPath())
@@ -81,9 +80,8 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
      * 静态资源映射
      */
     @Override
-    @ConditionalOnProperty(prefix = "snowdrift.resource", name = "enabled", havingValue = "true")
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        if (resourceProperties == null || CollectionUtils.isEmpty(resourceProperties.getMappings())) {
+        if (resourceProperties == null || !resourceProperties.getEnabled() || CollectionUtils.isEmpty(resourceProperties.getMappings())) {
             return;
         }
         for (ResourceProperties.ResourceMapping mapping : resourceProperties.getMappings()) {

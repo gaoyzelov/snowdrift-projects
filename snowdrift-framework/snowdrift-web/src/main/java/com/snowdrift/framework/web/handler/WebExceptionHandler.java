@@ -201,7 +201,7 @@ public class WebExceptionHandler {
     public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
         log.warn("非法参数: {}", e.getMessage());
         // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("common.illegal.argument", e.getMessage());
+        String i18nMessage = I18nUtil.getMessage("common.illegal.argument");
         return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
     }
 

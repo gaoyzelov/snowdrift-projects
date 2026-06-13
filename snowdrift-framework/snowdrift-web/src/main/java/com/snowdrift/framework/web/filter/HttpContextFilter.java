@@ -6,7 +6,6 @@ import com.snowdrift.framework.common.util.ServletUtil;
 import com.snowdrift.framework.context.http.HttpContext;
 import com.snowdrift.framework.context.http.HttpContextHolder;
 import jakarta.servlet.*;
-import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.io.IOException;
@@ -18,7 +17,6 @@ import java.io.IOException;
  * @description Http请求上下文过滤器
  * @since 1.0.0
  */
-@WebFilter(urlPatterns = "/*")
 public class HttpContextFilter implements Filter {
     @Override
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {

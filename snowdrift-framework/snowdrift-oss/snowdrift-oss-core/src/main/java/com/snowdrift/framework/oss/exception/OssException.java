@@ -22,8 +22,7 @@ public class OssException extends BizException {
     }
 
     public OssException(String message, Object[] args, Throwable cause) {
-        super(message, args);
-        initCause(cause);
+        super(message, args,cause);
     }
 
 }

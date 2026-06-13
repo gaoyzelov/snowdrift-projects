@@ -1,5 +1,6 @@
 package com.snowdrift.framework.web.config;
 
+import com.snowdrift.framework.common.util.AssertUtil;
 import com.snowdrift.framework.context.http.HttpContext;
 import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.context.security.SecurityContext;
@@ -8,9 +9,9 @@ import com.snowdrift.framework.log.util.LogTraceUtil;
 import com.snowdrift.framework.web.properties.AsyncProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.task.TaskDecorator;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -30,7 +31,7 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 @Slf4j
 @EnableAsync
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties(AsyncProperties.class)
 @ConditionalOnProperty(prefix = "snowdrift.async", name = "enabled", havingValue = "true")
 public class AsyncConfiguration implements AsyncConfigurer {
@@ -44,6 +45,8 @@ public class AsyncConfiguration implements AsyncConfigurer {
 
     @Override
     public Executor getAsyncExecutor() {
+        AssertUtil.isTrue(asyncProperties.getCorePoolSize() <= asyncProperties.getMaxPoolSize(),
+                "corePoolSize 不能大于 maxPoolSize");
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(asyncProperties.getCorePoolSize()); // 设置核心线程数
         executor.setMaxPoolSize(asyncProperties.getMaxPoolSize()); // 设置最大线程数
@@ -90,6 +93,7 @@ public class AsyncConfiguration implements AsyncConfigurer {
                     // 清理上下文，避免内存泄漏
                     HttpContextHolder.clear();
                     SecurityContextHolder.clear();
+                    LogTraceUtil.clearTraceId();
                 }
             };
         };

@@ -41,6 +41,17 @@ public class SecurityProperties {
     private Long timeout = 86400L;
 
     /**
+     * Token 活跃超时时间（秒）
+     * <p>
+     * 用户最后一次访问后，Token 保持活跃的最大时长。
+     * 超过此时间未访问则视为闲置，Token 将被清理。
+     * 默认 1800 秒（30 分钟）。
+     * </p>
+     */
+    @NotNull
+    private long activeTimeout = 1800;
+
+    /**
      * Token 前缀（拼接在 Token 值之前，中间用空格分隔）
      * <p>
      * 如 Bearer Token 格式：{@code Authorization: Bearer <token>}

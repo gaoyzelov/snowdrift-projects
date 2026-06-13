@@ -8,7 +8,6 @@ import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
 import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
@@ -33,7 +32,6 @@ import java.util.concurrent.TimeUnit;
         "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration",
         "com.snowdrift.framework.cache.redisson.config.SnowdriftRedissonConfiguration"
 })
-@ConditionalOnProperty(name = "snowdrift.cache.type", havingValue = "caffeine")
 public class SnowdriftCaffeineConfiguration implements CachingConfigurer {
 
     private final CacheProperties cacheProperties;

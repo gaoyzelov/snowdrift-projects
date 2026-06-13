@@ -1,6 +1,8 @@
 package com.snowdrift.framework.log.aspect;
 
 import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
 import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.result.ResultCode;
 import com.snowdrift.framework.common.util.DateTimeUtil;
@@ -26,16 +28,14 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.annotation.Order;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Reader;
-import java.util.Arrays;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.regex.Pattern;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * ApiLogAspect
@@ -47,6 +47,7 @@ import java.util.regex.Pattern;
  */
 @Slf4j
 @Aspect
+@Order(100)
 public class ApiLogAspect {
 
     private final ILogService logService;
@@ -120,7 +121,7 @@ public class ApiLogAspect {
                 .duration(stopWatch.getDuration().toMillis())
                 .userId(securityContext.getUserId())
                 .tenantId(securityContext.getTenantId())
-                .operator(securityContext.getNickname())
+                .operator(SecurityContextHolder.getOperatorName())
                 .operateTime(DateTimeUtil.timestampToLocalDateTime(stopWatch.getStartInstant().toEpochMilli()))
                 .build();
 
@@ -169,7 +170,10 @@ public class ApiLogAspect {
             json = safeSerialize(filtered);
         }
         if (ArrayUtils.isNotEmpty(apiLogAnno.mask())) {
-            return applyMask(json, apiLogAnno.mask());
+            Set<String> maskFields = Arrays.stream(apiLogAnno.mask())
+                    .map(String::toLowerCase)
+                    .collect(Collectors.toSet());
+            return applyMask(json, maskFields);
         }
         return json;
     }
@@ -191,22 +195,47 @@ public class ApiLogAspect {
     }
 
     /**
-     * 对 JSON 字符串做深度脱敏，正则匹配任意嵌套层级的指定字段
+     * 对 JSON 做递归脱敏，将指定字段的值替换为 ******
      *
      * @param json       JSON 字符串
-     * @param maskFields 需要脱敏的字段名
+     * @param maskFields 需脱敏的字段名（小写）
      * @return 脱敏后的 JSON 字符串
      */
-    private String applyMask(String json, String[] maskFields) {
+    private String applyMask(String json, Set<String> maskFields) {
         if (StringUtils.isBlank(json)) {
             return json;
         }
-        for (String field : maskFields) {
-            json = json.replaceAll(
-                    "(?i)\"" + Pattern.quote(field) + "\"\\s*:\\s*(\"[^\"]*\"|[^\\s,\\[\\]{}]+)",
-                    "\"" + field + "\":\"******\"");
+        try {
+            Object parsed = JSON.parse(json);
+            maskValue(parsed, maskFields);
+            return JSON.toJSONString(parsed);
+        } catch (Exception e) {
+            log.error("JSON 脱敏失败，返回原始数据", e);
+            return json;
         }
-        return json;
+    }
+
+    /**
+     * 递归脱敏 JSON 中的指定字段
+     */
+    private void maskValue(Object value, Set<String> maskFields) {
+        if (value instanceof JSONObject obj) {
+            List<String> toMask = new ArrayList<>();
+            for (String key : obj.keySet()) {
+                if (maskFields.contains(key.toLowerCase())) {
+                    toMask.add(key);
+                } else {
+                    maskValue(obj.get(key), maskFields);
+                }
+            }
+            for (String key : toMask) {
+                obj.put(key, "******");
+            }
+        } else if (value instanceof JSONArray arr) {
+            for (Object item : arr) {
+                maskValue(item, maskFields);
+            }
+        }
     }
 
     /**

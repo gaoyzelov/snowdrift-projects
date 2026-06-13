@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.springframework.core.annotation.Order;
 
 import java.util.concurrent.TimeUnit;
 
@@ -25,6 +26,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Slf4j
 @Aspect
+@Order(2)
 public class DistributedLockAspect {
 
     private final DistributedLockService lockService;

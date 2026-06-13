@@ -24,13 +24,8 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class InMemoryTokenStore implements TokenStore {
 
-    /**
-     * 闲置超时阈值（秒）：距上次 get() 超过此时间即视为废弃，可以被定时任务回收。
-     * 解决过期时间设得很长（如 30 天）时，已废弃 token 长期积压的问题。
-     */
-    private static final long IDLE_TIMEOUT_SECONDS = 1800;
-
     private final long defaultTimeoutSeconds;
+    private final long idleTimeoutSeconds;
     private final ConcurrentHashMap<String, TokenEntry> map = new ConcurrentHashMap<>();
     private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "token-store-cleaner");
@@ -38,8 +33,9 @@ public class InMemoryTokenStore implements TokenStore {
         return t;
     });
 
-    public InMemoryTokenStore(long defaultTimeoutSeconds) {
+    public InMemoryTokenStore(long defaultTimeoutSeconds, long idleTimeoutSeconds) {
         this.defaultTimeoutSeconds = defaultTimeoutSeconds;
+        this.idleTimeoutSeconds = idleTimeoutSeconds;
         cleaner.scheduleWithFixedDelay(this::cleanExpired, 60, 60, TimeUnit.SECONDS);
     }
 
@@ -81,7 +77,7 @@ public class InMemoryTokenStore implements TokenStore {
 
     private void cleanExpired() {
         long now = System.currentTimeMillis();
-        long idleThreshold = IDLE_TIMEOUT_SECONDS * 1000;
+        long idleThreshold = idleTimeoutSeconds * 1000;
         map.forEach((token, entry) -> {
             if (entry.expireAt < now || (now - entry.lastActiveAt) > idleThreshold) {
                 map.remove(token);

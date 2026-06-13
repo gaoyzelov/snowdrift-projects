@@ -11,7 +11,6 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * LogRecordServiceImpl
@@ -29,20 +28,18 @@ public class LogRecordServiceImpl implements ILogRecordService {
 
     @Override
     public void record(LogRecord logRecord) {
+        SecurityContext context = SecurityContextHolder.getContext();
         OperateLogCreateDTO operateLogDTO = OperateLogCreateDTO.builder()
                 .traceId(LogTraceUtil.getTraceId())
                 .bizId(logRecord.getBizNo())
                 .bizModule(logRecord.getType())
                 .bizType(logRecord.getSubType())
                 .content(logRecord.getAction())
+                .userId(context.getUserId())
+                .tenantId(context.getTenantId())
+                .operator(SecurityContextHolder.getOperatorName())
                 .operateTime(DateTimeUtil.dateToLocalDateTime(logRecord.getCreateTime()))
                 .build();
-        SecurityContext context = SecurityContextHolder.getContext();
-        if (Objects.nonNull(context)){
-            operateLogDTO.setUserId(context.getUserId());
-            operateLogDTO.setTenantId(context.getTenantId());
-            operateLogDTO.setOperator(context.getNickname());
-        }
         //记录日志
         logService.saveOperateLog(operateLogDTO);
     }
@@ -55,17 +52,5 @@ public class LogRecordServiceImpl implements ILogRecordService {
     @Override
     public List<LogRecord> queryLogByBizNo(String bizNo, String type, String subType) {
         throw new UnsupportedOperationException();
-    }
-
-    /**
-     * 安全解析业务 ID
-     */
-    private static Long parseBizId(String bizNo) {
-        try {
-            return Long.parseLong(bizNo);
-        } catch (NumberFormatException e) {
-            log.warn("业务号无法解析为 Long: {}", bizNo);
-            return null;
-        }
     }
 }

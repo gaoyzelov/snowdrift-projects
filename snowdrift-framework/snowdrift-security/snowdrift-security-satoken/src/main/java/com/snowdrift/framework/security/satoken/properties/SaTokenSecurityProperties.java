@@ -25,16 +25,6 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class SaTokenSecurityProperties extends SecurityProperties {
 
     /**
-     * Token 活跃超时时间（秒）
-     * <p>
-     * 用户最后一次访问后，Token 保持活跃的最大时长。
-     * 超过此时间未访问则 Token 冻结，默认 30 分钟。
-     * </p>
-     */
-    @NotNull
-    private long activeTimeout = 1800;
-
-    /**
      * 是否允许多端同时登录
      * <ul>
      *   <li>{@code true} — 同一用户可在多个设备同时在线</li>

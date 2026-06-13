@@ -56,28 +56,37 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
         return deserialize(value.toString(), type);
     }
 
-    /**
-     * Caffeine 不支持 per-key TTL，使用构造时统一配置的过期时间
-     */
     @Override
-    public void put(String key, Object value, Duration ttl) {
+    public void put(String key, Object value) {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
         cache.put(buildKey(key), serialize(value));
     }
 
     /**
-     * Caffeine 不支持 per-key TTL，使用构造时统一配置的过期时间
+     * Caffeine 不支持 per-key TTL
      */
     @Override
-    public boolean putIfAbsent(String key, Object value, Duration ttl) {
+    public void put(String key, Object value, Duration ttl) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean putIfAbsent(String key, Object value) {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
         String realKey = buildKey(key);
         String json = serialize(value);
-        // 使用 ConcurrentMap 原子 putIfAbsent
         Object existing = cache.asMap().putIfAbsent(realKey, json);
         return existing == null;
+    }
+
+    /**
+     * Caffeine 不支持 per-key TTL
+     */
+    @Override
+    public boolean putIfAbsent(String key, Object value, Duration ttl) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

@@ -53,6 +53,12 @@ public class BizException extends RuntimeException {
         this.code = ResultCode.ERR.code();
     }
 
+    public BizException(String message, Object[] args, Throwable cause) {
+        super(message,cause);
+        this.code = ResultCode.ERR.code();
+        this.args = args;
+    }
+
     public BizException(Throwable cause) {
         super(cause);
         this.code = ResultCode.ERR.code();
@@ -65,10 +71,7 @@ public class BizException extends RuntimeException {
 
     @Override
     public String getMessage() {
-        if (code != null) {
-            return "[" + code + "] " + super.getMessage();
-        }
-        return super.getMessage();
+        return "[" + code + "] " + super.getMessage();
     }
 
     public String getRawMessage() {

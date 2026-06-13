@@ -7,7 +7,6 @@ import com.snowdrift.framework.oss.qiniu.service.QiniuOssServiceImpl;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Configuration;
 
 /**
@@ -20,7 +19,6 @@ import org.springframework.context.annotation.Configuration;
  */
 @Slf4j
 @Configuration
-@ConditionalOnClass(QiniuOssServiceImpl.class)
 public class SnowdriftOssQiniuConfiguration {
 
     @Resource

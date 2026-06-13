@@ -7,7 +7,10 @@ package com.snowdrift.framework.common.constant;
  * @description 正则表达式常量
  * @since 1.0.0
  */
-public class RegexConst {
+public final class RegexConst {
+
+    private RegexConst() {
+    }
 
     // 地址
     public static final String URL = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
