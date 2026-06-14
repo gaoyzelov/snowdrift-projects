@@ -8,17 +8,24 @@ import com.snowdrift.framework.security.spring.filter.SecurityContextFilter;
 import com.snowdrift.framework.security.spring.handler.SpringSecurityExceptionHandler;
 import com.snowdrift.framework.security.spring.properties.SpringSecurityProperties;
 import com.snowdrift.framework.security.spring.service.SpringSecurityServiceImpl;
+import com.snowdrift.framework.security.spring.store.AbstractTokenStore;
 import com.snowdrift.framework.security.spring.store.InMemoryTokenStore;
+import com.snowdrift.framework.security.spring.store.RedisTokenStore;
 import com.snowdrift.framework.security.spring.store.TokenStore;
 import com.snowdrift.framework.web.i18n.I18nUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -106,7 +113,27 @@ public class SnowdriftSecuritySpringConfiguration {
     }
 
     /**
-     * 内存 TokenStore
+     * Redis TokenStore（当容器中存在 RedisTemplate 时优先使用）
+     */
+    @Bean
+    @ConditionalOnBean(RedisConnectionFactory.class)
+    @ConditionalOnMissingBean(TokenStore.class)
+    public TokenStore redisTokenStore(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+        template.setKeySerializer(RedisSerializer.string());
+        template.setHashKeySerializer(RedisSerializer.string());
+        template.setValueSerializer(new Jackson2JsonRedisSerializer<>(AbstractTokenStore.TokenEntry.class));
+        template.setHashValueSerializer(new Jackson2JsonRedisSerializer<>(AbstractTokenStore.TokenEntry.class));
+        template.afterPropertiesSet();
+        return new RedisTokenStore(template,
+                securityProperties.getTimeout(),
+                securityProperties.getActiveTimeout(),
+                securityProperties.getHeaderName() + ":token:");
+    }
+
+    /**
+     * 内存 TokenStore（Redis 不可用时的默认实现）
      */
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
