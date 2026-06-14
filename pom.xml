@@ -30,7 +30,6 @@
         <module>snowdrift-dependencies</module>
         <module>snowdrift-parent</module>
         <module>snowdrift-framework</module>
-        <module>snowdrift-sample</module>
     </modules>
 
     <properties>
