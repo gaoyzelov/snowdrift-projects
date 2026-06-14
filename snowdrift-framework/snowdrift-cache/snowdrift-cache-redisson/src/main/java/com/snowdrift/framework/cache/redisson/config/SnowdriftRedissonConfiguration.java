@@ -1,5 +1,6 @@
 package com.snowdrift.framework.cache.redisson.config;
 
+import com.snowdrift.framework.cache.CacheSerializer;
 import com.snowdrift.framework.cache.DistributedLockService;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
@@ -9,6 +10,7 @@ import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
+import org.redisson.codec.JsonJacksonCodec;
 import org.redisson.config.Config;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -63,6 +65,8 @@ public class SnowdriftRedissonConfiguration {
     @ConditionalOnMissingBean
     public RedissonClient redissonClient(RedisProperties redisProperties) {
         Config config = new Config();
+        // 使用 Jackson JSON 序列化，避免默认 MarshallingCodec 产生二进制乱码
+        config.setCodec(new JsonJacksonCodec(CacheSerializer.getObjectMapper()));
         String password = redisProperties.getPassword();
 
         if (redisProperties.getCluster() != null) {

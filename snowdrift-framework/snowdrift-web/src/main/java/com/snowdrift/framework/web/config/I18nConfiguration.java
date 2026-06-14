@@ -1,5 +1,6 @@
 package com.snowdrift.framework.web.config;
 
+import com.snowdrift.framework.web.advice.ResultI18nAdvice;
 import com.snowdrift.framework.web.i18n.I18nMessageSource;
 import com.snowdrift.framework.web.i18n.I18nMessageSourceImpl;
 import com.snowdrift.framework.web.i18n.I18nUtil;
@@ -68,5 +69,13 @@ public class I18nConfiguration implements WebMvcConfigurer {
         // 初始化工具类
         I18nUtil.initMessageSource(source);
         return source;
+    }
+
+    /**
+     * Result 响应体 i18n 自动解析
+     */
+    @Bean
+    public ResultI18nAdvice resultI18nAdvice() {
+        return new ResultI18nAdvice();
     }
 }
