@@ -117,7 +117,7 @@ public final class IpUtil {
         delimiter = StringUtils.isBlank(delimiter) ? StrConst.SPACE : delimiter;
         // 过滤无意义的"0"和内网IP标识
         List<String> list = Arrays.stream(info)
-                .filter(s -> !s.equals("0") && !s.equals("内网IP"))
+                .filter(s -> !"0".equals(s) && !"内网IP".equals(s))
                 .toList();
         return String.join(delimiter, list);
     }
