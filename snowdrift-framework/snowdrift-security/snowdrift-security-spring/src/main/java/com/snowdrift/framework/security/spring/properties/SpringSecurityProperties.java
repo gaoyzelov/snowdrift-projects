@@ -1,6 +1,7 @@
 package com.snowdrift.framework.security.spring.properties;
 
 import com.snowdrift.framework.security.properties.SecurityProperties;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -18,6 +19,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 1.0.0
  */
 @Data
+@Valid
 @EqualsAndHashCode(callSuper = true)
 @ConfigurationProperties(prefix = "snowdrift.security.spring")
 public class SpringSecurityProperties extends SecurityProperties {

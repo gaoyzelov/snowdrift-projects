@@ -1,6 +1,7 @@
 package com.snowdrift.framework.security.satoken.properties;
 
 import com.snowdrift.framework.security.properties.SecurityProperties;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -20,6 +21,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * @since 1.0.0
  */
 @Data
+@Valid
 @EqualsAndHashCode(callSuper = true)
 @ConfigurationProperties(prefix = "snowdrift.security.sa-token")
 public class SaTokenSecurityProperties extends SecurityProperties {

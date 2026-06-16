@@ -11,4 +11,7 @@ package com.snowdrift.framework.schedule.core;
  * @date 2026/6/15
  * @since 1.0.0
  */
-public interface IJobKey {}
+public interface IJobKey {
+
+    Object getValue();
+}

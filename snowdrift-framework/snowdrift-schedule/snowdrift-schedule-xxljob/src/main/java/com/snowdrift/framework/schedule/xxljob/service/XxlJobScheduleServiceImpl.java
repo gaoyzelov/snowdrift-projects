@@ -95,12 +95,16 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
 
     @Override
     public boolean exists(XxlJobKey jobKey) {
-        return findJobById(jobKey.getId()) != null;
+        return Objects.nonNull(getJob(jobKey));
     }
 
     @Override
     public JobDetails getJob(XxlJobKey jobKey) {
-        return convertToJobDetails(findJobById(jobKey.getId()));
+        List<JobDetails> jobDetails = listJobs();
+        return jobDetails.stream()
+                .filter(job -> job.getJobKey().getValue().equals(jobKey.getId()))
+                .findFirst()
+                .orElse(null);
     }
 
     @Override
@@ -118,9 +122,13 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
             param.put("jobGroup", String.valueOf(groupId));
             param.put("offset", String.valueOf(offset));
             param.put("pagesize", String.valueOf(PAGE_SIZE));
+            param.put("triggerStatus","-1");
+            param.put("jobDesc", StrConst.EMPTY);
+            param.put("executorHandler", StrConst.EMPTY);
+            param.put("author", StrConst.EMPTY);
 
             JSONObject resp = callAdminPostApi(XxlJobApiConst.JOB_PAGE_PATH, param);
-            JSONObject content = resp.getJSONObject("content");
+            JSONObject content = resp.getJSONObject("data");
             if (content == null) break;
             JSONArray data = content.getJSONArray("data");
             if (data == null || data.isEmpty()) break;
@@ -337,37 +345,11 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         throw new BizException("schedule.xxl.group.not.found", new Object[]{appName});
     }
 
-    /**
-     * 根据任务 ID 查找任务
-     */
-    private JSONObject findJobById(int jobId) {
-        int groupId = getExecutorGroupId(properties.getAppName());
-        int offset = 0;
-        while (true) {
-            Map<String, String> param = new HashMap<>();
-            param.put("jobGroup", String.valueOf(groupId));
-            param.put("offset", String.valueOf(offset));
-            param.put("pagesize", String.valueOf(PAGE_SIZE));
-
-            JSONObject result = callAdminGetApi(XxlJobApiConst.JOB_PAGE_PATH, param);
-            JSONObject content = result.getJSONObject("data");
-            if (content == null) break;
-            JSONArray data = content.getJSONArray("data");
-            if (data == null || data.isEmpty()) break;
-            for (int i = 0; i < data.size(); i++) {
-                JSONObject job = data.getJSONObject(i);
-                if (job.getIntValue("id") == jobId) return job;
-            }
-            int total = content.getIntValue("total");
-            offset += PAGE_SIZE;
-            if (offset >= total) break;
-        }
-        return null;
-    }
 
     private JobDetails convertToJobDetails(JSONObject job) {
         if (job == null) return null;
         JobDetails details = new JobDetails();
+        details.setJobKey(XxlJobKey.newInstance(job.getIntValue("id")));
         details.setName(job.getString("executorHandler"));
         details.setGroup(String.valueOf(job.getIntValue("jobGroup")));
         details.setCron(job.getString("scheduleConf"));

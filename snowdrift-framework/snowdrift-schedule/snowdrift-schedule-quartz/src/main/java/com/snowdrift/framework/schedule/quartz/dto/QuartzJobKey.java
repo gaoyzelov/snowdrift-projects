@@ -2,6 +2,7 @@ package com.snowdrift.framework.schedule.quartz.dto;
 
 import com.snowdrift.framework.schedule.core.IJobKey;
 import lombok.Data;
+import org.quartz.JobKey;
 
 /**
  * Quartz 任务标识 — 基于 name + group 定位任务（对应 {@code org.quartz.JobKey}）
@@ -25,5 +26,10 @@ public class QuartzJobKey implements IJobKey {
         quartzJobKey.setName(name);
         quartzJobKey.setGroup(group);
         return quartzJobKey;
+    }
+
+    @Override
+    public Object getValue() {
+        return JobKey.jobKey(name,group);
     }
 }

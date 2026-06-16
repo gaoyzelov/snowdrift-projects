@@ -1,5 +1,6 @@
 package com.snowdrift.framework.security.properties;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -20,6 +21,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Data
+@Valid
 public class SecurityProperties {
 
     /**

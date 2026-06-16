@@ -1,5 +1,6 @@
 package com.snowdrift.framework.schedule.dto;
 
+import com.snowdrift.framework.schedule.core.IJobKey;
 import com.snowdrift.framework.schedule.enums.JobStatusEnum;
 import lombok.Data;
 
@@ -19,6 +20,9 @@ import java.util.Map;
  */
 @Data
 public class JobDetails implements Serializable {
+
+    /** 任务键 — Quartz JobKey / XXL-JOB jobId */
+    private IJobKey jobKey;
 
     /** 任务名称 — Quartz JobKey.name / XXL-JOB executorHandler */
     private String name;

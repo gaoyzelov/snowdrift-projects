@@ -23,4 +23,9 @@ public class XxlJobKey implements IJobKey {
         xxlJobKey.setId(id);
         return xxlJobKey;
     }
+
+    @Override
+    public Object getValue() {
+        return id;
+    }
 }
