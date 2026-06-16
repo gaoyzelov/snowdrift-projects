@@ -104,7 +104,7 @@ public final class AssertUtil {
      * @param message   错误信息
      */
     public static void custom(Supplier<Boolean> predicate, String message) {
-        if (!predicate.get()){
+        if (Boolean.FALSE.equals(predicate.get())){
             throw new BizException(message);
         }
     }

@@ -3,6 +3,7 @@ package com.snowdrift.framework.common.util;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.*;
 
 /**
@@ -27,6 +28,27 @@ public final class ReflectUtil {
      */
     public static <T> List<Field> getDeclaredFields(T t) {
         return getDeclaredFields(t, false);
+    }
+
+    /**
+     * 根据方法名查找 Method 对象
+     * <p>
+     * 仅查找当前类的声明方法（不含父类），返回前调用 {@code setAccessible(true)}。
+     * </p>
+     *
+     * @param clazz 目标类
+     * @param name  方法名
+     * @return Method 对象
+     * @throws NoSuchMethodException 方法不存在时抛出
+     */
+    public static Method getMethod(Class<?> clazz, String name) throws NoSuchMethodException {
+        for (Method m : clazz.getDeclaredMethods()) {
+            if (m.getName().equals(name)) {
+                m.setAccessible(true);
+                return m;
+            }
+        }
+        throw new NoSuchMethodException(clazz.getName() + "#" + name);
     }
 
     /**

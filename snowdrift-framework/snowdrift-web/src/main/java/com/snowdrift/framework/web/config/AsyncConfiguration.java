@@ -66,12 +66,10 @@ public class AsyncConfiguration implements AsyncConfigurer {
      */
     @Override
     public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
-        return (ex, method, params) -> {
-            log.error("异步执行方法: {}, 参数: {}, 发生异常",
-                    method.getName(),
-                    Arrays.toString(params),
-                    ex);
-        };
+        return (ex, method, params) -> log.error("异步执行方法: {}, 参数: {}, 发生异常",
+                method.getName(),
+                Arrays.toString(params),
+                ex);
     }
 
     /**

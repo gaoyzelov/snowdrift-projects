@@ -5,16 +5,17 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.snowdrift</groupId>
-        <artifactId>snowdrift-framework</artifactId>
+        <artifactId>snowdrift-schedule</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-schedule</artifactId>
-    <packaging>pom</packaging>
-    <description>Snowdrift Schedule Module</description>
-    <modules>
-        <module>snowdrift-schedule-core</module>
-        <module>snowdrift-schedule-quartz</module>
-        <module>snowdrift-schedule-xxljob</module>
-    </modules>
+    <artifactId>snowdrift-schedule-core</artifactId>
+    <description>Snowdrift Schedule Core — 统一调度接口与抽象</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>com.snowdrift</groupId>
+            <artifactId>snowdrift-common</artifactId>
+        </dependency>
+    </dependencies>
 </project>
