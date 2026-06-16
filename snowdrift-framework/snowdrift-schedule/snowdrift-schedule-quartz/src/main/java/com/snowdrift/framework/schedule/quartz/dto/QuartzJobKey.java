@@ -11,19 +11,19 @@ import lombok.Data;
  * @since 1.0.0
  */
 @Data
-public class QuartzIJobKey implements IJobKey {
+public class QuartzJobKey implements IJobKey {
 
     /** 任务名称 */
     private String name;
     /** 任务分组 */
     private String group;
 
-    private QuartzIJobKey(){}
+    private QuartzJobKey(){}
 
-    public static QuartzIJobKey newInstance(String name, String group) {
-        QuartzIJobKey quartzIJobKey = new QuartzIJobKey();
-        quartzIJobKey.setName(name);
-        quartzIJobKey.setGroup(group);
-        return quartzIJobKey;
+    public static QuartzJobKey newInstance(String name, String group) {
+        QuartzJobKey quartzJobKey = new QuartzJobKey();
+        quartzJobKey.setName(name);
+        quartzJobKey.setGroup(group);
+        return quartzJobKey;
     }
 }

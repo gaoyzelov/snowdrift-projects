@@ -6,7 +6,7 @@ import com.snowdrift.framework.schedule.core.IScheduleService;
 import com.snowdrift.framework.schedule.dto.JobDetails;
 import com.snowdrift.framework.schedule.enums.JobStatusEnum;
 import com.snowdrift.framework.schedule.enums.MisfireStrategyEnum;
-import com.snowdrift.framework.schedule.quartz.dto.QuartzIJobKey;
+import com.snowdrift.framework.schedule.quartz.dto.QuartzJobKey;
 import com.snowdrift.framework.schedule.quartz.dto.QuartzJobRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
@@ -28,7 +28,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 @Slf4j
-public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequest, QuartzIJobKey> {
+public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequest, QuartzJobKey> {
 
     private final Scheduler scheduler;
 
@@ -39,7 +39,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     // ========== 任务管理 ==========
 
     @Override
-    public void addJob(QuartzJobRequest request) {
+    public QuartzJobKey addJob(QuartzJobRequest request) {
         if (request.getJobClass() == null) {
             throw new BizException("schedule.job.register.failed",
                     new Object[]{request.getName(), "jobClass 不能为空"});
@@ -71,6 +71,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             scheduler.scheduleJob(detail, trigger);
             log.info("Quartz 任务注册成功: name={}, group={}, cron={}",
                     request.getName(), request.getGroup(), request.getCron());
+            return QuartzJobKey.newInstance(request.getName(),request.getGroup());
         } catch (SchedulerException e) {
             log.error("Quartz 任务注册失败: name={}, group={}", request.getName(), request.getGroup(), e);
             throw new BizException("schedule.job.register.failed",
@@ -79,7 +80,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     }
 
     @Override
-    public void removeJob(QuartzIJobKey jobKey) {
+    public void removeJob(QuartzJobKey jobKey) {
         try {
             scheduler.deleteJob(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()));
             log.info("Quartz 任务删除成功: name={}, group={}", jobKey.getName(), jobKey.getGroup());
@@ -91,7 +92,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     }
 
     @Override
-    public void pauseJob(QuartzIJobKey jobKey) {
+    public void pauseJob(QuartzJobKey jobKey) {
         try {
             scheduler.pauseJob(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()));
             log.info("Quartz 任务暂停: name={}, group={}", jobKey.getName(), jobKey.getGroup());
@@ -103,7 +104,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     }
 
     @Override
-    public void resumeJob(QuartzIJobKey jobKey) {
+    public void resumeJob(QuartzJobKey jobKey) {
         try {
             scheduler.resumeJob(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()));
             log.info("Quartz 任务恢复: name={}, group={}", jobKey.getName(), jobKey.getGroup());
@@ -115,7 +116,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     }
 
     @Override
-    public void triggerJob(QuartzIJobKey jobKey, Map<String, Object> params) {
+    public void triggerJob(QuartzJobKey jobKey, Map<String, Object> params) {
         try {
             JobDataMap dataMap = new JobDataMap(params);
             scheduler.triggerJob(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()), dataMap);
@@ -130,7 +131,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     // ========== 查询 ==========
 
     @Override
-    public boolean exists(QuartzIJobKey jobKey) {
+    public boolean exists(QuartzJobKey jobKey) {
         try {
             return scheduler.checkExists(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()));
         } catch (SchedulerException e) {
@@ -140,7 +141,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     }
 
     @Override
-    public JobDetails getJob(QuartzIJobKey jobKey) {
+    public JobDetails getJob(QuartzJobKey jobKey) {
         try {
             JobDetail detail = scheduler.getJobDetail(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()));
             if (detail == null) {
@@ -187,7 +188,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
         List<JobDetails> result = new ArrayList<>();
         try {
             for (JobKey jobKey : scheduler.getJobKeys(GroupMatcher.jobGroupEquals(group))) {
-                JobDetails info = getJob(QuartzIJobKey.newInstance(jobKey.getName(), jobKey.getGroup()));
+                JobDetails info = getJob(QuartzJobKey.newInstance(jobKey.getName(), jobKey.getGroup()));
                 if (info != null) {
                     result.add(info);
                 }

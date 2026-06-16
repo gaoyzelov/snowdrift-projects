@@ -1,10 +1,12 @@
 package com.snowdrift.framework.schedule.xxljob.config;
 
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.validation.annotation.Validated;
+
+import java.time.Duration;
 
 /**
  * XXL-JOB 调度配置属性
@@ -18,7 +20,7 @@ import org.springframework.validation.annotation.Validated;
  * @since 1.0.0
  */
 @Data
-@Validated
+@Valid
 @ConfigurationProperties(prefix = "snowdrift.schedule.xxl-job")
 public class XxlJobProperties {
 
@@ -29,7 +31,8 @@ public class XxlJobProperties {
     private Boolean enabled = true;
 
     /**
-     * Admin 控制台地址（如 http://localhost:8080/xxl-job-admin）
+     * Admin 控制台地址（如 http://localhost:8080）
+     * <p>多个地址用逗号分隔</p>
      */
     @NotBlank
     private String adminAddresses;
@@ -41,9 +44,32 @@ public class XxlJobProperties {
     private String appName = "snowdrift-job";
 
     /**
-     * Admin 通讯 Token
+     * Admin 登录账号
      */
     @NotBlank
+    private String username;
+
+    /**
+     * Admin 登录密码
+     */
+    @NotBlank
+    private String password;
+
+    /**
+     * Admin 登录 Token Key
+     * <p>登录成功后从响应 Cookie 中按此 key 提取 token 值</p>
+     */
+    private String loginTokenKey = "xxl_job_login_token";
+
+    /**
+     * Admin 登录 Token 超时时间
+     * <p>登录成功后生成的 token 有效期</p>
+     */
+    private Duration loginTokenTimeout = Duration.ofHours(1);
+
+    /**
+     * Admin 通讯 Token（OpenApi 方式认证，后续兼容）
+     */
     private String accessToken;
 
     /**

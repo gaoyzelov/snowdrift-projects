@@ -11,16 +11,16 @@ import lombok.Data;
  * @since 1.0.0
  */
 @Data
-public class XxlIJobKey implements IJobKey {
+public class XxlJobKey implements IJobKey {
 
     /** 任务 ID（XXL-JOB Admin 端唯一标识） */
     private Integer id;
 
-    private XxlIJobKey(){}
+    private XxlJobKey(){}
 
-    public static XxlIJobKey newInstance(int id) {
-        XxlIJobKey xxlIJobKey = new XxlIJobKey();
-        xxlIJobKey.setId(id);
-        return xxlIJobKey;
+    public static XxlJobKey newInstance(int id) {
+        XxlJobKey xxlJobKey = new XxlJobKey();
+        xxlJobKey.setId(id);
+        return xxlJobKey;
     }
 }
