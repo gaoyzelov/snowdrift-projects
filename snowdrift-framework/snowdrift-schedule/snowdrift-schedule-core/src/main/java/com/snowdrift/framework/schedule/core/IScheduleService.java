@@ -23,7 +23,7 @@ public interface IScheduleService<T extends JobRequest, K extends IJobKey> {
 
     // ========== 任务管理 ==========
 
-    IJobKey addJob(T request);
+    K addJob(T request);
 
     void removeJob(K jobKey);
 

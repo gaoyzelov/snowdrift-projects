@@ -10,10 +10,11 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 /**
- * Quartz 璋冨害鑷姩閰嶇疆
+ * Quartz 调度自动配置
  * <p>
- * 褰?{@link Scheduler} 鍦ㄧ被璺緞涓彲鐢ㄤ笖 {@code snowdrift.schedule.quartz.enabled=true} 鏃舵縺娲汇€? * 鍦?XXL-JOB 鑷姩閰嶇疆涔嬪悗澶勭悊锛岃嫢 XXL-JOB 宸叉敞鍐?{@link IScheduleService} 鍒欒烦杩囥€? * </p>
- *
+ * 当 {@link Scheduler} 在类路径中可用且 {@code snowdrift.schedule.quartz.enabled=true} 时激活。
+ * 在 XXL-JOB 自动配置之后处理，若 XXL-JOB 已注册 {@link IScheduleService} 则跳过。
+ * </p>
  * @author 83674
  * @date 2026/6/15
  * @since 1.0.0
