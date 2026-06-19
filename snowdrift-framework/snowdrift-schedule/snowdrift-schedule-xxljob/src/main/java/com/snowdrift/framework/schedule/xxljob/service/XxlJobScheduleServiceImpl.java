@@ -64,21 +64,31 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     @Override
     public void removeJob(XxlJobKey jobKey) {
         callAdminPostApi(XxlJobApiConst.JOB_DELETE_PATH,
-                Map.of("ids", JSON.toJSONString(List.of(jobKey.getId()))));
+                Map.of("ids[]", String.valueOf(jobKey.getId())));
         log.info("XXL-JOB 任务删除成功: id={}", jobKey.getId());
+    }
+
+    @Override
+    public void updateJob(XxlJobKey jobKey, XxlJobRequest request) {
+        int groupId = jobKey.getGroupId() != null ? jobKey.getGroupId() : getExecutorGroupId(request.getGroup());
+        Map<String, String> param = buildJobParam(request, groupId);
+        param.put("id", String.valueOf(jobKey.getId()));
+        callAdminPostApi(XxlJobApiConst.JOB_UPDATE_PATH, param);
+        log.info("XXL-JOB 任务更新成功: id={}, name={}, cron={}",
+                jobKey.getId(), request.getName(), request.getCron());
     }
 
     @Override
     public void pauseJob(XxlJobKey jobKey) {
         callAdminPostApi(XxlJobApiConst.JOB_STOP_PATH,
-                Map.of("ids", JSON.toJSONString(List.of(jobKey.getId()))));
+                Map.of("ids[]", String.valueOf(jobKey.getId())));
         log.info("XXL-JOB 任务暂停: id={}", jobKey.getId());
     }
 
     @Override
     public void resumeJob(XxlJobKey jobKey) {
         callAdminPostApi(XxlJobApiConst.JOB_START_PATH,
-                Map.of("ids", JSON.toJSONString(List.of(jobKey.getId()))));
+                Map.of("ids[]", String.valueOf(jobKey.getId())));
         log.info("XXL-JOB 任务恢复: id={}", jobKey.getId());
     }
 
@@ -237,7 +247,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         ));
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
-                .timeout(Duration.ofSeconds(5))
+                .timeout(Duration.ofSeconds(properties.getAdminTimeout()))
                 .header("Content-Type", HttpUtil.CONTENT_TYPE_FORM)
                 .POST(HttpRequest.BodyPublishers.ofString(formBody, StandardCharsets.UTF_8))
                 .build();
@@ -420,7 +430,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         details.setGroup(String.valueOf(job.getIntValue("jobGroup")));
         details.setCron(job.getString("scheduleConf"));
         details.setDescription(job.getString("jobDesc"));
-        details.setStatus(job.getIntValue("triggerStatus") == 1 ? JobStatusEnum.NORMAL : JobStatusEnum.ERROR);
+        details.setStatus(job.getIntValue("triggerStatus") == 1 ? JobStatusEnum.NORMAL : JobStatusEnum.PAUSED);
         details.setParams(parseExecutorParam(job.getString("executorParam")));
         long lastTime = job.getLongValue("triggerLastTime", 0L);
         details.setLastFireTime(lastTime > 0 ? LocalDateTime.ofInstant(Instant.ofEpochMilli(lastTime), ZoneId.systemDefault()) : null);

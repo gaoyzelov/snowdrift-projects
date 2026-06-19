@@ -92,6 +92,51 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     }
 
     @Override
+    public void updateJob(QuartzJobKey jobKey, QuartzJobRequest request) {
+        if (request.getJobClass() == null) {
+            throw new BizException("schedule.job.update.failed",
+                    new Object[]{jobKey.getName(), "jobClass 不能为空"});
+        }
+        JobKey qJobKey = JobKey.jobKey(jobKey.getName(), jobKey.getGroup());
+        TriggerKey triggerKey = TriggerKey.triggerKey(jobKey.getName(), jobKey.getGroup());
+        try {
+            if (!scheduler.checkExists(qJobKey)) {
+                throw new BizException("schedule.job.update.failed",
+                        new Object[]{jobKey.getName(), "任务不存在"});
+            }
+
+            // 原地替换 JobDetail（参数、描述等）
+            JobDetail detail = JobBuilder.newJob(request.getJobClass())
+                    .withIdentity(qJobKey)
+                    .withDescription(request.getDescription())
+                    .usingJobData(new JobDataMap(request.getParams()))
+                    .storeDurably()
+                    .build();
+            scheduler.addJob(detail, true);
+
+            // 重新构建 CronTrigger 并 reschedule
+            CronScheduleBuilder cronBuilder = CronScheduleBuilder.cronSchedule(request.getCron());
+            if (MisfireStrategyEnum.FIRE_ONCE_NOW == request.getMisfireStrategy()) {
+                cronBuilder = cronBuilder.withMisfireHandlingInstructionFireAndProceed();
+            } else {
+                cronBuilder = cronBuilder.withMisfireHandlingInstructionDoNothing();
+            }
+            CronTrigger newTrigger = TriggerBuilder.newTrigger()
+                    .withIdentity(triggerKey)
+                    .withSchedule(cronBuilder)
+                    .build();
+            scheduler.rescheduleJob(triggerKey, newTrigger);
+
+            log.info("Quartz 任务更新成功: name={}, group={}, cron={}",
+                    request.getName(), request.getGroup(), request.getCron());
+        } catch (SchedulerException e) {
+            log.error("Quartz 任务更新失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
+            throw new BizException("schedule.job.update.failed",
+                    new Object[]{jobKey.getName(), e.getMessage()});
+        }
+    }
+
+    @Override
     public void pauseJob(QuartzJobKey jobKey) {
         try {
             scheduler.pauseJob(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()));
@@ -203,15 +248,15 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
 
     /**
      * 将 Quartz TriggerState 转换为通用 JobStatusEnum
-     * <p>
-     * NORMAL → NORMAL，其余状态暂时统一归为 ERROR。
-     * 后续 JobStatusEnum 扩展 PAUSED 等值后同步细化映射。
-     * </p>
      */
     private JobStatusEnum toJobStatus(Trigger.TriggerState state) {
         return switch (state) {
-            case NORMAL -> JobStatusEnum.NORMAL;
-            case PAUSED, COMPLETE, ERROR, BLOCKED, NONE -> JobStatusEnum.ERROR;
+            case NORMAL   -> JobStatusEnum.NORMAL;
+            case PAUSED   -> JobStatusEnum.PAUSED;
+            case COMPLETE -> JobStatusEnum.COMPLETE;
+            case ERROR    -> JobStatusEnum.ERROR;
+            case BLOCKED  -> JobStatusEnum.BLOCKED;
+            case NONE     -> JobStatusEnum.NONE;
         };
     }
 }

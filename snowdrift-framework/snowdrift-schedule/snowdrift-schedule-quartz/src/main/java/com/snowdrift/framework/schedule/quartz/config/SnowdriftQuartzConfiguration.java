@@ -4,6 +4,7 @@ import com.snowdrift.framework.schedule.core.IScheduleService;
 import com.snowdrift.framework.schedule.quartz.service.QuartzScheduleServiceImpl;
 import org.quartz.Scheduler;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -19,6 +20,7 @@ import org.springframework.context.annotation.Bean;
  * @date 2026/6/15
  * @since 1.0.0
  */
+@ConditionalOnClass(Scheduler.class)
 @EnableConfigurationProperties(QuartzProperties.class)
 @AutoConfiguration(afterName = "com.snowdrift.framework.schedule.xxljob.config.SnowdriftXxlJobConfiguration")
 @ConditionalOnProperty(prefix = "snowdrift.schedule.quartz", name = "enabled", havingValue = "true", matchIfMissing = true)

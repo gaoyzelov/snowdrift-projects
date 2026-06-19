@@ -29,6 +29,6 @@ public enum RouteStrategyEnum implements IEnum<String> {
     BUSYOVER("BUSYOVER", "忙碌转移"),
     SHARDING_BROADCAST("SHARDING_BROADCAST", "分片广播");
 
-    public final String code;
-    public final String note;
+    private final String code;
+    private final String note;
 }

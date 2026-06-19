@@ -27,6 +27,8 @@ public interface IScheduleService<T extends JobRequest, K extends IJobKey> {
 
     void removeJob(K jobKey);
 
+    void updateJob(K jobKey, T request);
+
     void pauseJob(K jobKey);
 
     void resumeJob(K jobKey);
