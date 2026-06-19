@@ -6,7 +6,6 @@ import com.snowdrift.framework.web.i18n.I18nMessageSourceImpl;
 import com.snowdrift.framework.web.i18n.I18nUtil;
 import com.snowdrift.framework.web.interceptor.I18nInterceptor;
 import com.snowdrift.framework.web.properties.I18nProperties;
-import jakarta.annotation.Resource;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,8 +30,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @EnableConfigurationProperties(I18nProperties.class)
 public class I18nConfiguration implements WebMvcConfigurer {
 
-    @Resource
-    private I18nProperties i18nProperties;
+    private final I18nProperties i18nProperties;
+
+    public I18nConfiguration(I18nProperties i18nProperties) {
+        this.i18nProperties = i18nProperties;
+    }
 
     /**
      * 配置 MessageSource

@@ -4,7 +4,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
- * BoolEnum
+ * YesNoEnum
  * @author 83674
  * @date 2026/4/29-14:20
  * @description 布尔枚举

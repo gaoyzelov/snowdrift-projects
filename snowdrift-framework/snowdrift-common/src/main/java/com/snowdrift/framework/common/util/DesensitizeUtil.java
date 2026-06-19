@@ -1,6 +1,5 @@
 package com.snowdrift.framework.common.util;
 
-import com.snowdrift.framework.common.constant.RegexConst;
 import com.snowdrift.framework.common.constant.StrConst;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -170,7 +169,7 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(bankCard)) {
             return StrConst.EMPTY;
         }
-        if (!bankCard.matches(RegexConst.BANK_CARD)) {
+        if (!ValidateUtil.isBankCard(bankCard)) {
             return bankCard;
         }
         return RegExUtils.replaceAll(bankCard, "(\\d{4})\\d+(\\d{4})", "$1********$2");

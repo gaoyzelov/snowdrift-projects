@@ -42,7 +42,7 @@ public class SnowdriftLogConfiguration {
     }
 
     @Bean
-    public LoginLogAspect loginLogAspect() {
-        return new LoginLogAspect();
+    public LoginLogAspect loginLogAspect(ILogService logService) {
+        return new LoginLogAspect(logService);
     }
 }

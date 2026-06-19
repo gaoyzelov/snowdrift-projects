@@ -37,7 +37,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @AutoConfiguration(beforeName = "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration")
-@ConditionalOnClass(org.redisson.api.RedissonClient.class)
+@ConditionalOnClass(RedissonClient.class)
 public class SnowdriftRedissonConfiguration implements CachingConfigurer {
 
     private static final String REDIS_URI_PREFIX = "redis://";
@@ -67,7 +67,7 @@ public class SnowdriftRedissonConfiguration implements CachingConfigurer {
     /**
      * 初始化 RedissonClient 客户端
      * <p>
-     * 按优先级依次检测集群、哨兵、单节点模式，密码为空时自动跳过设置。
+     * 根据配置自动选择集群、哨兵或单节点模式
      * </p>
      *
      * @param redisProperties Spring Boot Redis 配置属性
@@ -139,6 +139,7 @@ public class SnowdriftRedissonConfiguration implements CachingConfigurer {
     }
 
     @Bean
+    @ConditionalOnMissingBean(DistributedLockService.class)
     public DistributedLockService distributedLockService(RedissonClient redissonClient) {
         return new RedissonLockService(redissonClient);
     }

@@ -64,8 +64,8 @@ public class OssUploadRequest {
         return OssUploadRequest.builder()
                 .objectKey(file.getName())
                 .inputStream(Files.newInputStream(file.toPath()))
+                .contentType(Files.probeContentType(file.toPath()))
                 .size(file.length())
-                .contentType(null)
                 .build();
     }
 

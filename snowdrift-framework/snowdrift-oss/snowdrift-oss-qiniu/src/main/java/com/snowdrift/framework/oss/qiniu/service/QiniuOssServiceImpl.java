@@ -17,12 +17,15 @@ import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 
 import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
+import java.util.List;
 
 /**
  * 七牛云 Kodo OSS Service 实现
@@ -195,6 +198,40 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             log.error("文件删除失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
         }
+    }
+
+    /**
+     * 从七牛云 Kodo 批量删除文件
+     * <p>
+     * 使用七牛云原生批量删除 API（{@code BucketManager.batch()}），
+     * 按每组 1000 个文件分批提交，单次请求不超过七牛云 API 限制。
+     * 部分文件删除失败时仅记录错误日志，不中断批量操作。
+     * </p>
+     *
+     * @param objectKeys 对象键列表，要删除的文件标识列表
+     */
+    @Override
+    public void deleteBatch(List<String> objectKeys) {
+        if (CollectionUtils.isEmpty(objectKeys)) {
+            return;
+        }
+        String bucket = super.getBucket();
+        ListUtils.partition(objectKeys, 1000).forEach(partitionKeys -> {
+            try {
+                BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
+                batchOperations.addDeleteOp(bucket, partitionKeys.toArray(new String[0]));
+                Response response = bucketManager.batch(batchOperations);
+                if (response.isOK()) {
+                    log.debug("文件批量删除成功: bucket={}, count={}", bucket, partitionKeys.size());
+                } else {
+                    log.error("文件批量删除失败: bucket={}, count={}, response={}",
+                            bucket, partitionKeys.size(), response.bodyString());
+                }
+            } catch (QiniuException e) {
+                log.error("文件批量删除失败: bucket={}, count={}", bucket, partitionKeys.size(), e);
+                throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+            }
+        });
     }
 
     /**

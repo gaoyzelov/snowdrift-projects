@@ -104,7 +104,7 @@ public class OssInstanceProperties implements Serializable {
      * 分片大小（字节）
      */
     @Min(value = 1024, message = "分片大小至少为 1024 字节")
-    private Long chunkSize = 5 * 1024 * 1024L;
+    private Long chunkSize = 10 * 1024 * 1024L;
 
     /**
      * 上传凭证有效期（分钟）
