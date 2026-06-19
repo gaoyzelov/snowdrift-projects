@@ -202,6 +202,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             }
 
             JobDetails info = new JobDetails();
+            info.setJobKey(QuartzJobKey.newInstance(jobKey.getName(), jobKey.getGroup()));
             info.setName(jobKey.getName());
             info.setGroup(jobKey.getGroup());
             info.setCron(cronTrigger.getCronExpression());
