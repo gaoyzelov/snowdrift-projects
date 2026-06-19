@@ -68,8 +68,6 @@ public class I18nMessageSourceImpl implements I18nMessageSource {
         return new Locale[]{
                 Locale.SIMPLIFIED_CHINESE,
                 Locale.US,
-                Locale.JAPANESE,
-                Locale.KOREAN
         };
     }
 
