@@ -217,7 +217,7 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 ## 开发进度
 
 | 模块 | 状态 |
-|------|------|------|
+|------|------|
 | snowdrift-common | ✅ 完成 |
 | snowdrift-context | ✅ 完成 |
 | snowdrift-log | ✅ 完成 |
