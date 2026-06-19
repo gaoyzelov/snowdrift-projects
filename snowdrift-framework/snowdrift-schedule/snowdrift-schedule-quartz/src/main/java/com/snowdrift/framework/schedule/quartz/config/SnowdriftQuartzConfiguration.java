@@ -29,7 +29,7 @@ public class SnowdriftQuartzConfiguration {
     @Bean
     @ConditionalOnMissingBean(IScheduleService.class)
     public IScheduleService quartzScheduleService(Scheduler scheduler, QuartzProperties properties) {
-        return new QuartzScheduleServiceImpl(scheduler);
+        return new QuartzScheduleServiceImpl(scheduler, properties);
     }
 }
 

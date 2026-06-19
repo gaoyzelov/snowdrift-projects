@@ -75,7 +75,7 @@ public class SecurityContextHolder {
     /**
      * 获取当前用户ID
      *
-     * @return 用户ID，未登录时返回 null
+     * @return 用户ID，未登录时抛出 BizException
      */
     public static Long getUserId() {
         return getRequiredContext().getUserId();
@@ -84,7 +84,7 @@ public class SecurityContextHolder {
     /**
      * 获取当前租户ID
      *
-     * @return 租户ID，未登录时返回 null
+     * @return 租户ID，未登录时抛出 BizException
      */
     public static Long getTenantId() {
         return getRequiredContext().getTenantId();
@@ -94,7 +94,7 @@ public class SecurityContextHolder {
     /**
      * 获取登录账号
      *
-     * @return 登录账号，未设置时返回 null
+     * @return 登录账号，未登录时抛出 BizException
      */
     public static String getUsername() {
         SecurityContext ctx = getRequiredContext();
@@ -104,7 +104,7 @@ public class SecurityContextHolder {
     /**
      * 获取显示名称
      *
-     * @return 显示名称，未设置时返回 null
+     * @return 显示名称，未登录时抛出 BizException
      */
     public static String getNickname() {
         SecurityContext ctx = getRequiredContext();
@@ -114,7 +114,7 @@ public class SecurityContextHolder {
     /**
      * 获取操作者显示名称（优先昵称，用于日志展示）
      *
-     * @return 操作者名称，未设置时返回 null
+     * @return 操作者名称，未登录时抛出 BizException
      */
     public static String getOperatorName() {
         SecurityContext ctx = getRequiredContext();

@@ -3,7 +3,10 @@ package com.snowdrift.framework.security.spring.store;
 import com.snowdrift.framework.context.security.SecurityContext;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import java.io.Serializable;
 
 /**
  * TokenStore 抽象基类
@@ -125,10 +128,11 @@ public abstract class AbstractTokenStore implements TokenStore {
      * </ul>
      */
     @Getter
+    @NoArgsConstructor
     @AllArgsConstructor
-    public static class TokenEntry {
-        private final SecurityContext context;
-        private final long expireAt;
-        private final long lastActiveAt;
+    public static class TokenEntry  implements Serializable {
+        private SecurityContext context;
+        private long expireAt;
+        private long lastActiveAt;
     }
 }

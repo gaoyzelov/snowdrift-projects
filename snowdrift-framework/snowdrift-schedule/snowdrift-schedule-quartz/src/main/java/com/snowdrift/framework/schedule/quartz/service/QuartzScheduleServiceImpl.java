@@ -6,6 +6,7 @@ import com.snowdrift.framework.schedule.core.IScheduleService;
 import com.snowdrift.framework.schedule.dto.JobDetails;
 import com.snowdrift.framework.schedule.enums.JobStatusEnum;
 import com.snowdrift.framework.schedule.enums.MisfireStrategyEnum;
+import com.snowdrift.framework.schedule.quartz.config.QuartzProperties;
 import com.snowdrift.framework.schedule.quartz.dto.QuartzJobKey;
 import com.snowdrift.framework.schedule.quartz.dto.QuartzJobRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -31,9 +32,12 @@ import java.util.Map;
 public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequest, QuartzJobKey> {
 
     private final Scheduler scheduler;
+    // 预留配置属性
+    private final QuartzProperties quartzProperties;
 
-    public QuartzScheduleServiceImpl(Scheduler scheduler) {
+    public QuartzScheduleServiceImpl(Scheduler scheduler, QuartzProperties quartzProperties) {
         this.scheduler = scheduler;
+        this.quartzProperties = quartzProperties;
     }
 
     // ========== 任务管理 ==========

@@ -4,6 +4,8 @@ import com.snowdrift.framework.cache.CacheSerializer;
 import com.snowdrift.framework.cache.DistributedLockService;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
+import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
+import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
 import com.snowdrift.framework.cache.redisson.service.RedissonCacheServiceImpl;
 import com.snowdrift.framework.cache.redisson.service.RedissonLockService;
 import jakarta.annotation.PreDestroy;
@@ -16,6 +18,9 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
+import org.springframework.cache.annotation.CachingConfigurer;
+import org.springframework.cache.interceptor.CacheErrorHandler;
+import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 
 import java.util.List;
@@ -33,7 +38,7 @@ import java.util.List;
  */
 @AutoConfiguration(beforeName = "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration")
 @ConditionalOnClass(org.redisson.api.RedissonClient.class)
-public class SnowdriftRedissonConfiguration {
+public class SnowdriftRedissonConfiguration implements CachingConfigurer {
 
     private static final String REDIS_URI_PREFIX = "redis://";
 
@@ -44,6 +49,13 @@ public class SnowdriftRedissonConfiguration {
     private static final long LOCK_WATCHDOG_TIMEOUT_MS = 15_000L;
 
     private RedissonClient redissonClient;
+
+    private final CacheProperties cacheProperties;
+
+    public SnowdriftRedissonConfiguration(CacheProperties cacheProperties) {
+        this.cacheProperties = cacheProperties;
+    }
+
 
     @PreDestroy
     public void destroy() {
@@ -130,4 +142,23 @@ public class SnowdriftRedissonConfiguration {
     public DistributedLockService distributedLockService(RedissonClient redissonClient) {
         return new RedissonLockService(redissonClient);
     }
+
+    /**
+     * 缓存异常降级处理器，缓存故障时不阻断主流程
+     */
+    @Override
+    @Bean
+    public CacheErrorHandler errorHandler() {
+        return new SnowdriftCachingErrorHandler();
+    }
+
+    /**
+     * 统一缓存 Key 生成器，格式：[prefix:]ClassName#methodName[:params...]
+     */
+    @Override
+    @Bean
+    public KeyGenerator keyGenerator() {
+        return new SnowdriftKeyGenerator(cacheProperties.getKeyPrefix());
+    }
+
 }

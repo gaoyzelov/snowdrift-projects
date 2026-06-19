@@ -25,6 +25,8 @@ import java.util.List;
 @Slf4j
 public final class IpUtil {
 
+    private IpUtil() {}
+
     /**
      * IP 查询器，启动加载到内存中
      */

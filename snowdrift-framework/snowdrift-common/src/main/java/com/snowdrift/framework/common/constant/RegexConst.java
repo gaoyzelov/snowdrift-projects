@@ -25,7 +25,7 @@ public final class RegexConst {
     public static final String FIXED_PHONE = "^(\\d{3,4}-)?\\d{7,8}$";
 
     // 中文
-    public static final String CHINESE = "^[\\u4e00-\\u9fa5]$";
+    public static final String CHINESE = "^[\\u4e00-\\u9fa5]+$";
 
     // 邮箱
     public static final String EMAIL = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";

@@ -5,6 +5,7 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.snowdrift.framework.cache.AbstractCacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
 import com.snowdrift.framework.common.util.AssertUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.Duration;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
  * @date 2026/6/2
  * @since 1.0.0
  */
+@Slf4j
 public class CaffeineCacheServiceImpl extends AbstractCacheService {
 
     private final Cache<String, Object> cache;
@@ -64,11 +66,12 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     /**
-     * Caffeine 不支持 per-key TTL
+     * Caffeine 不支持 per-key TTL，静默降级为全局默认 TTL
      */
     @Override
     public void put(String key, Object value, Duration ttl) {
-        throw new UnsupportedOperationException();
+        log.warn("Caffeine 不支持 per-key TTL，已降级为全局默认 TTL: key={}", key);
+        put(key, value);
     }
 
     @Override
@@ -82,11 +85,12 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     /**
-     * Caffeine 不支持 per-key TTL
+     * Caffeine 不支持 per-key TTL，静默降级为全局默认 TTL
      */
     @Override
     public boolean putIfAbsent(String key, Object value, Duration ttl) {
-        throw new UnsupportedOperationException();
+        log.warn("Caffeine 不支持 per-key TTL，已降级为全局默认 TTL: key={}", key);
+        return putIfAbsent(key, value);
     }
 
     @Override
@@ -117,20 +121,21 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     /**
-     * Caffeine 原生不支持 per-key TTL
+     * Caffeine 原生不支持 per-key TTL 动态修改，返回 false 表示未生效
      */
     @Override
     public boolean expire(String key, Duration ttl) {
-        throw new UnsupportedOperationException();
+        log.warn("Caffeine 不支持 per-key TTL 修改，操作已忽略: key={}", key);
+        return false;
     }
 
     /**
-     * Caffeine 原生不支持查询剩余 TTL
-     *
+     * Caffeine 原生不支持查询剩余 TTL，返回 -2 表示不支持该操作
      */
     @Override
     public long getExpire(String key) {
-        throw new UnsupportedOperationException();
+        log.debug("Caffeine 不支持查询 per-key TTL: key={}", key);
+        return -2;
     }
 
     @Override

@@ -1,7 +1,7 @@
 package com.snowdrift.framework.common.result;
 
 import lombok.Builder;
-import lombok.Data;
+import lombok.Getter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -14,7 +14,7 @@ import java.io.Serializable;
  * @description 统一返回结果
  * @since 1.0.0
  */
-@Data
+@Getter
 @Builder
 public class Result<T> implements Serializable {
 
