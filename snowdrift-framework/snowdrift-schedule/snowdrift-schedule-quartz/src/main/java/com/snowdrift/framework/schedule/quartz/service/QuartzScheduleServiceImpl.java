@@ -181,7 +181,8 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             return scheduler.checkExists(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()));
         } catch (SchedulerException e) {
             log.error("Quartz 任务查询失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
-            return false;
+            throw new BizException("schedule.job.query.failed",
+                    new Object[]{jobKey.getName(), e.getMessage()});
         }
     }
 
@@ -196,6 +197,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             TriggerKey triggerKey = TriggerKey.triggerKey(jobKey.getName(), jobKey.getGroup());
             Trigger trigger = scheduler.getTrigger(triggerKey);
             if (!(trigger instanceof CronTrigger cronTrigger)) {
+                log.warn("Quartz 任务非 CronTrigger，暂不支持: name={}, group={}", jobKey.getName(), jobKey.getGroup());
                 return null;
             }
 

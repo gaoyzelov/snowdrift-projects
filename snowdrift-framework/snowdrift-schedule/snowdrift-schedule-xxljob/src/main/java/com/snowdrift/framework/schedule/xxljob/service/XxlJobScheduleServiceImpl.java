@@ -280,6 +280,14 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     // ========== 内部方法：HTTP 调用 ==========
 
     /**
+     * API 调用器函数式接口
+     */
+    @FunctionalInterface
+    private interface ApiCaller {
+        String call(String url, Map<String, String> params, Map<String, String> headers) throws Exception;
+    }
+
+    /**
      * POST API 调用（支持多地址重试 + 登录过期自动重登）
      */
     private JSONObject callAdminPostApi(String path, Map<String, String> params) {
@@ -292,26 +300,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
      * @param isRetry 是否为登录过期后的重试调用，重试不再递归以防止无限循环
      */
     private JSONObject callAdminPostApi(String path, Map<String, String> params, boolean isRetry) {
-        ensureLogin(isRetry);
-        Exception lastEx = null;
-        for (String baseUrl : adminUrls) {
-            try {
-                String body = HttpUtil.postForm(normalizeUrl(baseUrl) + path, params, buildRequestHeaders());
-                JSONObject json = JSON.parseObject(body);
-                if (isLoginExpired(json) && !isRetry) {
-                    log.info("XXL-JOB 登录过期，强制重登并重试: path={}", path);
-                    return callAdminPostApi(path, params, true);
-                }
-                return validateApiResponse(json);
-            } catch (BizException e) {
-                throw e;
-            } catch (Exception e) {
-                log.warn("XXL-JOB Admin[{}] 调用失败: {}", baseUrl, e.getMessage());
-                lastEx = e;
-            }
-        }
-        String message = lastEx != null ? lastEx.getMessage() : "unknown";
-        throw new BizException("schedule.xxl.admin.unreachable", new Object[]{message});
+        return callAdminApi(HttpUtil::postForm, path, params, isRetry);
     }
 
     /**
@@ -327,22 +316,31 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
      * @param isRetry 是否为登录过期后的重试调用，重试不再递归以防止无限循环
      */
     private JSONObject callAdminGetApi(String path, Map<String, String> queryParams, boolean isRetry) {
+        return callAdminApi((url, params, headers) -> {
+            String fullUrl = HttpUtil.buildUrlWithParams(url, params);
+            return HttpUtil.get(fullUrl, headers);
+        }, path, queryParams, isRetry);
+    }
+
+    /**
+     * Admin API 调用通用模板（支持多地址重试 + 登录过期自动重登）
+     */
+    private JSONObject callAdminApi(ApiCaller caller, String path, Map<String, String> params, boolean isRetry) {
         ensureLogin(isRetry);
         Exception lastEx = null;
         for (String baseUrl : adminUrls) {
             try {
-                String url = HttpUtil.buildUrlWithParams(normalizeUrl(baseUrl) + path, queryParams);
-                String body = HttpUtil.get(url, buildRequestHeaders());
+                String body = caller.call(normalizeUrl(baseUrl) + path, params, buildRequestHeaders());
                 JSONObject json = JSON.parseObject(body);
                 if (isLoginExpired(json) && !isRetry) {
                     log.info("XXL-JOB 登录过期，强制重登并重试: path={}", path);
-                    return callAdminGetApi(path, queryParams, true);
+                    return callAdminApi(caller, path, params, true);
                 }
                 return validateApiResponse(json);
             } catch (BizException e) {
                 throw e;
             } catch (Exception e) {
-                log.warn("XXL-JOB Admin[{}] GET 调用失败: {}", baseUrl, e.getMessage());
+                log.warn("XXL-JOB Admin[{}] 调用失败: {}", baseUrl, e.getMessage());
                 lastEx = e;
             }
         }
@@ -418,6 +416,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
                 }
             }
         }
+        executorGroupMap.remove(appName);
         throw new BizException("schedule.xxl.group.not.found", new Object[]{appName});
     }
 
