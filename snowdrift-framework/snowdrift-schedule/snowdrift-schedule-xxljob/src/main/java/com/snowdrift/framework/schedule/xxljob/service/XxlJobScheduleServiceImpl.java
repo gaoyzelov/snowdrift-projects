@@ -197,10 +197,13 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
 
     /**
      * 确保登录态有效，cookie 过期或不存在时自动登录
+     *
+     * @param force 是否强制重新登录（登录过期重试场景）
      */
-    private synchronized void ensureLogin() {
-        // 如果登录Cookie存在且未过期，则无需重新登录
-        if (StringUtils.isNotBlank(loginCookie) && System.currentTimeMillis() - lastLoginTime < properties.getLoginTokenTimeout().toMillis()) {
+    private synchronized void ensureLogin(boolean force) {
+        // 非强制模式下，如果登录Cookie存在且未过期，则无需重新登录
+        if (!force && StringUtils.isNotBlank(loginCookie)
+                && System.currentTimeMillis() - lastLoginTime < properties.getLoginTokenTimeout().toMillis()) {
             return;
         }
         if (CollectionUtils.isEmpty(adminUrls)) {
@@ -270,12 +273,26 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
      * POST API 调用（支持多地址重试 + 登录过期自动重登）
      */
     private JSONObject callAdminPostApi(String path, Map<String, String> params) {
-        ensureLogin();
+        return callAdminPostApi(path, params, false);
+    }
+
+    /**
+     * POST API 调用（支持多地址重试 + 登录过期自动重登）
+     *
+     * @param isRetry 是否为登录过期后的重试调用，重试不再递归以防止无限循环
+     */
+    private JSONObject callAdminPostApi(String path, Map<String, String> params, boolean isRetry) {
+        ensureLogin(isRetry);
         Exception lastEx = null;
         for (String baseUrl : adminUrls) {
             try {
                 String body = HttpUtil.postForm(normalizeUrl(baseUrl) + path, params, buildRequestHeaders());
-                return parseApiResponse(body);
+                JSONObject json = JSON.parseObject(body);
+                if (isLoginExpired(json) && !isRetry) {
+                    log.info("XXL-JOB 登录过期，强制重登并重试: path={}", path);
+                    return callAdminPostApi(path, params, true);
+                }
+                return validateApiResponse(json);
             } catch (BizException e) {
                 throw e;
             } catch (Exception e) {
@@ -291,13 +308,27 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
      * GET API 调用（支持多地址重试 + 登录过期自动重登）
      */
     private JSONObject callAdminGetApi(String path, Map<String, String> queryParams) {
-        ensureLogin();
+        return callAdminGetApi(path, queryParams, false);
+    }
+
+    /**
+     * GET API 调用（支持多地址重试 + 登录过期自动重登）
+     *
+     * @param isRetry 是否为登录过期后的重试调用，重试不再递归以防止无限循环
+     */
+    private JSONObject callAdminGetApi(String path, Map<String, String> queryParams, boolean isRetry) {
+        ensureLogin(isRetry);
         Exception lastEx = null;
         for (String baseUrl : adminUrls) {
             try {
                 String url = HttpUtil.buildUrlWithParams(normalizeUrl(baseUrl) + path, queryParams);
                 String body = HttpUtil.get(url, buildRequestHeaders());
-                return parseApiResponse(body);
+                JSONObject json = JSON.parseObject(body);
+                if (isLoginExpired(json) && !isRetry) {
+                    log.info("XXL-JOB 登录过期，强制重登并重试: path={}", path);
+                    return callAdminGetApi(path, queryParams, true);
+                }
+                return validateApiResponse(json);
             } catch (BizException e) {
                 throw e;
             } catch (Exception e) {
@@ -327,10 +358,27 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     }
 
     /**
-     * 解析 API 响应
+     * 判断 API 响应是否为登录过期
+     * <p>
+     * XXL-JOB Admin 未登录或登录过期时返回 code!=200，
+     * </p>
      */
-    private JSONObject parseApiResponse(String body) {
-        JSONObject json = JSON.parseObject(body);
+    private boolean isLoginExpired(JSONObject json) {
+        if (json == null || json.getIntValue("code", -1) == SUCCESS_CODE) {
+            return false;
+        }
+        String msg = json.getString("msg");
+        if (StringUtils.isBlank(msg)) {
+            return false;
+        }
+        log.info("XXL-JOB 登录过期: {}", msg);
+        return true;
+    }
+
+    /**
+     * 校验 API 响应并返回，失败时抛出 BizException
+     */
+    private JSONObject validateApiResponse(JSONObject json) {
         if (json.getIntValue("code", -1) != SUCCESS_CODE) {
             throw new BizException("schedule.xxl.api.error", new Object[]{json.getString("msg", "unknown")});
         }
