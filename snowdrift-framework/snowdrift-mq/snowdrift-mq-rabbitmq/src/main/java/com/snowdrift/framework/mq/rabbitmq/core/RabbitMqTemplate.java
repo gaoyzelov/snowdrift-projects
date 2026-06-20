@@ -3,6 +3,7 @@ package com.snowdrift.framework.mq.rabbitmq.core;
 import com.snowdrift.framework.mq.core.DefaultMqTemplate;
 import com.snowdrift.framework.mq.core.MqContextPropagator;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
+import com.snowdrift.framework.mq.core.MqSendInterceptor;
 import com.snowdrift.framework.mq.dto.MqMessage;
 import com.snowdrift.framework.mq.dto.MqSendResult;
 import com.snowdrift.framework.mq.exception.MqException;
@@ -44,8 +45,9 @@ public class RabbitMqTemplate extends DefaultMqTemplate implements ApplicationCo
 
     public RabbitMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
                             RabbitMqProperties rabbitProperties,
-                            Executor mqAsyncExecutor, MqMessageConverter converter) {
-        super(streamBridge, mqProperties, mqAsyncExecutor, converter);
+                            Executor mqAsyncExecutor, MqMessageConverter converter,
+                            List<MqSendInterceptor> interceptors) {
+        super(streamBridge, mqProperties, mqAsyncExecutor, converter, interceptors);
         this.rabbitProperties = rabbitProperties;
     }
 
@@ -56,36 +58,48 @@ public class RabbitMqTemplate extends DefaultMqTemplate implements ApplicationCo
 
     @Override
     public <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers) {
-        byte[] bytes = converter.serialize(payload);
+        fireBeforeSend(topic, key, payload);
+        try {
+            byte[] bytes = converter.serialize(payload);
 
-        MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);
+            MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);
 
-        if (Boolean.TRUE.equals(rabbitProperties.getDelayPluginEnabled())) {
-            builder.setHeader("x-delay", delay.toMillis());
-            log.debug("RabbitMQ 延迟消息（x-delay 插件）: topic={}, delay={}ms", topic, delay.toMillis());
-        } else {
-            builder.setHeader("x-message-ttl", delay.toMillis());
-            log.debug("RabbitMQ 延迟消息（x-message-ttl + DLX）: topic={}, ttl={}ms", topic, delay.toMillis());
+            if (Boolean.TRUE.equals(rabbitProperties.getDelayPluginEnabled())) {
+                builder.setHeader("x-delay", delay.toMillis());
+                log.debug("RabbitMQ 延迟消息（x-delay 插件）: topic={}, delay={}ms", topic, delay.toMillis());
+            } else {
+                builder.setHeader("x-message-ttl", delay.toMillis());
+                log.debug("RabbitMQ 延迟消息（x-message-ttl + DLX）: topic={}, ttl={}ms", topic, delay.toMillis());
+            }
+
+            if (StringUtils.isNotBlank(key)) {
+                builder.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, key);
+            }
+
+            MqContextPropagator.inject(builder);
+            if (headers != null && !headers.isEmpty()) {
+                headers.forEach(builder::setHeader);
+            }
+
+            Message<byte[]> message = builder.build();
+            boolean success = streamBridge.send(topic, message);
+            if (!success) {
+                MqException ex = new MqException("mq.send.failed", new Object[]{topic});
+                fireOnSendError(topic, ex);
+                log.warn("RabbitMQ 延迟消息发送失败: topic={}, delay={}", topic, delay);
+                throw ex;
+            }
+
+            MqSendResult result = MqSendResult.builder().topic(topic).timestamp(System.currentTimeMillis()).build();
+            fireAfterSend(topic, result);
+            log.debug("RabbitMQ 延迟消息发送成功: topic={}, delay={}", topic, delay);
+            return result;
+        } catch (Exception e) {
+            if (!(e instanceof MqException)) {
+                fireOnSendError(topic, e);
+            }
+            throw e;
         }
-
-        if (StringUtils.isNotBlank(key)) {
-            builder.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, key);
-        }
-
-        MqContextPropagator.inject(builder);
-        if (headers != null && !headers.isEmpty()) {
-            headers.forEach(builder::setHeader);
-        }
-
-        Message<byte[]> message = builder.build();
-        boolean success = streamBridge.send(topic, message);
-        if (!success) {
-            log.error("RabbitMQ 延迟消息发送失败: topic={}, delay={}", topic, delay);
-            throw new MqException("mq.send.failed", new Object[]{topic});
-        }
-
-        log.debug("RabbitMQ 延迟消息发送成功: topic={}, delay={}", topic, delay);
-        return MqSendResult.builder().topic(topic).timestamp(System.currentTimeMillis()).build();
     }
 
     // ========== 批量发送（RabbitTemplate） ==========

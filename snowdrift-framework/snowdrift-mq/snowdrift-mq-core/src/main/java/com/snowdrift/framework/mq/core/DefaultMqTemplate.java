@@ -14,6 +14,7 @@ import org.springframework.messaging.support.MessageBuilder;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -37,13 +38,16 @@ public class DefaultMqTemplate implements IMqTemplate {
     protected final MqProperties properties;
     protected final Executor mqAsyncExecutor;
     protected final MqMessageConverter converter;
+    protected final List<MqSendInterceptor> interceptors;
 
     public DefaultMqTemplate(StreamBridge streamBridge, MqProperties properties,
-                              Executor mqAsyncExecutor, MqMessageConverter converter) {
+                              Executor mqAsyncExecutor, MqMessageConverter converter,
+                              List<MqSendInterceptor> interceptors) {
         this.streamBridge = streamBridge;
         this.properties = properties;
         this.mqAsyncExecutor = mqAsyncExecutor;
         this.converter = converter;
+        this.interceptors = interceptors != null ? interceptors : Collections.emptyList();
     }
 
     // ========== 同步发送 ==========
@@ -62,37 +66,122 @@ public class DefaultMqTemplate implements IMqTemplate {
     @SuppressWarnings("unchecked")
     public <T> MqSendResult send(String topic, String key, T payload, Map<String, String> headers) {
         long start = System.currentTimeMillis();
-        byte[] bytes = converter.serialize(payload);
-        String originalType = payload.getClass().getName();
-
-        MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);
-
-        if (StringUtils.isNotBlank(key)) {
-            builder.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, key);
+        // 拦截器：发送前
+        for (MqSendInterceptor interceptor : interceptors) {
+            try {
+                interceptor.beforeSend(topic, key, payload);
+            } catch (Exception e) {
+                log.warn("拦截器 beforeSend 异常: {}", interceptor.getClass().getName(), e);
+            }
         }
 
-        // 注入 TTL 上下文（traceId, userId, tenantId, username）
-        MqContextPropagator.inject(builder);
+        try {
+            byte[] bytes = converter.serialize(payload);
+            String originalType = payload.getClass().getName();
 
-        // 注入用户自定义 headers
-        if (headers != null && !headers.isEmpty()) {
-            headers.forEach(builder::setHeader);
+            MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);
+
+            if (StringUtils.isNotBlank(key)) {
+                builder.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, key);
+            }
+
+            // 注入 TTL 上下文（traceId, userId, tenantId, username）
+            MqContextPropagator.inject(builder);
+
+            // 注入用户自定义 headers
+            if (headers != null && !headers.isEmpty()) {
+                headers.forEach(builder::setHeader);
+            }
+
+            Message<byte[]> message = builder.build();
+            boolean success = streamBridge.send(topic, message);
+            long elapsed = System.currentTimeMillis() - start;
+
+            if (!success) {
+                MqException ex = new MqException("mq.send.failed", new Object[]{topic});
+                // 拦截器：发送失败
+                for (MqSendInterceptor interceptor : interceptors) {
+                    try {
+                        interceptor.onSendError(topic, ex);
+                    } catch (Exception e) {
+                        log.warn("拦截器 onSendError 异常: {}", interceptor.getClass().getName(), e);
+                    }
+                }
+                log.warn("消息发送失败: topic={}, key={}, type={}", topic, key, originalType);
+                throw ex;
+            }
+
+            MqSendResult result = MqSendResult.builder()
+                    .topic(topic)
+                    .timestamp(System.currentTimeMillis())
+                    .build();
+
+            // 拦截器：发送成功
+            for (MqSendInterceptor interceptor : interceptors) {
+                try {
+                    interceptor.afterSend(topic, result);
+                } catch (Exception e) {
+                    log.warn("拦截器 afterSend 异常: {}", interceptor.getClass().getName(), e);
+                }
+            }
+
+            log.debug("消息发送成功: topic={}, key={}, type={}, elapsed={}ms", topic, key, originalType, elapsed);
+            return result;
+
+        } catch (MqException e) {
+            throw e;
+        } catch (Exception e) {
+            // 拦截器：异常
+            for (MqSendInterceptor interceptor : interceptors) {
+                try {
+                    interceptor.onSendError(topic, e);
+                } catch (Exception ex) {
+                    log.warn("拦截器 onSendError 异常: {}", interceptor.getClass().getName(), ex);
+                }
+            }
+            throw e;
         }
+    }
 
-        Message<byte[]> message = builder.build();
-        boolean success = streamBridge.send(topic, message);
-        long elapsed = System.currentTimeMillis() - start;
+    // ========== 拦截器辅助方法（供子类 sendDelay 等调用） ==========
 
-        if (!success) {
-            log.warn("消息发送失败: topic={}, key={}, type={}", topic, key, originalType);
-            throw new MqException("mq.send.failed", new Object[]{topic});
+    /**
+     * 触发发送前拦截器
+     */
+    protected void fireBeforeSend(String topic, String key, Object payload) {
+        for (MqSendInterceptor interceptor : interceptors) {
+            try {
+                interceptor.beforeSend(topic, key, payload);
+            } catch (Exception e) {
+                log.warn("拦截器 beforeSend 异常: {}", interceptor.getClass().getName(), e);
+            }
         }
+    }
 
-        log.debug("消息发送成功: topic={}, key={}, type={}, elapsed={}ms", topic, key, originalType, elapsed);
-        return MqSendResult.builder()
-                .topic(topic)
-                .timestamp(System.currentTimeMillis())
-                .build();
+    /**
+     * 触发发送后拦截器
+     */
+    protected void fireAfterSend(String topic, MqSendResult result) {
+        for (MqSendInterceptor interceptor : interceptors) {
+            try {
+                interceptor.afterSend(topic, result);
+            } catch (Exception e) {
+                log.warn("拦截器 afterSend 异常: {}", interceptor.getClass().getName(), e);
+            }
+        }
+    }
+
+    /**
+     * 触发发送异常拦截器
+     */
+    protected void fireOnSendError(String topic, Throwable ex) {
+        for (MqSendInterceptor interceptor : interceptors) {
+            try {
+                interceptor.onSendError(topic, ex);
+            } catch (Exception e) {
+                log.warn("拦截器 onSendError 异常: {}", interceptor.getClass().getName(), e);
+            }
+        }
     }
 
     // ========== 异步发送 ==========

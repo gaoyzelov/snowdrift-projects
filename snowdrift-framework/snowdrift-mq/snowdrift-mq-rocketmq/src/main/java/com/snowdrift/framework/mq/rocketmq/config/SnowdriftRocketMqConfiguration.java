@@ -2,12 +2,13 @@ package com.snowdrift.framework.mq.rocketmq.config;
 
 import com.snowdrift.framework.mq.core.IMqTemplate;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
+import com.snowdrift.framework.mq.core.MqSendInterceptor;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import com.snowdrift.framework.mq.rocketmq.core.RocketMqTemplate;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -19,15 +20,12 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
  * Snowdrift RocketMQ MQ 自动配置
- * <p>
- * 将 {@code snowdrift.mq.rocketmq.*} 属性自动映射为 Spring Cloud Stream RocketMQ Binder 属性，
- * 并创建 {@link DefaultMQProducer} 用于原生批量发送。
- * </p>
  *
  * @author 83674
  * @date 2026/6/20
@@ -42,33 +40,18 @@ public class SnowdriftRocketMqConfiguration {
 
     private static final String SCS_ROCKETMQ_BINDER_PREFIX = "spring.cloud.stream.rocketmq.binder.";
 
-    /**
-     * RocketMQ 批量发送专用 Producer（与 StreamBridge 的 SCS producer 独立）
-     * <p>仅在不存在同名 Bean 时创建</p>
-     */
-    @Bean(destroyMethod = "shutdown")
-    @ConditionalOnMissingBean(DefaultMQProducer.class)
-    public DefaultMQProducer mqBatchProducer(RocketMqProperties rocketProperties) throws MQClientException {
-        DefaultMQProducer producer = new DefaultMQProducer(
-                rocketProperties.getProducerGroup() + "-batch");
-        producer.setNamesrvAddr(rocketProperties.getNameServer());
-        producer.setMaxMessageSize(4 * 1024 * 1024); // 4MB
-        producer.start();
-        log.info("RocketMQ 批量发送 Producer 已启动: nameServer={}, group={}",
-                rocketProperties.getNameServer(), producer.getProducerGroup());
-        return producer;
-    }
-
     @Bean
     @ConditionalOnMissingBean(IMqTemplate.class)
     public RocketMqTemplate rocketMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
                                               Executor mqAsyncExecutor, MqMessageConverter converter,
                                               RocketMqProperties rocketProperties,
-                                              DefaultMQProducer batchProducer, ConfigurableEnvironment env) {
+                                              ObjectProvider<DefaultMQProducer> batchProducerProvider,
+                                              ConfigurableEnvironment env,
+                                              List<MqSendInterceptor> interceptors) {
         mapRocketMqProperties(rocketProperties, env);
-        log.info("Snowdrift RocketMQ MQ 模板已注册");
+        log.info("Snowdrift RocketMQ MQ 模板已注册，拦截器数量: {}", interceptors.size());
         return new RocketMqTemplate(streamBridge, mqProperties, mqAsyncExecutor, converter,
-                batchProducer, rocketProperties);
+                batchProducerProvider, rocketProperties, interceptors);
     }
 
     private void mapRocketMqProperties(RocketMqProperties props, ConfigurableEnvironment env) {

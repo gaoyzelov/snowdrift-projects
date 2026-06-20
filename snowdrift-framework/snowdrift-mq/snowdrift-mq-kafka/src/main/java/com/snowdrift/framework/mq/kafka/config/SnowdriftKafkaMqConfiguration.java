@@ -2,6 +2,7 @@ package com.snowdrift.framework.mq.kafka.config;
 
 import com.snowdrift.framework.mq.core.IMqTemplate;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
+import com.snowdrift.framework.mq.core.MqSendInterceptor;
 import com.snowdrift.framework.mq.kafka.core.KafkaMqTemplate;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -47,10 +49,11 @@ public class SnowdriftKafkaMqConfiguration {
     @ConditionalOnMissingBean(IMqTemplate.class)
     public KafkaMqTemplate kafkaMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
                                             Executor mqAsyncExecutor, MqMessageConverter converter,
-                                            KafkaMqProperties kafkaProperties, ConfigurableEnvironment env) {
+                                            KafkaMqProperties kafkaProperties, ConfigurableEnvironment env,
+                                            List<MqSendInterceptor> interceptors) {
         mapKafkaProperties(kafkaProperties, env);
-        log.info("Snowdrift Kafka MQ 模板已注册");
-        return new KafkaMqTemplate(streamBridge, mqProperties, mqAsyncExecutor, converter);
+        log.info("Snowdrift Kafka MQ 模板已注册，拦截器数量: {}", interceptors.size());
+        return new KafkaMqTemplate(streamBridge, mqProperties, mqAsyncExecutor, converter, interceptors);
     }
 
     /**

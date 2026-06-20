@@ -13,6 +13,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -61,10 +62,11 @@ public class SnowdriftMqConfiguration {
     @Bean
     @ConditionalOnMissingBean(IMqTemplate.class)
     public DefaultMqTemplate mqTemplate(StreamBridge streamBridge, MqProperties properties,
-                                         Executor mqAsyncExecutor, MqMessageConverter converter, ConfigurableEnvironment env) {
+                                         Executor mqAsyncExecutor, MqMessageConverter converter,
+                                         List<MqSendInterceptor> interceptors, ConfigurableEnvironment env) {
         mapCoreProperties(properties, env);
-        log.info("Snowdrift MQ 默认模板已注册（StreamBridge）");
-        return new DefaultMqTemplate(streamBridge, properties, mqAsyncExecutor, converter);
+        log.info("Snowdrift MQ 默认模板已注册（StreamBridge），拦截器数量: {}", interceptors.size());
+        return new DefaultMqTemplate(streamBridge, properties, mqAsyncExecutor, converter, interceptors);
     }
 
     @Bean

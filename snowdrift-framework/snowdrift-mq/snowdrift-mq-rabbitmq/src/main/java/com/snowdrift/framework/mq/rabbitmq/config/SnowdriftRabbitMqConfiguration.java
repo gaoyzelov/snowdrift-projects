@@ -2,6 +2,7 @@ package com.snowdrift.framework.mq.rabbitmq.config;
 
 import com.snowdrift.framework.mq.core.IMqTemplate;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
+import com.snowdrift.framework.mq.core.MqSendInterceptor;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import com.snowdrift.framework.mq.rabbitmq.core.RabbitMqTemplate;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +18,7 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 
@@ -45,10 +47,11 @@ public class SnowdriftRabbitMqConfiguration {
     public RabbitMqTemplate rabbitMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
                                               RabbitMqProperties rabbitProperties,
                                               Executor mqAsyncExecutor, MqMessageConverter converter,
-                                              ConfigurableEnvironment env) {
+                                              ConfigurableEnvironment env,
+                                              List<MqSendInterceptor> interceptors) {
         mapRabbitMqProperties(rabbitProperties, env);
-        log.info("Snowdrift RabbitMQ MQ 模板已注册");
-        return new RabbitMqTemplate(streamBridge, mqProperties, rabbitProperties, mqAsyncExecutor, converter);
+        log.info("Snowdrift RabbitMQ MQ 模板已注册，拦截器数量: {}", interceptors.size());
+        return new RabbitMqTemplate(streamBridge, mqProperties, rabbitProperties, mqAsyncExecutor, converter, interceptors);
     }
 
     /**

@@ -2,6 +2,7 @@ package com.snowdrift.framework.mq.kafka.core;
 
 import com.snowdrift.framework.mq.core.DefaultMqTemplate;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
+import com.snowdrift.framework.mq.core.MqSendInterceptor;
 import com.snowdrift.framework.mq.dto.MqMessage;
 import com.snowdrift.framework.mq.dto.MqSendResult;
 import com.snowdrift.framework.mq.exception.MqException;
@@ -39,8 +40,9 @@ public class KafkaMqTemplate extends DefaultMqTemplate implements ApplicationCon
     private volatile KafkaTemplate<byte[], byte[]> kafkaTemplate;
 
     public KafkaMqTemplate(StreamBridge streamBridge, MqProperties properties,
-                            Executor mqAsyncExecutor, MqMessageConverter converter) {
-        super(streamBridge, properties, mqAsyncExecutor, converter);
+                            Executor mqAsyncExecutor, MqMessageConverter converter,
+                            List<MqSendInterceptor> interceptors) {
+        super(streamBridge, properties, mqAsyncExecutor, converter, interceptors);
     }
 
     @Override
@@ -75,14 +77,20 @@ public class KafkaMqTemplate extends DefaultMqTemplate implements ApplicationCon
     private <T> List<MqSendResult> sendBatchWithKafkaTemplate(String topic,
                                                                List<MqMessage<T>> messages,
                                                                KafkaTemplate<byte[], byte[]> template) {
-        List<MqSendResult> results = new ArrayList<>(messages.size());
+        // 先全部提交，让 Kafka Producer 按 linger.ms 内部批次发送
+        List<java.util.concurrent.Future<RecordMetadata>> futures = new ArrayList<>(messages.size());
         for (MqMessage<T> mqMsg : messages) {
             byte[] key = mqMsg.getKey() != null ? mqMsg.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8) : null;
             byte[] payload = converter.serialize(mqMsg.getPayload());
             ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, key, payload);
+            futures.add(template.send(record).thenApply(SendResult::getRecordMetadata));
+        }
+
+        // 统一等待结果，此时 Kafka 已完成内部批次网络发送
+        List<MqSendResult> results = new ArrayList<>(messages.size());
+        for (java.util.concurrent.Future<RecordMetadata> future : futures) {
             try {
-                SendResult<byte[], byte[]> sendResult = template.send(record).get();
-                RecordMetadata meta = sendResult.getRecordMetadata();
+                RecordMetadata meta = future.get();
                 results.add(MqSendResult.builder()
                         .messageId(topic + "-" + meta.partition() + "-" + meta.offset())
                         .topic(topic)
@@ -90,7 +98,7 @@ public class KafkaMqTemplate extends DefaultMqTemplate implements ApplicationCon
                         .timestamp(meta.timestamp())
                         .build());
             } catch (Exception e) {
-                log.error("Kafka 批量消息发送失败: topic={}, key={}", topic, mqMsg.getKey(), e);
+                log.error("Kafka 批量消息发送失败: topic={}", topic, e);
                 throw new MqException("mq.send.failed", new Object[]{topic});
             }
         }

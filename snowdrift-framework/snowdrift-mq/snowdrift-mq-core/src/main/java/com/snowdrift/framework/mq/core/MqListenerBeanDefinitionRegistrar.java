@@ -17,8 +17,9 @@ import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
 
 import java.lang.reflect.Method;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -52,6 +53,7 @@ public class MqListenerBeanDefinitionRegistrar implements BeanDefinitionRegistry
     @Override
     public void postProcessBeanDefinitionRegistry(BeanDefinitionRegistry registry) throws BeansException {
         Map<String, Object> dynamicProperties = new HashMap<>();
+        List<String> functionNames = new ArrayList<>();
 
         String[] beanNames = registry.getBeanDefinitionNames();
         for (String beanName : beanNames) {
@@ -66,7 +68,8 @@ public class MqListenerBeanDefinitionRegistrar implements BeanDefinitionRegistry
                 for (Method method : beanClass.getDeclaredMethods()) {
                     MqListener annotation = method.getAnnotation(MqListener.class);
                     if (annotation != null) {
-                        registerConsumerBean(registry, beanName, method, annotation, dynamicProperties);
+                        registerConsumerBean(registry, beanName, method, annotation,
+                                dynamicProperties, functionNames);
                     }
                 }
             } catch (ClassNotFoundException e) {
@@ -74,11 +77,18 @@ public class MqListenerBeanDefinitionRegistrar implements BeanDefinitionRegistry
             }
         }
 
+        // 注册 function.definition，确保 SCS 激活所有 Consumer Bean
+        if (!functionNames.isEmpty()) {
+            dynamicProperties.put("spring.cloud.function.definition",
+                    String.join(";", functionNames));
+        }
+
         // 一次性注入所有动态 binding 配置
         if (!dynamicProperties.isEmpty()) {
             environment.getPropertySources()
                     .addFirst(new MapPropertySource("snowdrift-mq-dynamic-bindings", dynamicProperties));
-            log.info("已注册 {} 个 @MqListener Consumer", dynamicProperties.size() / 4);
+            log.info("已注册 {} 个 @MqListener Consumer: {}",
+                    functionNames.size(), functionNames);
         }
     }
 
@@ -92,7 +102,8 @@ public class MqListenerBeanDefinitionRegistrar implements BeanDefinitionRegistry
      */
     private void registerConsumerBean(BeanDefinitionRegistry registry, String beanName,
                                        Method method, MqListener annotation,
-                                       Map<String, Object> dynamicProperties) {
+                                       Map<String, Object> dynamicProperties,
+                                       List<String> functionNames) {
         // 校验方法签名：必须有且只有一个参数
         Class<?>[] paramTypes = method.getParameterTypes();
         if (paramTypes.length != 1) {
@@ -103,6 +114,7 @@ public class MqListenerBeanDefinitionRegistrar implements BeanDefinitionRegistry
         Class<?> paramType = paramTypes[0];
 
         String functionName = "mqListener_" + beanName + "_" + method.getName();
+        functionNames.add(functionName);
         String bindingName = functionName + "-in-0";
 
         // 1. 注册 Consumer Bean

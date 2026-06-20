@@ -68,7 +68,14 @@ public class MqListenerConsumerWrapper implements Consumer<Message<byte[]>>, App
             if (byte[].class.equals(targetParameterType)) {
                 payload = body;
             } else {
-                payload = getConverter().deserialize(body, targetParameterType);
+                try {
+                    payload = getConverter().deserialize(body, targetParameterType);
+                } catch (Exception e) {
+                    log.error("消息反序列化失败: topic={}, group={}, type={}",
+                            config.topic(), config.group(), targetParameterType.getName(), e);
+                    throw new MqException("mq.deserialize.failed",
+                            new Object[]{targetParameterType.getName()}, e);
+                }
             }
 
             // 3. MethodHandle 调用用户方法
