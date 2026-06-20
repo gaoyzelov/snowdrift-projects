@@ -1,10 +1,10 @@
 package com.snowdrift.framework.mq.rabbitmq.config;
 
-import com.snowdrift.framework.mq.core.IMqTemplate;
+import com.snowdrift.framework.mq.core.IMqService;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.core.MqSendInterceptor;
 import com.snowdrift.framework.mq.properties.MqProperties;
-import com.snowdrift.framework.mq.rabbitmq.core.RabbitMqTemplate;
+import com.snowdrift.framework.mq.rabbitmq.core.RabbitMqServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -43,15 +43,15 @@ public class SnowdriftRabbitMqConfiguration {
     private static final String SCS_RABBIT_BINDER_PREFIX = "spring.cloud.stream.rabbit.binder.";
 
     @Bean
-    @ConditionalOnMissingBean(IMqTemplate.class)
-    public RabbitMqTemplate rabbitMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
-                                              RabbitMqProperties rabbitProperties,
-                                              Executor mqAsyncExecutor, MqMessageConverter converter,
-                                              ConfigurableEnvironment env,
-                                              List<MqSendInterceptor> interceptors) {
+    @ConditionalOnMissingBean(IMqService.class)
+    public RabbitMqServiceImpl rabbitMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
+                                                RabbitMqProperties rabbitProperties,
+                                                Executor mqAsyncExecutor, MqMessageConverter converter,
+                                                ConfigurableEnvironment env,
+                                                List<MqSendInterceptor> interceptors) {
         mapRabbitMqProperties(rabbitProperties, env);
         log.info("Snowdrift RabbitMQ MQ 模板已注册，拦截器数量: {}", interceptors.size());
-        return new RabbitMqTemplate(streamBridge, mqProperties, rabbitProperties, mqAsyncExecutor, converter, interceptors);
+        return new RabbitMqServiceImpl(streamBridge, mqProperties, rabbitProperties, mqAsyncExecutor, converter, interceptors);
     }
 
     /**

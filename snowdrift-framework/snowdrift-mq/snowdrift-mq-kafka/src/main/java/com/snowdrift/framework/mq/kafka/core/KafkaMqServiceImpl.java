@@ -1,6 +1,6 @@
 package com.snowdrift.framework.mq.kafka.core;
 
-import com.snowdrift.framework.mq.core.DefaultMqTemplate;
+import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.core.MqSendInterceptor;
 import com.snowdrift.framework.mq.dto.MqMessage;
@@ -34,14 +34,14 @@ import java.util.concurrent.Executor;
  * @since 1.0.0
  */
 @Slf4j
-public class KafkaMqTemplate extends DefaultMqTemplate implements ApplicationContextAware {
+public class KafkaMqServiceImpl extends DefaultMqServiceImpl implements ApplicationContextAware {
 
     private ApplicationContext applicationContext;
     private volatile KafkaTemplate<byte[], byte[]> kafkaTemplate;
 
-    public KafkaMqTemplate(StreamBridge streamBridge, MqProperties properties,
-                            Executor mqAsyncExecutor, MqMessageConverter converter,
-                            List<MqSendInterceptor> interceptors) {
+    public KafkaMqServiceImpl(StreamBridge streamBridge, MqProperties properties,
+                              Executor mqAsyncExecutor, MqMessageConverter converter,
+                              List<MqSendInterceptor> interceptors) {
         super(streamBridge, properties, mqAsyncExecutor, converter, interceptors);
     }
 

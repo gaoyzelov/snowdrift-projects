@@ -20,7 +20,7 @@ import java.util.concurrent.CompletableFuture;
  * @date 2026/6/20
  * @since 1.0.0
  */
-public interface IMqTemplate {
+public interface IMqService {
 
     // ========== 同步发送 ==========
 

@@ -1,10 +1,10 @@
 package com.snowdrift.framework.mq.rocketmq.config;
 
-import com.snowdrift.framework.mq.core.IMqTemplate;
+import com.snowdrift.framework.mq.core.IMqService;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.core.MqSendInterceptor;
 import com.snowdrift.framework.mq.properties.MqProperties;
-import com.snowdrift.framework.mq.rocketmq.core.RocketMqTemplate;
+import com.snowdrift.framework.mq.rocketmq.core.RocketMqServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
@@ -41,16 +41,16 @@ public class SnowdriftRocketMqConfiguration {
     private static final String SCS_ROCKETMQ_BINDER_PREFIX = "spring.cloud.stream.rocketmq.binder.";
 
     @Bean
-    @ConditionalOnMissingBean(IMqTemplate.class)
-    public RocketMqTemplate rocketMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
-                                              Executor mqAsyncExecutor, MqMessageConverter converter,
-                                              RocketMqProperties rocketProperties,
-                                              ObjectProvider<DefaultMQProducer> batchProducerProvider,
-                                              ConfigurableEnvironment env,
-                                              List<MqSendInterceptor> interceptors) {
+    @ConditionalOnMissingBean(IMqService.class)
+    public RocketMqServiceImpl rocketMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
+                                                Executor mqAsyncExecutor, MqMessageConverter converter,
+                                                RocketMqProperties rocketProperties,
+                                                ObjectProvider<DefaultMQProducer> batchProducerProvider,
+                                                ConfigurableEnvironment env,
+                                                List<MqSendInterceptor> interceptors) {
         mapRocketMqProperties(rocketProperties, env);
         log.info("Snowdrift RocketMQ MQ 模板已注册，拦截器数量: {}", interceptors.size());
-        return new RocketMqTemplate(streamBridge, mqProperties, mqAsyncExecutor, converter,
+        return new RocketMqServiceImpl(streamBridge, mqProperties, mqAsyncExecutor, converter,
                 batchProducerProvider, rocketProperties, interceptors);
     }
 

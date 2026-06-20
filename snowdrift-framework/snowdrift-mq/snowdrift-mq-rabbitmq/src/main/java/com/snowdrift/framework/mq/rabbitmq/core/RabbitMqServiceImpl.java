@@ -1,6 +1,6 @@
 package com.snowdrift.framework.mq.rabbitmq.core;
 
-import com.snowdrift.framework.mq.core.DefaultMqTemplate;
+import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
 import com.snowdrift.framework.mq.core.MqContextPropagator;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.core.MqSendInterceptor;
@@ -37,16 +37,16 @@ import java.util.concurrent.Executor;
  * @since 1.0.0
  */
 @Slf4j
-public class RabbitMqTemplate extends DefaultMqTemplate implements ApplicationContextAware {
+public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements ApplicationContextAware {
 
     private final RabbitMqProperties rabbitProperties;
     private ApplicationContext applicationContext;
     private volatile RabbitTemplate rabbitTemplate;
 
-    public RabbitMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
-                            RabbitMqProperties rabbitProperties,
-                            Executor mqAsyncExecutor, MqMessageConverter converter,
-                            List<MqSendInterceptor> interceptors) {
+    public RabbitMqServiceImpl(StreamBridge streamBridge, MqProperties mqProperties,
+                               RabbitMqProperties rabbitProperties,
+                               Executor mqAsyncExecutor, MqMessageConverter converter,
+                               List<MqSendInterceptor> interceptors) {
         super(streamBridge, mqProperties, mqAsyncExecutor, converter, interceptors);
         this.rabbitProperties = rabbitProperties;
     }

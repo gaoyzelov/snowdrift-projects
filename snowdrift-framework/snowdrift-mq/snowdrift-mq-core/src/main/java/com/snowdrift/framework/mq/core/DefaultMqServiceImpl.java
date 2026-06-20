@@ -32,7 +32,7 @@ import java.util.concurrent.Executor;
  * @since 1.0.0
  */
 @Slf4j
-public class DefaultMqTemplate implements IMqTemplate {
+public class DefaultMqServiceImpl implements IMqService {
 
     protected final StreamBridge streamBridge;
     protected final MqProperties properties;
@@ -40,9 +40,9 @@ public class DefaultMqTemplate implements IMqTemplate {
     protected final MqMessageConverter converter;
     protected final List<MqSendInterceptor> interceptors;
 
-    public DefaultMqTemplate(StreamBridge streamBridge, MqProperties properties,
-                              Executor mqAsyncExecutor, MqMessageConverter converter,
-                              List<MqSendInterceptor> interceptors) {
+    public DefaultMqServiceImpl(StreamBridge streamBridge, MqProperties properties,
+                                Executor mqAsyncExecutor, MqMessageConverter converter,
+                                List<MqSendInterceptor> interceptors) {
         this.streamBridge = streamBridge;
         this.properties = properties;
         this.mqAsyncExecutor = mqAsyncExecutor;

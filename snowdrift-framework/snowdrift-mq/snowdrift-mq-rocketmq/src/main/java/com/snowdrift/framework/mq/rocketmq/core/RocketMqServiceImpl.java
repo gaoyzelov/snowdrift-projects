@@ -1,6 +1,6 @@
 package com.snowdrift.framework.mq.rocketmq.core;
 
-import com.snowdrift.framework.mq.core.DefaultMqTemplate;
+import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
 import com.snowdrift.framework.mq.core.MqContextPropagator;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.core.MqSendInterceptor;
@@ -37,7 +37,7 @@ import java.util.concurrent.Executor;
  * @since 1.0.0
  */
 @Slf4j
-public class RocketMqTemplate extends DefaultMqTemplate {
+public class RocketMqServiceImpl extends DefaultMqServiceImpl {
 
     private static final String ROCKETMQ_DELAY_LEVEL_HEADER = "DELAY";
 
@@ -51,11 +51,11 @@ public class RocketMqTemplate extends DefaultMqTemplate {
     private volatile DefaultMQProducer batchProducer;
     private volatile boolean batchProducerLookedUp;
 
-    public RocketMqTemplate(StreamBridge streamBridge, MqProperties properties,
-                             Executor mqAsyncExecutor, MqMessageConverter converter,
-                             ObjectProvider<DefaultMQProducer> batchProducerProvider,
-                             RocketMqProperties rocketProperties,
-                             List<MqSendInterceptor> interceptors) {
+    public RocketMqServiceImpl(StreamBridge streamBridge, MqProperties properties,
+                               Executor mqAsyncExecutor, MqMessageConverter converter,
+                               ObjectProvider<DefaultMQProducer> batchProducerProvider,
+                               RocketMqProperties rocketProperties,
+                               List<MqSendInterceptor> interceptors) {
         super(streamBridge, properties, mqAsyncExecutor, converter, interceptors);
         this.batchProducerProvider = batchProducerProvider;
         this.rocketProperties = rocketProperties;
