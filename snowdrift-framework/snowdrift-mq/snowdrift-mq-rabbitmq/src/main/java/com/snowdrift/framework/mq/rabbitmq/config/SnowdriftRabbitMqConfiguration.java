@@ -1,9 +1,11 @@
 package com.snowdrift.framework.mq.rabbitmq.config;
 
 import com.snowdrift.framework.mq.core.IMqTemplate;
+import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import com.snowdrift.framework.mq.rabbitmq.core.RabbitMqTemplate;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -11,10 +13,17 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * Snowdrift RabbitMQ MQ 自动配置
  * <p>
+ * 将 {@code snowdrift.mq.rabbitmq.*} 属性自动映射为 Spring Cloud Stream Rabbit Binder 属性。
  * 当 {@code snowdrift.mq.rabbitmq.enabled=true} 且 RabbitMQ Binder 在 classpath 中时激活。
  * </p>
  *
@@ -29,11 +38,49 @@ import org.springframework.context.annotation.Bean;
 @ConditionalOnClass(name = "org.springframework.cloud.stream.binder.rabbit.config.RabbitMessageChannelBinderConfiguration")
 public class SnowdriftRabbitMqConfiguration {
 
+    private static final String SCS_RABBIT_BINDER_PREFIX = "spring.cloud.stream.rabbit.binder.";
+
     @Bean
     @ConditionalOnMissingBean(IMqTemplate.class)
     public RabbitMqTemplate rabbitMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
-                                              RabbitMqProperties rabbitProperties) {
+                                              RabbitMqProperties rabbitProperties,
+                                              Executor mqAsyncExecutor, MqMessageConverter converter,
+                                              ConfigurableEnvironment env) {
+        mapRabbitMqProperties(rabbitProperties, env);
         log.info("Snowdrift RabbitMQ MQ 模板已注册");
-        return new RabbitMqTemplate(streamBridge, mqProperties, rabbitProperties);
+        return new RabbitMqTemplate(streamBridge, mqProperties, rabbitProperties, mqAsyncExecutor, converter);
+    }
+
+    /**
+     * 将 snowdrift.mq.rabbitmq.* 映射为 spring.cloud.stream.rabbit.binder.*
+     */
+    private void mapRabbitMqProperties(RabbitMqProperties props, ConfigurableEnvironment env) {
+        Map<String, Object> mapped = new HashMap<>();
+        if (StringUtils.isNotBlank(props.getAddresses())) {
+            setIfAbsent(mapped, env, SCS_RABBIT_BINDER_PREFIX + "addresses",
+                    props.getAddresses());
+        }
+        if (StringUtils.isNotBlank(props.getVirtualHost())) {
+            setIfAbsent(mapped, env, SCS_RABBIT_BINDER_PREFIX + "virtual-host",
+                    props.getVirtualHost());
+        }
+        if (StringUtils.isNotBlank(props.getUsername())) {
+            setIfAbsent(mapped, env, SCS_RABBIT_BINDER_PREFIX + "username",
+                    props.getUsername());
+        }
+        if (StringUtils.isNotBlank(props.getPassword())) {
+            setIfAbsent(mapped, env, SCS_RABBIT_BINDER_PREFIX + "password",
+                    props.getPassword());
+        }
+        if (!mapped.isEmpty()) {
+            env.getPropertySources().addFirst(new MapPropertySource("snowdrift-mq-rabbitmq", mapped));
+        }
+    }
+
+    private static void setIfAbsent(Map<String, Object> map, ConfigurableEnvironment env,
+                                     String key, String value) {
+        if (env.getProperty(key) == null) {
+            map.put(key, value);
+        }
     }
 }

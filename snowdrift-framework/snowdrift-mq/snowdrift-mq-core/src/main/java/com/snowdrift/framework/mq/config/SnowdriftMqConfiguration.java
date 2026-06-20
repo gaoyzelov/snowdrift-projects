@@ -1,8 +1,6 @@
 package com.snowdrift.framework.mq.config;
 
-import com.snowdrift.framework.mq.core.DefaultMqTemplate;
-import com.snowdrift.framework.mq.core.IMqTemplate;
-import com.snowdrift.framework.mq.core.MqListenerBeanDefinitionRegistrar;
+import com.snowdrift.framework.mq.core.*;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -11,14 +9,15 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+
+import java.util.Map;
+import java.util.concurrent.Executor;
 
 /**
  * Snowdrift MQ 通用自动配置
- * <p>
- * 注册 {@link DefaultMqTemplate} 和 {@link MqListenerBeanDefinitionRegistrar}。
- * 当 {@code snowdrift.mq.enabled=true} 时激活（默认开启）。
- * 各 binder 实现模块的自动配置会在本配置之后运行，覆盖 template 实现。
- * </p>
  *
  * @author 83674
  * @date 2026/6/20
@@ -30,24 +29,54 @@ import org.springframework.context.annotation.Bean;
 @ConditionalOnProperty(prefix = "snowdrift.mq", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SnowdriftMqConfiguration {
 
-    /**
-     * 默认消息模板 — 包装 StreamBridge
-     * <p>
-     * 当 classpath 中存在具体的 binder template bean 时，本 bean 会被覆盖（{@link ConditionalOnMissingBean}）
-     * </p>
-     */
+    private static final String SCS_DYNAMIC_DEST_CACHE = "spring.cloud.stream.dynamic-destination-cache-size";
+
     @Bean
-    @ConditionalOnMissingBean(IMqTemplate.class)
-    public DefaultMqTemplate mqTemplate(StreamBridge streamBridge, MqProperties properties) {
-        log.info("Snowdrift MQ 默认模板已注册（StreamBridge）");
-        return new DefaultMqTemplate(streamBridge, properties);
+    @ConditionalOnMissingBean(name = "mqAsyncExecutor")
+    public Executor mqAsyncExecutor(MqProperties properties) {
+        MqProperties.ExecutorProperties exec = properties.getExecutor();
+        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(exec.getCoreSize());
+        executor.setMaxPoolSize(exec.getMaxSize());
+        executor.setQueueCapacity(exec.getQueueCapacity());
+        executor.setKeepAliveSeconds(exec.getKeepAliveSeconds());
+        executor.setThreadNamePrefix(exec.getThreadNamePrefix());
+        executor.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+        executor.initialize();
+        log.info("MQ 异步发送线程池已初始化: core={}, max={}, queue={}",
+                exec.getCoreSize(), exec.getMaxSize(), exec.getQueueCapacity());
+        return executor;
     }
 
     /**
-     * @MqListener 扫描注册器
+     * 消息转换器（默认 FastJson2）
      */
+    @Bean
+    @ConditionalOnMissingBean(MqMessageConverter.class)
+    public MqMessageConverter mqMessageConverter() {
+        return new FastJson2MqMessageConverter();
+    }
+
+
+    @Bean
+    @ConditionalOnMissingBean(IMqTemplate.class)
+    public DefaultMqTemplate mqTemplate(StreamBridge streamBridge, MqProperties properties,
+                                         Executor mqAsyncExecutor, MqMessageConverter converter, ConfigurableEnvironment env) {
+        mapCoreProperties(properties, env);
+        log.info("Snowdrift MQ 默认模板已注册（StreamBridge）");
+        return new DefaultMqTemplate(streamBridge, properties, mqAsyncExecutor, converter);
+    }
+
     @Bean
     public MqListenerBeanDefinitionRegistrar mqListenerBeanDefinitionRegistrar() {
         return new MqListenerBeanDefinitionRegistrar();
+    }
+
+    private void mapCoreProperties(MqProperties props, ConfigurableEnvironment env) {
+        if (env.getProperty(SCS_DYNAMIC_DEST_CACHE) == null) {
+            env.getPropertySources().addFirst(new MapPropertySource("snowdrift-mq-core",
+                    Map.of(SCS_DYNAMIC_DEST_CACHE,
+                            String.valueOf(props.getDynamicDestinationCacheSize()))));
+        }
     }
 }

@@ -1,7 +1,7 @@
 package com.snowdrift.framework.mq.core;
 
-import com.alibaba.fastjson2.JSON;
 import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.mq.dto.MqMessage;
 import com.snowdrift.framework.mq.dto.MqSendResult;
 import com.snowdrift.framework.mq.exception.MqException;
 import com.snowdrift.framework.mq.properties.MqProperties;
@@ -13,8 +13,11 @@ import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 /**
  * 默认消息发送模板 — 基于 Spring Cloud Stream {@link StreamBridge}
@@ -32,10 +35,15 @@ public class DefaultMqTemplate implements IMqTemplate {
 
     protected final StreamBridge streamBridge;
     protected final MqProperties properties;
+    protected final Executor mqAsyncExecutor;
+    protected final MqMessageConverter converter;
 
-    public DefaultMqTemplate(StreamBridge streamBridge, MqProperties properties) {
+    public DefaultMqTemplate(StreamBridge streamBridge, MqProperties properties,
+                              Executor mqAsyncExecutor, MqMessageConverter converter) {
         this.streamBridge = streamBridge;
         this.properties = properties;
+        this.mqAsyncExecutor = mqAsyncExecutor;
+        this.converter = converter;
     }
 
     // ========== 同步发送 ==========
@@ -53,11 +61,11 @@ public class DefaultMqTemplate implements IMqTemplate {
     @Override
     @SuppressWarnings("unchecked")
     public <T> MqSendResult send(String topic, String key, T payload, Map<String, String> headers) {
-        byte[] bytes = JSON.toJSONBytes(payload);
+        long start = System.currentTimeMillis();
+        byte[] bytes = converter.serialize(payload);
         String originalType = payload.getClass().getName();
 
-        MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes)
-                .setHeader(MqContextPropagator.HEADER_ORIGINAL_TYPE, originalType);
+        MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);
 
         if (StringUtils.isNotBlank(key)) {
             builder.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, key);
@@ -73,12 +81,14 @@ public class DefaultMqTemplate implements IMqTemplate {
 
         Message<byte[]> message = builder.build();
         boolean success = streamBridge.send(topic, message);
+        long elapsed = System.currentTimeMillis() - start;
+
         if (!success) {
-            log.error("消息发送失败: topic={}, key={}, type={}", topic, key, originalType);
+            log.warn("消息发送失败: topic={}, key={}, type={}", topic, key, originalType);
             throw new MqException("mq.send.failed", new Object[]{topic});
         }
 
-        log.debug("消息发送成功: topic={}, key={}, type={}", topic, key, originalType);
+        log.debug("消息发送成功: topic={}, key={}, type={}, elapsed={}ms", topic, key, originalType, elapsed);
         return MqSendResult.builder()
                 .topic(topic)
                 .timestamp(System.currentTimeMillis())
@@ -105,10 +115,10 @@ public class DefaultMqTemplate implements IMqTemplate {
             } catch (BizException e) {
                 throw e;
             } catch (Exception e) {
-                log.error("异步发送异常: topic={}, key={}", topic, key, e);
+                log.warn("异步发送异常: topic={}, key={}", topic, key, e);
                 throw ExceptionUtils.<RuntimeException>rethrow(e);
             }
-        });
+        }, mqAsyncExecutor);
     }
 
     // ========== 延迟发送（默认不支持，由子类覆盖） ==========
@@ -126,5 +136,19 @@ public class DefaultMqTemplate implements IMqTemplate {
     @Override
     public <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers) {
         throw new UnsupportedOperationException("当前 MQ 不支持延迟消息，请使用各 binder 模块（如 snowdrift-mq-rocketmq）或直接使用 StreamBridge");
+    }
+
+    // ========== 批量发送 ==========
+
+    @Override
+    public <T> List<MqSendResult> sendBatch(String topic, List<MqMessage<T>> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return List.of();
+        }
+        List<MqSendResult> results = new ArrayList<>(messages.size());
+        for (MqMessage<T> msg : messages) {
+            results.add(send(topic, msg.getKey(), msg.getPayload(), msg.getHeaders()));
+        }
+        return results;
     }
 }

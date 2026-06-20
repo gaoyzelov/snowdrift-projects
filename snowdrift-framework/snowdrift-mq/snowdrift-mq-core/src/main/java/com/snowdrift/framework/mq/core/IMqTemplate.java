@@ -1,8 +1,10 @@
 package com.snowdrift.framework.mq.core;
 
+import com.snowdrift.framework.mq.dto.MqMessage;
 import com.snowdrift.framework.mq.dto.MqSendResult;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
@@ -133,4 +135,20 @@ public interface IMqTemplate {
      * @return 发送结果
      */
     <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers);
+
+    // ========== 批量发送 ==========
+
+    /**
+     * 批量发送消息到同一 topic
+     * <p>
+     * 默认实现逐条发送，非原子操作——部分成功部分失败时抛出异常，已发送的消息不回滚。
+     * Kafka 场景下建议使用原生 producer batch 获得更好的吞吐量。
+     * </p>
+     *
+     * @param topic    目标 topic
+     * @param messages 消息列表
+     * @param <T>      消息体类型
+     * @return 发送结果列表（顺序与输入一致）
+     */
+    <T> List<MqSendResult> sendBatch(String topic, List<MqMessage<T>> messages);
 }

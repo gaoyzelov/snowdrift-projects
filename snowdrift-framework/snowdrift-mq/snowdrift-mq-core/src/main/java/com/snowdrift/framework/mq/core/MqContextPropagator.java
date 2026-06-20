@@ -8,8 +8,6 @@ import org.slf4j.MDC;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
-import java.util.Objects;
-
 /**
  * MQ 上下文传播器 — 在消息头中注入 / 提取 TTL 上下文
  * <p>
@@ -25,9 +23,6 @@ import java.util.Objects;
 public final class MqContextPropagator {
 
     private static final String TRACE_ID_KEY = "traceId";
-
-    /** 发送端：payload 原始类型名，消费端用于反序列化 */
-    public static final String HEADER_ORIGINAL_TYPE = "x-snowdrift-original-type";
 
     /** 发送端：消息 Key */
     public static final String HEADER_MESSAGE_KEY = "x-snowdrift-message-key";
@@ -133,13 +128,4 @@ public final class MqContextPropagator {
         MDC.remove(TRACE_ID_KEY);
     }
 
-    /**
-     * 从消息头读取原始类型名（用于反序列化）
-     *
-     * @param message 消息
-     * @return 原始类型全限定名，可能为 null
-     */
-    public static String getOriginalType(Message<?> message) {
-        return message.getHeaders().get(HEADER_ORIGINAL_TYPE, String.class);
-    }
 }
