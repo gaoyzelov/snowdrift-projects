@@ -13,6 +13,7 @@ import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.SendResult;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -80,8 +81,7 @@ public class KafkaMqTemplate extends DefaultMqTemplate implements ApplicationCon
             byte[] payload = converter.serialize(mqMsg.getPayload());
             ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, key, payload);
             try {
-                org.springframework.kafka.support.SendResult<byte[], byte[]> sendResult =
-                        template.send(record).get();
+                SendResult<byte[], byte[]> sendResult = template.send(record).get();
                 RecordMetadata meta = sendResult.getRecordMetadata();
                 results.add(MqSendResult.builder()
                         .messageId(topic + "-" + meta.partition() + "-" + meta.offset())

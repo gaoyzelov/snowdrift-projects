@@ -120,7 +120,7 @@ public class RocketMqTemplate extends DefaultMqTemplate {
 
             List<MqSendResult> results = new ArrayList<>(rocketMsgs.size());
             long timestamp = System.currentTimeMillis();
-            for (MqMessage<T> msg : messages) {
+            for (MqMessage<T> ignored : messages) {
                 results.add(MqSendResult.builder()
                         .messageId(result.getMsgId())
                         .topic(topic)
