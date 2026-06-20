@@ -1,9 +1,9 @@
 package com.snowdrift.framework.mq.kafka.config;
 
 import com.snowdrift.framework.mq.core.IMqService;
+import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
-import com.snowdrift.framework.mq.core.MqSendInterceptor;
-import com.snowdrift.framework.mq.kafka.core.KafkaMqServiceImpl;
+import com.snowdrift.framework.mq.kafka.service.KafkaMqServiceImpl;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -50,10 +50,10 @@ public class SnowdriftKafkaMqConfiguration {
     public KafkaMqServiceImpl kafkaMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
                                               Executor mqAsyncExecutor, MqMessageConverter converter,
                                               KafkaMqProperties kafkaProperties, ConfigurableEnvironment env,
-                                              List<MqSendInterceptor> interceptors) {
+                                              MqInterceptorRegistry interceptorRegistry) {
         mapKafkaProperties(kafkaProperties, env);
-        log.info("Snowdrift Kafka MQ 模板已注册，拦截器数量: {}", interceptors.size());
-        return new KafkaMqServiceImpl(streamBridge, mqProperties, mqAsyncExecutor, converter, interceptors);
+        log.info("Snowdrift Kafka MQ 模板已注册，拦截器数量: {}", interceptorRegistry.getInterceptors().size());
+        return new KafkaMqServiceImpl(streamBridge, mqProperties, mqAsyncExecutor, converter, interceptorRegistry);
     }
 
     /**

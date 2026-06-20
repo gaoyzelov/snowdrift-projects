@@ -2,9 +2,9 @@ package com.snowdrift.framework.mq.rocketmq.config;
 
 import com.snowdrift.framework.mq.core.IMqService;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
-import com.snowdrift.framework.mq.core.MqSendInterceptor;
+import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.properties.MqProperties;
-import com.snowdrift.framework.mq.rocketmq.core.RocketMqServiceImpl;
+import com.snowdrift.framework.mq.rocketmq.service.RocketMqServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
@@ -47,11 +47,11 @@ public class SnowdriftRocketMqConfiguration {
                                                 RocketMqProperties rocketProperties,
                                                 ObjectProvider<DefaultMQProducer> batchProducerProvider,
                                                 ConfigurableEnvironment env,
-                                                List<MqSendInterceptor> interceptors) {
+                                                MqInterceptorRegistry interceptorRegistry) {
         mapRocketMqProperties(rocketProperties, env);
-        log.info("Snowdrift RocketMQ MQ 模板已注册，拦截器数量: {}", interceptors.size());
+        log.info("Snowdrift RocketMQ MQ 模板已注册，拦截器数量: {}", interceptorRegistry.getInterceptors().size());
         return new RocketMqServiceImpl(streamBridge, mqProperties, mqAsyncExecutor, converter,
-                batchProducerProvider, rocketProperties, interceptors);
+                batchProducerProvider, rocketProperties, interceptorRegistry);
     }
 
     private void mapRocketMqProperties(RocketMqProperties props, ConfigurableEnvironment env) {

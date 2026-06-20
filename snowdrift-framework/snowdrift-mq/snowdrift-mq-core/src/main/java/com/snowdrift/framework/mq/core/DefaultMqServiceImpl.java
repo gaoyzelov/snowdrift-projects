@@ -14,7 +14,6 @@ import org.springframework.messaging.support.MessageBuilder;
 
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -38,16 +37,16 @@ public class DefaultMqServiceImpl implements IMqService {
     protected final MqProperties properties;
     protected final Executor mqAsyncExecutor;
     protected final MqMessageConverter converter;
-    protected final List<MqSendInterceptor> interceptors;
+    protected final MqInterceptorRegistry interceptorRegistry;
 
     public DefaultMqServiceImpl(StreamBridge streamBridge, MqProperties properties,
                                 Executor mqAsyncExecutor, MqMessageConverter converter,
-                                List<MqSendInterceptor> interceptors) {
+                                MqInterceptorRegistry interceptorRegistry) {
         this.streamBridge = streamBridge;
         this.properties = properties;
         this.mqAsyncExecutor = mqAsyncExecutor;
         this.converter = converter;
-        this.interceptors = interceptors != null ? interceptors : Collections.emptyList();
+        this.interceptorRegistry = interceptorRegistry;
     }
 
     // ========== 同步发送 ==========
@@ -67,7 +66,7 @@ public class DefaultMqServiceImpl implements IMqService {
     public <T> MqSendResult send(String topic, String key, T payload, Map<String, String> headers) {
         long start = System.currentTimeMillis();
         // 拦截器：发送前
-        for (MqSendInterceptor interceptor : interceptors) {
+        for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
             try {
                 interceptor.beforeSend(topic, key, payload);
             } catch (Exception e) {
@@ -100,7 +99,7 @@ public class DefaultMqServiceImpl implements IMqService {
             if (!success) {
                 MqException ex = new MqException("mq.send.failed", new Object[]{topic});
                 // 拦截器：发送失败
-                for (MqSendInterceptor interceptor : interceptors) {
+                for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
                     try {
                         interceptor.onSendError(topic, ex);
                     } catch (Exception e) {
@@ -117,7 +116,7 @@ public class DefaultMqServiceImpl implements IMqService {
                     .build();
 
             // 拦截器：发送成功
-            for (MqSendInterceptor interceptor : interceptors) {
+            for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
                 try {
                     interceptor.afterSend(topic, result);
                 } catch (Exception e) {
@@ -132,7 +131,7 @@ public class DefaultMqServiceImpl implements IMqService {
             throw e;
         } catch (Exception e) {
             // 拦截器：异常
-            for (MqSendInterceptor interceptor : interceptors) {
+            for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
                 try {
                     interceptor.onSendError(topic, e);
                 } catch (Exception ex) {
@@ -149,7 +148,7 @@ public class DefaultMqServiceImpl implements IMqService {
      * 触发发送前拦截器
      */
     protected void fireBeforeSend(String topic, String key, Object payload) {
-        for (MqSendInterceptor interceptor : interceptors) {
+        for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
             try {
                 interceptor.beforeSend(topic, key, payload);
             } catch (Exception e) {
@@ -162,7 +161,7 @@ public class DefaultMqServiceImpl implements IMqService {
      * 触发发送后拦截器
      */
     protected void fireAfterSend(String topic, MqSendResult result) {
-        for (MqSendInterceptor interceptor : interceptors) {
+        for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
             try {
                 interceptor.afterSend(topic, result);
             } catch (Exception e) {
@@ -175,7 +174,7 @@ public class DefaultMqServiceImpl implements IMqService {
      * 触发发送异常拦截器
      */
     protected void fireOnSendError(String topic, Throwable ex) {
-        for (MqSendInterceptor interceptor : interceptors) {
+        for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
             try {
                 interceptor.onSendError(topic, ex);
             } catch (Exception e) {

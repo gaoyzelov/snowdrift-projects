@@ -2,9 +2,9 @@ package com.snowdrift.framework.mq.rabbitmq.config;
 
 import com.snowdrift.framework.mq.core.IMqService;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
-import com.snowdrift.framework.mq.core.MqSendInterceptor;
+import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.properties.MqProperties;
-import com.snowdrift.framework.mq.rabbitmq.core.RabbitMqServiceImpl;
+import com.snowdrift.framework.mq.rabbitmq.service.RabbitMqServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -48,10 +48,10 @@ public class SnowdriftRabbitMqConfiguration {
                                                 RabbitMqProperties rabbitProperties,
                                                 Executor mqAsyncExecutor, MqMessageConverter converter,
                                                 ConfigurableEnvironment env,
-                                                List<MqSendInterceptor> interceptors) {
+                                                MqInterceptorRegistry interceptorRegistry) {
         mapRabbitMqProperties(rabbitProperties, env);
-        log.info("Snowdrift RabbitMQ MQ 模板已注册，拦截器数量: {}", interceptors.size());
-        return new RabbitMqServiceImpl(streamBridge, mqProperties, rabbitProperties, mqAsyncExecutor, converter, interceptors);
+        log.info("Snowdrift RabbitMQ MQ 模板已注册，拦截器数量: {}", interceptorRegistry.getInterceptors().size());
+        return new RabbitMqServiceImpl(streamBridge, mqProperties, rabbitProperties, mqAsyncExecutor, converter, interceptorRegistry);
     }
 
     /**

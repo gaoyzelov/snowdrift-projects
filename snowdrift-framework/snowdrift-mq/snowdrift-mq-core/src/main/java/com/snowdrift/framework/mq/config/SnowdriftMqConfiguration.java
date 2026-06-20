@@ -59,14 +59,28 @@ public class SnowdriftMqConfiguration {
     }
 
 
+    /**
+     * 拦截器注册表 — 启动时自动收集所有 MqSendInterceptor Bean 并按优先级排序
+     */
+    @Bean
+    @ConditionalOnMissingBean(MqInterceptorRegistry.class)
+    public MqInterceptorRegistry mqInterceptorRegistry(List<MqSendInterceptor> interceptors) {
+        MqInterceptorRegistry registry = new MqInterceptorRegistry();
+        interceptors.forEach(registry::register);
+        log.info("MQ 拦截器注册表已初始化，注册数量: {}", interceptors.size());
+        return registry;
+    }
+
     @Bean
     @ConditionalOnMissingBean(IMqService.class)
     public DefaultMqServiceImpl mqTemplate(StreamBridge streamBridge, MqProperties properties,
                                            Executor mqAsyncExecutor, MqMessageConverter converter,
-                                           List<MqSendInterceptor> interceptors, ConfigurableEnvironment env) {
+                                           MqInterceptorRegistry interceptorRegistry,
+                                           ConfigurableEnvironment env) {
         mapCoreProperties(properties, env);
-        log.info("Snowdrift MQ 默认模板已注册（StreamBridge），拦截器数量: {}", interceptors.size());
-        return new DefaultMqServiceImpl(streamBridge, properties, mqAsyncExecutor, converter, interceptors);
+        log.info("Snowdrift MQ 默认模板已注册（StreamBridge），拦截器数量: {}",
+                interceptorRegistry.getInterceptors().size());
+        return new DefaultMqServiceImpl(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry);
     }
 
     @Bean

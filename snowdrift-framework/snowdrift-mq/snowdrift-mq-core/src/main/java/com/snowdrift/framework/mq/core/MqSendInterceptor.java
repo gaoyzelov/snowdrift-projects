@@ -31,6 +31,13 @@ import com.snowdrift.framework.mq.dto.MqSendResult;
 public interface MqSendInterceptor {
 
     /**
+     * 拦截器优先级，数值越大越先执行，默认 0
+     */
+    default int getPriority() {
+        return 0;
+    }
+
+    /**
      * 发送前回调
      *
      * @param topic   目标 topic

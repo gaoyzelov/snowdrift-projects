@@ -1,9 +1,9 @@
-package com.snowdrift.framework.mq.rabbitmq.core;
+package com.snowdrift.framework.mq.rabbitmq.service;
 
 import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
 import com.snowdrift.framework.mq.core.MqContextPropagator;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
-import com.snowdrift.framework.mq.core.MqSendInterceptor;
+import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.dto.MqMessage;
 import com.snowdrift.framework.mq.dto.MqSendResult;
 import com.snowdrift.framework.mq.exception.MqException;
@@ -46,8 +46,8 @@ public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements Applica
     public RabbitMqServiceImpl(StreamBridge streamBridge, MqProperties mqProperties,
                                RabbitMqProperties rabbitProperties,
                                Executor mqAsyncExecutor, MqMessageConverter converter,
-                               List<MqSendInterceptor> interceptors) {
-        super(streamBridge, mqProperties, mqAsyncExecutor, converter, interceptors);
+                               MqInterceptorRegistry interceptorRegistry) {
+        super(streamBridge, mqProperties, mqAsyncExecutor, converter, interceptorRegistry);
         this.rabbitProperties = rabbitProperties;
     }
 
