@@ -346,6 +346,27 @@
                 <artifactId>snowdrift-schedule-xxljob</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- 消息队列模块 -->
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-mq-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-mq-kafka</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-mq-rocketmq</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-mq-rabbitmq</artifactId>
+                <version>${revision}</version>
+            </dependency>
             <!-- 插件模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>

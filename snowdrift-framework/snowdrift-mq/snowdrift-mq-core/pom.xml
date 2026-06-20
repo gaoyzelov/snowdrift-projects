@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <parent>
+        <groupId>com.snowdrift</groupId>
+        <artifactId>snowdrift-mq</artifactId>
+        <version>${revision}</version>
+    </parent>
+
+    <artifactId>snowdrift-mq-core</artifactId>
+    <description>Snowdrift MQ Core — 统一消息发送/消费接口、上下文传播、i18n</description>
+
+    <dependencies>
+        <!-- Snowdrift Context (SecurityContextHolder + TTL, 传递带 snowdrift-common) -->
+        <dependency>
+            <groupId>com.snowdrift</groupId>
+            <artifactId>snowdrift-context</artifactId>
+        </dependency>
+        <!-- Spring Cloud Stream (StreamBridge, Message, MessageBuilder) -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-stream</artifactId>
+        </dependency>
+        <!-- Spring Boot Autoconfigure (@AutoConfiguration) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+        <!-- Configuration Processor -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
+    </dependencies>
+
+</project>

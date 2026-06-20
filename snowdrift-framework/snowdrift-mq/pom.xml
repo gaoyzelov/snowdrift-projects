@@ -10,5 +10,14 @@
     </parent>
 
     <artifactId>snowdrift-mq</artifactId>
+    <packaging>pom</packaging>
+    <description>Snowdrift MQ Module</description>
+
+    <modules>
+        <module>snowdrift-mq-core</module>
+        <module>snowdrift-mq-kafka</module>
+        <module>snowdrift-mq-rocketmq</module>
+        <module>snowdrift-mq-rabbitmq</module>
+    </modules>
 
 </project>

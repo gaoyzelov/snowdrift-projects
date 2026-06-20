@@ -60,7 +60,7 @@ public class I18nProperties implements Serializable {
      * 资源文件基础名称
      */
     @NotEmpty
-    private List<String> baseNames = List.of("i18n/web-messages", "i18n/oss-messages", "i18n/security-messages", "i18n/cache-messages", "i18n/schedule-messages");
+    private List<String> baseNames = List.of("i18n/web-messages", "i18n/oss-messages", "i18n/security-messages", "i18n/cache-messages", "i18n/schedule-messages", "i18n/mq-messages");
 
     /**
      * 编码格式

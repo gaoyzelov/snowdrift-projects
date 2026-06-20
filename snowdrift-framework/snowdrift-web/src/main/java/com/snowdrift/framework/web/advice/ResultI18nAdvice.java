@@ -61,7 +61,12 @@ public class ResultI18nAdvice implements ResponseBodyAdvice<Result<?>> {
             String resolved = I18nUtil.getMessage(msg);
             if (!msg.equals(resolved)) {
                 log.debug("Result msg i18n 解析: {} -> {}", msg, resolved);
-                body.setMsg(resolved);
+                return Result.builder()
+                        .code(body.getCode())
+                        .msg(resolved)
+                        .data(body.getData())
+                        .timestamp(body.getTimestamp())
+                        .build();
             }
         }
 
