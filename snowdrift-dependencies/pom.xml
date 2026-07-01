@@ -367,6 +367,17 @@
                 <artifactId>snowdrift-mq-rabbitmq</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- ORM模块 -->
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-orm-core</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.snowdrift</groupId>
+                <artifactId>snowdrift-orm-mp</artifactId>
+                <version>${revision}</version>
+            </dependency>
             <!-- 插件模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
