@@ -9,8 +9,6 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionBuilder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.EnvironmentAware;
 import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.Environment;
@@ -35,19 +33,13 @@ import java.util.Map;
  */
 @Slf4j
 public class MqListenerBeanDefinitionRegistrar implements BeanDefinitionRegistryPostProcessor,
-        EnvironmentAware, ApplicationContextAware {
+        EnvironmentAware {
 
     private ConfigurableEnvironment environment;
-    private ApplicationContext applicationContext;
 
     @Override
     public void setEnvironment(Environment environment) {
         this.environment = (ConfigurableEnvironment) environment;
-    }
-
-    @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -62,7 +54,7 @@ public class MqListenerBeanDefinitionRegistrar implements BeanDefinitionRegistry
                 continue;
             }
             try {
-                Class<?> beanClass = Class.forName(bd.getBeanClassName(), true,
+                Class<?> beanClass = Class.forName(bd.getBeanClassName(), false,
                         Thread.currentThread().getContextClassLoader());
                 // 扫描当前类及父类的方法
                 for (Method method : beanClass.getDeclaredMethods()) {

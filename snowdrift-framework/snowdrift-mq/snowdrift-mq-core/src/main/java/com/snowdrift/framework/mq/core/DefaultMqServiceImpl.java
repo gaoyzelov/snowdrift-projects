@@ -62,7 +62,6 @@ public class DefaultMqServiceImpl implements IMqService {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public <T> MqSendResult send(String topic, String key, T payload, Map<String, String> headers) {
         long start = System.currentTimeMillis();
         fireBeforeSend(topic, key, payload);
