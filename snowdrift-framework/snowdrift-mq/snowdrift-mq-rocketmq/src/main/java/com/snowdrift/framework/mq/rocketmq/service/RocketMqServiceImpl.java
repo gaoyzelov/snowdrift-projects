@@ -103,7 +103,7 @@ public class RocketMqServiceImpl extends DefaultMqServiceImpl {
                 rocketMsg.setKeys(mqMsg.getKey());
             }
             // 注入上下文和自定义头部到 RocketMQ properties
-            Message<byte[]> springMsg = buildMessage(topic, mqMsg.getKey(),
+            Message<byte[]> springMsg = buildMessage(mqMsg.getKey(),
                     mqMsg.getPayload(), mqMsg.getHeaders());
             springMsg.getHeaders().forEach((headerKey, headerValue) ->
                     rocketMsg.getProperties().put(headerKey,

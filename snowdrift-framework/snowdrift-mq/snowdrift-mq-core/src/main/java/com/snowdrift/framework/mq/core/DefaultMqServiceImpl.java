@@ -68,7 +68,7 @@ public class DefaultMqServiceImpl implements IMqService {
 
         try {
             String originalType = payload.getClass().getName();
-            Message<byte[]> message = buildMessage(topic, key, payload, headers);
+            Message<byte[]> message = buildMessage(key, payload, headers);
             boolean success = streamBridge.send(topic, message);
             long elapsed = System.currentTimeMillis() - start;
 
@@ -258,13 +258,12 @@ public class DefaultMqServiceImpl implements IMqService {
      * 构建 Spring Message，包含序列化、上下文注入和自定义头部
      * <p>供子类批量/延迟路径复用，确保拦截器和上下文传播的一致性</p>
      *
-     * @param topic   目标 topic
      * @param key     消息 Key（可空）
      * @param payload 消息体
      * @param headers 自定义消息头（可空）
      * @return 构建完成的 Spring Message
      */
-    protected Message<byte[]> buildMessage(String topic, String key, Object payload,
+    protected Message<byte[]> buildMessage(String key, Object payload,
                                             Map<String, String> headers) {
         byte[] bytes = converter.serialize(payload);
         MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);

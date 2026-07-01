@@ -84,7 +84,7 @@ public class KafkaMqServiceImpl extends DefaultMqServiceImpl implements Applicat
             fireBeforeSend(topic, mqMsg.getKey(), mqMsg.getPayload());
 
             // 使用 buildMessage 统一构建（包含上下文注入和自定义头部）
-            Message<byte[]> springMsg = buildMessage(topic, mqMsg.getKey(),
+            Message<byte[]> springMsg = buildMessage(mqMsg.getKey(),
                     mqMsg.getPayload(), mqMsg.getHeaders());
 
             byte[] msgKey = mqMsg.getKey() != null

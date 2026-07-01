@@ -99,7 +99,7 @@ public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements Applica
             MessageProperties props = new MessageProperties();
 
             // 使用 buildMessage 统一构建（包含上下文注入和自定义头部），并写入 AMQP properties
-            Message<byte[]> springMsg = buildMessage(topic, mqMsg.getKey(),
+            Message<byte[]> springMsg = buildMessage(mqMsg.getKey(),
                     mqMsg.getPayload(), mqMsg.getHeaders());
             springMsg.getHeaders().forEach((headerKey, headerValue) ->
                     props.setHeader(headerKey, headerValue));
