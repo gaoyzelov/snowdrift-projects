@@ -14,7 +14,7 @@ import java.util.Map;
  * 包含任务配置元数据 + 运行时状态（仅查询时填充），屏蔽 Quartz / XXL-JOB 差异。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

@@ -20,7 +20,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 /**
  * I18nConfiguration
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 国际化配置类
  * @since 1.0.0

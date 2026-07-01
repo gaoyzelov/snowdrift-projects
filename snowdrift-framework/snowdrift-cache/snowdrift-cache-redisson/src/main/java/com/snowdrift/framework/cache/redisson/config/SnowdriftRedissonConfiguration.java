@@ -32,7 +32,7 @@ import java.util.List;
  * 支持单节点、哨兵和集群模式。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

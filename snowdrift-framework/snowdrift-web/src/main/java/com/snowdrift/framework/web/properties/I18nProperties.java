@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * I18nProperties
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 国际化配置属性
  * @since 1.0.0

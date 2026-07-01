@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Bean;
  * 当 {@link Scheduler} 在类路径中可用且 {@code snowdrift.schedule.quartz.enabled=true} 时激活。
  * 在 XXL-JOB 自动配置之后处理，若 XXL-JOB 已注册 {@link IScheduleService} 则跳过。
  * </p>
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

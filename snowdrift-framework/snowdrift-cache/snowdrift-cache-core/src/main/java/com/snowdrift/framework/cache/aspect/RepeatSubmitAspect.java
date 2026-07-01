@@ -19,7 +19,7 @@ import java.time.Duration;
  * 在执行前检查是否重复提交，若已存在则拒绝，否则写入标记并放行。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

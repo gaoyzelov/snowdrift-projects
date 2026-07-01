@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * 与 {@code WebExceptionHandler}、{@code SaTokenExceptionHandler} 协同工作。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

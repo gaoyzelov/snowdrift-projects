@@ -8,7 +8,7 @@ import java.io.IOException;
 
 /**
  * LogTraceFilter
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/7-17:49
  * @description 日志链路追踪过滤器，生成 TraceId 并写入响应头 X-Trace-Id
  * @since 1.0.0

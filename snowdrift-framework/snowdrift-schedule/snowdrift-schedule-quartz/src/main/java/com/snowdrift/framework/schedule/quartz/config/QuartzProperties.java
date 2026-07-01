@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * Quartz 调度配置属性
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

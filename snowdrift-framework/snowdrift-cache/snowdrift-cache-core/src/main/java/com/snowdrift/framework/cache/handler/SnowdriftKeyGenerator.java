@@ -29,7 +29,7 @@ import java.util.StringJoiner;
  * OrderService#batch:[a3f8c1d2e5...] → app:OrderService#batch:a3f8c1d2e5b74f09
  * </pre>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/13
  * @since 1.0.0
  */

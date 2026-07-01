@@ -26,7 +26,7 @@ import java.util.Objects;
  * </ol>
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/15
  * @since 1.0.0
  */

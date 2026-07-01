@@ -14,7 +14,7 @@ import java.util.Map;
  * Spring Boot 配置属性类，用于读取 application.yml 中的 OSS 配置
  * 启用 @Valid 支持配置校验，启动时自动验证 OssInstanceProperties
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description Spring Boot 配置属性类，用于读取 application.yml 中的 OSS 配置
  * @since 1.0.0

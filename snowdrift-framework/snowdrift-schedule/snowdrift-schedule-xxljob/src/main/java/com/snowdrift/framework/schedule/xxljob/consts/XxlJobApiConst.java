@@ -6,7 +6,7 @@ package com.snowdrift.framework.schedule.xxljob.consts;
  * 对照 XXL-JOB Admin {@code JobInfoController} / {@code JobGroupController} 源码
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

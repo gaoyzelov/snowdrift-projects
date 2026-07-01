@@ -32,7 +32,7 @@ import org.springframework.data.redis.serializer.RedisSerializer;
  * 与 ICacheService 共享同一套 Jackson 序列化机制。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

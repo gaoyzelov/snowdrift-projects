@@ -24,7 +24,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 /**
  * AsyncConfiguration
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2024/8/19 11:24
  * @description 异步配置类
  * @since 1.0.0

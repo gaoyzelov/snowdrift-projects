@@ -8,7 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * StdoutLogServiceImpl
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/30-14:56
  * @description 控制台日志服务实现类
  * @since 1.0.0

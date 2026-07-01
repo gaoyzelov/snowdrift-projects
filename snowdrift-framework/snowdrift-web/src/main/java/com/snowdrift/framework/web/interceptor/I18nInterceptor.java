@@ -15,7 +15,7 @@ import java.util.Locale;
 /**
  * I18nInterceptor
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 国际化语言拦截器
  * 优先级：URL 参数（默认 lang） > 默认语言

@@ -6,7 +6,7 @@ import lombok.Getter;
 /**
  * EnabledEnum
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/29-14:21
  * @description 启用禁用枚举
  * @since 1.0.0

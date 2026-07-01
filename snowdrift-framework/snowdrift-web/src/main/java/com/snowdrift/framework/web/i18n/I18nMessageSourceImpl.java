@@ -12,7 +12,7 @@ import java.util.Map;
 /**
  * I18nMessageSourceImpl
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 默认国际化消息源实现（基于配置文件）
  *              后续可扩展实现 II18nMessageSource 接口从数据库获取

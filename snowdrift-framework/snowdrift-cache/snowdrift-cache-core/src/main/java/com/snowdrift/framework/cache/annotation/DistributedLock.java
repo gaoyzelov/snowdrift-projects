@@ -25,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * &#064;DistributedLock(key = "#id", message = "订单处理中，请稍后重试")
  * </pre>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

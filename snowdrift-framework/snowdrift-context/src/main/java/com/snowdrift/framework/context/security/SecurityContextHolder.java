@@ -10,7 +10,7 @@ import java.util.Objects;
 /**
  * SecurityContextHolder
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/30-15:58
  * @description 安全上下文Holder
  * @since 1.0.0

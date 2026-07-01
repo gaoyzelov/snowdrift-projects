@@ -10,6 +10,7 @@ import com.qiniu.storage.UploadManager;
 import com.qiniu.storage.model.DefaultPutRet;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.snowdrift.framework.common.util.HttpUtil;
 import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
@@ -23,14 +24,16 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 
 import java.io.InputStream;
-import java.net.URL;
+import java.net.URI;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
 
 /**
  * 七牛云 Kodo OSS Service 实现
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/12
  * @description 基于七牛云对象存储的 OSS 实现，适用于 CDN 加速场景
  * @since 1.0.0
@@ -166,8 +169,16 @@ public class QiniuOssServiceImpl extends AbstractOssService {
 
             // 返回文件流（这里需要从七牛云 CDN 下载）
             // 注意：七牛云 SDK 没有直接的 getObject 方法，需要通过 URL 下载
-            URL url = new URL(downloadUrl);
-            return url.openStream();
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(downloadUrl))
+                    .timeout(Duration.ofSeconds(30))
+                    .build();
+            HttpResponse<InputStream> response = HttpUtil.getHttpClient().send(request, HttpResponse.BodyHandlers.ofInputStream());
+            if (response.statusCode() == 200) {
+                return response.body();
+            } else {
+                throw new OssException("oss.download.failed", new Object[]{response.statusCode()});
+            }
         } catch (Exception e) {
             log.error("文件下载失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.download.failed", new Object[]{e.getMessage()});

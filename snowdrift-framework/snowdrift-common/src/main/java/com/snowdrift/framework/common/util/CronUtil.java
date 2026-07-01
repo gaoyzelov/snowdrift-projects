@@ -10,7 +10,7 @@ import java.util.regex.Pattern;
 /**
  * CronUtil
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/3/30-11:40
  * @description cron工具类
  * @since 1.0.0

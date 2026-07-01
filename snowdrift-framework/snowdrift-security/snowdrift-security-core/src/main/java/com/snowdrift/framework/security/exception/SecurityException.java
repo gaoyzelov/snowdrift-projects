@@ -5,7 +5,7 @@ import com.snowdrift.framework.common.exception.BizException;
 /**
  * Security 异常
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/15
  * @description 安全操作异常（支持国际化）
  *              message 字段存储国际化消息 key，而非硬编码文本

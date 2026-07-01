@@ -10,7 +10,7 @@ import lombok.Setter;
 /**
  * XXL-JOB 任务请求 — 继承公共字段，扩展 XXL-JOB 独有配置
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

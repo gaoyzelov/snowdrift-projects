@@ -7,7 +7,7 @@ package com.snowdrift.framework.schedule.core;
  * XXL-JOB 实现使用数字 id。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

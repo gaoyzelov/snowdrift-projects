@@ -18,7 +18,7 @@ import java.util.Map;
  * 封装文件上传所需的参数，并提供统一的校验方法
  * 所有实现类无需重复校验，直接调用 validate() 即可
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 文件上传请求参数
  * @since 1.0.0

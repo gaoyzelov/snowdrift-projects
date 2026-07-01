@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Spring Security 工具类
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

@@ -14,7 +14,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
  * {@link ConfigurationProperties} 绑定 {@code snowdrift.security.spring} 前缀。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

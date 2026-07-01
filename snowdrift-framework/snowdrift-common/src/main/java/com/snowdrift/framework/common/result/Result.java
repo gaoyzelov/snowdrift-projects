@@ -9,7 +9,7 @@ import java.io.Serializable;
 /**
  * Result
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/3/25-16:09
  * @description 统一返回结果
  * @since 1.0.0

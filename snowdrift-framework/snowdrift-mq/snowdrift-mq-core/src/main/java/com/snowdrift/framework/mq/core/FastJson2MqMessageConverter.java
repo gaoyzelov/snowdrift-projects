@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
  * 如需切换序列化方案（如 Jackson），注册一个 {@link MqMessageConverter} 类型的 Bean 即可覆盖。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

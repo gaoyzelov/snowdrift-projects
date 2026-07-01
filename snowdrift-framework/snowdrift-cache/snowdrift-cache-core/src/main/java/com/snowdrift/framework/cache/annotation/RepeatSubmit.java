@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
  * public Result&lt;Void&gt; submit(Long userId) { ... }
  * </pre>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

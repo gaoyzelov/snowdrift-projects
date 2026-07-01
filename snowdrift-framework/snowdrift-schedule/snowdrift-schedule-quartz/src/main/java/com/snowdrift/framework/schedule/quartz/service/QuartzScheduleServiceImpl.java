@@ -24,7 +24,7 @@ import java.util.Map;
  * 任务执行类由调用方通过 {@link QuartzJobRequest#getJobClass()} 指定。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

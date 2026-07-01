@@ -6,7 +6,7 @@ import java.util.Map;
 /**
  * II18nMessageSource
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 国际化消息源接口（可扩展为从数据库获取）
  * @since 1.0.0

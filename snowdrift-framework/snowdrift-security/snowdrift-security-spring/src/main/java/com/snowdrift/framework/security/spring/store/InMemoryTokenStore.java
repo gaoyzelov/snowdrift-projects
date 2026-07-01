@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  * 生产环境建议启用 Redis（引入 {@code spring-boot-starter-data-redis} 即可自动切换）。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

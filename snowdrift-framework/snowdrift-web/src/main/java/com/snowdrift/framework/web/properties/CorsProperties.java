@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * CORS 跨域配置属性
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

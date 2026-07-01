@@ -6,7 +6,7 @@ import com.snowdrift.framework.oss.properties.OssInstanceProperties;
 /**
  * OSS 配置转换器
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 用于 OssProperties 和 OssConfigDTO 之间的转换
  * @since 1.0.0

@@ -21,7 +21,7 @@ import java.time.Duration;
 /**
  * 本地存储 OSS Service 实现
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 基于本地文件系统的 OSS 实现，适用于开发环境和小型项目
  * @since 1.0.0

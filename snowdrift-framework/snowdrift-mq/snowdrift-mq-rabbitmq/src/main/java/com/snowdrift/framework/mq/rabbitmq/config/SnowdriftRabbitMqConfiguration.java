@@ -29,7 +29,7 @@ import java.util.concurrent.Executor;
  * 当 {@code snowdrift.mq.rabbitmq.enabled=true} 且 RabbitMQ Binder 在 classpath 中时激活。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

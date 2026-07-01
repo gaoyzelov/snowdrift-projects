@@ -25,7 +25,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * 通过 {@code snowdrift.security.sa-token.enabled} 控制整个安全模块的开关。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/15
  * @since 1.0.0
  */

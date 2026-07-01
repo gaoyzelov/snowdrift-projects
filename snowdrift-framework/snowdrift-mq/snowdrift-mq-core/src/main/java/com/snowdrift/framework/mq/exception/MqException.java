@@ -8,7 +8,7 @@ import com.snowdrift.framework.common.exception.BizException;
  * message 字段存储 i18n key，配合 {@link com.snowdrift.framework.common.result.ResultCode} 使用。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

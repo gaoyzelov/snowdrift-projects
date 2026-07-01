@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * OSS 策略工厂
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 管理和切换不同的 OSS 实例，支持动态注册和热更新
  * @since 1.0.0

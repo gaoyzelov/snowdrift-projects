@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 /**
  * LoginLog
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/30-14:28
  * @description 登录日志注解
  * @since 1.0.0

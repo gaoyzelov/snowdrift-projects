@@ -18,7 +18,7 @@ import java.util.function.Consumer;
  * 生命周期：context restore → 反序列化 → MethodHandle 调用用户方法 → 异常翻译为 MqException → finally context clear
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

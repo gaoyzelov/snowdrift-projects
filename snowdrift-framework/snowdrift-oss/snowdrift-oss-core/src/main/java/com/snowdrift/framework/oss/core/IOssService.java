@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * OSS 统一操作接口
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 定义所有 OSS 存储的统一操作接口，屏蔽底层差异
  * @since 1.0.0

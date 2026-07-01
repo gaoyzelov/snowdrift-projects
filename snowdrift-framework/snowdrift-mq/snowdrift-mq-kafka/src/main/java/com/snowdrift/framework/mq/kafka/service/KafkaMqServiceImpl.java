@@ -32,7 +32,7 @@ import java.util.concurrent.Future;
  * 批量发送优先使用 {@link KafkaTemplate}（如可用），Kafka Producer 内部按 linger.ms 自动批次发送。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

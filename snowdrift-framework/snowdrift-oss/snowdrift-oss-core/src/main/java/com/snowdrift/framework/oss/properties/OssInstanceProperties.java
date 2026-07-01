@@ -16,7 +16,7 @@ import java.io.Serializable;
  * 用于 YAML/Properties 配置文件中的 OSS 实例配置
  * 支持 Jakarta Validation 校验，启动时自动验证配置合法性
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description OSS 实例配置
  * @since 1.0.0

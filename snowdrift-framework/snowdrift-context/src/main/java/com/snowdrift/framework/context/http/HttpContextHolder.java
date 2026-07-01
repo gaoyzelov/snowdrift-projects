@@ -8,7 +8,7 @@ import java.util.Objects;
 /**
  * HttpContextHolder
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/30-16:00
  * @description Http请求上下文Holder
  * @since 1.0.0

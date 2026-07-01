@@ -12,7 +12,7 @@ import java.io.Serializable;
 /**
  * AsyncProperties
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/8-15:29
  * @description 异步配置
  * @since 1.0.0

@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
  * 不经过 {@link AbstractCacheService} 的 serialize/deserialize 方法，避免二次序列化。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

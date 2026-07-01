@@ -6,7 +6,7 @@ import com.snowdrift.framework.log.dto.OperateLogCreateDTO;
 
 /**
  *  ILogService
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/30-14:54
  * @description 日志服务接口
  * @since 1.0.0

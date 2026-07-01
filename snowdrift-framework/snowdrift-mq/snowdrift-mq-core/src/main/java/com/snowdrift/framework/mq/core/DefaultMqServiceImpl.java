@@ -26,7 +26,7 @@ import java.util.concurrent.Executor;
  * 延迟发送默认为不支持，由各 binder 实现模块覆盖。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

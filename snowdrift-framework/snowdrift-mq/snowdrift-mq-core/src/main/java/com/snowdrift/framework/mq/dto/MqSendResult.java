@@ -15,7 +15,7 @@ import java.io.Serializable;
  * 如需这些信息，可直接使用各 MQ 的原生 SDK 发送。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

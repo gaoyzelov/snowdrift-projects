@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  * 登录/登出操作不在此接口中抽象，业务代码直接调用 {@code StpUtil.login()} 等原生 API。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

@@ -10,7 +10,7 @@ import java.time.Duration;
 /**
  * 缓存配置属性
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

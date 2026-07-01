@@ -16,7 +16,7 @@ import com.snowdrift.framework.context.security.SecurityContext;
  * 引入 {@code sa-token-dao-redis-jackson} 依赖即可启用，无需此接口。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

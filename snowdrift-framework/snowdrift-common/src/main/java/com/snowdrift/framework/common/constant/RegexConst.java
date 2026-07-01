@@ -2,7 +2,7 @@ package com.snowdrift.framework.common.constant;
 
 /**
  * RegexConst
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/3/31-17:33
  * @description 正则表达式常量
  * @since 1.0.0

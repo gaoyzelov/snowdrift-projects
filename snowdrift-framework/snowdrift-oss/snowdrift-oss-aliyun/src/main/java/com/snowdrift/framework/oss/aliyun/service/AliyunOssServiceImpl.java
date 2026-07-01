@@ -26,7 +26,7 @@ import java.util.List;
 /**
  * 阿里云 OSS Service 实现
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/12
  * @description 阿里云对象存储服务实现
  * @since 1.0.0

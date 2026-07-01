@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * OSS 存储类型枚举
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 支持的 OSS 存储类型
  * @since 1.0.0

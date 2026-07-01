@@ -11,7 +11,7 @@ import lombok.Getter;
  * XXL-JOB 的 {@code triggerStatus} 做兼容映射：1→NORMAL，0→PAUSED。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

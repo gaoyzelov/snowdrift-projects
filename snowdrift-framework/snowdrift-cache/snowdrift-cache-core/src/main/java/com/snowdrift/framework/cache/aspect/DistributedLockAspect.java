@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
  * 仅在容器中存在 {@link DistributedLockService} Bean 时生效（即 Redisson 模块激活时）。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

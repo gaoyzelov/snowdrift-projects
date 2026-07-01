@@ -19,7 +19,7 @@ import java.util.Set;
  * Jackson 序列化由 Redisson 内置的 Codec 处理。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

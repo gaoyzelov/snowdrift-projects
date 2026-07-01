@@ -13,7 +13,7 @@ import java.util.Map;
  * 管理端通过此对象创建和管理任务。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

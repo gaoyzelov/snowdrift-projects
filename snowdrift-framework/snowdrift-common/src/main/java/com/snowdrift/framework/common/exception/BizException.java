@@ -7,7 +7,7 @@ import lombok.Getter;
 /**
  * BizException
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/3/25-15:59
  * @description 业务异常
  * @since 1.0.0

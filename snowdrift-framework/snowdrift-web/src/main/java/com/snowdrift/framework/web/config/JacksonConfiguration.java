@@ -20,7 +20,7 @@ import java.time.LocalTime;
 /**
  * JacksonConfiguration
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/7-18:00
  * @description Jackson 配置类
  * @since 1.0.0

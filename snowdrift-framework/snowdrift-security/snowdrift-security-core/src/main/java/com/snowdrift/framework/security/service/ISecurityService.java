@@ -11,7 +11,7 @@ import com.snowdrift.framework.security.model.TokenInfo;
  * 无需直接依赖具体框架的 API。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

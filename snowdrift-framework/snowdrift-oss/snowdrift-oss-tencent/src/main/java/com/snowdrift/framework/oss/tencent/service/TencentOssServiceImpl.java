@@ -28,7 +28,7 @@ import java.util.List;
 /**
  * 腾讯云 COS OSS Service 实现
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/11
  * @description 基于腾讯云对象存储的 OSS 实现，适用于腾讯云生态场景
  * @since 1.0.0

@@ -6,7 +6,7 @@ import lombok.Data;
 /**
  * XXL-JOB 任务标识 — 基于 id + groupId 定位任务（对应 Admin 端 jobId + jobGroup）
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

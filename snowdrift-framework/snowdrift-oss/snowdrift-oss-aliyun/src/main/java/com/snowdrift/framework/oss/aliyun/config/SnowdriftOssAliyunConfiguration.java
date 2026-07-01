@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 阿里云 OSS 自动配置类
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/12
  * @description 自动注册阿里云 OSS 实例到策略工厂
  * @since 1.0.0

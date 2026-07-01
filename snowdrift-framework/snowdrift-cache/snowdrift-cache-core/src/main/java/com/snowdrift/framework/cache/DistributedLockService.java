@@ -10,7 +10,7 @@ import java.util.function.Supplier;
  * 轻量场景推荐使用 {@link com.snowdrift.framework.cache.annotation.DistributedLock @DistributedLock} 注解。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

@@ -16,7 +16,7 @@ import java.util.Map;
 /**
  * ServletUtil
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/29-16:44
  * @description 获取请求工具类
  * @since 1.0.0

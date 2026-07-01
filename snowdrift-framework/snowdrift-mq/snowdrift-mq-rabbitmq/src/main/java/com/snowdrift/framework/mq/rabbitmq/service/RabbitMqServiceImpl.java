@@ -29,7 +29,7 @@ import java.util.concurrent.Executor;
  * 批量发送优先使用 {@link RabbitTemplate}（如可用）。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

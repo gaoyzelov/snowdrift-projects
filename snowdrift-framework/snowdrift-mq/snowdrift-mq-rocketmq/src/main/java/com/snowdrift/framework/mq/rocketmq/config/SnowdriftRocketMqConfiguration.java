@@ -27,7 +27,7 @@ import java.util.concurrent.Executor;
 /**
  * Snowdrift RocketMQ MQ 自动配置
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

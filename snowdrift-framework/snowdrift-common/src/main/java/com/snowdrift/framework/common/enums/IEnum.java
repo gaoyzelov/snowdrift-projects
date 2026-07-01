@@ -8,7 +8,7 @@ import java.util.Optional;
 /**
  * IEnum
  * 
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/3/25-15:57
  * @description 通用枚举接口
  * @since 1.0.0

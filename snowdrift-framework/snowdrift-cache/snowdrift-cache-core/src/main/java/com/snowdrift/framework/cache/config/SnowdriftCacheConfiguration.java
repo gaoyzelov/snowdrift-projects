@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Bean;
  * 按类路径自动检测：Redisson → Redis（Lettuce/Jedis）→ Caffeine。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

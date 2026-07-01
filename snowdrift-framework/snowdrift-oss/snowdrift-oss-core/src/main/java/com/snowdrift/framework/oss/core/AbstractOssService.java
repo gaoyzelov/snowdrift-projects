@@ -17,7 +17,7 @@ import java.util.UUID;
  * 提供所有 OSS 实现的公共方法，避免代码重复
  * 包含 objectKey 规范化、批量删除、配置信息获取等通用逻辑
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/10
  * @description OSS 服务抽象基类，封装公共逻辑
  * @since 1.0.0

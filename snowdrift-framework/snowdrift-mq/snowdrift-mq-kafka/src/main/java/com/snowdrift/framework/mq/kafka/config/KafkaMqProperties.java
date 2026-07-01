@@ -8,7 +8,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * Kafka 消息队列配置属性
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

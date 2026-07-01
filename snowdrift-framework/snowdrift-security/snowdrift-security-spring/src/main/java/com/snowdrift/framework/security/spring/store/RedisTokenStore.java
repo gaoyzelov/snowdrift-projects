@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
  * 多实例部署时 Token 自动共享，无需额外的会话同步。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/14
  * @since 1.0.0
  */

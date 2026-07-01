@@ -9,7 +9,7 @@ import java.util.Optional;
 /**
  * URL 风格枚举
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description OSS URL 访问风格
  * @since 1.0.0

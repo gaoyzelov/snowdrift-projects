@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 
 /**
  * ApiLog
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/30-14:27
  * @description 接口访问日志注解
  * @since 1.0.0

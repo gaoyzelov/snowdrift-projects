@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 /**
  * AnonymousAccess
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27-14:04
  * @description 匿名访问注解
  * @since 1.0.0

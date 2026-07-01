@@ -5,7 +5,7 @@ import lombok.Getter;
 
 /**
  * YesNoEnum
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/29-14:20
  * @description 布尔枚举
  * @since 1.0.0

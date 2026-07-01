@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Configuration;
 /**
  * 腾讯云 COS 自动配置类
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/11
  * @description 自动注册腾讯云 COS OSS 实例到策略工厂
  * @since 1.0.0

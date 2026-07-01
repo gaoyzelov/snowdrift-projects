@@ -22,7 +22,7 @@ import java.util.Map;
 /**
  * HttpUtil
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/3/30-13:29
  * @description http工具类
  * @since 1.0.0

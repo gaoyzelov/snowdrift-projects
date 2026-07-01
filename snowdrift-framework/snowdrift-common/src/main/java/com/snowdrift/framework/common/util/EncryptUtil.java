@@ -25,7 +25,7 @@ import java.util.List;
 /**
  * EncryptUtil
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/3/27-13:05
  * @description 加密工具类
  * @since 1.0.0

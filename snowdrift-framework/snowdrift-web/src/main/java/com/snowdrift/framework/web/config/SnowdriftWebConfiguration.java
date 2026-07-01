@@ -22,7 +22,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 /**
  * SnowdriftWebConfiguration
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/7-18:00
  * @description web 自动配置
  * @since 1.0.0

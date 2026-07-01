@@ -10,7 +10,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * MQ 拦截器注册表 — 支持运行时动态增删，按 {@link MqSendInterceptor#getPriority()} 降序执行
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

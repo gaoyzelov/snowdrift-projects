@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
  * 不支持 per-key TTL（{@link #expire} 和 {@link #getExpire} 返回语义降级值）。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

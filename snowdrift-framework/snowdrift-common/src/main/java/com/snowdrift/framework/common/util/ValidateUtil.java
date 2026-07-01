@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 /**
  * ValidateUtil
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/3/31-17:31
  * @description 验证工具类
  * @since 1.0.0

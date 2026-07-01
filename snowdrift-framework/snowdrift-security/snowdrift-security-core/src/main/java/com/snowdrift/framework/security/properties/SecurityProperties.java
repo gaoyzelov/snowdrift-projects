@@ -16,7 +16,7 @@ import java.util.List;
  * 并在子类上添加 {@code @ConfigurationProperties} 绑定对应前缀。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/15
  * @since 1.0.0
  */

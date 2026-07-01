@@ -13,7 +13,7 @@ import lombok.extern.slf4j.Slf4j;
  * 统一处理日志记录与上下文清理。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

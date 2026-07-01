@@ -22,7 +22,7 @@ import java.io.Serializable;
  *   <li><b>闲置过期</b>（{@link TokenEntry#lastActiveAt}）：每次 get 时刷新</li>
  * </ul>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/14
  * @since 1.0.0
  */

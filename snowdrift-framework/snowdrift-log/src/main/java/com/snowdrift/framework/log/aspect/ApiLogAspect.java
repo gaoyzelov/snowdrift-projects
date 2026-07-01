@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 /**
  * ApiLogAspect
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/7-15:37
  * @description 接口访问日志注解
  * @since 1.0.0

@@ -30,7 +30,7 @@ import java.util.concurrent.Executor;
  * 则使用原生 {@code send(Collection)} 单次网络请求；否则回退为 StreamBridge 循环。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

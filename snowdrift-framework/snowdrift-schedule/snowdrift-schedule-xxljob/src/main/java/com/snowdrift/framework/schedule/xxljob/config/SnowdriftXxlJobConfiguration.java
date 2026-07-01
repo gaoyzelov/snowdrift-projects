@@ -18,7 +18,7 @@ import org.springframework.context.annotation.Bean;
  * 优先于 Quartz 注册 {@link IScheduleService} 实现。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

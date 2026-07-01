@@ -16,7 +16,7 @@ import java.util.concurrent.CompletableFuture;
  * 用户仍可绕过本接口直接使用 StreamBridge 或 @Bean Consumer。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

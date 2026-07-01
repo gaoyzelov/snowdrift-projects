@@ -5,7 +5,7 @@ import lombok.Getter;
 
 /**
  * BizTypeEnum
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/29-15:12
  * @description 业务类型枚举
  * @since 1.0.0

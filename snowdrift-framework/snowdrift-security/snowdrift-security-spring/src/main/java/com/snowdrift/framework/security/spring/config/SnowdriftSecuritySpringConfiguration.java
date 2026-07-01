@@ -44,7 +44,7 @@ import java.util.List;
  * 通过 {@code snowdrift.security.spring.enabled} 控制模块开关。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

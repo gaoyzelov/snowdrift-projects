@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * LogRecordServiceImpl
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/30-14:56
  * @description 操作日志记录服务实现类，需启用{@link com.mzt.logapi.starter.annotation.EnableLogRecord}
  * @since 1.0.0

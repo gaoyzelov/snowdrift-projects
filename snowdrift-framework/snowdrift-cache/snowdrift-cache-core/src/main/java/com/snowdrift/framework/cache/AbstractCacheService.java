@@ -13,7 +13,7 @@ import java.util.Objects;
  * 通过 {@link CacheSerializer} 确保 Redis / Caffeine 数据格式一致。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

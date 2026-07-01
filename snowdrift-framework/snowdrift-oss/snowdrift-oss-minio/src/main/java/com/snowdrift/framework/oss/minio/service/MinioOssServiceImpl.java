@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * MinIO 存储 OSS Service 实现
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/12
  * @description 基于 MinIO 对象存储的 OSS 实现，适用于生产环境和分布式系统
  * @since 1.0.0

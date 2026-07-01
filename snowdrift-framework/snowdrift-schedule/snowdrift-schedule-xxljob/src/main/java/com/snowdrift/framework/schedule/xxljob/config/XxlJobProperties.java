@@ -15,7 +15,7 @@ import java.time.Duration;
  * 前缀 {@code snowdrift.schedule.xxl-job}，同时兼容 {@code xxl.job.*} 原生配置。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0
  */

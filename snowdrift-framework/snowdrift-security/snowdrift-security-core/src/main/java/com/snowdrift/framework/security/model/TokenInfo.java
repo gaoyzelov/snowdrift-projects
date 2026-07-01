@@ -12,7 +12,7 @@ import java.io.Serializable;
  * 屏蔽底层 Sa-Token、Spring Security 等不同实现中 Token 对象的差异。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

@@ -24,7 +24,7 @@ import com.snowdrift.framework.mq.dto.MqSendResult;
  * }
  * }</pre>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

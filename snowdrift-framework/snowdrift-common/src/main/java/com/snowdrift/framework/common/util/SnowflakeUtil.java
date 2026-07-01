@@ -5,7 +5,7 @@ import com.snowdrift.framework.common.exception.BizException;
 /**
  * SnowflakeUtil
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/3/31-15:21
  * @description 雪花ID工具类 参考地址：https://www.cnblogs.com/relucent/p/4955340.html
  * @since 1.0.0

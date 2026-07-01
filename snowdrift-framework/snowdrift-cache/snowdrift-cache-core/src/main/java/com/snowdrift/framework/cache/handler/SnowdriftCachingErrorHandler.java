@@ -18,7 +18,7 @@ import org.springframework.cache.interceptor.CacheErrorHandler;
  *   <li>{@code clear} 失败 → 跳过清空，记录日志</li>
  * </ul>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/13
  * @since 1.0.0
  */

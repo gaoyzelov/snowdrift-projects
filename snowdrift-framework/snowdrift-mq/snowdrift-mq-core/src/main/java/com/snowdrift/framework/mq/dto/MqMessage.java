@@ -14,7 +14,7 @@ import java.util.Map;
  * </p>
  *
  * @param <T> 消息体类型
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

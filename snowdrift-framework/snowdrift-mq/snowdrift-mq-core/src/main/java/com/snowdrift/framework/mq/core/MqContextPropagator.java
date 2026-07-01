@@ -15,7 +15,7 @@ import org.springframework.messaging.support.MessageBuilder;
  * Consumer 端：从消息头恢复上下文，确保下游服务可获取原始请求链路的用户信息和链路追踪。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

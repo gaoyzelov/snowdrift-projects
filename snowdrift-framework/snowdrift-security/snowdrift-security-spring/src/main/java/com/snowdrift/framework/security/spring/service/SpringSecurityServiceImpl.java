@@ -23,7 +23,7 @@ import java.util.UUID;
  * 登录时生成 UUID Token，通过 {@link TokenStore} 持久化映射关系。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

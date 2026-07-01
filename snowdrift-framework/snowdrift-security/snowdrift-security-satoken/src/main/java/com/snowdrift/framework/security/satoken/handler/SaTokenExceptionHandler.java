@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * 做更精确的映射（401 未登录、403 无权限/无角色等）。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

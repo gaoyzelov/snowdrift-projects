@@ -6,7 +6,7 @@ import java.util.UUID;
 
 /**
  * LogTraceUtil
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/29-17:00
  * @description 日志链路追踪工具类
  * @since 1.0.0

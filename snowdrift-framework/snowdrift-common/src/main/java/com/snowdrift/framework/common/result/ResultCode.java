@@ -2,7 +2,7 @@ package com.snowdrift.framework.common.result;
 
 /**
  * ResultCode
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/30-10:57
  * @description 响应结果状态码（支持国际化）
  *              msg 字段存储国际化消息 key，而非硬编码文本

@@ -12,7 +12,7 @@ import java.util.List;
 /**
  * 静态资源配置属性
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 静态资源映射配置，支持本地文件访问
  * @since 1.0.0

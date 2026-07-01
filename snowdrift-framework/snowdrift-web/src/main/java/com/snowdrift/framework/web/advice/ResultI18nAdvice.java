@@ -27,7 +27,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
  * 异常处理器解析过的消息（不含 "." 的自然语言文本）不会被二次处理。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/9
  * @since 1.0.0
  */

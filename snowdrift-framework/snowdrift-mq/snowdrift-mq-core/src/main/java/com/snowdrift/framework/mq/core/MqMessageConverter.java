@@ -8,7 +8,7 @@ package com.snowdrift.framework.mq.core;
  * 用户可通过注册 {@link MqMessageConverter} 类型的 Bean 覆盖，切换到 Jackson、Protobuf 等方案。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

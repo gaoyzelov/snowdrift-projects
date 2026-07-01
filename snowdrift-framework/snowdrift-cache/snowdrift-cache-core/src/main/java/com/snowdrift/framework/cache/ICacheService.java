@@ -12,7 +12,7 @@ import java.util.Set;
  * 配合 Spring Cache 注解（@Cacheable 等）使用，覆盖编程式缓存场景。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

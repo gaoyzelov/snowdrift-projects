@@ -7,7 +7,7 @@ import lombok.Data;
 /**
  * OSS 配置 DTO
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description OSS 存储配置信息，支持静态配置和数据库动态配置
  * @since 1.0.0

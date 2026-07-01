@@ -23,7 +23,7 @@ import java.util.Objects;
 /**
  * LoginLogAspect
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/7-15:33
  * @description 登录日志切面
  * @since 1.0.0

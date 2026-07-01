@@ -15,7 +15,7 @@ import java.util.Map;
  * 转换为 Ant 风格路径后注入到 Spring Security 的放行列表中。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/27
  * @since 1.0.0
  */

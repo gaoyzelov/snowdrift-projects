@@ -12,7 +12,7 @@ import java.util.function.Supplier;
 /**
  * AssertUtil
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/3/27-13:19
  * @description 断言工具类
  * @since 1.0.0

@@ -24,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * 仅在容器中不存在其他 {@link ICacheService} Bean（Redis / Redisson）时激活。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */

@@ -6,7 +6,7 @@ import lombok.Data;
 /**
  * OSS 上传结果
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 文件上传成功后的返回结果
  * @since 1.0.0

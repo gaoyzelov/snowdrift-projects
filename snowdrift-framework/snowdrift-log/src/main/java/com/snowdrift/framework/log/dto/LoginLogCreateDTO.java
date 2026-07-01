@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 /**
  * LoginLogCreateDTO
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/30-14:51
  * @description 登录日志DTO
  * @since 1.0.0

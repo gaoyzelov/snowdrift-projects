@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 /**
  * WebExceptionHandler
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/8-15:16
  * @description Web统一异常处理
  * @since 1.0.0

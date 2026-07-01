@@ -10,7 +10,7 @@ import org.apache.commons.lang3.StringUtils;
  * 统一处理 OSS 访问 URL 的拼接逻辑
  * 自动处理域名/端点中的斜杠，避免路径错误
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description OSS URL 构建工具
  * @since 1.0.0

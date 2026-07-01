@@ -27,7 +27,7 @@ import java.util.Map;
  * 为每个 {@code @MqListener} 方法自动注册对应的 SCS Consumer Bean 和 binding 配置。
  * </p>
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */

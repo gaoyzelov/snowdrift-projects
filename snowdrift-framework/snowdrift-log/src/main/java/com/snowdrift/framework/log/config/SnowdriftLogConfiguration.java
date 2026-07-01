@@ -15,7 +15,7 @@ import org.springframework.context.annotation.Primary;
 /**
  * SnowdriftLogConfiguration
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/4/30-14:46
  * @description 日志配置
  * @since 1.0.0

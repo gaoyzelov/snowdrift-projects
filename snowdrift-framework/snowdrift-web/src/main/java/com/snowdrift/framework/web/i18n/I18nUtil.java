@@ -11,7 +11,7 @@ import java.util.Locale;
 /**
  * I18nUtil
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/5/9
  * @description 国际化工具类
  * @since 1.0.0
