@@ -179,7 +179,64 @@ public class DefaultMqServiceImpl implements IMqService {
 
     @Override
     public <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers) {
-        throw new UnsupportedOperationException("当前 MQ 不支持延迟消息，请使用各 binder 模块（如 snowdrift-mq-rocketmq）或直接使用 StreamBridge");
+        throw new MqException("mq.send.delay.unsupported");
+    }
+
+    // ========== 延迟发送模板方法（供子类复用） ==========
+
+    /**
+     * 延迟发送模板方法 — 子类只需提供延迟头部的设置逻辑
+     * <p>统一处理：Duration 空值校验 → 拦截器触发 → 序列化 → 上下文注入 → StreamBridge 发送</p>
+     *
+     * @param topic              目标 topic
+     * @param key                消息 Key（可空）
+     * @param payload            消息体
+     * @param delay              延迟时长（不可为空）
+     * @param headers            自定义消息头（可空）
+     * @param delayHeaderSetter  延迟头部设置回调
+     * @param <T>                消息体类型
+     * @return 发送结果
+     */
+    protected <T> MqSendResult doSendDelay(String topic, String key, T payload,
+                                            Duration delay, Map<String, String> headers,
+                                            java.util.function.Consumer<MessageBuilder<byte[]>> delayHeaderSetter) {
+        if (delay == null) {
+            throw new IllegalArgumentException("delay must not be null");
+        }
+        fireBeforeSend(topic, key, payload);
+        try {
+            byte[] bytes = converter.serialize(payload);
+            MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);
+            delayHeaderSetter.accept(builder);
+
+            if (StringUtils.isNotBlank(key)) {
+                builder.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, key);
+            }
+            MqContextPropagator.inject(builder);
+            if (headers != null && !headers.isEmpty()) {
+                headers.forEach(builder::setHeader);
+            }
+
+            Message<byte[]> message = builder.build();
+            boolean success = streamBridge.send(topic, message);
+            if (!success) {
+                MqException ex = new MqException("mq.send.failed", new Object[]{topic});
+                fireOnSendError(topic, ex);
+                log.warn("延迟消息发送失败: topic={}, delay={}", topic, delay);
+                throw ex;
+            }
+
+            MqSendResult result = MqSendResult.builder().topic(topic)
+                    .timestamp(System.currentTimeMillis()).build();
+            fireAfterSend(topic, result);
+            log.debug("延迟消息发送成功: topic={}, delay={}", topic, delay);
+            return result;
+        } catch (Exception e) {
+            if (!(e instanceof MqException)) {
+                fireOnSendError(topic, e);
+            }
+            throw e;
+        }
     }
 
     // ========== 批量发送 ==========

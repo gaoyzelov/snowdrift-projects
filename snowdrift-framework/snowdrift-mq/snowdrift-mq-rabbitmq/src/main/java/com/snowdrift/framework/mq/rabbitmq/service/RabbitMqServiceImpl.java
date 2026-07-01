@@ -58,48 +58,14 @@ public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements Applica
 
     @Override
     public <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers) {
-        fireBeforeSend(topic, key, payload);
-        try {
-            byte[] bytes = converter.serialize(payload);
-
-            MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);
-
-            if (Boolean.TRUE.equals(rabbitProperties.getDelayPluginEnabled())) {
+        boolean useDelayPlugin = Boolean.TRUE.equals(rabbitProperties.getDelayPluginEnabled());
+        return doSendDelay(topic, key, payload, delay, headers, builder -> {
+            if (useDelayPlugin) {
                 builder.setHeader("x-delay", delay.toMillis());
-                log.debug("RabbitMQ 延迟消息（x-delay 插件）: topic={}, delay={}ms", topic, delay.toMillis());
             } else {
                 builder.setHeader("x-message-ttl", delay.toMillis());
-                log.debug("RabbitMQ 延迟消息（x-message-ttl + DLX）: topic={}, ttl={}ms", topic, delay.toMillis());
             }
-
-            if (StringUtils.isNotBlank(key)) {
-                builder.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, key);
-            }
-
-            MqContextPropagator.inject(builder);
-            if (headers != null && !headers.isEmpty()) {
-                headers.forEach(builder::setHeader);
-            }
-
-            Message<byte[]> message = builder.build();
-            boolean success = streamBridge.send(topic, message);
-            if (!success) {
-                MqException ex = new MqException("mq.send.failed", new Object[]{topic});
-                fireOnSendError(topic, ex);
-                log.warn("RabbitMQ 延迟消息发送失败: topic={}, delay={}", topic, delay);
-                throw ex;
-            }
-
-            MqSendResult result = MqSendResult.builder().topic(topic).timestamp(System.currentTimeMillis()).build();
-            fireAfterSend(topic, result);
-            log.debug("RabbitMQ 延迟消息发送成功: topic={}, delay={}", topic, delay);
-            return result;
-        } catch (Exception e) {
-            if (!(e instanceof MqException)) {
-                fireOnSendError(topic, e);
-            }
-            throw e;
-        }
+        });
     }
 
     // ========== 批量发送（RabbitTemplate） ==========
