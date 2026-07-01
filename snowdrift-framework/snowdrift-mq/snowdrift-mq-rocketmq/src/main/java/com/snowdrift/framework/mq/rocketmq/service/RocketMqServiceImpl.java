@@ -89,6 +89,11 @@ public class RocketMqServiceImpl extends DefaultMqServiceImpl {
     private <T> List<MqSendResult> sendBatchWithProducer(String topic,
                                                           List<MqMessage<T>> messages,
                                                           DefaultMQProducer producer) {
+        // 逐条触发 beforeSend 拦截器
+        for (MqMessage<T> mqMsg : messages) {
+            fireBeforeSend(topic, mqMsg.getKey(), mqMsg.getPayload());
+        }
+
         List<org.apache.rocketmq.common.message.Message> rocketMsgs = new ArrayList<>(messages.size());
         for (MqMessage<T> mqMsg : messages) {
             byte[] body = converter.serialize(mqMsg.getPayload());
@@ -97,6 +102,12 @@ public class RocketMqServiceImpl extends DefaultMqServiceImpl {
             if (StringUtils.isNotBlank(mqMsg.getKey())) {
                 rocketMsg.setKeys(mqMsg.getKey());
             }
+            // 注入上下文和自定义头部到 RocketMQ properties
+            Message<byte[]> springMsg = buildMessage(topic, mqMsg.getKey(),
+                    mqMsg.getPayload(), mqMsg.getHeaders());
+            springMsg.getHeaders().forEach(header ->
+                    rocketMsg.getProperties().put(header.getKey(),
+                            header.getValue() != null ? header.getValue().toString() : ""));
             rocketMsgs.add(rocketMsg);
         }
 
@@ -105,19 +116,25 @@ public class RocketMqServiceImpl extends DefaultMqServiceImpl {
             log.debug("RocketMQ 批量发送成功: topic={}, count={}, msgId={}",
                     topic, rocketMsgs.size(), result.getMsgId());
 
+            // 逐条触发 afterSend 拦截器
             List<MqSendResult> results = new ArrayList<>(rocketMsgs.size());
             long timestamp = System.currentTimeMillis();
             for (int i = 0; i < rocketMsgs.size(); i++) {
-                results.add(MqSendResult.builder()
+                MqSendResult sendResult = MqSendResult.builder()
                         .messageId(result.getMsgId())
                         .topic(topic)
                         .timestamp(timestamp)
-                        .build());
+                        .build();
+                results.add(sendResult);
+                fireAfterSend(topic, sendResult);
             }
             return results;
 
         } catch (Exception e) {
             log.error("RocketMQ 批量发送失败: topic={}, count={}", topic, rocketMsgs.size(), e);
+            for (MqMessage<T> mqMsg : messages) {
+                fireOnSendError(topic, e);
+            }
             throw new MqException("mq.send.failed", new Object[]{topic + ", count=" + rocketMsgs.size()});
         }
     }

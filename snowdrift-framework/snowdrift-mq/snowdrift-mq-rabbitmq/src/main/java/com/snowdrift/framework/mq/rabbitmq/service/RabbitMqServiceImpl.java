@@ -89,24 +89,43 @@ public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements Applica
                                                                 List<MqMessage<T>> messages,
                                                                 RabbitTemplate template) {
         List<MqSendResult> results = new ArrayList<>(messages.size());
-        for (MqMessage<T> mqMsg : messages) {
+        List<Exception> errors = new ArrayList<>();
+
+        for (int i = 0; i < messages.size(); i++) {
+            MqMessage<T> mqMsg = messages.get(i);
+            fireBeforeSend(topic, mqMsg.getKey(), mqMsg.getPayload());
+
             byte[] body = converter.serialize(mqMsg.getPayload());
             MessageProperties props = new MessageProperties();
-            if (StringUtils.isNotBlank(mqMsg.getKey())) {
-                props.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, mqMsg.getKey());
-            }
+
+            // 使用 buildMessage 统一构建（包含上下文注入和自定义头部），并写入 AMQP properties
+            Message<byte[]> springMsg = buildMessage(topic, mqMsg.getKey(),
+                    mqMsg.getPayload(), mqMsg.getHeaders());
+            springMsg.getHeaders().forEach(header ->
+                    props.setHeader(header.getKey(), header.getValue()));
+
             org.springframework.amqp.core.Message amqpMsg =
                     new org.springframework.amqp.core.Message(body, props);
             try {
                 template.send(topic, "", amqpMsg);
-                results.add(MqSendResult.builder()
+                MqSendResult result = MqSendResult.builder()
                         .topic(topic)
                         .timestamp(System.currentTimeMillis())
-                        .build());
+                        .build();
+                results.add(result);
+                fireAfterSend(topic, result);
             } catch (Exception e) {
-                log.error("RabbitMQ 批量消息发送失败: topic={}, key={}", topic, mqMsg.getKey(), e);
-                throw new MqException("mq.send.failed", new Object[]{topic});
+                log.error("RabbitMQ 批量发送第 {} 条失败: topic={}, key={}", i, topic, mqMsg.getKey(), e);
+                fireOnSendError(topic, e);
+                errors.add(e);
+                results.add(null); // 占位，保持索引对齐
             }
+        }
+
+        if (!errors.isEmpty()) {
+            long successCount = results.stream().filter(java.util.Objects::nonNull).count();
+            throw new MqException("mq.send.batch.partial-failed",
+                    new Object[]{topic, successCount, messages.size()});
         }
         log.debug("RabbitMQ 批量发送完成: topic={}, count={}", topic, messages.size());
         return results;

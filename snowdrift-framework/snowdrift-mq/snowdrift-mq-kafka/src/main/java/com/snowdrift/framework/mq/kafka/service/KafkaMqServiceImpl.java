@@ -77,30 +77,56 @@ public class KafkaMqServiceImpl extends DefaultMqServiceImpl implements Applicat
     private <T> List<MqSendResult> sendBatchWithKafkaTemplate(String topic,
                                                                List<MqMessage<T>> messages,
                                                                KafkaTemplate<byte[], byte[]> template) {
-        // 先全部提交，让 Kafka Producer 按 linger.ms 内部批次发送
+        // 逐条：触发 beforeSend 拦截器 → 构建消息 → 提交 Kafka send
         List<java.util.concurrent.Future<RecordMetadata>> futures = new ArrayList<>(messages.size());
         for (MqMessage<T> mqMsg : messages) {
-            byte[] key = mqMsg.getKey() != null ? mqMsg.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8) : null;
-            byte[] payload = converter.serialize(mqMsg.getPayload());
-            ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, key, payload);
+            fireBeforeSend(topic, mqMsg.getKey(), mqMsg.getPayload());
+
+            // 使用 buildMessage 统一构建（包含上下文注入和自定义头部）
+            Message<byte[]> springMsg = buildMessage(topic, mqMsg.getKey(),
+                    mqMsg.getPayload(), mqMsg.getHeaders());
+
+            byte[] msgKey = mqMsg.getKey() != null
+                    ? mqMsg.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8) : null;
+            ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, null, null, msgKey, springMsg.getPayload());
+
+            // 将 Spring Message headers 写入 Kafka Record headers
+            springMsg.getHeaders().forEach(header -> {
+                byte[] headerValue = header.getValue() instanceof byte[]
+                        ? (byte[]) header.getValue()
+                        : header.getValue().toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                record.headers().add(header.getKey(), headerValue);
+            });
+
             futures.add(template.send(record).thenApply(SendResult::getRecordMetadata));
         }
 
-        // 统一等待结果，此时 Kafka 已完成内部批次网络发送
+        // 逐条等待结果，收集成功/失败信息（不因单条失败丢弃其余结果）
         List<MqSendResult> results = new ArrayList<>(messages.size());
-        for (java.util.concurrent.Future<RecordMetadata> future : futures) {
+        List<Exception> errors = new ArrayList<>();
+        for (int i = 0; i < futures.size(); i++) {
             try {
-                RecordMetadata meta = future.get();
-                results.add(MqSendResult.builder()
+                RecordMetadata meta = futures.get(i).get();
+                MqSendResult result = MqSendResult.builder()
                         .messageId(topic + "-" + meta.partition() + "-" + meta.offset())
                         .topic(topic)
                         .partitionOrQueue(String.valueOf(meta.partition()))
                         .timestamp(meta.timestamp())
-                        .build());
+                        .build();
+                results.add(result);
+                fireAfterSend(topic, result);
             } catch (Exception e) {
-                log.error("Kafka 批量消息发送失败: topic={}", topic, e);
-                throw new MqException("mq.send.failed", new Object[]{topic});
+                log.error("Kafka 批量发送第 {} 条失败: topic={}", i, topic, e);
+                fireOnSendError(topic, e);
+                errors.add(e);
+                results.add(null); // 占位，保持索引对齐
             }
+        }
+
+        if (!errors.isEmpty()) {
+            long successCount = results.stream().filter(java.util.Objects::nonNull).count();
+            throw new MqException("mq.send.batch.partial-failed",
+                    new Object[]{topic, successCount, messages.size()});
         }
         log.debug("Kafka 批量发送完成: topic={}, count={}", topic, messages.size());
         return results;
