@@ -2,6 +2,8 @@ package com.snowdrift.framework.mq.core;
 
 import com.alibaba.fastjson2.JSON;
 
+import java.nio.charset.StandardCharsets;
+
 /**
  * FastJson2 消息转换器（默认实现）
  * <p>
@@ -26,7 +28,7 @@ public class FastJson2MqMessageConverter implements MqMessageConverter {
             return targetType.cast(data);
         }
         if (String.class.equals(targetType)) {
-            return targetType.cast(new String(data, java.nio.charset.StandardCharsets.UTF_8));
+            return targetType.cast(new String(data, StandardCharsets.UTF_8));
         }
         return JSON.parseObject(data, targetType);
     }
