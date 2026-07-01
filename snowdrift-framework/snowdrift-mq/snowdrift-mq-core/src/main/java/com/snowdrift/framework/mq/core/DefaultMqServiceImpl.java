@@ -65,47 +65,17 @@ public class DefaultMqServiceImpl implements IMqService {
     @SuppressWarnings("unchecked")
     public <T> MqSendResult send(String topic, String key, T payload, Map<String, String> headers) {
         long start = System.currentTimeMillis();
-        // 拦截器：发送前
-        for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
-            try {
-                interceptor.beforeSend(topic, key, payload);
-            } catch (Exception e) {
-                log.warn("拦截器 beforeSend 异常: {}", interceptor.getClass().getName(), e);
-            }
-        }
+        fireBeforeSend(topic, key, payload);
 
         try {
-            byte[] bytes = converter.serialize(payload);
             String originalType = payload.getClass().getName();
-
-            MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);
-
-            if (StringUtils.isNotBlank(key)) {
-                builder.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, key);
-            }
-
-            // 注入 TTL 上下文（traceId, userId, tenantId, username）
-            MqContextPropagator.inject(builder);
-
-            // 注入用户自定义 headers
-            if (headers != null && !headers.isEmpty()) {
-                headers.forEach(builder::setHeader);
-            }
-
-            Message<byte[]> message = builder.build();
+            Message<byte[]> message = buildMessage(topic, key, payload, headers);
             boolean success = streamBridge.send(topic, message);
             long elapsed = System.currentTimeMillis() - start;
 
             if (!success) {
                 MqException ex = new MqException("mq.send.failed", new Object[]{topic});
-                // 拦截器：发送失败
-                for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
-                    try {
-                        interceptor.onSendError(topic, ex);
-                    } catch (Exception e) {
-                        log.warn("拦截器 onSendError 异常: {}", interceptor.getClass().getName(), e);
-                    }
-                }
+                fireOnSendError(topic, ex);
                 log.warn("消息发送失败: topic={}, key={}, type={}", topic, key, originalType);
                 throw ex;
             }
@@ -115,14 +85,7 @@ public class DefaultMqServiceImpl implements IMqService {
                     .timestamp(System.currentTimeMillis())
                     .build();
 
-            // 拦截器：发送成功
-            for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
-                try {
-                    interceptor.afterSend(topic, result);
-                } catch (Exception e) {
-                    log.warn("拦截器 afterSend 异常: {}", interceptor.getClass().getName(), e);
-                }
-            }
+            fireAfterSend(topic, result);
 
             log.debug("消息发送成功: topic={}, key={}, type={}, elapsed={}ms", topic, key, originalType, elapsed);
             return result;
@@ -130,14 +93,7 @@ public class DefaultMqServiceImpl implements IMqService {
         } catch (MqException e) {
             throw e;
         } catch (Exception e) {
-            // 拦截器：异常
-            for (MqSendInterceptor interceptor : interceptorRegistry.getInterceptors()) {
-                try {
-                    interceptor.onSendError(topic, e);
-                } catch (Exception ex) {
-                    log.warn("拦截器 onSendError 异常: {}", interceptor.getClass().getName(), ex);
-                }
-            }
+            fireOnSendError(topic, e);
             throw e;
         }
     }
@@ -238,5 +194,37 @@ public class DefaultMqServiceImpl implements IMqService {
             results.add(send(topic, msg.getKey(), msg.getPayload(), msg.getHeaders()));
         }
         return results;
+    }
+
+    // ========== 消息构建（供子类复用） ==========
+
+    /**
+     * 构建 Spring Message，包含序列化、上下文注入和自定义头部
+     * <p>供子类批量/延迟路径复用，确保拦截器和上下文传播的一致性</p>
+     *
+     * @param topic   目标 topic
+     * @param key     消息 Key（可空）
+     * @param payload 消息体
+     * @param headers 自定义消息头（可空）
+     * @return 构建完成的 Spring Message
+     */
+    protected Message<byte[]> buildMessage(String topic, String key, Object payload,
+                                            Map<String, String> headers) {
+        byte[] bytes = converter.serialize(payload);
+        MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);
+
+        if (StringUtils.isNotBlank(key)) {
+            builder.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, key);
+        }
+
+        // 注入 TTL 上下文（traceId, userId, tenantId, username）
+        MqContextPropagator.inject(builder);
+
+        // 注入用户自定义 headers
+        if (headers != null && !headers.isEmpty()) {
+            headers.forEach(builder::setHeader);
+        }
+
+        return builder.build();
     }
 }
