@@ -12,16 +12,18 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.ApplicationContext;
-import org.springframework.messaging.Message;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
+import org.springframework.messaging.Message;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 
 /**
  * Kafka 消息发送模板
@@ -79,7 +81,7 @@ public class KafkaMqServiceImpl extends DefaultMqServiceImpl implements Applicat
                                                                List<MqMessage<T>> messages,
                                                                KafkaTemplate<byte[], byte[]> template) {
         // 逐条：触发 beforeSend 拦截器 → 构建消息 → 提交 Kafka send
-        List<java.util.concurrent.Future<RecordMetadata>> futures = new ArrayList<>(messages.size());
+        List<Future<RecordMetadata>> futures = new ArrayList<>(messages.size());
         for (MqMessage<T> mqMsg : messages) {
             fireBeforeSend(topic, mqMsg.getKey(), mqMsg.getPayload());
 
@@ -88,14 +90,14 @@ public class KafkaMqServiceImpl extends DefaultMqServiceImpl implements Applicat
                     mqMsg.getPayload(), mqMsg.getHeaders());
 
             byte[] msgKey = mqMsg.getKey() != null
-                    ? mqMsg.getKey().getBytes(java.nio.charset.StandardCharsets.UTF_8) : null;
+                    ? mqMsg.getKey().getBytes(StandardCharsets.UTF_8) : null;
             ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, null, null, msgKey, springMsg.getPayload());
 
             // 将 Spring Message headers 写入 Kafka Record headers
             springMsg.getHeaders().forEach((headerKey, headerValue) -> {
                 byte[] valueBytes = headerValue instanceof byte[]
                         ? (byte[]) headerValue
-                        : headerValue.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                        : headerValue.toString().getBytes(StandardCharsets.UTF_8);
                 record.headers().add(headerKey, valueBytes);
             });
 

@@ -1,9 +1,8 @@
 package com.snowdrift.framework.mq.rocketmq.service;
 
 import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
-import com.snowdrift.framework.mq.core.MqContextPropagator;
-import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
+import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.dto.MqMessage;
 import com.snowdrift.framework.mq.dto.MqSendResult;
 import com.snowdrift.framework.mq.exception.MqException;
@@ -15,7 +14,6 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -132,7 +130,7 @@ public class RocketMqServiceImpl extends DefaultMqServiceImpl {
 
         } catch (Exception e) {
             log.error("RocketMQ 批量发送失败: topic={}, count={}", topic, rocketMsgs.size(), e);
-            for (MqMessage<T> mqMsg : messages) {
+            for (MqMessage<T> ignored : messages) {
                 fireOnSendError(topic, e);
             }
             throw new MqException("mq.send.failed", new Object[]{topic + ", count=" + rocketMsgs.size()});

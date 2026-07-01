@@ -1,23 +1,20 @@
 package com.snowdrift.framework.mq.rabbitmq.service;
 
 import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
-import com.snowdrift.framework.mq.core.MqContextPropagator;
-import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
+import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.dto.MqMessage;
 import com.snowdrift.framework.mq.dto.MqSendResult;
 import com.snowdrift.framework.mq.exception.MqException;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import com.snowdrift.framework.mq.rabbitmq.config.RabbitMqProperties;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.messaging.Message;
-import org.springframework.messaging.support.MessageBuilder;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -101,8 +98,7 @@ public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements Applica
             // 使用 buildMessage 统一构建（包含上下文注入和自定义头部），并写入 AMQP properties
             Message<byte[]> springMsg = buildMessage(mqMsg.getKey(),
                     mqMsg.getPayload(), mqMsg.getHeaders());
-            springMsg.getHeaders().forEach((headerKey, headerValue) ->
-                    props.setHeader(headerKey, headerValue));
+            springMsg.getHeaders().forEach(props::setHeader);
 
             org.springframework.amqp.core.Message amqpMsg =
                     new org.springframework.amqp.core.Message(body, props);
