@@ -38,7 +38,7 @@ snowdrift（雪堆）
 │   ├── snowdrift-oss        ← 对象存储：Local / MinIO / 阿里云 / 七牛云 / 腾讯云
 │   ├── snowdrift-security   ← 安全认证：Sa-Token / Spring Security 双实现
 │   ├── snowdrift-schedule   ← 分布式调度：Quartz / XXL-JOB 双实现
-│   ├── snowdrift-mq         ← 消息队列（规划中）
+│   ├── snowdrift-mq         ← 消息队列：Kafka / RocketMQ / RabbitMQ
 │   └── snowdrift-plugin     ← 插件基础设施（规划中）
 ```
 
@@ -226,7 +226,7 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 | snowdrift-oss | ✅ 完成 |
 | snowdrift-security | ✅ 完成 |
 | snowdrift-schedule | ✅ 完成 |
-| snowdrift-mq | 🚧 规划中 |
+| snowdrift-mq | ✅ 完成 |
 | snowdrift-plugin | 🚧 规划中 |
 
 ## 提交规范
