@@ -5,6 +5,7 @@ import com.snowdrift.framework.schedule.xxljob.service.XxlJobScheduleServiceImpl
 import com.xxl.job.core.executor.impl.XxlJobSpringExecutor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -24,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 @Slf4j
 @AutoConfiguration
 @EnableConfigurationProperties(XxlJobProperties.class)
+@ConditionalOnClass(XxlJobSpringExecutor.class)
 @ConditionalOnProperty(prefix = "snowdrift.schedule.xxl-job", name = "enabled", havingValue = "true")
 public class SnowdriftXxlJobConfiguration {
 

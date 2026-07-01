@@ -36,9 +36,17 @@ public class I18nInterceptor implements HandlerInterceptor {
         // 1. 从参数获取
         String lang = request.getParameter(i18nProperties.getParamName());
 
-        // 2. 如果都没有，使用默认语言
+        // 2. 如果没有，从请求头获取
         if (StringUtils.isBlank(lang)) {
-            lang = i18nProperties.getDefaultLocale();
+            // 检查 Accept-Language 头部
+            Locale requestLocale = request.getLocale();
+            if (requestLocale != null && i18nProperties.getSupportedLocales()
+                    .contains(requestLocale.toString())) {
+                lang = requestLocale.toString();
+            } else {
+                // 回退到配置的默认值
+                lang = i18nProperties.getDefaultLocale();
+            }
         }
 
         // 3. 验证是否支持该语言

@@ -58,7 +58,8 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         JSONObject result = callAdminPostApi(XxlJobApiConst.JOB_INSERT_PATH, buildJobParam(request, groupId));
         log.info("XXL-JOB 任务注册成功: name={}, group={}, cron={}",
                 request.getName(), request.getGroup(), request.getCron());
-        return XxlJobKey.newInstance(result.getIntValue("id"), groupId);
+
+        return XxlJobKey.newInstance(result.getIntValue("data"), groupId);
     }
 
     @Override

@@ -76,7 +76,7 @@ public class AsyncConfiguration implements AsyncConfigurer {
      * 任务装饰器
      * @return TaskDecorator
      */
-    public TaskDecorator taskDecorator() {
+    private TaskDecorator taskDecorator() {
         return runnable -> {
             final HttpContext httpContext = HttpContextHolder.getContext();
             final SecurityContext securityContext = SecurityContextHolder.getContext();
