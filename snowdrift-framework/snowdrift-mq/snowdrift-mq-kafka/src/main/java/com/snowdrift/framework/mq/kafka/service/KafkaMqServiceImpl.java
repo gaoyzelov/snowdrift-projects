@@ -12,6 +12,7 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.ApplicationContext;
+import org.springframework.messaging.Message;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
@@ -91,11 +92,11 @@ public class KafkaMqServiceImpl extends DefaultMqServiceImpl implements Applicat
             ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, null, null, msgKey, springMsg.getPayload());
 
             // 将 Spring Message headers 写入 Kafka Record headers
-            springMsg.getHeaders().forEach(header -> {
-                byte[] headerValue = header.getValue() instanceof byte[]
-                        ? (byte[]) header.getValue()
-                        : header.getValue().toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
-                record.headers().add(header.getKey(), headerValue);
+            springMsg.getHeaders().forEach((headerKey, headerValue) -> {
+                byte[] valueBytes = headerValue instanceof byte[]
+                        ? (byte[]) headerValue
+                        : headerValue.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                record.headers().add(headerKey, valueBytes);
             });
 
             futures.add(template.send(record).thenApply(SendResult::getRecordMetadata));
