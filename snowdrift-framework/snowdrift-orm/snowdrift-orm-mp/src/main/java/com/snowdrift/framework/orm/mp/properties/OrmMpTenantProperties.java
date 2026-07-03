@@ -7,14 +7,11 @@ import java.io.Serializable;
 import java.util.Set;
 
 /**
- * 多租户配置属性
- * <p>
- * 配置前缀：{@code snowdrift.orm.mp.tenant}<br>
- * 启用后，所有 SQL 自动追加租户过滤条件（除 ignoreTables 中配置的表外）。
- * </p>
+ * OrmMpTenantProperties
  *
  * @author gaoyzelov
  * @date 2026/7/1-15:27
+ * @description 多租户配置属性
  * @since 1.0.0
  */
 @Data

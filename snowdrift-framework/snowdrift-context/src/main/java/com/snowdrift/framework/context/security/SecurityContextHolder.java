@@ -1,6 +1,7 @@
 package com.snowdrift.framework.context.security;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
+import com.snowdrift.framework.common.enums.DataScopeEnum;
 import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.common.util.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -82,16 +83,6 @@ public class SecurityContextHolder {
     }
 
     /**
-     * 获取当前租户ID
-     *
-     * @return 租户ID，未登录时抛出 BizException
-     */
-    public static Long getTenantId() {
-        return getRequiredContext().getTenantId();
-
-    }
-
-    /**
      * 获取登录账号
      *
      * @return 登录账号，未登录时抛出 BizException
@@ -123,5 +114,32 @@ public class SecurityContextHolder {
             return nickname;
         }
         return ctx.getUsername();
+    }
+
+    /**
+     * 获取当前租户ID
+     *
+     * @return 租户ID，未登录时抛出 BizException
+     */
+    public static Long getTenantId() {
+        return getRequiredContext().getTenantId();
+    }
+
+    /**
+     * 获取当前部门ID
+     *
+     * @return 部门ID，未登录时抛出 BizException
+     */
+    public static Long getDeptId() {
+        return getRequiredContext().getDeptId();
+    }
+
+    /**
+     * 获取数据范围
+     *
+     * @return 数据范围，未登录时抛出 BizException
+     */
+    public static DataScopeEnum getDataScope() {
+        return getRequiredContext().getDataScope();
     }
 }

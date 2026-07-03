@@ -25,24 +25,11 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 数据加解密 MyBatis 拦截器
- * <p>
- * 基于 MyBatis {@link Interceptor} 机制，在 SQL 执行前后对标注 {@link com.snowdrift.framework.orm.core.anno.Encrypted @Encrypted} 的字段进行自动加解密：
- * </p>
- * <ol>
- *   <li><b>写入时加密</b>：拦截 {@code Executor.update} 方法（INSERT/UPDATE/DELETE），
- *       遍历参数对象中所有 {@code @Encrypted} 字段，调用 {@link EncryptUtil#aesEncrypt} 加密后写入密文</li>
- *   <li><b>读取时解密</b>：拦截 {@code Executor.query} 方法（SELECT），
- *       遍历返回结果中所有 {@code @Encrypted} 字段，调用 {@link EncryptUtil#aesDecrypt} 解密密文</li>
- * </ol>
- * <p>
- * 密文格式：<code>{ENC} + Base64(AES密文)</code>，通过 {@code {ENC}} 前缀避免重复加密。<br>
- * 支持嵌套对象、Collection、Map 等复杂返回类型的递归处理。<br>
- * 通过 {@code snowdrift.orm.mp.crypto.enabled=true} 开启。
- * </p>
+ * DataCryptoInterceptor
  *
  * @author gaoyzelov
  * @date 2026/7/1-15:11
+ * @description 数据加解密 MyBatis 拦截器
  * @since 1.0.0
  */
 @Slf4j

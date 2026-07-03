@@ -6,11 +6,11 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import java.io.Serializable;
 
 /**
- * 数据加解密配置属性
- * <p>配置前缀：{@code snowdrift.orm.mp.crypto}</p>
+ * OrmMpCryptoProperties
  *
  * @author gaoyzelov
  * @date 2026/7/1-15:26
+ * @description 数据加解密配置属性
  * @since 1.0.0
  */
 @Data

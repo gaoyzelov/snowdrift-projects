@@ -6,14 +6,11 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * 多租户实体基类
- * <p>
- * 继承自 {@link BaseEntity}，额外增加租户隔离能力：
- * 多租户业务实体继承此类；非多租户业务直接继承 {@link BaseEntity}。
- * </p>
+ * TenantBaseEntity
  *
  * @author 83674
  * @date 2026/7/1-16:02
+ * @description 多租户实体基类
  * @since 1.0.0
  */
 @Getter

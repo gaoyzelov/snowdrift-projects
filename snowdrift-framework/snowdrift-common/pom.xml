@@ -28,6 +28,11 @@
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2</artifactId>
         </dependency>
+        <!-- Jackson Annotations -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+        </dependency>
         <!-- Apache Commons -->
         <dependency>
             <groupId>org.apache.commons</groupId>

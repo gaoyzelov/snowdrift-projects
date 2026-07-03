@@ -1,5 +1,6 @@
 package com.snowdrift.framework.context.security;
 
+import com.snowdrift.framework.common.enums.DataScopeEnum;
 import lombok.Builder;
 import lombok.Data;
 
@@ -41,14 +42,20 @@ public class SecurityContext implements Serializable {
 
     // =================== 组织信息 ========================
     /**
-     * 组织ID
-     */
-    private Long orgId;
-
-    /**
      * 租户ID
      */
     private Long tenantId;
+
+    /**
+     * 部门ID
+     */
+    private Long deptId;
+
+    // =================== 数据信息 ========================
+    /**
+     * 数据权限
+     */
+    private DataScopeEnum dataScope;
 
     // ========== 授权信息（RBAC）==========
     /**
