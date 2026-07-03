@@ -39,6 +39,7 @@ snowdrift（雪堆）
 │   ├── snowdrift-security   ← 安全认证：Sa-Token / Spring Security 双实现
 │   ├── snowdrift-schedule   ← 分布式调度：Quartz / XXL-JOB 双实现
 │   ├── snowdrift-mq         ← 消息队列：Kafka / RocketMQ / RabbitMQ
+│   ├── snowdrift-orm        ← ORM 增强：自动填充、多租户、数据权限、字段加密
 │   └── snowdrift-plugin     ← 插件基础设施（规划中）
 ```
 
@@ -166,6 +167,63 @@ scheduleService.pauseJob(key);
 scheduleService.triggerJob(key, Map.of("param", "value"));
 ```
 
+### ORM 增强（MyBatis-Plus）
+
+基于 MyBatis-Plus 插件体系，提供企业级 ORM 增强能力，全部通过配置开关控制。
+
+**实体基类：** `BaseEntity`（自增主键 + 自动填充 + 逻辑删除）和 `TenantBaseEntity`（额外增加租户隔离）。
+
+```java
+@Data
+@TableName("sys_user")
+public class User extends BaseEntity {
+    private String username;
+    @Encrypted   // 入库加密，出库解密
+    private String phone;
+}
+```
+
+**核心能力：**
+
+| 能力 | 说明 | 配置前缀 |
+|------|------|---------|
+| 自动填充 | INSERT/UPDATE 时自动填充 createBy、createTime、updateBy、updateTime、租户ID | — |
+| 多租户隔离 | 自动在 SQL 中注入 `tenant_id = ?` 条件，支持忽略指定表 | `snowdrift.orm.mp.tenant` |
+| 数据权限 | 基于 `@DataScope` 注解，支持 ALL / DEPT / DEPT_AND_SUB / SELF / CUSTOM 五种范围 | 注解驱动 |
+| 字段加密 | 对 `@Encrypted` 字段自动 AES 加解密，密文带 `{ENC}` 前缀防重复 | `snowdrift.orm.mp.crypto` |
+| 分页 | 多数据库方言、最大条数限制、溢出处理、LEFT JOIN count 优化 | `snowdrift.orm.mp.pagination` |
+| 乐观锁 | 配合 `@Version` 注解，更新时自动版本号校验 | — |
+| 防全表操作 | 阻止不带 WHERE 的 UPDATE/DELETE | — |
+
+**数据权限示例：**
+
+```java
+@Mapper
+public interface OrderMapper extends BaseMapper<Order> {
+
+    @DataScope(alias = "o", deptColumn = "dept_id", userColumn = "user_id")
+    List<Order> selectOrderList(OrderQuery query);
+}
+// 自动追加 SQL: AND o.dept_id IN (1, 2, 3)  或  AND o.user_id = 100
+```
+
+```yaml
+snowdrift:
+  orm:
+    mp:
+      tenant:
+        enabled: true
+        ignore-tables:
+          - sys_config
+          - sys_dict
+      crypto:
+        enabled: true
+        aes-key: your-16-byte-key!
+      pagination:
+        db-type: MYSQL
+        max-limit: 1000
+```
+
 ### 日志审计
 
 `@ApiLog` 记录接口调用，`@LoginLog` 记录登录行为，支持参数脱敏。
@@ -227,6 +285,7 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 | snowdrift-security | ✅ 完成 |
 | snowdrift-schedule | ✅ 完成 |
 | snowdrift-mq | ✅ 完成 |
+| snowdrift-orm | ✅ 完成 |
 | snowdrift-plugin | 🚧 规划中 |
 
 ## 提交规范
