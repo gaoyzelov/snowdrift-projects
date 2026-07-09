@@ -200,7 +200,7 @@ public class DefaultMqServiceImpl implements IMqService {
                                             Duration delay, Map<String, String> headers,
                                             java.util.function.Consumer<MessageBuilder<byte[]>> delayHeaderSetter) {
         if (delay == null) {
-            throw new IllegalArgumentException("delay must not be null");
+            throw new MqException("mq.send.delay.null");
         }
         fireBeforeSend(topic, key, payload);
         try {
