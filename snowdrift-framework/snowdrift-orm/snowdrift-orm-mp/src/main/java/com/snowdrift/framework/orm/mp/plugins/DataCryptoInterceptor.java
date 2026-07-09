@@ -3,7 +3,7 @@ package com.snowdrift.framework.orm.mp.plugins;
 import com.snowdrift.framework.common.util.EncryptUtil;
 import com.snowdrift.framework.common.util.ReflectUtil;
 import com.snowdrift.framework.orm.core.anno.Encrypted;
-import com.snowdrift.framework.orm.mp.properties.OrmMpCryptoProperties;
+import com.snowdrift.framework.orm.mp.properties.OrmMpBaseProperties;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -42,7 +42,7 @@ import java.util.Objects;
 public class DataCryptoInterceptor implements Interceptor {
 
     private static final String ENCRYPT_FLAG = "{ENC}";
-    private final OrmMpCryptoProperties cryptoProperties;
+    private final OrmMpBaseProperties cryptoProperties;
 
     /**
      * MyBatis 拦截入口
@@ -144,10 +144,10 @@ public class DataCryptoInterceptor implements Interceptor {
      * @return {@code {ENC} + Base64(AES密文)}；密钥为空或已加密则返回原文
      */
     private String encryptValue(String text) {
-        if (StringUtils.isBlank(text) || StringUtils.isBlank(cryptoProperties.getAesKey()) || text.startsWith(ENCRYPT_FLAG)) {
+        if (StringUtils.isBlank(text) || StringUtils.isBlank(cryptoProperties.getCryptoKey()) || text.startsWith(ENCRYPT_FLAG)) {
             return text;
         }
-        return ENCRYPT_FLAG + EncryptUtil.aesEncrypt(text, cryptoProperties.getAesKey());
+        return ENCRYPT_FLAG + EncryptUtil.aesEncrypt(text, cryptoProperties.getCryptoKey());
     }
 
     /**
@@ -157,10 +157,10 @@ public class DataCryptoInterceptor implements Interceptor {
      * @return 明文；密钥为空或非密文格式则返回原文
      */
     private String decryptValue(String text) {
-        if (StringUtils.isBlank(text) || StringUtils.isBlank(cryptoProperties.getAesKey()) || !text.startsWith(ENCRYPT_FLAG)) {
+        if (StringUtils.isBlank(text) || StringUtils.isBlank(cryptoProperties.getCryptoKey()) || !text.startsWith(ENCRYPT_FLAG)) {
             return text;
         }
-        return EncryptUtil.aesDecrypt(text.substring(ENCRYPT_FLAG.length()), cryptoProperties.getAesKey());
+        return EncryptUtil.aesDecrypt(text.substring(ENCRYPT_FLAG.length()), cryptoProperties.getCryptoKey());
     }
 
     /**

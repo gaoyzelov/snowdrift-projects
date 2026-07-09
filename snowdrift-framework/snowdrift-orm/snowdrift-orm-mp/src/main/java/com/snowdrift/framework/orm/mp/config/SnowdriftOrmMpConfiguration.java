@@ -8,7 +8,7 @@ import com.snowdrift.framework.orm.mp.handler.DataScopeHandler;
 import com.snowdrift.framework.orm.mp.handler.FieldAutoFillHandler;
 import com.snowdrift.framework.orm.mp.handler.MultiTenantLineHandler;
 import com.snowdrift.framework.orm.mp.plugins.DataCryptoInterceptor;
-import com.snowdrift.framework.orm.mp.properties.OrmMpCryptoProperties;
+import com.snowdrift.framework.orm.mp.properties.OrmMpBaseProperties;
 import com.snowdrift.framework.orm.mp.properties.OrmMpPaginationProperties;
 import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
 import org.springframework.beans.factory.ObjectProvider;
@@ -27,7 +27,7 @@ import org.springframework.context.annotation.Bean;
  * @since 1.0.0
  */
 @AutoConfiguration
-@EnableConfigurationProperties({OrmMpCryptoProperties.class, OrmMpTenantProperties.class, OrmMpPaginationProperties.class})
+@EnableConfigurationProperties({OrmMpBaseProperties.class, OrmMpTenantProperties.class, OrmMpPaginationProperties.class})
 public class SnowdriftOrmMpConfiguration {
 
     /**
@@ -40,7 +40,7 @@ public class SnowdriftOrmMpConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public MybatisPlusInterceptor mybatisPlusInterceptor(OrmMpPaginationProperties paginationProperties,
+    public MybatisPlusInterceptor mybatisPlusInterceptor(OrmMpBaseProperties baseProperties, OrmMpPaginationProperties paginationProperties,
                                                          OrmMpTenantProperties tenantProperties,
                                                          ObjectProvider<IDataScopeProvider> dataScopeProvider) {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
@@ -49,14 +49,16 @@ public class SnowdriftOrmMpConfiguration {
         if (tenantInterceptor != null) {
             interceptor.addInnerInterceptor(tenantInterceptor);
         }
-        // 数据权限插件（无 provider 时自动降级：DEPT_AND_SUB→DEPT，CUSTOM→跳过）
+        // 数据权限插件（无 provider 时自动降级：DEPT_AND_SUB→DEPT，CUSTOM→SELF）
         interceptor.addInnerInterceptor(new DataPermissionInterceptor(new DataScopeHandler(dataScopeProvider.getIfAvailable())));
 
         // 防止全表更新与删除插件
         interceptor.addInnerInterceptor(new BlockAttackInnerInterceptor());
 
         // 乐观锁插件
-        interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
+        if (Boolean.TRUE.equals(baseProperties.getOptimisticLock())){
+            interceptor.addInnerInterceptor(new OptimisticLockerInnerInterceptor());
+        }
 
         // 分页插件
         PaginationInnerInterceptor paginationInterceptor = this.getPaginationInnerInterceptor(paginationProperties);
@@ -115,8 +117,8 @@ public class SnowdriftOrmMpConfiguration {
      * @return DataCryptoInterceptor 实例
      */
     @Bean
-    @ConditionalOnProperty(prefix = "snowdrift.orm.mp.crypto", name = "enabled", havingValue = "true")
-    public DataCryptoInterceptor dataCryptoInterceptor(OrmMpCryptoProperties properties) {
+    @ConditionalOnProperty(prefix = "snowdrift.orm", name = "crypto", havingValue = "true")
+    public DataCryptoInterceptor dataCryptoInterceptor(OrmMpBaseProperties properties) {
         return new DataCryptoInterceptor(properties);
     }
 }

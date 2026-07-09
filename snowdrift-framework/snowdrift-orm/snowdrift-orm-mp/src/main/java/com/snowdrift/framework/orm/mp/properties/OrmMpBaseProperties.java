@@ -14,16 +14,21 @@ import java.io.Serializable;
  * @since 1.0.0
  */
 @Data
-@ConfigurationProperties(prefix = "snowdrift.orm.mp.crypto")
-public class OrmMpCryptoProperties implements Serializable {
+@ConfigurationProperties(prefix = "snowdrift.orm.mp")
+public class OrmMpBaseProperties implements Serializable {
+
+    /**
+     * 是否启用乐观锁（默认关闭）
+     */
+    private Boolean optimisticLock = Boolean.FALSE;
 
     /**
      * 是否启用字段加解密（默认关闭）
      */
-    private Boolean enabled;
+    private Boolean crypto = Boolean.FALSE;
 
     /**
      * AES 加密密钥（16/24/32 字节对应 AES-128/192/256）
      */
-    private String aesKey;
+    private String cryptoKey;
 }
