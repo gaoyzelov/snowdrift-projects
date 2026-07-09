@@ -43,6 +43,7 @@
         <module>snowdrift-context</module>
         <module>snowdrift-plugin</module>
         <module>snowdrift-orm</module>
+        <module>snowdrift-rpc</module>
     </modules>
 
 </project>

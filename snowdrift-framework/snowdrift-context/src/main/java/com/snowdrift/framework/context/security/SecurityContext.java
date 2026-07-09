@@ -1,6 +1,5 @@
 package com.snowdrift.framework.context.security;
 
-import com.snowdrift.framework.common.enums.DataScopeEnum;
 import lombok.Builder;
 import lombok.Data;
 
@@ -55,7 +54,7 @@ public class SecurityContext implements Serializable {
     /**
      * 数据权限
      */
-    private DataScopeEnum dataScope;
+    private Integer dataScope;
 
     // ========== 授权信息（RBAC）==========
     /**

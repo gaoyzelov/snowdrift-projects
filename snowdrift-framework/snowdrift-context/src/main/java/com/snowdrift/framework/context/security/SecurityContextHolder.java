@@ -140,6 +140,6 @@ public class SecurityContextHolder {
      * @return 数据范围，未登录时抛出 BizException
      */
     public static DataScopeEnum getDataScope() {
-        return getRequiredContext().getDataScope();
+        return DataScopeEnum.of(getRequiredContext().getDataScope());
     }
 }

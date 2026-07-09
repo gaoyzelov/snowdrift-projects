@@ -5,33 +5,22 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>com.snowdrift</groupId>
-        <artifactId>snowdrift-orm</artifactId>
+        <artifactId>snowdrift-rpc</artifactId>
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-orm-mp</artifactId>
+    <artifactId>snowdrift-rpc-dubbo</artifactId>
+    <description>Snowdrift RPC Dubbo Module</description>
 
     <dependencies>
-        <!-- Snowdrift ORM Core -->
-        <dependency>
-            <groupId>com.snowdrift</groupId>
-            <artifactId>snowdrift-orm-core</artifactId>
-        </dependency>
-        <!-- Snowdrift Context -->
         <dependency>
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-context</artifactId>
             <optional>true</optional>
         </dependency>
-        <!-- MyBatis Plus -->
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
-        </dependency>
-        <!-- MyBatis Plus JSQLParser -->
-        <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo-spring-boot-starter</artifactId>
         </dependency>
     </dependencies>
 </project>

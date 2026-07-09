@@ -1,0 +1,5 @@
+dubboConsumerContextFilter=com.snowdrift.framework.rpc.dubbo.filter.DubboConsumerContextFilter
+dubboProviderContextFilter=com.snowdrift.framework.rpc.dubbo.filter.DubboProviderContextFilter
+dubboExceptionFilter=com.snowdrift.framework.rpc.dubbo.filter.DubboExceptionFilter
+dubboConsumerLogFilter=com.snowdrift.framework.rpc.dubbo.filter.DubboConsumerLogFilter
+dubboProviderLogFilter=com.snowdrift.framework.rpc.dubbo.filter.DubboProviderLogFilter

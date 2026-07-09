@@ -69,7 +69,7 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
             return null;
         }
         SecurityContext context = SecurityContextHolder.getRequiredContext();
-        DataScopeEnum dataScope = context.getDataScope();
+        DataScopeEnum dataScope = DataScopeEnum.of(context.getDataScope());
         if (dataScope == null || dataScope == DataScopeEnum.ALL) {
             log.debug("数据权限类型为 {}，跳过数据权限过滤", dataScope);
             return null;
