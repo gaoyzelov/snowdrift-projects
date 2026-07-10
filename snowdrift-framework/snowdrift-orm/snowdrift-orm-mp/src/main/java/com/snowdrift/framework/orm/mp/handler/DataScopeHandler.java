@@ -70,7 +70,7 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         }
         SecurityContext context = SecurityContextHolder.getRequiredContext();
         DataScopeEnum dataScope = DataScopeEnum.of(context.getDataScope());
-        if (dataScope == null || dataScope == DataScopeEnum.ALL) {
+        if (dataScope == DataScopeEnum.ALL) {
             log.debug("数据权限类型为 {}，跳过数据权限过滤", dataScope);
             return null;
         }
@@ -138,6 +138,7 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         String userColumn = buildColumnName(scope.userColumn(), alias);
 
         return switch (dataScope) {
+            case ALL -> null;
             case DEPT -> {
                 Long deptId = context.getDeptId();
                 if (deptId == null) {
@@ -190,7 +191,6 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
                 }
                 yield buildInExpression(deptColumn, customDeptIds);
             }
-            default -> null;
         };
     }
 

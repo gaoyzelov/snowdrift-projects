@@ -16,7 +16,6 @@
         <dependency>
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-context</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.dubbo</groupId>
