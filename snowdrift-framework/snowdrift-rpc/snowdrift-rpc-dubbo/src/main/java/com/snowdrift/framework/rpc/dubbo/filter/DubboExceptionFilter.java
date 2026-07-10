@@ -56,7 +56,7 @@ public class DubboExceptionFilter implements Filter, Filter.Listener {
                         invocation.getParameterTypes());
                 Class<?>[] exceptionClasses = method.getExceptionTypes();
                 for (Class<?> exceptionClass : exceptionClasses) {
-                    if (exception.getClass().equals(exceptionClass)) {
+                    if (exception.getClass().isInstance(exceptionClass)) {
                         return;
                     }
                 }
@@ -102,6 +102,7 @@ public class DubboExceptionFilter implements Filter, Filter.Listener {
                     invoker.getInterface().getName(),
                     invocation.getMethodName(),
                     e.getLocalizedMessage(), e);
+            appResponse.setException(new BizException(e.getLocalizedMessage()));
         }
     }
 
