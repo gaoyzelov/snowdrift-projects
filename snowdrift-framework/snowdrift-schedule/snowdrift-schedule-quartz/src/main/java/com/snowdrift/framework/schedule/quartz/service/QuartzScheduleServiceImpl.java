@@ -14,6 +14,7 @@ import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -57,7 +58,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             JobDetail detail = JobBuilder.newJob(request.getJobClass())
                     .withIdentity(jobKey)
                     .withDescription(request.getDescription())
-                    .usingJobData(new JobDataMap(request.getParams()))
+                    .usingJobData(new JobDataMap(request.getParams() != null ? request.getParams() : new HashMap<>()))
                     .build();
 
             CronScheduleBuilder cronBuilder = CronScheduleBuilder.cronSchedule(request.getCron());
@@ -113,7 +114,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             JobDetail detail = JobBuilder.newJob(request.getJobClass())
                     .withIdentity(qJobKey)
                     .withDescription(request.getDescription())
-                    .usingJobData(new JobDataMap(request.getParams()))
+                    .usingJobData(new JobDataMap(request.getParams() != null ? request.getParams() : new HashMap<>()))
                     .storeDurably()
                     .build();
             scheduler.addJob(detail, true);
@@ -129,7 +130,14 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
                     .withIdentity(triggerKey)
                     .withSchedule(cronBuilder)
                     .build();
-            scheduler.rescheduleJob(triggerKey, newTrigger);
+            try {
+                scheduler.rescheduleJob(triggerKey, newTrigger);
+            } catch (SchedulerException e) {
+                log.error("Quartz rescheduleJob 失败，JobDetail 已更新，状态可能不一致: group={}, name={}",
+                        jobKey.getGroup(), jobKey.getName(), e);
+                throw new BizException("schedule.job.update.failed",
+                        new Object[]{jobKey.getName(), "reschedule 失败"});
+            }
 
             log.info("Quartz 任务更新成功: name={}, group={}, cron={}",
                     request.getName(), request.getGroup(), request.getCron());

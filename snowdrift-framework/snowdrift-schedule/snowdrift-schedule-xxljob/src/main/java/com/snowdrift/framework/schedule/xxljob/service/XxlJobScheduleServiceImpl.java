@@ -113,27 +113,32 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     @Override
     public JobDetails getJob(XxlJobKey jobKey) {
         int groupId = jobKey.getGroupId() != null ? jobKey.getGroupId() : getExecutorGroupId(null);
+        int offset = 0;
         Map<String, String> param = new HashMap<>();
         param.put("jobGroup", String.valueOf(groupId));
-        param.put("offset", "0");
+        param.put("offset", String.valueOf(offset));
         param.put("pagesize", String.valueOf(PAGE_SIZE));
         param.put("triggerStatus", "-1");
         param.put("jobDesc", StrConst.EMPTY);
         param.put("executorHandler", StrConst.EMPTY);
         param.put("author", StrConst.EMPTY);
-
-        JSONObject resp = callAdminPostApi(XxlJobApiConst.JOB_PAGE_PATH, param);
-        JSONObject content = resp.getJSONObject("data");
-        if (content == null) return null;
-        JSONArray data = content.getJSONArray("data");
-        if (data == null) return null;
-        for (int i = 0; i < data.size(); i++) {
-            JSONObject job = data.getJSONObject(i);
-            if (job.getIntValue("id") == jobKey.getId()) {
-                return convertToJobDetails(job);
+        while (true) {
+            JSONObject resp = callAdminPostApi(XxlJobApiConst.JOB_PAGE_PATH, param);
+            JSONObject content = resp.getJSONObject("data");
+            if (content == null) return null;
+            JSONArray data = content.getJSONArray("data");
+            if (data == null || data.isEmpty()) return null;
+            for (int i = 0; i < data.size(); i++) {
+                JSONObject job = data.getJSONObject(i);
+                if (job.getIntValue("id") == jobKey.getId()) {
+                    return convertToJobDetails(job);
+                }
             }
+            int total = content.getIntValue("total");
+            offset += PAGE_SIZE;
+            param.put("offset", String.valueOf(offset));
+            if (offset >= total) return null;
         }
-        return null;
     }
 
     @Override
