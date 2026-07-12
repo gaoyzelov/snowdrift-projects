@@ -146,11 +146,16 @@ public abstract class AbstractOssService implements IOssService {
         if (StringUtils.isBlank(objectKey)) {
             throw new OssException("oss.object.key.empty");
         }
-
-        // 移除开头的斜杠
-        String key = objectKey.startsWith(StrConst.SLASH) ? objectKey.substring(1) : objectKey;
         // 将 Windows 反斜杠替换为正斜杠
-        key = key.replace("\\", StrConst.SLASH);
+        String key = objectKey.replace("\\", StrConst.SLASH);
+        // 移除开头的斜杠
+        while (key.startsWith(StrConst.SLASH)){
+            key = key.substring(1);
+        }
+        // 路径穿越检测
+        if (key.contains("..")) {
+            throw new OssException("oss.object.key.invalid");
+        }
 
         return key;
     }

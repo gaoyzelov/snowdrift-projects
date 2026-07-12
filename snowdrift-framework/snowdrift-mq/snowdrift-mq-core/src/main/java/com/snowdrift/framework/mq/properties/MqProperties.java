@@ -32,6 +32,16 @@ public class MqProperties {
     private Integer dynamicDestinationCacheSize = 10;
 
     /**
+     * 消息签名配置
+     */
+    private Boolean sign = Boolean.FALSE;
+
+    /**
+     * 消息签名密钥
+     */
+    private String signKey;
+
+    /**
      * 异步发送线程池配置
      */
     @Valid

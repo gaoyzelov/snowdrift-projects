@@ -38,14 +38,17 @@ public class DefaultMqServiceImpl implements IMqService {
     protected final Executor mqAsyncExecutor;
     protected final MqMessageConverter converter;
     protected final MqInterceptorRegistry interceptorRegistry;
+    protected final MqContextPropagator contextPropagator;
+
 
     public DefaultMqServiceImpl(StreamBridge streamBridge, MqProperties properties,
                                 Executor mqAsyncExecutor, MqMessageConverter converter,
-                                MqInterceptorRegistry interceptorRegistry) {
+                                MqInterceptorRegistry interceptorRegistry,MqContextPropagator contextPropagator) {
         this.streamBridge = streamBridge;
         this.properties = properties;
         this.mqAsyncExecutor = mqAsyncExecutor;
         this.converter = converter;
+        this.contextPropagator = contextPropagator;
         this.interceptorRegistry = interceptorRegistry;
     }
 
@@ -211,7 +214,7 @@ public class DefaultMqServiceImpl implements IMqService {
             if (StringUtils.isNotBlank(key)) {
                 builder.setHeader(MqContextPropagator.HEADER_MESSAGE_KEY, key);
             }
-            MqContextPropagator.inject(builder);
+            contextPropagator.inject(builder);
             if (headers != null && !headers.isEmpty()) {
                 headers.forEach(builder::setHeader);
             }
@@ -273,7 +276,7 @@ public class DefaultMqServiceImpl implements IMqService {
         }
 
         // 注入 TTL 上下文（traceId, userId, tenantId, username）
-        MqContextPropagator.inject(builder);
+        contextPropagator.inject(builder);
 
         // 注入用户自定义 headers
         if (headers != null && !headers.isEmpty()) {

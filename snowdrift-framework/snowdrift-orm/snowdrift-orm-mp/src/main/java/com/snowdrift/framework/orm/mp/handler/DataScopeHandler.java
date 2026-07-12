@@ -142,41 +142,42 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
             case DEPT -> {
                 Long deptId = context.getDeptId();
                 if (deptId == null) {
-                    log.debug("DEPT 模式下 deptId 为空，跳过数据权限过滤");
-                    yield null;
+                    log.debug("DEPT 模式下 deptId 为空，用户数据权限被拒绝");
+                    yield new EqualsTo(new LongValue(1), new LongValue(0));
                 }
                 yield new EqualsTo(new Column(deptColumn), new LongValue(deptId));
             }
             case SELF -> {
                 Long userId = context.getUserId();
                 if (userId == null) {
-                    log.debug("SELF 模式下 userId 为空，跳过数据权限过滤");
-                    yield null;
+                    log.debug("SELF 模式下 userId 为空，用户数据权限被拒绝");
+                    yield new EqualsTo(new LongValue(1), new LongValue(0));
                 }
                 yield new EqualsTo(new Column(userColumn), new LongValue(userId));
             }
             case DEPT_AND_SUB -> {
                 Long deptId = context.getDeptId();
                 if (deptId == null) {
-                    yield null;
+                    log.debug("DEPT_AND_SUB 模式下 deptId 为空，用户数据权限被拒绝");
+                    yield new EqualsTo(new LongValue(1), new LongValue(0));
                 }
                 if (dataScopeProvider == null) {
                     // 无 provider 时降级为 DEPT 模式
                     log.debug("DEPT_AND_SUB 模式无 IDataScopeProvider，降级为 DEPT");
-
                     yield new EqualsTo(new Column(deptColumn), new LongValue(deptId));
                 }
                 List<Long> childDeptIds = dataScopeProvider.getChildDeptIds(context.getDeptId());
                 if (CollectionUtils.isEmpty(childDeptIds)) {
-                    log.debug("DEPT_AND_SUB 模式下 childDeptIds 为空，跳过数据权限过滤");
-                    yield null;
+                    log.debug("DEPT_AND_SUB 模式下 childDeptIds 为空，用户数据权限被拒绝");
+                    yield new EqualsTo(new LongValue(1), new LongValue(0));
                 }
                 yield buildInExpression(deptColumn, childDeptIds);
             }
             case CUSTOM -> {
                 Long userId = context.getUserId();
                 if (userId == null) {
-                    yield null;
+                    log.debug("CUSTOM 模式下 userId 为空，用户数据权限被拒绝");
+                    yield new EqualsTo(new LongValue(1), new LongValue(0));
                 }
                 if (dataScopeProvider == null) {
                     // 无 provider 降级为 SELF
@@ -185,8 +186,8 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
                 }
                 List<Long> customDeptIds = dataScopeProvider.getCustomDeptIds(userId);
                 if (CollectionUtils.isEmpty(customDeptIds)) {
-                    log.debug("CUSTOM 模式下 customDeptIds 为空，跳过数据权限过滤");
-                    yield null;
+                    log.debug("CUSTOM 模式下 customDeptIds 为空，用户数据权限被拒绝");
+                    yield new EqualsTo(new LongValue(1), new LongValue(0));
                 }
                 yield buildInExpression(deptColumn, customDeptIds);
             }

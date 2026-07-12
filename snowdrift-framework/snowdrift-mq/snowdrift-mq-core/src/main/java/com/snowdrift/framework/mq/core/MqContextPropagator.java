@@ -1,12 +1,17 @@
 package com.snowdrift.framework.mq.core;
 
+import com.snowdrift.framework.common.util.EncryptUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
+import com.snowdrift.framework.mq.properties.MqProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.MDC;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 
 /**
  * MQ 上下文传播器 — 在消息头中注入 / 提取 TTL 上下文
@@ -20,7 +25,7 @@ import org.springframework.messaging.support.MessageBuilder;
  * @since 1.0.0
  */
 @Slf4j
-public final class MqContextPropagator {
+public class MqContextPropagator {
 
     private static final String TRACE_ID_KEY = "traceId";
 
@@ -39,7 +44,13 @@ public final class MqContextPropagator {
     /** 租户 ID */
     public static final String HEADER_TENANT_ID = "x-snowdrift-tenant-id";
 
-    private MqContextPropagator() {
+    /** 签名 */
+    private static final String SIGNATURE_HEADER = "x-snowdrift-signature";
+
+    private final MqProperties properties;
+
+    public MqContextPropagator(MqProperties properties) {
+        this.properties = properties;
     }
 
     /**
@@ -49,7 +60,7 @@ public final class MqContextPropagator {
      * @param <T>     消息体类型
      * @return 注入上下文后的 builder（链式调用）
      */
-    public static <T> MessageBuilder<T> inject(MessageBuilder<T> builder) {
+    public <T> MessageBuilder<T> inject(MessageBuilder<T> builder) {
         // 注入 TraceId
         String traceId = MDC.get(TRACE_ID_KEY);
         if (StringUtils.isNotBlank(traceId)) {
@@ -58,14 +69,27 @@ public final class MqContextPropagator {
 
         // 注入安全上下文（getContext() 永不为 null，返回空上下文而非 null）
         SecurityContext ctx = SecurityContextHolder.getContext();
+        String userIdStr = null;
+        String username = null;
+        String tenantIdStr = null;
         if (ctx.getUserId() != null) {
-            builder.setHeader(HEADER_USER_ID, ctx.getUserId().toString());
+            userIdStr = ctx.getUserId().toString();
+            builder.setHeader(HEADER_USER_ID, userIdStr);
         }
         if (StringUtils.isNotBlank(ctx.getUsername())) {
-            builder.setHeader(HEADER_USERNAME, ctx.getUsername());
+            username = ctx.getUsername();
+            builder.setHeader(HEADER_USERNAME, username);
         }
         if (ctx.getTenantId() != null) {
-            builder.setHeader(HEADER_TENANT_ID, ctx.getTenantId().toString());
+            tenantIdStr = ctx.getTenantId().toString();
+            builder.setHeader(HEADER_TENANT_ID, tenantIdStr);
+        }
+
+        // 计算签名
+        if (Boolean.TRUE.equals(properties.getSign()) && StringUtils.isNotBlank(properties.getSignKey())) {
+            String payload = buildSignPayload(traceId, userIdStr, username, tenantIdStr);
+            String signature = EncryptUtil.hmacSha256(payload, properties.getSignKey());
+            builder.setHeader(SIGNATURE_HEADER, signature);
         }
         return builder;
     }
@@ -75,11 +99,19 @@ public final class MqContextPropagator {
      * <p>
      * 恢复 traceId 到 MDC，恢复 SecurityContext 到 SecurityContextHolder。
      * 仅当消息头中存在对应字段时才覆盖当前值。
+     * 若开启了签名校验，签名不通过则拒绝恢复上下文。
      * </p>
      *
      * @param message 消息
      */
-    public static void restore(Message<?> message) {
+    public void restore(Message<?> message) {
+        // 验证签名：签名不通过则拒绝恢复上下文，防止伪造身份
+        if (Boolean.TRUE.equals(properties.getSign())) {
+            if (!verifySignature(message)) {
+                log.warn("MQ 消息签名校验不通过，上下文已丢弃");
+                return;
+            }
+        }
         // 恢复 TraceId 到 MDC
         String traceId = message.getHeaders().get(HEADER_TRACE_ID, String.class);
         if (StringUtils.isNotBlank(traceId)) {
@@ -123,9 +155,55 @@ public final class MqContextPropagator {
      * 避免上下文残留到下次消费（特别是在线程池模式下）。
      * </p>
      */
-    public static void clear() {
+    public void clear() {
         SecurityContextHolder.clear();
         MDC.remove(TRACE_ID_KEY);
+    }
+
+    // ========== 签名相关 ==========
+
+    /**
+     * 验证消息签名
+     *
+     * @param message 消息
+     * @return true 签名通过，false 签名不通过或缺少签名
+     */
+    private boolean verifySignature(Message<?> message) {
+        String expected = message.getHeaders().get(SIGNATURE_HEADER, String.class);
+        if (StringUtils.isBlank(expected)) {
+            log.warn("MQ 消息缺少签名 header，上下文已丢弃");
+            return false;
+        }
+        String payload = buildSignPayloadFromMessage(message);
+        String actual = EncryptUtil.hmacSha256(payload, properties.getSignKey());
+        if (!MessageDigest.isEqual(
+                expected.getBytes(StandardCharsets.UTF_8),
+                actual.getBytes(StandardCharsets.UTF_8))) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * 构建签名规范字符串（inject 端，从原始值构建）
+     * <p>所有上下文字段按固定顺序拼接，空值保留 key 占位，防止通过"省略 header"绕过签名</p>
+     */
+    private String buildSignPayload(String traceId, String userId, String username, String tenantId) {
+        return "traceId=" + (traceId != null ? traceId : "")
+                + "&userId=" + (userId != null ? userId : "")
+                + "&username=" + (username != null ? username : "")
+                + "&tenantId=" + (tenantId != null ? tenantId : "");
+    }
+
+    /**
+     * 构建签名规范字符串（restore 端，从 Message headers 构建）
+     */
+    private String buildSignPayloadFromMessage(Message<?> message) {
+        return buildSignPayload(
+                message.getHeaders().get(HEADER_TRACE_ID, String.class),
+                message.getHeaders().get(HEADER_USER_ID, String.class),
+                message.getHeaders().get(HEADER_USERNAME, String.class),
+                message.getHeaders().get(HEADER_TENANT_ID, String.class));
     }
 
 }

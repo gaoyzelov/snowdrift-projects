@@ -31,6 +31,7 @@ public class MqListenerConsumerWrapper implements Consumer<Message<byte[]>>, App
     private final MethodHandle methodHandle;
     private ApplicationContext applicationContext;
     private volatile MqMessageConverter converter;
+    private volatile MqContextPropagator contextPropagator;
     private volatile Object cachedTargetBean;
 
     public MqListenerConsumerWrapper(String targetBeanName, Method targetMethod,
@@ -59,7 +60,7 @@ public class MqListenerConsumerWrapper implements Consumer<Message<byte[]>>, App
     public void accept(Message<byte[]> message) {
         long start = System.currentTimeMillis();
         // 1. 恢复 TTL 上下文（traceId, SecurityContext）
-        MqContextPropagator.restore(message);
+        getContextPropagator().restore(message);
 
         try {
             // 2. 反序列化 payload（通过 MqMessageConverter SPI）
@@ -90,7 +91,7 @@ public class MqListenerConsumerWrapper implements Consumer<Message<byte[]>>, App
                     new Object[]{config.topic(), e.getMessage()}, e);
         } finally {
             // 4. 清除上下文
-            MqContextPropagator.clear();
+            getContextPropagator().clear();
         }
     }
 
@@ -106,6 +107,20 @@ public class MqListenerConsumerWrapper implements Consumer<Message<byte[]>>, App
             }
         }
         return this.converter;
+    }
+
+    /**
+     * 懒加载并发安全的 MqContextPropagator 获取
+     */
+    private MqContextPropagator getContextPropagator() {
+        if (this.contextPropagator == null) {
+            synchronized (this) {
+                if (this.contextPropagator == null) {
+                    this.contextPropagator = applicationContext.getBean(MqContextPropagator.class);
+                }
+            }
+        }
+        return this.contextPropagator;
     }
 
     /**

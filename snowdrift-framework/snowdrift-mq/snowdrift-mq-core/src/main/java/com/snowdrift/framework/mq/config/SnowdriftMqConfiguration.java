@@ -76,16 +76,22 @@ public class SnowdriftMqConfiguration {
     public DefaultMqServiceImpl mqTemplate(StreamBridge streamBridge, MqProperties properties,
                                            Executor mqAsyncExecutor, MqMessageConverter converter,
                                            MqInterceptorRegistry interceptorRegistry,
+                                           MqContextPropagator contextPropagator,
                                            ConfigurableEnvironment env) {
         mapCoreProperties(properties, env);
         log.info("Snowdrift MQ 默认模板已注册（StreamBridge），拦截器数量: {}",
                 interceptorRegistry.getInterceptors().size());
-        return new DefaultMqServiceImpl(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry);
+        return new DefaultMqServiceImpl(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
     }
 
     @Bean
     public MqListenerBeanDefinitionRegistrar mqListenerBeanDefinitionRegistrar() {
         return new MqListenerBeanDefinitionRegistrar();
+    }
+
+    @Bean
+    public MqContextPropagator mqContextPropagator(MqProperties properties) {
+        return new MqContextPropagator(properties);
     }
 
     private void mapCoreProperties(MqProperties props, ConfigurableEnvironment env) {

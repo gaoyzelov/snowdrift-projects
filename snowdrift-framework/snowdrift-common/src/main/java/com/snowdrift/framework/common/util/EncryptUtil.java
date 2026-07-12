@@ -8,6 +8,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
+import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.Serializable;
@@ -102,6 +103,27 @@ public final class EncryptUtil {
             byte[] bytes = sha256.digest(text.getBytes(StandardCharsets.UTF_8));
             // 转为16进制字符串
             return HexFormat.of().formatHex(bytes);
+        } catch (Exception e) {
+            throw new BizException(e);
+        }
+    }
+
+    /**
+     * hmacSha256
+     *
+     * @param text 文本
+     * @param key  密钥
+     * @return hmacSha256 (Base64 字符串)
+     */
+    public static String hmacSha256(String text, String key) {
+        AssertUtil.notBlank(text, "待签名文本不能为空");
+        AssertUtil.notBlank(key, "签名密钥不能为空");
+        try {
+            Mac mac = Mac.getInstance("HmacSHA256");
+            SecretKeySpec keySpec = new SecretKeySpec(key.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            mac.init(keySpec);
+            byte[] hmac = mac.doFinal(text.getBytes(StandardCharsets.UTF_8));
+            return Base64.getEncoder().encodeToString(hmac);
         } catch (Exception e) {
             throw new BizException(e);
         }
