@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * ServletUtil
@@ -45,6 +46,7 @@ public final class ServletUtil {
     public static Map<String, String> getHeaderMap(HttpServletRequest request) {
         Map<String, String> headerMap = new HashMap<>();
         Enumeration<String> names = request.getHeaderNames();
+        if (Objects.isNull(names)) return headerMap;
         String name;
         while (names.hasMoreElements()) {
             name = names.nextElement();

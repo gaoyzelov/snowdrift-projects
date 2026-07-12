@@ -117,15 +117,15 @@ public class QiniuOssServiceImpl extends AbstractOssService {
      */
     @Override
     public OssResult upload(@NonNull OssUploadRequest request) {
-        // 校验请求参数
-        request.validate();
-
         String objectKey = buildObjectKey(request.getObjectKey());
         String bucket = super.getBucket();
         // 生成上传 Token（expires 参数是秒）
         long expireSeconds = config.getUploadTokenExpire() != null ? config.getUploadTokenExpire() * 60L : 3600L;
         String uploadToken = auth.uploadToken(bucket, objectKey, expireSeconds, null);
         try (InputStream inputStream = request.getInputStream()) {
+            // 校验请求参数
+            request.validate();
+
             // 上传文件
             Response response = uploadManager.put(inputStream, objectKey, uploadToken, null, null);
 

@@ -19,7 +19,7 @@ import java.util.Locale;
 @Slf4j
 public final class I18nUtil {
 
-    private static I18nMessageSource messageSource;
+    private static volatile I18nMessageSource messageSource;
 
     private I18nUtil() {
     }

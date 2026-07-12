@@ -101,13 +101,13 @@ public class TencentOssServiceImpl extends AbstractOssService {
      */
     @Override
     public OssResult upload(@NonNull OssUploadRequest request) {
-        // 校验请求参数
-        request.validate();
-
         String bucket = super.getBucket();
         String objectKey = buildObjectKey(request.getObjectKey());
 
         try (InputStream inputStream = request.getInputStream()) {
+            // 校验请求参数
+            request.validate();
+
             // 创建上传请求
             ObjectMetadata metadata = new ObjectMetadata();
             metadata.setContentLength(request.getSize());

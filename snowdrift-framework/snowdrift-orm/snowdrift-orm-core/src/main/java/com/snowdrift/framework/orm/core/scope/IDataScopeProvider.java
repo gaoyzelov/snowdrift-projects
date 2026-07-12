@@ -20,7 +20,7 @@ public interface IDataScopeProvider {
     List<Long> getCustomDeptIds(Long userId);
 
     /**
-     * 根据部门ID获取子部门ID列表
+     * 根据部门ID获取子部门ID列表(包含当前部门)
      *
      * @param deptId 部门ID
      * @return 子部门ID列表

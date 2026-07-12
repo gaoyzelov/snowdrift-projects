@@ -56,7 +56,7 @@ public class DubboExceptionFilter implements Filter, Filter.Listener {
                         invocation.getParameterTypes());
                 Class<?>[] exceptionClasses = method.getExceptionTypes();
                 for (Class<?> exceptionClass : exceptionClasses) {
-                    if (exception.getClass().isInstance(exceptionClass)) {
+                    if (exceptionClass.isInstance(exception)) {
                         return;
                     }
                 }

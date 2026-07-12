@@ -37,7 +37,7 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
         this.strictInsertFill(metaObject, "updateBy", String.class, operatorName);
         this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
         if (Boolean.TRUE.equals(tenantProperties.getEnabled())){
-            Long tenantId = Optional.ofNullable(SecurityContextHolder.getContext().getTenantId()).orElse(0L);
+            Long tenantId = Optional.ofNullable(SecurityContextHolder.getContext().getTenantId()).orElse(MultiTenantLineHandler.DEFAULT_TENANT_ID);
             this.strictInsertFill(metaObject, "tenantId", Long.class, tenantId);
         }
     }

@@ -25,6 +25,7 @@ public class MultiTenantLineHandler implements TenantLineHandler {
 
     /** 租户字段名 */
     private static final String TENANT_ID = "tenant_id";
+    public static final Long DEFAULT_TENANT_ID = 0L;
     private final OrmMpTenantProperties tenantProperties;
 
     public MultiTenantLineHandler(OrmMpTenantProperties properties) {
@@ -42,7 +43,7 @@ public class MultiTenantLineHandler implements TenantLineHandler {
         if (Objects.nonNull(tenantId)) {
             return new LongValue(tenantId);
         }
-        return new NullValue();
+        return new LongValue(DEFAULT_TENANT_ID);
     }
 
     /**

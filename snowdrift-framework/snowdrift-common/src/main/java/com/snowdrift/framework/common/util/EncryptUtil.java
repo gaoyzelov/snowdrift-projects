@@ -162,7 +162,7 @@ public final class EncryptUtil {
         try {
             SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
             // 算法/模式/补码方式
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.ENCRYPT_MODE, keySpec);
             byte[] encrypted = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(encrypted);
@@ -197,7 +197,7 @@ public final class EncryptUtil {
         try {
             SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
             // 算法/模式/补码方式
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
             cipher.init(Cipher.DECRYPT_MODE, keySpec);
             byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(text));
             return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);

@@ -3,6 +3,7 @@ package com.snowdrift.framework.security.satoken.listener;
 import cn.dev33.satoken.listener.SaTokenListener;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.stp.parameter.SaLoginParameter;
+import com.snowdrift.framework.common.util.DesensitizeUtil;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,19 +23,19 @@ public class TokenStateListener implements SaTokenListener {
 
     @Override
     public void doLogin(String loginType, Object loginId, String tokenValue, SaLoginParameter loginParameter) {
-        log.info("[登录事件] loginType={}, loginId={}, token={}", loginType, loginId, tokenValue);
+        log.info("[登录事件] loginType={}, loginId={}, token={}", loginType, loginId, desensitizeToken(tokenValue));
     }
 
     @Override
     public void doLogout(String loginType, Object loginId, String tokenValue) {
-        log.info("[登出事件] loginType={}, loginId={}, token={}", loginType, loginId, tokenValue);
+        log.info("[登出事件] loginType={}, loginId={}, token={}", loginType, loginId, desensitizeToken(tokenValue));
         // 清除请求线程中的安全上下文，防止残留数据被后续复用
         SecurityContextHolder.clear();
     }
 
     @Override
     public void doKickout(String loginType, Object loginId, String tokenValue) {
-        log.warn("[被踢下线] loginType={}, loginId={}, token={}", loginType, loginId, tokenValue);
+        log.warn("[被踢下线] loginType={}, loginId={}, token={}", loginType, loginId, desensitizeToken(tokenValue));
         // 删除 Token 映射，使其立即失效
         StpUtil.getStpLogic().deleteTokenToIdMapping(tokenValue);
         SecurityContextHolder.clear();
@@ -42,7 +43,7 @@ public class TokenStateListener implements SaTokenListener {
 
     @Override
     public void doReplaced(String loginType, Object loginId, String tokenValue) {
-        log.warn("[被顶下线] loginType={}, loginId={}, token={}", loginType, loginId, tokenValue);
+        log.warn("[被顶下线] loginType={}, loginId={}, token={}", loginType, loginId, desensitizeToken(tokenValue));
         // 删除 Token 映射，使其立即失效
         StpUtil.getStpLogic().deleteTokenToIdMapping(tokenValue);
         SecurityContextHolder.clear();
@@ -82,7 +83,16 @@ public class TokenStateListener implements SaTokenListener {
     @Override
     public void doRenewTimeout(String loginType, Object loginId, String tokenValue, long timeout) {
         log.info("[Token 续期] loginType={}, loginId={}, token={}, newTimeout={}s",
-                loginType, loginId, tokenValue, timeout);
+                loginType, loginId, desensitizeToken(tokenValue), timeout);
     }
 
+    /**
+     * 对 Token 进行脱敏处理
+     *
+     * @param tokenValue Token 值
+     * @return 脱敏后的 Token 值
+     */
+    private String desensitizeToken(String tokenValue) {
+        return DesensitizeUtil.process(tokenValue, "([\\w-]{5})[\\w-]+([\\w-]{5})", "$1*****$2");
+    }
 }

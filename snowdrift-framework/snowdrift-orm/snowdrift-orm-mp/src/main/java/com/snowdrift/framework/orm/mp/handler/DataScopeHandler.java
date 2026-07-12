@@ -171,7 +171,6 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
                     log.debug("DEPT_AND_SUB 模式下 childDeptIds 为空，跳过数据权限过滤");
                     yield null;
                 }
-                childDeptIds.add(deptId);
                 yield buildInExpression(deptColumn, childDeptIds);
             }
             case CUSTOM -> {

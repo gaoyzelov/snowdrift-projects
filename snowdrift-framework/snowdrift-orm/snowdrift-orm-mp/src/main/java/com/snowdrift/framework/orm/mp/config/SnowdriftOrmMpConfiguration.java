@@ -117,7 +117,7 @@ public class SnowdriftOrmMpConfiguration {
      * @return DataCryptoInterceptor 实例
      */
     @Bean
-    @ConditionalOnProperty(prefix = "snowdrift.orm", name = "crypto", havingValue = "true")
+    @ConditionalOnProperty(prefix = "snowdrift.orm.mp", name = "crypto", havingValue = "true")
     public DataCryptoInterceptor dataCryptoInterceptor(OrmMpBaseProperties properties) {
         return new DataCryptoInterceptor(properties);
     }
