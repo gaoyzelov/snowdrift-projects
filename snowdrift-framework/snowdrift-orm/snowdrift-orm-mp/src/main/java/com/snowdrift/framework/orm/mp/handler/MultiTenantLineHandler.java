@@ -6,7 +6,6 @@ import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
-import net.sf.jsqlparser.expression.NullValue;
 import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Objects;
@@ -35,7 +34,7 @@ public class MultiTenantLineHandler implements TenantLineHandler {
     /**
      * 获取当前请求上下文的租户ID，转换为 SQL 表达式
      *
-     * @return 租户ID 的 {@link LongValue} 表达式；无租户上下文时返回 {@link NullValue}
+     * @return 租户ID 的 {@link LongValue} 表达式；无租户上下文时返回默认值 {@link #DEFAULT_TENANT_ID} (0L)
      */
     @Override
     public Expression getTenantId() {

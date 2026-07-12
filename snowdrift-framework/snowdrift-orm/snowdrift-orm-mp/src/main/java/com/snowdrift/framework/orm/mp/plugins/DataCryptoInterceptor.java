@@ -144,10 +144,11 @@ public class DataCryptoInterceptor implements Interceptor {
      * @return {@code {ENC} + Base64(AES密文)}；密钥为空或已加密则返回原文
      */
     private String encryptValue(String text) {
-        if (StringUtils.isBlank(text) || StringUtils.isBlank(cryptoProperties.getCryptoKey()) || text.startsWith(ENCRYPT_FLAG)) {
+        if (StringUtils.isBlank(text) || StringUtils.isBlank(cryptoProperties.getCryptoKey())
+                || StringUtils.isBlank(cryptoProperties.getCryptoIv()) || text.startsWith(ENCRYPT_FLAG)) {
             return text;
         }
-        return ENCRYPT_FLAG + EncryptUtil.aesEncrypt(text, cryptoProperties.getCryptoKey());
+        return ENCRYPT_FLAG + EncryptUtil.aesEncrypt(text, cryptoProperties.getCryptoKey(), cryptoProperties.getCryptoIv());
     }
 
     /**
@@ -157,10 +158,11 @@ public class DataCryptoInterceptor implements Interceptor {
      * @return 明文；密钥为空或非密文格式则返回原文
      */
     private String decryptValue(String text) {
-        if (StringUtils.isBlank(text) || StringUtils.isBlank(cryptoProperties.getCryptoKey()) || !text.startsWith(ENCRYPT_FLAG)) {
+        if (StringUtils.isBlank(text) || StringUtils.isBlank(cryptoProperties.getCryptoKey())
+                || StringUtils.isBlank(cryptoProperties.getCryptoIv()) || !text.startsWith(ENCRYPT_FLAG)) {
             return text;
         }
-        return EncryptUtil.aesDecrypt(text.substring(ENCRYPT_FLAG.length()), cryptoProperties.getCryptoKey());
+        return EncryptUtil.aesDecrypt(text.substring(ENCRYPT_FLAG.length()), cryptoProperties.getCryptoKey(), cryptoProperties.getCryptoIv());
     }
 
     /**
