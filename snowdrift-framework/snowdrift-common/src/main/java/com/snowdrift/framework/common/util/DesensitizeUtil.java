@@ -156,7 +156,7 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(chineseName)) {
             return StrConst.EMPTY;
         }
-        return chineseName.charAt(0) + "*".repeat(chineseName.length() - 1);
+        return chineseName.charAt(0) + "*".repeat(Math.max(1, chineseName.length() - 1));
     }
 
     /**

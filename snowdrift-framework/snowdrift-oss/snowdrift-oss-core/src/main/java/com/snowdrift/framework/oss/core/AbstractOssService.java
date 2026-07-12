@@ -121,7 +121,10 @@ public abstract class AbstractOssService implements IOssService {
             String path = StringUtils.substringBeforeLast(normalizedKey, StrConst.SLASH);
             newObjectKey.append(path).append(StrConst.SLASH);
         }
-        newObjectKey.append(uuid).append(StrConst.DOT).append(extension);
+        newObjectKey.append(uuid);
+        if (StringUtils.isNotBlank(extension)) {
+            newObjectKey.append(StrConst.DOT).append(extension);
+        }
         String prefix = config.getPathPrefix();
 
         if (StringUtils.isNotBlank(prefix)) {

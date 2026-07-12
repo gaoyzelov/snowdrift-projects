@@ -22,7 +22,7 @@ public class OssException extends BizException {
     }
 
     public OssException(String message, Object[] args, Throwable cause) {
-        super(message, args,cause);
+        super(message, args, cause);
     }
 
 }

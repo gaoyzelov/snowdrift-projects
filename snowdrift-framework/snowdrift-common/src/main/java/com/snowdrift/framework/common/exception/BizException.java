@@ -23,7 +23,7 @@ public class BizException extends RuntimeException {
     private Object[] args;
 
     public BizException() {
-        super();
+        super("common.error");
         this.code = ResultCode.ERR.code();
     }
 

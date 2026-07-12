@@ -1,6 +1,7 @@
 package com.snowdrift.framework.cache.config;
 
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -34,5 +35,6 @@ public class CacheProperties {
      * 最大缓存条目数
      * 仅当缓存类型为 caffeine 时有效
      */
+    @Min(1)
     private long maxSize = 10000;
 }

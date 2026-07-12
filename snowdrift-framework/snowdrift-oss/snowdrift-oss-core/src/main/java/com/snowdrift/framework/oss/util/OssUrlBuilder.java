@@ -86,12 +86,13 @@ public final class OssUrlBuilder {
             throw new OssException("oss.object.key.empty");
         }
 
-        // 移除协议前缀
+        // 移除协议前缀，但保留原始协议用于最终 URL
+        String protocol = endpoint.startsWith(HTTP) ? HTTP : HTTPS;
         String normalizedEndpoint = removeProtocol(endpoint);
         normalizedEndpoint = removeTrailingSlash(normalizedEndpoint);
         String normalizedKey = removeLeadingSlash(objectKey);
 
-        return HTTPS + bucket + StrConst.DOT + normalizedEndpoint + StrConst.SLASH + normalizedKey;
+        return protocol + bucket + StrConst.DOT + normalizedEndpoint + StrConst.SLASH + normalizedKey;
     }
 
     /**

@@ -28,20 +28,24 @@ public class LogRecordServiceImpl implements ILogRecordService {
 
     @Override
     public void record(LogRecord logRecord) {
-        SecurityContext context = SecurityContextHolder.getContext();
-        OperateLogCreateDTO operateLogDTO = OperateLogCreateDTO.builder()
-                .traceId(LogTraceUtil.getTraceId())
-                .bizId(logRecord.getBizNo())
-                .bizModule(logRecord.getType())
-                .bizType(logRecord.getSubType())
-                .content(logRecord.getAction())
-                .userId(context.getUserId())
-                .tenantId(context.getTenantId())
-                .operator(SecurityContextHolder.getOperatorName())
-                .operateTime(DateTimeUtil.dateToLocalDateTime(logRecord.getCreateTime()))
-                .build();
-        //记录日志
-        logService.saveOperateLog(operateLogDTO);
+        try {
+            SecurityContext context = SecurityContextHolder.getContext();
+            OperateLogCreateDTO operateLogDTO = OperateLogCreateDTO.builder()
+                    .traceId(LogTraceUtil.getTraceId())
+                    .bizId(logRecord.getBizNo())
+                    .bizModule(logRecord.getType())
+                    .bizType(logRecord.getSubType())
+                    .content(logRecord.getAction())
+                    .userId(context.getUserId())
+                    .tenantId(context.getTenantId())
+                    .operator(SecurityContextHolder.getOperatorName())
+                    .operateTime(DateTimeUtil.dateToLocalDateTime(logRecord.getCreateTime()))
+                    .build();
+            //记录日志
+            logService.saveOperateLog(operateLogDTO);
+        } catch (Exception e) {
+            log.error("记录操作日志失败", e);
+        }
     }
 
     @Override

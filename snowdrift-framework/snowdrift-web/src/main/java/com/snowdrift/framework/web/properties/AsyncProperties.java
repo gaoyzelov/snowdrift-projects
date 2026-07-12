@@ -63,6 +63,7 @@ public class AsyncProperties implements Serializable {
     /**
      * 等待任务在关机时完成，并设置超时时间
      */
+    @Min(1)
     @NotNull
     private Integer awaitTerminationSeconds = 60;
 }
