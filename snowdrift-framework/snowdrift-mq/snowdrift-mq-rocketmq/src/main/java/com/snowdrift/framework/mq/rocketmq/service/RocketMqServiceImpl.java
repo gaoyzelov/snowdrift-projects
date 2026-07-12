@@ -1,6 +1,7 @@
 package com.snowdrift.framework.mq.rocketmq.service;
 
 import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
+import com.snowdrift.framework.mq.core.MqContextPropagator;
 import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.dto.MqMessage;
@@ -53,8 +54,9 @@ public class RocketMqServiceImpl extends DefaultMqServiceImpl {
                                Executor mqAsyncExecutor, MqMessageConverter converter,
                                ObjectProvider<DefaultMQProducer> batchProducerProvider,
                                RocketMqProperties rocketProperties,
-                               MqInterceptorRegistry interceptorRegistry) {
-        super(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry);
+                               MqInterceptorRegistry interceptorRegistry,
+                               MqContextPropagator contextPropagator) {
+        super(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
         this.batchProducerProvider = batchProducerProvider;
         this.rocketProperties = rocketProperties;
     }

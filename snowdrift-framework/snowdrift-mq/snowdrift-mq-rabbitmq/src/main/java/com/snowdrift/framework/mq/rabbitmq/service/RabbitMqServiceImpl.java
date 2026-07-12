@@ -1,6 +1,7 @@
 package com.snowdrift.framework.mq.rabbitmq.service;
 
 import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
+import com.snowdrift.framework.mq.core.MqContextPropagator;
 import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.dto.MqMessage;
@@ -27,6 +28,7 @@ import java.util.concurrent.Executor;
  * <p>
  * 基于 Spring Cloud Stream Rabbit Binder。
  * 批量发送优先使用 {@link RabbitTemplate}（如可用）。
+ * 延迟消息需安装 rabbitmq-delayed-message-exchange 插件，未启用时降级为即时发送。
  * </p>
  *
  * @author gaoyzelov
@@ -43,8 +45,9 @@ public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements Applica
     public RabbitMqServiceImpl(StreamBridge streamBridge, MqProperties mqProperties,
                                RabbitMqProperties rabbitProperties,
                                Executor mqAsyncExecutor, MqMessageConverter converter,
-                               MqInterceptorRegistry interceptorRegistry) {
-        super(streamBridge, mqProperties, mqAsyncExecutor, converter, interceptorRegistry);
+                               MqInterceptorRegistry interceptorRegistry,
+                               MqContextPropagator contextPropagator) {
+        super(streamBridge, mqProperties, mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
         this.rabbitProperties = rabbitProperties;
     }
 
@@ -60,6 +63,7 @@ public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements Applica
             if (useDelayPlugin) {
                 builder.setHeader("x-delay", delay.toMillis());
             } else {
+                // 降级方案：设置消息过期时间 + 死信队列，需用提前配置
                 builder.setHeader("x-message-ttl", delay.toMillis());
             }
         });

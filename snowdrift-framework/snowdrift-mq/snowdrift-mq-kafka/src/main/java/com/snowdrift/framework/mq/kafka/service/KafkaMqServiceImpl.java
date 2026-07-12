@@ -1,6 +1,7 @@
 package com.snowdrift.framework.mq.kafka.service;
 
 import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
+import com.snowdrift.framework.mq.core.MqContextPropagator;
 import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.dto.MqMessage;
@@ -44,8 +45,9 @@ public class KafkaMqServiceImpl extends DefaultMqServiceImpl implements Applicat
 
     public KafkaMqServiceImpl(StreamBridge streamBridge, MqProperties properties,
                               Executor mqAsyncExecutor, MqMessageConverter converter,
-                              MqInterceptorRegistry interceptorRegistry) {
-        super(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry);
+                              MqInterceptorRegistry interceptorRegistry,
+                              MqContextPropagator contextPropagator) {
+        super(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.snowdrift.framework.mq.rocketmq.config;
 
 import com.snowdrift.framework.mq.core.IMqService;
+import com.snowdrift.framework.mq.core.MqContextPropagator;
 import com.snowdrift.framework.mq.core.MqMessageConverter;
 import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.properties.MqProperties;
@@ -47,11 +48,12 @@ public class SnowdriftRocketMqConfiguration {
                                                 RocketMqProperties rocketProperties,
                                                 ObjectProvider<DefaultMQProducer> batchProducerProvider,
                                                 ConfigurableEnvironment env,
-                                                MqInterceptorRegistry interceptorRegistry) {
+                                                MqInterceptorRegistry interceptorRegistry,
+                                                MqContextPropagator contextPropagator) {
         mapRocketMqProperties(rocketProperties, env);
         log.info("Snowdrift RocketMQ MQ 模板已注册，拦截器数量: {}", interceptorRegistry.getInterceptors().size());
         return new RocketMqServiceImpl(streamBridge, mqProperties, mqAsyncExecutor, converter,
-                batchProducerProvider, rocketProperties, interceptorRegistry);
+                batchProducerProvider, rocketProperties, interceptorRegistry, contextPropagator);
     }
 
     private void mapRocketMqProperties(RocketMqProperties props, ConfigurableEnvironment env) {
