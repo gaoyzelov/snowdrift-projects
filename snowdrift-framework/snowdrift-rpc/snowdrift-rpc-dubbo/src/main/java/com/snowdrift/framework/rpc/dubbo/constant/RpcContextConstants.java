@@ -19,4 +19,7 @@ public final class RpcContextConstants {
     /** 安全上下文 */
     public static final String SECURITY_CONTEXT = "x-snowdrift-security-context";
 
+    /** 上下文注入失败标记（Consumer → Provider 降级信号） */
+    public static final String CONTEXT_ERROR = "x-snowdrift-context-error";
+
 }

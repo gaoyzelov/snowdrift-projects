@@ -33,6 +33,7 @@ public class DubboConsumerContextFilter implements Filter {
         } catch (Exception e) {
             log.error("RPC 消费者上下文注入失败: interface={}, method={}",
                     invoker.getInterface().getName(), invocation.getMethodName(), e);
+            RpcContext.getServiceContext().setAttachment(RpcContextConstants.CONTEXT_ERROR, "true");
         }
         return invoker.invoke(invocation);
     }
