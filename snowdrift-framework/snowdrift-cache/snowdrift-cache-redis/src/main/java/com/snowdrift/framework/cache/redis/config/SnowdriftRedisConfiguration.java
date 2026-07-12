@@ -64,6 +64,7 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
 
     @Override
     @Bean
+    @ConditionalOnMissingBean(CacheManager.class)
     public CacheManager cacheManager() {
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(cacheProperties.getKeyTtl())
@@ -80,6 +81,7 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
      */
     @Override
     @Bean
+    @ConditionalOnMissingBean(CacheErrorHandler.class)
     public CacheErrorHandler errorHandler() {
         return new SnowdriftCachingErrorHandler();
     }
@@ -89,6 +91,7 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
      */
     @Override
     @Bean
+    @ConditionalOnMissingBean(KeyGenerator.class)
     public KeyGenerator keyGenerator() {
         return new SnowdriftKeyGenerator(cacheProperties.getKeyPrefix());
     }

@@ -213,12 +213,13 @@ public class MinioOssServiceImpl extends AbstractOssService {
                                 .objects(objects)
                                 .build()
                 );
-                if (resultIterable.iterator().hasNext()) {
-                    for (Result<DeleteResult.Error> result : resultIterable) {
-                        DeleteResult.Error error = result.get();
-                        log.error("文件批量删除失败: bucket={}, objectKey={}, error={}", bucket, error.objectName(), error.message());
-                    }
-                } else {
+                boolean hasErrors = false;
+                for (Result<DeleteResult.Error> result : resultIterable) {
+                    hasErrors = true;
+                    DeleteResult.Error error = result.get();
+                    log.error("文件批量删除失败: bucket={}, objectKey={}, error={}", bucket, error.objectName(), error.message());
+                }
+                if (!hasErrors) {
                     log.debug("文件批量删除成功: bucket={}", bucket);
                 }
             } catch (Exception e) {

@@ -71,8 +71,12 @@ public class MqListenerBeanDefinitionRegistrar implements BeanDefinitionRegistry
 
         // 注册 function.definition，确保 SCS 激活所有 Consumer Bean
         if (!functionNames.isEmpty()) {
-            dynamicProperties.put("spring.cloud.function.definition",
-                    String.join(";", functionNames));
+            String existing = environment.getProperty("spring.cloud.function.definition");
+            String definition = String.join(";", functionNames);
+            if (StringUtils.isNotBlank(existing)) {
+                definition = existing + ";" + definition;
+            }
+            dynamicProperties.put("spring.cloud.function.definition", definition);
         }
 
         // 一次性注入所有动态 binding 配置

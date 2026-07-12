@@ -2,6 +2,7 @@ package com.snowdrift.framework.cache.redis.service;
 
 import com.snowdrift.framework.cache.AbstractCacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
+import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.common.util.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.Cursor;
@@ -44,7 +45,16 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
     @Override
     public <T> T get(String key, Class<T> type) {
         AssertUtil.notBlank(key, "cache.key.required");
-        return type.cast(redisTemplate.opsForValue().get(buildKey(key)));
+        Object value = redisTemplate.opsForValue().get(buildKey(key));
+        if (value == null) {
+            return null;
+        }
+        try {
+            return type.cast(value);
+        } catch (ClassCastException e) {
+            throw new BizException("cache.type.mismatch",
+                    new Object[]{key, type.getName(), value.getClass().getName()});
+        }
     }
 
     @Override

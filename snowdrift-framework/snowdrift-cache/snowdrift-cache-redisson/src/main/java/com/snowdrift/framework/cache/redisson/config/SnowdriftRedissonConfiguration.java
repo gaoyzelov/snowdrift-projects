@@ -40,8 +40,6 @@ import java.util.List;
 @ConditionalOnClass(RedissonClient.class)
 public class SnowdriftRedissonConfiguration implements CachingConfigurer {
 
-    private static final String REDIS_URI_PREFIX = "redis://";
-
     /**
      * 看门狗锁续期时间（毫秒）。
      * <p>Redisson 默认 30s，缩短至 15s 可更快释放失联客户端持有的锁。</p>
@@ -81,12 +79,14 @@ public class SnowdriftRedissonConfiguration implements CachingConfigurer {
         config.setCodec(new JsonJacksonCodec(CacheSerializer.getObjectMapper()));
         String password = redisProperties.getPassword();
 
+        String uriPrefix = Boolean.TRUE.equals(redisProperties.getSsl()) ? "rediss://" : "redis://";
+
         if (redisProperties.getCluster() != null) {
-            configureCluster(config, redisProperties.getCluster().getNodes());
+            configureCluster(config, redisProperties.getCluster().getNodes(), uriPrefix);
         } else if (redisProperties.getSentinel() != null) {
-            configureSentinel(config, redisProperties.getSentinel(), redisProperties.getDatabase());
+            configureSentinel(config, redisProperties.getSentinel(), redisProperties.getDatabase(), uriPrefix);
         } else {
-            configureSingle(config, redisProperties.getHost(), redisProperties.getPort(), redisProperties.getDatabase());
+            configureSingle(config, redisProperties.getHost(), redisProperties.getPort(), redisProperties.getDatabase(), uriPrefix);
         }
 
         // 密码统一在 Config 层设置（Redisson 4.x 已废弃各 ServerConfig 的 setPassword）
@@ -102,9 +102,9 @@ public class SnowdriftRedissonConfiguration implements CachingConfigurer {
     /**
      * 集群模式配置
      */
-    private void configureCluster(Config config, List<String> nodes) {
+    private void configureCluster(Config config, List<String> nodes, String uriPrefix) {
         String[] addresses = nodes.stream()
-                .map(node -> REDIS_URI_PREFIX + node)
+                .map(node -> uriPrefix + node)
                 .toArray(String[]::new);
         config.useClusterServers().addNodeAddress(addresses);
     }
@@ -112,9 +112,9 @@ public class SnowdriftRedissonConfiguration implements CachingConfigurer {
     /**
      * 哨兵模式配置
      */
-    private void configureSentinel(Config config, RedisProperties.Sentinel sentinel, int database) {
+    private void configureSentinel(Config config, RedisProperties.Sentinel sentinel, int database, String uriPrefix) {
         String[] addresses = sentinel.getNodes().stream()
-                .map(node -> REDIS_URI_PREFIX + node)
+                .map(node -> uriPrefix + node)
                 .toArray(String[]::new);
         config.useSentinelServers()
                 .setMasterName(sentinel.getMaster())
@@ -125,9 +125,9 @@ public class SnowdriftRedissonConfiguration implements CachingConfigurer {
     /**
      * 单节点模式配置
      */
-    private void configureSingle(Config config, String host, int port, int database) {
+    private void configureSingle(Config config, String host, int port, int database, String uriPrefix) {
         config.useSingleServer()
-                .setAddress(REDIS_URI_PREFIX + host + ":" + port)
+                .setAddress(uriPrefix + host + ":" + port)
                 .setDatabase(database);
     }
 
@@ -149,6 +149,7 @@ public class SnowdriftRedissonConfiguration implements CachingConfigurer {
      */
     @Override
     @Bean
+    @ConditionalOnMissingBean(CacheErrorHandler.class)
     public CacheErrorHandler errorHandler() {
         return new SnowdriftCachingErrorHandler();
     }
@@ -158,6 +159,7 @@ public class SnowdriftRedissonConfiguration implements CachingConfigurer {
      */
     @Override
     @Bean
+    @ConditionalOnMissingBean(KeyGenerator.class)
     public KeyGenerator keyGenerator() {
         return new SnowdriftKeyGenerator(cacheProperties.getKeyPrefix());
     }

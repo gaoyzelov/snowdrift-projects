@@ -110,7 +110,9 @@ public class TencentOssServiceImpl extends AbstractOssService {
 
             // 创建上传请求
             ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentLength(request.getSize());
+            if (request.getSize() != null) {
+                metadata.setContentLength(request.getSize());
+            }
             if (StringUtils.isNotBlank(request.getContentType())) {
                 metadata.setContentType(request.getContentType());
             }

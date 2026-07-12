@@ -93,6 +93,7 @@ public class DefaultMqServiceImpl implements IMqService {
             return result;
 
         } catch (MqException e) {
+            fireOnSendError(topic, e);
             throw e;
         } catch (Exception e) {
             fireOnSendError(topic, e);
@@ -269,6 +270,20 @@ public class DefaultMqServiceImpl implements IMqService {
     protected Message<byte[]> buildMessage(String key, Object payload,
                                             Map<String, String> headers) {
         byte[] bytes = converter.serialize(payload);
+        return buildMessageFromBytes(key, bytes, headers);
+    }
+
+    /**
+     * 从已序列化的字节数组构建 Spring Message（含上下文注入和自定义头部）
+     * <p>供子类在己方已完成序列化的场景下复用，避免二次序列化</p>
+     *
+     * @param key     消息 Key（可空）
+     * @param bytes   已序列化的消息体字节
+     * @param headers 自定义消息头（可空）
+     * @return 构建完成的 Spring Message
+     */
+    protected Message<byte[]> buildMessageFromBytes(String key, byte[] bytes,
+                                                      Map<String, String> headers) {
         MessageBuilder<byte[]> builder = MessageBuilder.withPayload(bytes);
 
         if (StringUtils.isNotBlank(key)) {

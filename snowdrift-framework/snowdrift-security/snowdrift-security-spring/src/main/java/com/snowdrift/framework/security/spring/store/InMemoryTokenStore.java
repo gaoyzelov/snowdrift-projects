@@ -51,7 +51,8 @@ public class InMemoryTokenStore extends AbstractTokenStore {
 
     @Override
     protected void touch(String token, TokenEntry entry) {
-        map.put(token, new TokenEntry(entry.getContext(), entry.getExpireAt(), System.currentTimeMillis()));
+        map.computeIfPresent(token, (k, v) ->
+            new TokenEntry(v.getContext(), v.getExpireAt(), System.currentTimeMillis()));
     }
 
     @Override

@@ -95,7 +95,9 @@ public class AliyunOssServiceImpl extends AbstractOssService {
             request.validate();
 
             ObjectMetadata metadata = new ObjectMetadata();
-            metadata.setContentLength(request.getSize());
+            if (request.getSize() != null) {
+                metadata.setContentLength(request.getSize());
+            }
             if (StringUtils.isNotBlank(request.getContentType())) {
                 metadata.setContentType(request.getContentType());
             }

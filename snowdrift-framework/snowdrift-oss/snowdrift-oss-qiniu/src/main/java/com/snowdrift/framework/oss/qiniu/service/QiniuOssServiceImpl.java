@@ -128,7 +128,11 @@ public class QiniuOssServiceImpl extends AbstractOssService {
 
             // 上传文件
             Response response = uploadManager.put(inputStream, objectKey, uploadToken, null, null);
-
+            if (!response.isOK()) {
+                log.error("文件上传失败: bucket={}, objectKey={}, status={}, body={}",
+                        bucket, objectKey, response.statusCode, response.bodyString());
+                throw new OssException("oss.upload.failed", new Object[]{response.statusCode});
+            }
             // 解析返回结果（用于日志记录）
             DefaultPutRet putRet = JSON.parseObject(
                     response.bodyString(), DefaultPutRet.class);

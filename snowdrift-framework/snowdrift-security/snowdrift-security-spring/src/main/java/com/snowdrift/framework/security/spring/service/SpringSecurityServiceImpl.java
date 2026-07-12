@@ -111,6 +111,9 @@ public class SpringSecurityServiceImpl implements ISecurityService {
                 }
             }
         }
+        // 清理上下文，防止同一请求内后续 filter/handler 仍视为已认证
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        com.snowdrift.framework.context.security.SecurityContextHolder.clear();
     }
 
     @Override

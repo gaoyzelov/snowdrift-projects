@@ -402,8 +402,13 @@ public final class HttpUtil {
             if (response.statusCode() >= 200 && response.statusCode() < 300) {
                 return response.body();
             } else {
-                log.warn("{} request failed with status {}: {}", request.method(), response.statusCode(), request.uri());
-                throw new BizException("HTTP " + request.method() + " request failed with status: " + response.statusCode());
+                String body = response.body();
+                String truncatedBody = body != null && body.length() > 500
+                        ? body.substring(0, 500) + "..." : body;
+                log.warn("{} request failed with status {}: {}, body: {}",
+                        request.method(), response.statusCode(), request.uri(), truncatedBody);
+                throw new BizException("HTTP " + request.method() + " request failed with status: "
+                        + response.statusCode() + ", body: " + truncatedBody);
             }
         } catch (IOException e) {
             log.error("{} request failed: {}", request.method(), request.uri(), e);

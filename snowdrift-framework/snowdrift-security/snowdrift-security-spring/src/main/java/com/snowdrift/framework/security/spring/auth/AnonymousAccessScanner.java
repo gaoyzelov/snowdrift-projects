@@ -41,9 +41,9 @@ public final class AnonymousAccessScanner {
     }
 
     /**
-     * 将 Spring MVC URI 模板转为 Ant 风格（{id} → *）
+     * 将 Spring MVC URI 模板转为 Ant 风格（{id} → **）
      */
     private static String toAntPattern(String mvcPattern) {
-        return mvcPattern.replaceAll("\\{[^}]+\\}", "*");
+        return mvcPattern.replaceAll("\\{[^}]+\\}", "**");
     }
 }

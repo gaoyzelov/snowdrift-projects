@@ -50,9 +50,12 @@ public class RepeatSubmitAspect {
 
         try {
             return joinPoint.proceed();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // 业务异常时删除标记，允许用户修正后重新提交
             cacheService.delete(key);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
             throw e;
         }
     }
