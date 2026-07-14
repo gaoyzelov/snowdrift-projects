@@ -213,13 +213,11 @@ public class LocalOssServiceImpl extends AbstractOssService {
         if (!resolved.startsWith(storageRoot.normalize())) {
             throw new OssException("oss.object.key.invalid");
         }
-        // 如果配置了域名，使用域名
-        if (StringUtils.isNotBlank(config.getDomain())) {
-            return OssUrlBuilder.buildUrl(config.getDomain(), resolved.toUri().toString());
+        // 必须配置域名，否则无法生成可访问的 URL
+        if (StringUtils.isBlank(config.getDomain())) {
+            throw new OssException("oss.local.url.no.domain", new Object[]{objectKey});
         }
-
-        // 否则返回本地文件路径
-        return resolved.toUri().toString();
+        return OssUrlBuilder.buildUrl(config.getDomain(), resolved.toUri().toString());
     }
 
     /**

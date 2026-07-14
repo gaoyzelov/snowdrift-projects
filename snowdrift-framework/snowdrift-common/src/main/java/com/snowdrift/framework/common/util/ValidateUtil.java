@@ -18,6 +18,16 @@ import java.util.regex.Pattern;
  */
 public final class ValidateUtil {
 
+    // 预编译正则
+    private static final Pattern URL_PATTERN = Pattern.compile(RegexConst.URL);
+    private static final Pattern VIN_PATTERN = Pattern.compile(RegexConst.VIN);
+    private static final Pattern BANK_CARD_PATTERN = Pattern.compile(RegexConst.BANK_CARD);
+    private static final Pattern CAR_LICENSE_PATTERN = Pattern.compile(RegexConst.CAR_LICENSE);
+    private static final Pattern MOBILE_PHONE_PATTERN = Pattern.compile(RegexConst.MOBILE_PHONE);
+    private static final Pattern FIXED_PHONE_PATTERN = Pattern.compile(RegexConst.FIXED_PHONE);
+    private static final Pattern CARD_NO_PATTERN = Pattern.compile(RegexConst.CARD_NO);
+    private static final Pattern EMAIL_PATTERN = Pattern.compile(RegexConst.EMAIL);
+
     // 地区编码
     private static final Set<String> AREA_SET = SetUtils.hashSet(
             "11", "12", "13", "14", "15", "21", "22", "23", "31", "32", "33", "34", "35", "36", "37", "41",
@@ -41,7 +51,7 @@ public final class ValidateUtil {
         if (StringUtils.isBlank(url)) {
             return false;
         }
-        return Pattern.matches(RegexConst.URL,url);
+        return URL_PATTERN.matcher(url).matches();
     }
 
     /**
@@ -54,7 +64,7 @@ public final class ValidateUtil {
         if (StringUtils.isBlank(vin)) {
             return false;
         }
-        return Pattern.matches(RegexConst.VIN,vin);
+        return VIN_PATTERN.matcher(vin).matches();
     }
 
     /**
@@ -67,7 +77,7 @@ public final class ValidateUtil {
         if (StringUtils.isBlank(bankCard)) {
             return false;
         }
-        return Pattern.matches(RegexConst.BANK_CARD,bankCard);
+        return BANK_CARD_PATTERN.matcher(bankCard).matches();
     }
 
     /**
@@ -80,7 +90,7 @@ public final class ValidateUtil {
         if (StringUtils.isBlank(carLicense)) {
             return false;
         }
-        return Pattern.matches(RegexConst.CAR_LICENSE, carLicense);
+        return CAR_LICENSE_PATTERN.matcher(carLicense).matches();
     }
 
     /**
@@ -93,7 +103,7 @@ public final class ValidateUtil {
         if (StringUtils.isBlank(mobilePhone)) {
             return false;
         }
-        return Pattern.matches(RegexConst.MOBILE_PHONE, mobilePhone);
+        return MOBILE_PHONE_PATTERN.matcher(mobilePhone).matches();
     }
 
     /**
@@ -106,7 +116,7 @@ public final class ValidateUtil {
         if (StringUtils.isBlank(fixedPhone)) {
             return false;
         }
-        return Pattern.matches(RegexConst.FIXED_PHONE, fixedPhone);
+        return FIXED_PHONE_PATTERN.matcher(fixedPhone).matches();
     }
 
     /**
@@ -119,7 +129,7 @@ public final class ValidateUtil {
         if (StringUtils.isBlank(idCard) || (idCard.length() != 15 && idCard.length() != 18)) {
             return false;
         }
-        boolean matches = Pattern.matches(RegexConst.CARD_NO, idCard);
+        boolean matches = CARD_NO_PATTERN.matcher(idCard).matches();
         if (!matches) {
             return false;
         }
@@ -179,7 +189,7 @@ public final class ValidateUtil {
         if (StringUtils.isBlank(email)) {
             return false;
         }
-        return Pattern.matches(RegexConst.EMAIL, email);
+        return EMAIL_PATTERN.matcher(email).matches();
     }
 
 }

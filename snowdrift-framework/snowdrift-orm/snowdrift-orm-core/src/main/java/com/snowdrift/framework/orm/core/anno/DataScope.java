@@ -8,7 +8,6 @@ import java.lang.annotation.Target;
 /**
  * DataScope
  *
- * @author gaoyzelov
  * @date 2026/7/2-14:14
  * @description 数据权限注解
  * @since 1.0.0

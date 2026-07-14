@@ -1,6 +1,8 @@
 package com.snowdrift.framework.oss.util;
 
+import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
+import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.properties.OssInstanceProperties;
 
 /**
@@ -22,7 +24,7 @@ public class OssConfigConverter {
      */
     public static OssConfigDTO fromProperties(OssInstanceProperties properties, String configKey) {
         if (properties == null) {
-            return null;
+            throw new OssException("oss.instance.properties.null");
         }
         
         OssConfigDTO config = new OssConfigDTO();
@@ -58,7 +60,7 @@ public class OssConfigConverter {
      */
     public static OssInstanceProperties toProperties(OssConfigDTO config) {
         if (config == null) {
-            return null;
+            throw new OssException("oss.config.info.null");
         }
         
         OssInstanceProperties properties = new OssInstanceProperties();

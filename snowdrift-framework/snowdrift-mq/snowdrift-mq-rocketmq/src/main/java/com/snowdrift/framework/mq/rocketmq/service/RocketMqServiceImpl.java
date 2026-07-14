@@ -40,6 +40,7 @@ public class RocketMqServiceImpl extends DefaultMqServiceImpl {
 
     private static final String ROCKETMQ_DELAY_LEVEL_HEADER = "DELAY";
 
+    // RocketMQ 延迟级别从 1 开始，索引 0 为占位值
     private static final long[] DELAY_LEVEL_SECONDS = {
         0, 1, 5, 10, 30, 60, 120, 180, 240, 300,
         360, 420, 480, 540, 600, 1200, 1800, 3600, 7200

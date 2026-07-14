@@ -226,7 +226,8 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             return info;
         } catch (SchedulerException e) {
             log.error("Quartz 任务详情查询失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
-            return null;
+            throw new BizException("schedule.job.query.failed",
+                    new Object[]{jobKey.getName(), e.getMessage()});
         }
     }
 

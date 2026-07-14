@@ -33,6 +33,8 @@ import java.util.List;
  */
 public final class EncryptUtil {
 
+    private static final HexFormat HEX_FORMAT = HexFormat.of();
+
     private EncryptUtil() {
     }
 
@@ -62,7 +64,7 @@ public final class EncryptUtil {
             // 计算消息摘要
             byte[] bytes = md5.digest(text.getBytes(StandardCharsets.UTF_8));
             // 转为16进制字符串
-            return HexFormat.of().formatHex(bytes);
+            return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
             throw new BizException(e);
         }
@@ -82,7 +84,7 @@ public final class EncryptUtil {
             // 计算消息摘要
             byte[] bytes = sha1.digest(text.getBytes(StandardCharsets.UTF_8));
             // 转为16进制字符串
-            return HexFormat.of().formatHex(bytes);
+            return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
             throw new BizException(e);
         }
@@ -102,7 +104,7 @@ public final class EncryptUtil {
             // 计算消息摘要
             byte[] bytes = sha256.digest(text.getBytes(StandardCharsets.UTF_8));
             // 转为16进制字符串
-            return HexFormat.of().formatHex(bytes);
+            return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
             throw new BizException(e);
         }
@@ -136,7 +138,7 @@ public final class EncryptUtil {
      */
     public static String aesKey() {
         SecretKey secretKey = aesKey(256);
-        return HexFormat.of().formatHex(secretKey.getEncoded());
+        return HEX_FORMAT.formatHex(secretKey.getEncoded());
     }
 
     /**
@@ -168,7 +170,7 @@ public final class EncryptUtil {
     public static String aesEncrypt(String text, String aesKey) {
         AssertUtil.notBlank(text, "待加密文本不能为空");
         AssertUtil.notBlank(aesKey, "秘钥不能为空");
-        return aesEncrypt(text, HexFormat.of().parseHex(aesKey));
+        return aesEncrypt(text, HEX_FORMAT.parseHex(aesKey));
     }
 
     /**
@@ -202,7 +204,7 @@ public final class EncryptUtil {
     public static String aesDecrypt(String text, String aesKey) {
         AssertUtil.notBlank(text, "待解密文本不能为空");
         AssertUtil.notBlank(aesKey, "秘钥不能为空");
-        return aesDecrypt(text, HexFormat.of().parseHex(aesKey));
+        return aesDecrypt(text, HEX_FORMAT.parseHex(aesKey));
     }
 
     /**

@@ -1,11 +1,9 @@
 package com.snowdrift.framework.common.util;
 
-import com.snowdrift.framework.common.constant.RegexConst;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.regex.Pattern;
 
 /**
  * CronUtil
@@ -19,8 +17,6 @@ import java.util.regex.Pattern;
 public final class CronUtil {
 
     private static final String CRON_FORMAT = "ss mm HH dd MM ? yyyy";
-
-    private static final Pattern CRON_PATTERN = Pattern.compile(RegexConst.CRON);
 
     private CronUtil() {
     }

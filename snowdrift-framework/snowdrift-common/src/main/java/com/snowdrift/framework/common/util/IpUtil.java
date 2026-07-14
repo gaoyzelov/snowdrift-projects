@@ -97,7 +97,7 @@ public final class IpUtil {
      * @return 解析IP地址，返回完整地域信息数组
      */
     public static String[] parseIp(String ip) {
-        if (searcher == null || !isValidIp(ip) || isInternalIp(ip)) {
+        if (!isValidIp(ip) || isInternalIp(ip)) {
             return new String[]{"", "", "", "", ""};
         }
         try {

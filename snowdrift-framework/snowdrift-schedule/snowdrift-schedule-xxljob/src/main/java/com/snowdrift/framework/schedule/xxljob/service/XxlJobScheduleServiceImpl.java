@@ -4,6 +4,8 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.common.util.HttpUtil;
@@ -27,7 +29,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 @Slf4j
 public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest, XxlJobKey> {
@@ -37,7 +39,10 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     private static final int PAGE_SIZE = 200;
     private final XxlJobProperties properties;
     private final List<String> adminUrls;
-    private final Map<String, Integer> executorGroupMap = new ConcurrentHashMap<>();
+    private final Cache<String, Integer> executorGroupCache = CacheBuilder.newBuilder()
+            .maximumSize(256)
+            .expireAfterAccess(Duration.ofMinutes(30))
+            .build();
 
     /**
      * 登录 Cookie（name=value 格式）
@@ -403,9 +408,17 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
 
     private int getExecutorGroupId(String group) {
         String appName = StringUtils.isNotBlank(group) ? group : properties.getAppName();
-        Integer cached = executorGroupMap.get(appName);
-        if (cached != null) return cached;
+        try {
+            return executorGroupCache.get(appName, () -> loadExecutorGroupId(appName));
+        } catch (ExecutionException e) {
+            if (e.getCause() instanceof BizException) {
+                throw (BizException) e.getCause();
+            }
+            throw new BizException("schedule.xxl.group.not.found", new Object[]{appName});
+        }
+    }
 
+    private int loadExecutorGroupId(String appName) {
         Map<String, String> params = Map.of("offset", "0", "pagesize", "100", "appname", appName);
         JSONObject result = callAdminGetApi(XxlJobApiConst.GROUP_PAGE_PATH, params);
         JSONObject content = result.getJSONObject("data");
@@ -415,14 +428,11 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
                 for (int i = 0; i < data.size(); i++) {
                     JSONObject gi = data.getJSONObject(i);
                     if (appName.equals(gi.getString("appname"))) {
-                        int id = gi.getIntValue("id");
-                        executorGroupMap.put(appName, id);
-                        return id;
+                        return gi.getIntValue("id");
                     }
                 }
             }
         }
-        executorGroupMap.remove(appName);
         throw new BizException("schedule.xxl.group.not.found", new Object[]{appName});
     }
 
