@@ -1,17 +1,16 @@
 package com.snowdrift.framework.security.spring.store;
 
-import jakarta.annotation.PreDestroy;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 /**
  * 基于内存的 {@link TokenStore} 默认实现
  * <p>
- * 使用 ConcurrentHashMap 存储 Token 映射，后台定时任务兜底清理过期条目。
+ * 使用 Guava Cache 存储 Token 映射，LRU 自动淘汰防止内存溢出。
+ * 绝对过期和闲置过期由 {@link AbstractTokenStore#get(String)} 统一校验。
  * 生产环境建议启用 Redis（引入 {@code spring-boot-starter-data-redis} 即可自动切换）。
  * </p>
  *
@@ -22,51 +21,35 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class InMemoryTokenStore extends AbstractTokenStore {
 
-    private final ConcurrentHashMap<String, TokenEntry> map = new ConcurrentHashMap<>();
-    private static final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
-        Thread t = new Thread(r, "token-store-cleaner");
-        t.setDaemon(true);
-        return t;
-    });
+    private final Cache<String, TokenEntry> cache;
 
     public InMemoryTokenStore(long defaultTimeoutSeconds, long idleTimeoutSeconds) {
         super(defaultTimeoutSeconds, idleTimeoutSeconds);
-        cleaner.scheduleWithFixedDelay(this::cleanExpired, 60, 60, TimeUnit.SECONDS);
-    }
-
-    @PreDestroy
-    void shutdown() {
-        cleaner.shutdown();
+        this.cache = CacheBuilder.newBuilder()
+                .maximumSize(2048)
+                .expireAfterAccess(Duration.ofSeconds(Math.max(defaultTimeoutSeconds, idleTimeoutSeconds)))
+                .build();
     }
 
     @Override
     protected void doPut(String token, TokenEntry entry, long ttl) {
-        map.put(token, entry);
+        cache.put(token, entry);
     }
 
     @Override
     protected TokenEntry doGet(String token) {
-        return map.get(token);
+        return cache.getIfPresent(token);
     }
 
     @Override
     protected void touch(String token, TokenEntry entry) {
-        map.computeIfPresent(token, (k, v) ->
+        cache.asMap().computeIfPresent(token, (k, v) ->
             new TokenEntry(v.getContext(), v.getExpireAt(), System.currentTimeMillis()));
     }
 
     @Override
     public void remove(String token) {
-        map.remove(token);
+        cache.invalidate(token);
         log.trace("内存 TokenStore 移除: token={}", token);
-    }
-
-    private void cleanExpired() {
-        long now = System.currentTimeMillis();
-        long idleThreshold = idleTimeoutSeconds * 1000;
-        map.entrySet().removeIf(e -> {
-            TokenEntry entry = e.getValue();
-            return entry.getExpireAt() < now || (now - entry.getLastActiveAt()) > idleThreshold;
-        });
     }
 }
