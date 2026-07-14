@@ -1,5 +1,6 @@
 package com.snowdrift.framework.common.util;
 
+import com.google.common.net.InetAddresses;
 import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.exception.BizException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -11,13 +12,12 @@ import java.io.InputStream;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.regex.Pattern;
 
 /**
  * IpUtil
+ *
  * @author gaoyzelov
  * @date 2026/4/29-16:10
  * @description ip工具类
@@ -26,9 +26,8 @@ import java.util.regex.Pattern;
 @Slf4j
 public final class IpUtil {
 
-    private static final Pattern IP_PATTERN = Pattern.compile("^(\\d{1,3}\\.){3}\\d{1,3}$|^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$");
-
-    private IpUtil() {}
+    private IpUtil() {
+    }
 
     /**
      * IP 查询器，启动加载到内存中
@@ -136,9 +135,7 @@ public final class IpUtil {
     public static boolean isValidIp(String ip) {
         try {
             basicCheck(ip);
-            InetAddress ignored = InetAddress.getByName(ip);
-        } catch (UnknownHostException e) {
-            log.error("IP地址有误：{}",ip, e);
+        } catch (Exception e) {
             return false;
         }
         return true;
@@ -152,13 +149,8 @@ public final class IpUtil {
      */
     public static boolean isIpv4(String ip) {
         basicCheck(ip);
-        try {
-            InetAddress address = InetAddress.getByName(ip);
-            return address instanceof Inet4Address;
-        } catch (UnknownHostException e) {
-            log.error("IP地址有误：{}", ip, e);
-            throw new BizException("IP地址有误");
-        }
+        InetAddress address = InetAddresses.forString(ip);
+        return address instanceof Inet4Address;
     }
 
     /**
@@ -169,13 +161,8 @@ public final class IpUtil {
      */
     public static boolean isIpv6(String ip) {
         basicCheck(ip);
-        try {
-            InetAddress address = InetAddress.getByName(ip);
-            return address instanceof Inet6Address;
-        } catch (UnknownHostException e) {
-            log.error("IP地址有误：{}", ip, e);
-            throw new BizException("IP地址有误");
-        }
+        InetAddress address = InetAddresses.forString(ip);
+        return address instanceof Inet6Address;
     }
 
     /**
@@ -186,13 +173,8 @@ public final class IpUtil {
      */
     public static boolean isInternalIp(String ip) {
         basicCheck(ip);
-        try {
-            InetAddress address = InetAddress.getByName(ip);
-            return address.isLoopbackAddress() || address.isSiteLocalAddress() || address.isLinkLocalAddress();
-        } catch (UnknownHostException e) {
-            log.error("IP地址有误：{}", ip, e);
-            throw new BizException("IP地址有误");
-        }
+        InetAddress address = InetAddresses.forString(ip);
+        return address.isLoopbackAddress() || address.isSiteLocalAddress() || address.isLinkLocalAddress();
     }
 
     /**
@@ -202,6 +184,6 @@ public final class IpUtil {
      */
     private static void basicCheck(String ip) {
         AssertUtil.notBlank(ip, "IP地址不能为空");
-        AssertUtil.isTrue(IP_PATTERN.matcher(ip).matches(), "IP地址格式有误");
+        AssertUtil.isTrue(InetAddresses.isInetAddress(ip), "IP地址格式有误");
     }
 }

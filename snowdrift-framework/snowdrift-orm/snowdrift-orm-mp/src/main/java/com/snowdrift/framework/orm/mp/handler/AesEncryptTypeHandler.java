@@ -1,5 +1,6 @@
 package com.snowdrift.framework.orm.mp.handler;
 
+import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.common.util.EncryptUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.type.JdbcType;
@@ -55,7 +56,7 @@ public class AesEncryptTypeHandler implements TypeHandler<String> {
             return text;
         }
         if (!CryptoKeyHolder.isKeyAvailable()){
-            return text;
+            throw new BizException("orm.crypto.key.unavailable");
         }
         return ENCRYPT_FLAG + EncryptUtil.aesEncrypt(text, CryptoKeyHolder.getKey());
     }
@@ -70,7 +71,7 @@ public class AesEncryptTypeHandler implements TypeHandler<String> {
             return encryptedValue;
         }
         if (!CryptoKeyHolder.isKeyAvailable()){
-            return encryptedValue;
+            throw new BizException("orm.crypto.key.unavailable");
         }
         return EncryptUtil.aesDecrypt(encryptedValue.substring(ENCRYPT_FLAG.length()), CryptoKeyHolder.getKey());
     }

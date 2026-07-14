@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.snowdrift.framework.common.exception.BizException;
@@ -76,6 +77,8 @@ public final class CacheSerializer {
         // 写入类型信息，反序列化时还原具体类型（final 类除外，如 String/Integer）
         om.activateDefaultTyping(LaissezFaireSubTypeValidator.instance,
                 ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY);
+        //LocalDateTime类型redis序列化、反序列化异常处理
+        om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         // 支持 Java 8 日期时间类型
         om.registerModule(new JavaTimeModule());
         om.findAndRegisterModules();
