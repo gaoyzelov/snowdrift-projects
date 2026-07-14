@@ -87,15 +87,12 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      */
     @Override
     public OssResult upload(@NonNull OssUploadRequest request) {
-        String bucket = null;
-        String objectKey = null;
+        // 校验请求参数
+        request.validate();
+        // 构建对象键
+        String objectKey = buildObjectKey(request.getObjectKey());
+        String bucket = super.getBucket();
         try (InputStream inputStream = request.getInputStream()) {
-            // 校验请求参数
-            request.validate();
-            // 构建对象键
-            objectKey = buildObjectKey(request.getObjectKey());
-            bucket = super.getBucket();
-
             ObjectMetadata metadata = new ObjectMetadata();
             if (request.getSize() != null) {
                 metadata.setContentLength(request.getSize());

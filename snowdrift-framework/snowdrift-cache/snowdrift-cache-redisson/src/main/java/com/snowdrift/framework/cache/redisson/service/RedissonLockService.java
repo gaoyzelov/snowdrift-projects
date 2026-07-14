@@ -61,7 +61,7 @@ public class RedissonLockService implements DistributedLockService {
                                   TimeUnit unit, Supplier<T> supplier) {
         boolean locked = tryLock(key, waitTime, leaseTime, unit);
         if (!locked) {
-            throw new BizException(ResultCode.ERR.code(), "cache.lock.failed");
+            throw new BizException(ResultCode.LOCK_FAILED);
         }
         try {
             return supplier.get();

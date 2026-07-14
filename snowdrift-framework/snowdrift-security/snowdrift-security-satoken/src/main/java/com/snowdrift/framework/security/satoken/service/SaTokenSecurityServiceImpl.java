@@ -1,5 +1,6 @@
 package com.snowdrift.framework.security.satoken.service;
 
+import cn.dev33.satoken.exception.SaTokenException;
 import cn.dev33.satoken.stp.StpUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.security.exception.SecurityException;
@@ -68,7 +69,7 @@ public class SaTokenSecurityServiceImpl implements ISecurityService {
     public SecurityContext getContext() {
         try {
             return StpUtil.getTokenSession().getModel(CONTEXT_KEY, SecurityContext.class, null);
-        } catch (RuntimeException e) {
+        } catch (SaTokenException e) {
             log.warn("获取安全上下文失败: {}", e.getMessage(), e);
             return null;
         }

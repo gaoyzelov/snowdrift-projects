@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 public class InMemoryTokenStore extends AbstractTokenStore {
 
     private final ConcurrentHashMap<String, TokenEntry> map = new ConcurrentHashMap<>();
-    private final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
+    private static final ScheduledExecutorService cleaner = Executors.newSingleThreadScheduledExecutor(r -> {
         Thread t = new Thread(r, "token-store-cleaner");
         t.setDaemon(true);
         return t;

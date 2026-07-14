@@ -29,6 +29,8 @@ public record ResultCode(int code, String msg) {
     public static final ResultCode METHOD_NOT_ALLOWED = new ResultCode(405, "common.method.not.allowed");
     /** 资源冲突 */
     public static final ResultCode CONFLICT = new ResultCode(409, "common.conflict");
+    /** 分布式锁获取失败（锁被占用） */
+    public static final ResultCode LOCK_FAILED = new ResultCode(423, "cache.lock.failed");
     /** 请求体过大 */
     public static final ResultCode PAYLOAD_TOO_LARGE = new ResultCode(413, "common.payload.too.large");
     /** 不支持的媒体类型 */
