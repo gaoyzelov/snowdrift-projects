@@ -87,12 +87,13 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public OssResult upload(@NonNull OssUploadRequest request) {
-        String objectKey = buildObjectKey(request.getObjectKey());
-        Path targetPath = storageRoot.resolve(objectKey).normalize();
-
+        String objectKey = null;
         try (InputStream inputStream = request.getInputStream()) {
             // 校验请求参数
             request.validate();
+            // 构建对象键
+            objectKey = buildObjectKey(request.getObjectKey());
+            Path targetPath = storageRoot.resolve(objectKey).normalize();
 
             // 确保父目录存在
             Path parentDir = targetPath.getParent();

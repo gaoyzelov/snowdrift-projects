@@ -109,6 +109,7 @@ public class MqContextPropagator {
         if (Boolean.TRUE.equals(properties.getSign())) {
             if (!verifySignature(message)) {
                 log.warn("MQ 消息签名校验不通过，上下文已丢弃");
+                clear();
                 return;
             }
         }

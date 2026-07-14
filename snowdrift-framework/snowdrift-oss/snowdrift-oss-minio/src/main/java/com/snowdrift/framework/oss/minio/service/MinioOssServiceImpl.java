@@ -111,13 +111,16 @@ public class MinioOssServiceImpl extends AbstractOssService {
      */
     @Override
     public OssResult upload(@NonNull OssUploadRequest request) {
-
-        String objectKey = buildObjectKey(request.getObjectKey());
-        String bucket = super.getBucket();
+        String objectKey = null;
+        String bucket = null;
 
         try (InputStream inputStream = request.getInputStream()) {
             // 校验请求参数
             request.validate();
+
+            // 构建对象键
+            objectKey = buildObjectKey(request.getObjectKey());
+            bucket = super.getBucket();
 
             // 上传文件到 MinIO
             minioClient.putObject(
