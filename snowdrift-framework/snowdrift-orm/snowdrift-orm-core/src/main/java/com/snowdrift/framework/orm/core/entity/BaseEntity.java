@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 /**
  * BaseEntity
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/7/1-16:00
  * @description 实体基类（通用字段）
  * @since 1.0.0

@@ -8,7 +8,7 @@ import lombok.Setter;
 /**
  * TenantBaseEntity
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/7/1-16:02
  * @description 多租户实体基类
  * @since 1.0.0

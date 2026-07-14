@@ -8,7 +8,7 @@ import java.util.function.Supplier;
 /**
  * TenantUtil
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/7/1-17:21
  * @description 租户工具类
  * @since 1.0.0

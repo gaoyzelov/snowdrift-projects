@@ -4,17 +4,19 @@ import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.*;
 import com.snowdrift.framework.orm.core.scope.IDataScopeProvider;
+import com.snowdrift.framework.orm.mp.handler.CryptoKeyHolder;
 import com.snowdrift.framework.orm.mp.handler.DataScopeHandler;
 import com.snowdrift.framework.orm.mp.handler.FieldAutoFillHandler;
 import com.snowdrift.framework.orm.mp.handler.MultiTenantLineHandler;
-import com.snowdrift.framework.orm.mp.plugins.DataCryptoInterceptor;
 import com.snowdrift.framework.orm.mp.properties.OrmMpBaseProperties;
 import com.snowdrift.framework.orm.mp.properties.OrmMpPaginationProperties;
 import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
+import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
@@ -26,9 +28,32 @@ import org.springframework.context.annotation.Bean;
  * @description MyBatis Plus 配置类
  * @since 1.0.0
  */
+@Slf4j
 @AutoConfiguration
 @EnableConfigurationProperties({OrmMpBaseProperties.class, OrmMpTenantProperties.class, OrmMpPaginationProperties.class})
 public class SnowdriftOrmMpConfiguration {
+
+    /**
+     * AES 加密密钥初始化
+     *
+     * @param properties ORM 基础配置属性
+     */
+    @PostConstruct
+    public void cryptoKeyInitializer(OrmMpBaseProperties properties) {
+        if (Boolean.FALSE.equals(properties.getCrypto())){
+            return;
+        }
+        String key = properties.getCryptoKey();
+        if (StringUtils.isBlank(key)) {
+            throw new IllegalStateException("snowdrift.orm.mp.crypto=true 但 cryptoKey 未配置!");
+        }
+        int keyBytes = key.length() / 2;
+        if (keyBytes != 16 && keyBytes != 24 && keyBytes != 32) {
+            throw new IllegalStateException("snowdrift.orm.mp.cryptoKey 长度无效，请使用 16/24/32 位十六进制字符!");
+        }
+        CryptoKeyHolder.setKey(key);
+        log.info("AES 加密密钥已初始化，密钥长度: {} 位", keyBytes * 8);
+    }
 
     /**
      * MyBatis-Plus 核心拦截器
@@ -108,17 +133,5 @@ public class SnowdriftOrmMpConfiguration {
     @ConditionalOnMissingBean
     public MetaObjectHandler fieldAutoFillHandler(OrmMpTenantProperties properties) {
         return new FieldAutoFillHandler(properties);
-    }
-
-    /**
-     * 数据加解密拦截器（仅在配置启用时注册）
-     *
-     * @param properties 加密配置属性（含 AES 密钥）
-     * @return DataCryptoInterceptor 实例
-     */
-    @Bean
-    @ConditionalOnProperty(prefix = "snowdrift.orm.mp", name = "crypto", havingValue = "true")
-    public DataCryptoInterceptor dataCryptoInterceptor(OrmMpBaseProperties properties) {
-        return new DataCryptoInterceptor(properties);
     }
 }
