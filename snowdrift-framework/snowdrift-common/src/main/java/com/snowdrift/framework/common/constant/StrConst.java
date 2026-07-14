@@ -9,6 +9,7 @@ package com.snowdrift.framework.common.constant;
  * @since 1.0.0
  */
 public final class StrConst {
+
     private StrConst() {
     }
     /**
@@ -70,4 +71,13 @@ public final class StrConst {
      * 未知
      */
     public static final String UNKNOWN = "unknown";
+
+    /**
+     * 是
+     */
+    public static final String TRUE = "true";
+    /**
+     * 否
+     */
+    public static final String FALSE = "false";
 }

@@ -1,5 +1,6 @@
 package com.snowdrift.framework.rpc.dubbo.filter;
 
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.rpc.dubbo.constant.RpcContextConstants;
@@ -33,7 +34,7 @@ public class DubboConsumerContextFilter implements Filter {
         } catch (Exception e) {
             log.error("RPC 消费者上下文注入失败: interface={}, method={}",
                     invoker.getInterface().getName(), invocation.getMethodName(), e);
-            RpcContext.getServiceContext().setAttachment(RpcContextConstants.CONTEXT_ERROR, "true");
+            RpcContext.getServiceContext().setAttachment(RpcContextConstants.CONTEXT_ERROR, StrConst.TRUE);
         }
         return invoker.invoke(invocation);
     }

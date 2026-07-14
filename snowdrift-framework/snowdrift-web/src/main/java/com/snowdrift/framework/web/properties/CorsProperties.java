@@ -42,9 +42,9 @@ public class CorsProperties {
     private List<String> allowedHeaders = List.of("*");
 
     /**
-     * 是否允许携带凭证（Cookie），默认 true
+     * 是否允许携带凭证（Cookie），默认 false
      */
-    private boolean allowCredentials = true;
+    private boolean allowCredentials = false;
 
     /**
      * 预检请求缓存时间（秒），默认 3600

@@ -79,10 +79,18 @@ public class MqListenerBeanDefinitionRegistrar implements BeanDefinitionRegistry
             dynamicProperties.put("spring.cloud.function.definition", definition);
         }
 
-        // 一次性注入所有动态 binding 配置
+        // 一次性注入所有动态 binding 配置（仅写入用户未显式配置的属性，优先用户配置）
         if (!dynamicProperties.isEmpty()) {
-            environment.getPropertySources()
-                    .addFirst(new MapPropertySource("snowdrift-mq-dynamic-bindings", dynamicProperties));
+            Map<String, Object> filtered = new HashMap<>();
+            dynamicProperties.forEach((key, value) -> {
+                if (!environment.containsProperty(key)) {
+                    filtered.put(key, value);
+                }
+            });
+            if (!filtered.isEmpty()) {
+                environment.getPropertySources()
+                        .addLast(new MapPropertySource("snowdrift-mq-dynamic-bindings", filtered));
+            }
             log.info("已注册 {} 个 @MqListener Consumer: {}",
                     functionNames.size(), functionNames);
         }

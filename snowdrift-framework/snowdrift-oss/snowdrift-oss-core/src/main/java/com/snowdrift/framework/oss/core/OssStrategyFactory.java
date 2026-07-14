@@ -64,7 +64,7 @@ public class OssStrategyFactory {
      * @param service   OSS Service 实例，不能为空
      * @throws OssException 当 configKey 为空或 service 为空时抛出
      */
-    public void register(String configKey, IOssService service) {
+    public synchronized void register(String configKey, IOssService service) {
         if (!StringUtils.hasText(configKey)) {
             throw new OssException("oss.config.key.empty");
         }
@@ -86,7 +86,7 @@ public class OssStrategyFactory {
      * @return OSS Service 实例
      * @throws OssException 当 configKey 不存在时抛出
      */
-    public IOssService getService(String configKey) {
+    public synchronized IOssService getService(String configKey) {
         IOssService service = serviceMap.get(configKey);
         if (service == null) {
             throw new OssException("oss.config.not.found", new Object[]{configKey});
@@ -116,7 +116,7 @@ public class OssStrategyFactory {
      *
      * @param configKey 配置标识
      */
-    public void remove(String configKey) {
+    public synchronized void remove(String configKey) {
         IOssService service = serviceMap.remove(configKey);
         if (service != null) {
             try {
@@ -138,7 +138,7 @@ public class OssStrategyFactory {
      * @param configKey 配置标识
      * @return true 如果配置存在，false 如果不存在
      */
-    public boolean contains(String configKey) {
+    public synchronized boolean contains(String configKey) {
         return serviceMap.containsKey(configKey);
     }
     
@@ -150,7 +150,7 @@ public class OssStrategyFactory {
      *
      * @return 配置标识到 OSS Service 实例的映射
      */
-    public Map<String, IOssService> getAllServices() {
+    public synchronized Map<String, IOssService> getAllServices() {
         return new ConcurrentHashMap<>(serviceMap);
     }
 
@@ -198,7 +198,7 @@ public class OssStrategyFactory {
      * @param targetType      目标存储类型
      * @param serviceCreator  Service 创建器
      */
-    public void registerFromProperties(OssProperties ossProperties, OssTypeEnum targetType,
+    public synchronized void registerFromProperties(OssProperties ossProperties, OssTypeEnum targetType,
                                         ServiceCreator serviceCreator) {
         if (MapUtils.isEmpty(ossProperties.getConfigs())) {
             log.debug("未配置 OSS 实例，跳过 {} 存储注册", targetType.getNote());
@@ -294,7 +294,7 @@ public class OssStrategyFactory {
      * 单个实例关闭失败不会影响其他实例的关闭
      */
     @PreDestroy
-    public void destroy() {
+    public synchronized void destroy() {
         if (serviceMap.isEmpty()) {
             log.debug("无 OSS 实例需要关闭");
             return;

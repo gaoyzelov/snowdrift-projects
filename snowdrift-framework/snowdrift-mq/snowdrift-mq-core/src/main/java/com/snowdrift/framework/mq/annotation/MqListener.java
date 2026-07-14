@@ -57,10 +57,4 @@ public @interface MqListener {
      * 消费线程并发数，默认 1
      */
     int concurrency() default 1;
-
-    /**
-     * 是否自动提交偏移量，默认 false
-     * — Kafka: enable.auto.commit
-     */
-    boolean autoCommit() default false;
 }

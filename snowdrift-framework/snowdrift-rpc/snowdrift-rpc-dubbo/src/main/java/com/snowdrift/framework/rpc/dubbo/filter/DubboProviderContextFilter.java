@@ -1,5 +1,6 @@
 package com.snowdrift.framework.rpc.dubbo.filter;
 
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.rpc.dubbo.constant.RpcContextConstants;
@@ -41,6 +42,13 @@ public class DubboProviderContextFilter implements Filter {
      */
     private void restoreContext() {
         RpcContext rpcContext = RpcContext.getServiceContext();
+
+        // 检查 Consumer 端上下文注入失败标记
+        String contextError = rpcContext.getAttachment(RpcContextConstants.CONTEXT_ERROR);
+        if (StrConst.TRUE.equals(contextError)) {
+            log.warn("Consumer 端上下文注入失败，跳过上下文恢复");
+            return;
+        }
 
         // 恢复 TraceId
         String traceId = (String) rpcContext.getObjectAttachment(RpcContextConstants.TRACE_ID);
