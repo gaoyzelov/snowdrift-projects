@@ -102,7 +102,7 @@ public class DubboExceptionFilter implements Filter, Filter.Listener {
                     invoker.getInterface().getName(),
                     invocation.getMethodName(),
                     e.getLocalizedMessage(), e);
-            appResponse.setException(new BizException(e.getLocalizedMessage()));
+            appResponse.setException(new BizException(e.getLocalizedMessage(),e));
         }
     }
 
