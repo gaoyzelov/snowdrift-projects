@@ -159,7 +159,6 @@ public abstract class AbstractOssService implements IOssService {
         if (key.contains("..")) {
             throw new OssException("oss.object.key.invalid");
         }
-
         return key;
     }
 }

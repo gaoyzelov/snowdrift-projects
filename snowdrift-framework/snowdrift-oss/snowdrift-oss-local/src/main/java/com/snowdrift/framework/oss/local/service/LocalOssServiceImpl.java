@@ -88,7 +88,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
     @Override
     public OssResult upload(@NonNull OssUploadRequest request) {
         String objectKey = buildObjectKey(request.getObjectKey());
-        Path targetPath = storageRoot.resolve(objectKey);
+        Path targetPath = storageRoot.resolve(objectKey).normalize();
 
         try (InputStream inputStream = request.getInputStream()) {
             // 校验请求参数
@@ -128,14 +128,17 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public InputStream download(@NonNull String objectKey) {
-        Path filePath = storageRoot.resolve(objectKey);
-
-        if (!Files.exists(filePath)) {
+        String normalized = normalizeObjectKey(objectKey);
+        Path resolved = storageRoot.resolve(normalized).normalize();
+        if (!resolved.startsWith(storageRoot.normalize())) {
+            throw new OssException("oss.object.key.invalid");
+        }
+        if (!Files.exists(resolved)) {
             throw new OssException("oss.local.file.not.found", new Object[]{objectKey});
         }
 
         try {
-            return Files.newInputStream(filePath);
+            return Files.newInputStream(resolved);
         } catch (IOException e) {
             log.error("文件下载失败: objectKey={}", objectKey, e);
             throw new OssException("oss.download.failed", new Object[]{e.getMessage()});
@@ -153,11 +156,15 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public void delete(@NonNull String objectKey) {
-        Path filePath = storageRoot.resolve(objectKey);
+        String normalized = normalizeObjectKey(objectKey);
+        Path resolved = storageRoot.resolve(normalized).normalize();
+        if (!resolved.startsWith(storageRoot.normalize())) {
+            throw new OssException("oss.object.key.invalid");
+        }
 
         try {
-            if (Files.exists(filePath)) {
-                Files.delete(filePath);
+            if (Files.exists(resolved)) {
+                Files.delete(resolved);
                 log.debug("文件删除成功: objectKey={}", objectKey);
             }
         } catch (IOException e) {
@@ -176,9 +183,13 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public boolean exists(@NonNull String objectKey) {
+        String normalized = normalizeObjectKey(objectKey);
+        Path resolved = storageRoot.resolve(normalized).normalize();
+        if (!resolved.startsWith(storageRoot.normalize())) {
+            throw new OssException("oss.object.key.invalid");
+        }
         try {
-            Path filePath = storageRoot.resolve(objectKey);
-            return Files.exists(filePath);
+            return Files.exists(resolved);
         }catch (Exception e){
             log.error("检查文件存在性失败: objectKey={}", objectKey, e);
             throw new OssException("oss.exists.check.failed", new Object[]{e.getMessage()});
@@ -198,13 +209,18 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public String getUrl(String objectKey, Duration expiry) {
+        String normalized = normalizeObjectKey(objectKey);
+        Path resolved = storageRoot.resolve(normalized).normalize();
+        if (!resolved.startsWith(storageRoot.normalize())) {
+            throw new OssException("oss.object.key.invalid");
+        }
         // 如果配置了域名，使用域名
         if (StringUtils.isNotBlank(config.getDomain())) {
-            return OssUrlBuilder.buildUrl(config.getDomain(), objectKey);
+            return OssUrlBuilder.buildUrl(config.getDomain(), resolved.toUri().toString());
         }
 
         // 否则返回本地文件路径
-        return storageRoot.resolve(objectKey).toUri().toString();
+        return resolved.toUri().toString();
     }
 
     /**

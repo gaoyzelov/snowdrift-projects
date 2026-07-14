@@ -125,6 +125,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>flatten-maven-plugin</artifactId>
+                    <version>${flatten-maven-plugin.version}</version>
                     <configuration>
                         <flattenMode>resolveCiFriendliesOnly</flattenMode>
                         <updatePomFile>true</updatePomFile>
