@@ -1,12 +1,12 @@
 package com.snowdrift.framework.orm.mp.handler;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
 import org.apache.ibatis.reflection.MetaObject;
 
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 /**
  * FieldAutoFillHandler
@@ -37,7 +37,10 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
         this.strictInsertFill(metaObject, "updateBy", String.class, operatorName);
         this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
         if (Boolean.TRUE.equals(tenantProperties.getEnabled())){
-            Long tenantId = Optional.ofNullable(SecurityContextHolder.getContext().getTenantId()).orElse(MultiTenantLineHandler.DEFAULT_TENANT_ID);
+            Long tenantId = SecurityContextHolder.getContext().getTenantId();
+            if (tenantId == null) {
+                throw new BizException("orm.tenant.context.missing");
+            }
             this.strictInsertFill(metaObject, "tenantId", Long.class, tenantId);
         }
     }

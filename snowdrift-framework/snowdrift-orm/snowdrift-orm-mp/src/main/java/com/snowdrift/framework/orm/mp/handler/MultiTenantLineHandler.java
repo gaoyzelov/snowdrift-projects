@@ -1,6 +1,7 @@
 package com.snowdrift.framework.orm.mp.handler;
 
 import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
+import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -34,7 +35,8 @@ public class MultiTenantLineHandler implements TenantLineHandler {
     /**
      * 获取当前请求上下文的租户ID，转换为 SQL 表达式
      *
-     * @return 租户ID 的 {@link LongValue} 表达式；无租户上下文时返回默认值 {@link #DEFAULT_TENANT_ID} (0L)
+     * @return 租户ID 的 {@link LongValue} 表达式
+     * @throws BizException 无租户上下文时抛出
      */
     @Override
     public Expression getTenantId() {
@@ -42,7 +44,7 @@ public class MultiTenantLineHandler implements TenantLineHandler {
         if (Objects.nonNull(tenantId)) {
             return new LongValue(tenantId);
         }
-        return new LongValue(DEFAULT_TENANT_ID);
+        throw new BizException("orm.tenant.context.missing");
     }
 
     /**

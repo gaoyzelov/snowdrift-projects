@@ -33,8 +33,8 @@ public class RedisTokenStore extends AbstractTokenStore {
 
     @Override
     protected void doPut(String token, TokenEntry entry, long ttl) {
-        // Redis TTL 设为 min(ttl, idleTimeout)，保证闲置时 key 能被 Redis 自动清除
-        long effectiveTtl = Math.min(ttl, idleTimeoutSeconds);
+        // Redis TTL 取闲置超时与绝对超时的较小值；闲置超时为 0 时不限制
+        long effectiveTtl = idleTimeoutSeconds > 0 ? Math.min(ttl, idleTimeoutSeconds) : ttl;
         redisTemplate.opsForValue().set(tokenKey(token), entry, effectiveTtl, TimeUnit.SECONDS);
     }
 
@@ -49,10 +49,11 @@ public class RedisTokenStore extends AbstractTokenStore {
 
     @Override
     protected void touch(String token, TokenEntry entry) {
-        // 刷新 Redis TTL = 刷新闲置窗口
-        long effectiveTtl = Math.min(
-                (entry.getExpireAt() - System.currentTimeMillis()) / 1000,
-                idleTimeoutSeconds);
+        // 刷新 Redis TTL；闲置超时为 0 时使用绝对剩余时间
+        long absoluteRemain = (entry.getExpireAt() - System.currentTimeMillis()) / 1000;
+        long effectiveTtl = idleTimeoutSeconds > 0
+            ? Math.min(absoluteRemain, idleTimeoutSeconds)
+            : absoluteRemain;
         if (effectiveTtl > 0) {
             redisTemplate.expire(tokenKey(token), effectiveTtl, TimeUnit.SECONDS);
         }

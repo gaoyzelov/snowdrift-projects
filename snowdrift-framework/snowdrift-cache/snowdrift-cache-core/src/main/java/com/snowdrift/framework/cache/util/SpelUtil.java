@@ -1,5 +1,7 @@
 package com.snowdrift.framework.cache.util;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.snowdrift.framework.common.constant.StrConst;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -7,11 +9,13 @@ import org.aspectj.lang.reflect.MethodSignature;
 import org.springframework.core.DefaultParameterNameDiscoverer;
 import org.springframework.core.ParameterNameDiscoverer;
 import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.Expression;
 import org.springframework.expression.ExpressionParser;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.ExecutionException;
 
 /**
  * SpEL 表达式解析工具类
@@ -31,6 +35,10 @@ public final class SpelUtil {
     private static final ExpressionParser PARSER = new SpelExpressionParser();
 
     private static final ParameterNameDiscoverer PARAMETER_NAME_DISCOVERER = new DefaultParameterNameDiscoverer();
+
+    private static final Cache<String, Expression> EXPRESSION_CACHE = CacheBuilder.newBuilder()
+            .maximumSize(1000)
+            .build();
 
     private SpelUtil() {
     }
@@ -63,7 +71,14 @@ public final class SpelUtil {
                 }
             }
 
-            Object value = PARSER.parseExpression(expression).getValue(context);
+            Expression expr;
+            try {
+                expr = EXPRESSION_CACHE.get(expression, () -> PARSER.parseExpression(expression));
+            } catch (ExecutionException e) {
+                log.warn("从缓存获取 SpEL 表达式失败，降级直接解析: {}", expression, e);
+                expr = PARSER.parseExpression(expression);
+            }
+            Object value = expr.getValue(context);
             return value != null ? value.toString() : expression;
         } catch (Exception e) {
             log.warn("解析 SpEL 表达式失败，使用原始值: {}", expression, e);
