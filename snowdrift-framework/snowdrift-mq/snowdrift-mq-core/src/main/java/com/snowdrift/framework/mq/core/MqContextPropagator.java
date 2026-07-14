@@ -27,7 +27,7 @@ import java.security.MessageDigest;
 @Slf4j
 public class MqContextPropagator {
 
-    private static final String TRACE_ID_KEY = "traceId";
+    public static final String TRACE_ID_KEY = "traceId";
 
     /** 发送端：消息 Key */
     public static final String HEADER_MESSAGE_KEY = "x-snowdrift-message-key";

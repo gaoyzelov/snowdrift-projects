@@ -1,6 +1,8 @@
 package com.snowdrift.framework.mq.core;
 
 import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.context.security.SecurityContext;
+import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.mq.dto.MqMessage;
 import com.snowdrift.framework.mq.dto.MqSendResult;
 import com.snowdrift.framework.mq.exception.MqException;
@@ -8,6 +10,7 @@ import com.snowdrift.framework.mq.properties.MqProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.slf4j.MDC;
 import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
@@ -77,7 +80,6 @@ public class DefaultMqServiceImpl implements IMqService {
 
             if (!success) {
                 MqException ex = new MqException("mq.send.failed", new Object[]{topic});
-                fireOnSendError(topic, ex);
                 log.warn("消息发送失败: topic={}, key={}, type={}", topic, key, originalType);
                 throw ex;
             }
@@ -92,9 +94,6 @@ public class DefaultMqServiceImpl implements IMqService {
             log.debug("消息发送成功: topic={}, key={}, type={}, elapsed={}ms", topic, key, originalType, elapsed);
             return result;
 
-        } catch (MqException e) {
-            fireOnSendError(topic, e);
-            throw e;
         } catch (Exception e) {
             fireOnSendError(topic, e);
             throw e;
@@ -156,7 +155,11 @@ public class DefaultMqServiceImpl implements IMqService {
 
     @Override
     public <T> CompletableFuture<MqSendResult> sendAsync(String topic, String key, T payload, Map<String, String> headers) {
+        final String traceId = MDC.get(MqContextPropagator.TRACE_ID_KEY);
+        final SecurityContext context = SecurityContextHolder.getContext();
         return CompletableFuture.supplyAsync(() -> {
+            MDC.put(MqContextPropagator.TRACE_ID_KEY, traceId);
+            SecurityContextHolder.setContext(context);
             try {
                 return send(topic, key, payload, headers);
             } catch (BizException e) {
@@ -164,6 +167,9 @@ public class DefaultMqServiceImpl implements IMqService {
             } catch (Exception e) {
                 log.warn("异步发送异常: topic={}, key={}", topic, key, e);
                 throw ExceptionUtils.<RuntimeException>rethrow(e);
+            }finally {
+                MDC.clear();
+                SecurityContextHolder.clear();
             }
         }, mqAsyncExecutor);
     }
@@ -224,7 +230,6 @@ public class DefaultMqServiceImpl implements IMqService {
             boolean success = streamBridge.send(topic, message);
             if (!success) {
                 MqException ex = new MqException("mq.send.failed", new Object[]{topic});
-                fireOnSendError(topic, ex);
                 log.warn("延迟消息发送失败: topic={}, delay={}", topic, delay);
                 throw ex;
             }
@@ -235,9 +240,7 @@ public class DefaultMqServiceImpl implements IMqService {
             log.debug("延迟消息发送成功: topic={}, delay={}", topic, delay);
             return result;
         } catch (Exception e) {
-            if (!(e instanceof MqException)) {
-                fireOnSendError(topic, e);
-            }
+            fireOnSendError(topic, e);
             throw e;
         }
     }

@@ -14,6 +14,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.regex.Pattern;
 
 /**
  * IpUtil
@@ -24,6 +25,8 @@ import java.util.List;
  */
 @Slf4j
 public final class IpUtil {
+
+    private static final Pattern IP_PATTERN = Pattern.compile("^(\\d{1,3}\\.){3}\\d{1,3}$|^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$");
 
     private IpUtil() {}
 
@@ -131,10 +134,8 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isValidIp(String ip) {
-        if (StringUtils.isBlank(ip)) {
-            return false;
-        }
         try {
+            basicCheck(ip);
             InetAddress ignored = InetAddress.getByName(ip);
         } catch (UnknownHostException e) {
             log.error("IP地址有误：{}",ip, e);
@@ -150,7 +151,7 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isIpv4(String ip) {
-        AssertUtil.notBlank(ip, "IP地址不能为空");
+        basicCheck(ip);
         try {
             InetAddress address = InetAddress.getByName(ip);
             return address instanceof Inet4Address;
@@ -167,7 +168,7 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isIpv6(String ip) {
-        AssertUtil.notBlank(ip, "IP地址不能为空");
+        basicCheck(ip);
         try {
             InetAddress address = InetAddress.getByName(ip);
             return address instanceof Inet6Address;
@@ -184,7 +185,7 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isInternalIp(String ip) {
-        AssertUtil.notBlank(ip, "IP地址不能为空");
+        basicCheck(ip);
         try {
             InetAddress address = InetAddress.getByName(ip);
             return address.isLoopbackAddress() || address.isSiteLocalAddress() || address.isLinkLocalAddress();
@@ -194,4 +195,13 @@ public final class IpUtil {
         }
     }
 
+    /**
+     * 基本校验
+     *
+     * @param ip ip地址
+     */
+    private static void basicCheck(String ip) {
+        AssertUtil.notBlank(ip, "IP地址不能为空");
+        AssertUtil.isTrue(IP_PATTERN.matcher(ip).matches(), "IP地址格式有误");
+    }
 }

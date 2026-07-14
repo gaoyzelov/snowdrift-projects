@@ -16,6 +16,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Snowdrift MQ 通用自动配置
@@ -42,7 +43,7 @@ public class SnowdriftMqConfiguration {
         executor.setQueueCapacity(exec.getQueueCapacity());
         executor.setKeepAliveSeconds(exec.getKeepAliveSeconds());
         executor.setThreadNamePrefix(exec.getThreadNamePrefix());
-        executor.setRejectedExecutionHandler(new java.util.concurrent.ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
         executor.initialize();
         log.info("MQ 异步发送线程池已初始化: core={}, max={}, queue={}",
                 exec.getCoreSize(), exec.getMaxSize(), exec.getQueueCapacity());
