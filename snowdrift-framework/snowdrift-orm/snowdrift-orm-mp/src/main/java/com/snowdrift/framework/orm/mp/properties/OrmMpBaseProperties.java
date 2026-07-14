@@ -31,9 +31,4 @@ public class OrmMpBaseProperties implements Serializable {
      * AES 加密密钥（十六进制字符串，16/24/32 字节对应 AES-128/192/256）
      */
     private String cryptoKey;
-
-    /**
-     * AES 加密初始化向量（十六进制字符串，GCM 模式需要 12 字节即 24 个十六进制字符）
-     */
-    private String cryptoIv;
 }

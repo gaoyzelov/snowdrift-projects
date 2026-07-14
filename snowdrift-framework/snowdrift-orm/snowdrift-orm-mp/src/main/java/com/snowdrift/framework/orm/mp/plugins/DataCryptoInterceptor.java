@@ -145,10 +145,10 @@ public class DataCryptoInterceptor implements Interceptor {
      */
     private String encryptValue(String text) {
         if (StringUtils.isBlank(text) || StringUtils.isBlank(cryptoProperties.getCryptoKey())
-                || StringUtils.isBlank(cryptoProperties.getCryptoIv()) || text.startsWith(ENCRYPT_FLAG)) {
+               || text.startsWith(ENCRYPT_FLAG)) {
             return text;
         }
-        return ENCRYPT_FLAG + EncryptUtil.aesEncrypt(text, cryptoProperties.getCryptoKey(), cryptoProperties.getCryptoIv());
+        return ENCRYPT_FLAG + EncryptUtil.aesEncrypt(text, cryptoProperties.getCryptoKey());
     }
 
     /**
@@ -159,10 +159,10 @@ public class DataCryptoInterceptor implements Interceptor {
      */
     private String decryptValue(String text) {
         if (StringUtils.isBlank(text) || StringUtils.isBlank(cryptoProperties.getCryptoKey())
-                || StringUtils.isBlank(cryptoProperties.getCryptoIv()) || !text.startsWith(ENCRYPT_FLAG)) {
+                || !text.startsWith(ENCRYPT_FLAG)) {
             return text;
         }
-        return EncryptUtil.aesDecrypt(text.substring(ENCRYPT_FLAG.length()), cryptoProperties.getCryptoKey(), cryptoProperties.getCryptoIv());
+        return EncryptUtil.aesDecrypt(text.substring(ENCRYPT_FLAG.length()), cryptoProperties.getCryptoKey());
     }
 
     /**

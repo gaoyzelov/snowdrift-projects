@@ -10,7 +10,6 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -164,14 +163,12 @@ public final class EncryptUtil {
      *
      * @param text   待加密文本
      * @param aesKey aes密钥（十六进制字符串）
-     * @param iv     初始化向量（十六进制字符串，GCM 模式需要 12 字节即 24 个十六进制字符）
      * @return 加密后的文本  (Base64格式符串)
      */
-    public static String aesEncrypt(String text, String aesKey, String iv) {
+    public static String aesEncrypt(String text, String aesKey) {
         AssertUtil.notBlank(text, "待加密文本不能为空");
         AssertUtil.notBlank(aesKey, "秘钥不能为空");
-        AssertUtil.notBlank(iv, "初始化向量不能为空");
-        return aesEncrypt(text, HexFormat.of().parseHex(aesKey), HexFormat.of().parseHex(iv));
+        return aesEncrypt(text, HexFormat.of().parseHex(aesKey));
     }
 
     /**
@@ -179,18 +176,15 @@ public final class EncryptUtil {
      *
      * @param text 待加密文本
      * @param key  密钥（16/24/32 字节对应 AES-128/192/256）
-     * @param iv   初始化向量（GCM 模式推荐 12 字节）
      * @return 加密后的文本  (Base64格式符串)
      */
-    public static String aesEncrypt(String text, byte[] key, byte[] iv) {
+    public static String aesEncrypt(String text, byte[] key) {
         AssertUtil.notBlank(text, "待加密文本不能为空");
         AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
-        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(iv), "初始化向量不能为空");
         try {
             SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
-            GCMParameterSpec gcmSpec = new GCMParameterSpec(128, iv);
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmSpec);
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec);
             byte[] encrypted = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(encrypted);
         } catch (Exception e) {
@@ -203,14 +197,12 @@ public final class EncryptUtil {
      *
      * @param text   待解密文本 (Base64格式符串)
      * @param aesKey aes密钥（十六进制字符串）
-     * @param iv     初始化向量（十六进制字符串，需与加密时使用的 IV 一致）
      * @return 解密后的文本
      */
-    public static String aesDecrypt(String text, String aesKey, String iv) {
+    public static String aesDecrypt(String text, String aesKey) {
         AssertUtil.notBlank(text, "待解密文本不能为空");
         AssertUtil.notBlank(aesKey, "秘钥不能为空");
-        AssertUtil.notBlank(iv, "初始化向量不能为空");
-        return aesDecrypt(text, HexFormat.of().parseHex(aesKey), HexFormat.of().parseHex(iv));
+        return aesDecrypt(text, HexFormat.of().parseHex(aesKey));
     }
 
     /**
@@ -218,18 +210,15 @@ public final class EncryptUtil {
      *
      * @param text 待解密文本 (Base64格式符串)
      * @param key  密钥（需与加密时使用的密钥一致）
-     * @param iv   初始化向量（需与加密时使用的 IV 一致）
      * @return 解密后的文本
      */
-    public static String aesDecrypt(String text, byte[] key, byte[] iv) {
+    public static String aesDecrypt(String text, byte[] key) {
         AssertUtil.notBlank(text, "待解密文本不能为空");
         AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
-        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(iv), "初始化向量不能为空");
         try {
             SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
-            GCMParameterSpec gcmSpec = new GCMParameterSpec(128, iv);
-            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
-            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
+            cipher.init(Cipher.DECRYPT_MODE, keySpec);
             byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(text));
             return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
