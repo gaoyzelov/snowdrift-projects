@@ -120,7 +120,7 @@ public class SpringSecurityServiceImpl implements ISecurityService {
     public boolean hasRole(String role) {
         String roleAuthority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             return false;
         }
         return authentication.getAuthorities().stream()
@@ -130,7 +130,7 @@ public class SpringSecurityServiceImpl implements ISecurityService {
     @Override
     public boolean hasPermission(String permission) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
+        if (authentication == null || !authentication.isAuthenticated()) {
             return false;
         }
         return authentication.getAuthorities().stream()

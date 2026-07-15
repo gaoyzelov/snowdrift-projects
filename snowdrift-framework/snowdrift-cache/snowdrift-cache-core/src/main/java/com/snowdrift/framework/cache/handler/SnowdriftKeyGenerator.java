@@ -59,7 +59,7 @@ public class SnowdriftKeyGenerator implements KeyGenerator {
         }
 
         // 2. 类名#方法名
-        sb.append(target.getClass().getSimpleName())
+        sb.append(method.getDeclaringClass().getSimpleName())
           .append(StrConst.HASH)
           .append(method.getName());
 

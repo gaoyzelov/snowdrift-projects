@@ -58,7 +58,11 @@ public class DistributedLockAspect {
             log.debug("获取分布式锁成功，执行业务: key={}", key);
             return joinPoint.proceed();
         } finally {
-            lockService.unlock(key);
+            try {
+                lockService.unlock(key);
+            } catch (Exception e) {
+                log.error("释放分布式锁异常: key={}", key, e);
+            }
             log.debug("释放分布式锁: key={}", key);
         }
     }

@@ -230,8 +230,13 @@ public class AliyunOssServiceImpl extends AbstractOssService {
             GeneratePresignedUrlRequest request = new GeneratePresignedUrlRequest(bucket, objectKey);
             request.setExpiration(expiration);
 
-            URL url = ossClient.generatePresignedUrl(request);
-            return url.toString();
+            try {
+                URL url = ossClient.generatePresignedUrl(request);
+                return url.toString();
+            } catch (Exception e) {
+                log.error("生成文件访问 URL 失败: bucket={}, objectKey={}", bucket, objectKey, e);
+                throw new OssException("oss.url.generate.failed", new Object[]{e.getMessage()});
+            }
         }
 
         // 如果配置了域名，使用域名访问

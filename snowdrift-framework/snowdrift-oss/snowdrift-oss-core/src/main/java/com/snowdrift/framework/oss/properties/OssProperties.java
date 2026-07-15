@@ -1,6 +1,6 @@
 package com.snowdrift.framework.oss.properties;
 
-import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -20,7 +20,7 @@ import java.util.Map;
  * @since 1.0.0
  */
 @Data
-@Valid
+@Validated
 @ConfigurationProperties(prefix = "snowdrift.oss")
 public class OssProperties {
     
@@ -37,7 +37,7 @@ public class OssProperties {
      * <p>
      * 使用 @Valid 启用嵌套校验，确保每个 OssInstanceProperties 都被验证
      */
-    @Valid
+    @Validated
     private Map<String, OssInstanceProperties> configs = new HashMap<>();
 
 }

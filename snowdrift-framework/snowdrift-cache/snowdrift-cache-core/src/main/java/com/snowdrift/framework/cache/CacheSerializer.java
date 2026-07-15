@@ -81,7 +81,6 @@ public final class CacheSerializer {
         om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         // 支持 Java 8 日期时间类型
         om.registerModule(new JavaTimeModule());
-        om.findAndRegisterModules();
         return om;
     }
 }

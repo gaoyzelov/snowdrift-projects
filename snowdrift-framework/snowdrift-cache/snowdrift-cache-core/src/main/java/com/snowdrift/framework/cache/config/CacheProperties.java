@@ -1,6 +1,6 @@
 package com.snowdrift.framework.cache.config;
 
-import jakarta.validation.Valid;
+import org.springframework.validation.annotation.Validated;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -16,7 +16,7 @@ import java.time.Duration;
  * @since 1.0.0
  */
 @Data
-@Valid
+@Validated
 @ConfigurationProperties(prefix = "snowdrift.cache")
 public class CacheProperties {
 
