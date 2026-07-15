@@ -1,5 +1,6 @@
 package com.snowdrift.framework.web.properties;
 
+import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -32,7 +33,7 @@ public class ResourceProperties {
      * 静态资源映射列表
      */
     @NotNull
-    @Validated
+    @Valid
     private List<ResourceMapping> mappings = new ArrayList<>();
 
     /**

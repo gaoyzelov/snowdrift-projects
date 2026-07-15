@@ -1,5 +1,6 @@
 package com.snowdrift.framework.oss.properties;
 
+import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
@@ -37,7 +38,7 @@ public class OssProperties {
      * <p>
      * 使用 @Valid 启用嵌套校验，确保每个 OssInstanceProperties 都被验证
      */
-    @Validated
+    @Valid
     private Map<String, OssInstanceProperties> configs = new HashMap<>();
 
 }

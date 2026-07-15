@@ -1,5 +1,6 @@
 package com.snowdrift.framework.mq.properties;
 
+import jakarta.validation.Valid;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -44,7 +45,7 @@ public class MqProperties {
     /**
      * 异步发送线程池配置
      */
-    @Validated
+    @Valid
     private ExecutorProperties executor = new ExecutorProperties();
 
     /**
