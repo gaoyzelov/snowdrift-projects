@@ -11,7 +11,6 @@ import org.apache.dubbo.common.extension.Activate;
 import org.apache.dubbo.rpc.*;
 import org.slf4j.MDC;
 
-import java.util.UUID;
 
 /**
  * DubboConsumerContextFilter
@@ -45,13 +44,9 @@ public class DubboConsumerContextFilter implements Filter {
     private void injectContext() {
         RpcContext rpcContext = RpcContext.getServiceContext();
 
-        // 注入 TraceId
+        // 注入 TraceId（有则传，无则由 Provider 端自行生成）
         String traceId = MDC.get(TRACE_ID_KEY);
         if (StringUtils.isNotBlank(traceId)) {
-            rpcContext.setObjectAttachment(RpcContextConstants.TRACE_ID, traceId);
-        } else {
-            traceId = UUID.randomUUID().toString();
-            MDC.put(TRACE_ID_KEY, traceId);
             rpcContext.setObjectAttachment(RpcContextConstants.TRACE_ID, traceId);
         }
 

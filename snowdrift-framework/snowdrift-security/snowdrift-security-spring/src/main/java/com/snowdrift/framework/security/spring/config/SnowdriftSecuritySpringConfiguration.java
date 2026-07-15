@@ -15,7 +15,7 @@ import com.snowdrift.framework.security.spring.store.TokenStore;
 import com.snowdrift.framework.web.i18n.I18nUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -72,9 +72,8 @@ public class SnowdriftSecuritySpringConfiguration {
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextFilter securityContextFilter,
-                                                   ObjectProvider<RequestMappingHandlerMapping> handlerMappingProvider) throws Exception {
-        RequestMappingHandlerMapping hm = handlerMappingProvider.getIfAvailable();
-        List<String> anonymousPaths = hm != null ? AnonymousAccessScanner.scan(hm) : List.of();
+                                                   RequestMappingHandlerMapping handlerMapping) throws Exception {
+        List<String> anonymousPaths = AnonymousAccessScanner.scan(handlerMapping);
         http
                 .csrf(csrf -> {
                     if (!securityProperties.isCsrfEnabled()) {

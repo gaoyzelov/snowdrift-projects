@@ -217,7 +217,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
         if (StringUtils.isBlank(config.getDomain())) {
             throw new OssException("oss.local.url.no.domain", new Object[]{objectKey});
         }
-        return OssUrlBuilder.buildUrl(config.getDomain(), resolved.toUri().toString());
+        return OssUrlBuilder.buildUrl(config.getDomain(), objectKey);
     }
 
     /**

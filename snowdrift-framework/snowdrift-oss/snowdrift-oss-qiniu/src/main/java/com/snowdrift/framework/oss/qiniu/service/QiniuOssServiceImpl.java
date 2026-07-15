@@ -183,6 +183,10 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             if (response.statusCode() == 200) {
                 return response.body();
             } else {
+                try {
+                    response.body().close();
+                } catch (Exception ignored) {
+                }
                 throw new OssException("oss.download.failed", new Object[]{response.statusCode()});
             }
         } catch (Exception e) {

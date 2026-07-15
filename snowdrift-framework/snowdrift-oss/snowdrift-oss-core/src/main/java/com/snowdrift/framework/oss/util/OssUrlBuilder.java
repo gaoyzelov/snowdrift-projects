@@ -72,7 +72,7 @@ public final class OssUrlBuilder {
      * @param bucket    Bucket 名称，不能为空
      * @param endpoint  端点（可包含或不包含协议），不能为空
      * @param objectKey 对象键，不能为空
-     * @return 完整的访问 URL（始终使用 https）
+     * @return 完整的访问 URL（若 endpoint 以 http:// 开头则使用 http，否则使用 https）
      * @throws OssException 当参数为空时抛出
      */
     public static String buildVirtualHostUrl(String bucket, String endpoint, String objectKey) {

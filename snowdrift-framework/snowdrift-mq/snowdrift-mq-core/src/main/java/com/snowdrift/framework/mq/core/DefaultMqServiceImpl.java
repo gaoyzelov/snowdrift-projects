@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
@@ -253,8 +254,20 @@ public class DefaultMqServiceImpl implements IMqService {
             return List.of();
         }
         List<MqSendResult> results = new ArrayList<>(messages.size());
-        for (MqMessage<T> msg : messages) {
-            results.add(send(topic, msg.getKey(), msg.getPayload(), msg.getHeaders()));
+        List<Exception> errors = new ArrayList<>();
+        for (int i = 0; i < messages.size(); i++) {
+            MqMessage<T> msg = messages.get(i);
+            try {
+                results.add(send(topic, msg.getKey(), msg.getPayload(), msg.getHeaders()));
+            } catch (Exception e) {
+                log.error("批量发送第 {} 条失败: topic={}", i, topic, e);
+                errors.add(e);
+                results.add(null);
+            }
+        }
+        if (!errors.isEmpty()) {
+            throw new MqException("mq.send.batch.partial-failed",
+                    new Object[]{topic, results.stream().filter(Objects::nonNull).count(), messages.size()});
         }
         return results;
     }
