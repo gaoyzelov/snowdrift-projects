@@ -16,7 +16,7 @@ import java.io.Serializable;
  */
 @Getter
 @Builder
-public class Result<T> implements Serializable {
+public final class Result<T> implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

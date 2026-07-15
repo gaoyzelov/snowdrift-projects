@@ -121,7 +121,8 @@ public class ApiLogAspect {
                 .duration(stopWatch.getDuration().toMillis())
                 .userId(securityContext.getUserId())
                 .tenantId(securityContext.getTenantId())
-                .operator(SecurityContextHolder.getOperatorName())
+                .operator(StringUtils.isNotBlank(securityContext.getNickname())
+                        ? securityContext.getNickname() : securityContext.getUsername())
                 .operateTime(DateTimeUtil.timestampToLocalDateTime(stopWatch.getStartInstant().toEpochMilli()))
                 .build();
 

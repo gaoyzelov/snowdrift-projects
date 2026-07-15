@@ -96,10 +96,7 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
     @Override
     public boolean delete(String key) {
         AssertUtil.notBlank(key, "cache.key.required");
-        String realKey = buildKey(key);
-        boolean existed = cache.getIfPresent(realKey) != null;
-        cache.invalidate(realKey);
-        return existed;
+        return cache.asMap().remove(buildKey(key)) != null;
     }
 
     @Override

@@ -80,4 +80,7 @@ public final class StrConst {
      * 否
      */
     public static final String FALSE = "false";
+
+    /** 链路追踪 ID */
+    public static final String TRACE_ID = "traceId";
 }

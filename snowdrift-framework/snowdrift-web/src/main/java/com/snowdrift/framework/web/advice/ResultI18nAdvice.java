@@ -4,6 +4,8 @@ import com.snowdrift.framework.common.result.Result;
 import com.snowdrift.framework.web.i18n.I18nUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.regex.Pattern;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -34,6 +36,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 @Slf4j
 @RestControllerAdvice
 public class ResultI18nAdvice implements ResponseBodyAdvice<Result<?>> {
+
+    private static final Pattern I18N_KEY_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]+$");
 
     @Override
     public boolean supports(MethodParameter returnType,
@@ -85,17 +89,6 @@ public class ResultI18nAdvice implements ResponseBodyAdvice<Result<?>> {
         if (StringUtils.isBlank(msg) || !msg.contains(".")) {
             return false;
         }
-        for (int i = 0; i < msg.length(); i++) {
-            char c = msg.charAt(i);
-            if (c == '.' || c == '_' || c == '-'
-                    || (c >= 'a' && c <= 'z')
-                    || (c >= 'A' && c <= 'Z')
-                    || (c >= '0' && c <= '9')) {
-                continue;
-            }
-            // 含非 ASCII 字符或空格等 → 不是 i18n key
-            return false;
-        }
-        return true;
+        return I18N_KEY_PATTERN.matcher(msg).matches();
     }
 }

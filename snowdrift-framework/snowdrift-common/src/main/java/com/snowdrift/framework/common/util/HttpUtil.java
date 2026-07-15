@@ -45,6 +45,7 @@ public final class HttpUtil {
     private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
             .version(HttpClient.Version.HTTP_2)
             .connectTimeout(DEFAULT_CONNECT_TIMEOUT)
+            .followRedirects(HttpClient.Redirect.NORMAL)
             .build();
 
     private HttpUtil() {

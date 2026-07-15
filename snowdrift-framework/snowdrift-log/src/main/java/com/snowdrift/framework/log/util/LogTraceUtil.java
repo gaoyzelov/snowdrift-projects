@@ -1,5 +1,6 @@
 package com.snowdrift.framework.log.util;
 
+import com.snowdrift.framework.common.constant.StrConst;
 import org.slf4j.MDC;
 
 import java.util.UUID;
@@ -13,7 +14,7 @@ import java.util.UUID;
  */
 public final class LogTraceUtil {
 
-    private static final String TRACE_ID_KEY = "traceId";
+    private static final String TRACE_ID_KEY = StrConst.TRACE_ID;
 
     private LogTraceUtil(){}
 

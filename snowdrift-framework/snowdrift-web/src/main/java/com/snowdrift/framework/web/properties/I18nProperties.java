@@ -48,7 +48,7 @@ public class I18nProperties implements Serializable {
      * 正数表示缓存指定秒数（生产环境推荐，如：3600）
      */
     @NotNull
-    private Integer cacheSeconds = -1;
+    private Integer cacheSeconds = 3600;
 
     /**
      * 支持的语言列表

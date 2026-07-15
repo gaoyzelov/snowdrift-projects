@@ -1,5 +1,6 @@
 package com.snowdrift.framework.mq.core;
 
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.util.EncryptUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;

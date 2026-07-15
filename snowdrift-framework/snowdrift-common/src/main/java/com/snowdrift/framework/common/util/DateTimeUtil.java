@@ -8,6 +8,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -273,7 +274,7 @@ public final class DateTimeUtil {
      * @param date 日期
      */
     public static LocalDateTime getStartOfDay(LocalDate date) {
-        if (null == date) {
+        if (Objects.isNull(date)) {
             date = LocalDate.now();
         }
         return date.atStartOfDay();
@@ -285,7 +286,7 @@ public final class DateTimeUtil {
      * @param date 日期
      */
     public static LocalDateTime getEndOfDay(LocalDate date) {
-        if (null == date) {
+        if (Objects.isNull(date)) {
             date = LocalDate.now();
         }
         return date.atTime(LocalTime.MAX);
@@ -470,7 +471,7 @@ public final class DateTimeUtil {
      * @return DayOfWeek 枚举值（MONDAY-SUNDAY）
      */
     public static DayOfWeek getDayOfWeek(LocalDateTime dateTime) {
-        if (null == dateTime) {
+        if (Objects.isNull(dateTime)) {
             dateTime = LocalDateTime.now();
         }
         return dateTime.getDayOfWeek();

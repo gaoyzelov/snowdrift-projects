@@ -25,7 +25,7 @@ import java.util.UUID;
 @Activate(group = CommonConstants.PROVIDER, order = -200)
 public class DubboProviderContextFilter implements Filter, Filter.Listener {
 
-    private static final String TRACE_ID_KEY = "traceId";
+    private static final String TRACE_ID_KEY = StrConst.TRACE_ID;
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
