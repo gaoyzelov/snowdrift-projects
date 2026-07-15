@@ -4,17 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.snowdrift.framework.cache.CacheSerializer;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
-import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
-import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
 import com.snowdrift.framework.cache.redis.service.RedisCacheServiceImpl;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CachingConfigurer;
-import org.springframework.cache.interceptor.CacheErrorHandler;
-import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
@@ -28,7 +23,6 @@ import org.springframework.data.redis.serializer.RedisSerializer;
  * Redis 缓存自动配置
  * <p>
  * 当 Spring Data Redis 可用且 {@link RedisConnectionFactory} 存在时激活。
- * 实现 {@link CachingConfigurer} 提供自定义 {@link CacheManager}，
  * 与 ICacheService 共享同一套 Jackson 序列化机制。
  * </p>
  *
@@ -38,7 +32,7 @@ import org.springframework.data.redis.serializer.RedisSerializer;
  */
 @AutoConfiguration(after = RedisAutoConfiguration.class)
 @ConditionalOnBean(RedisConnectionFactory.class)
-public class SnowdriftRedisConfiguration implements CachingConfigurer {
+public class SnowdriftRedisConfiguration {
 
     private final CacheProperties cacheProperties;
 
@@ -62,7 +56,6 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
         return template;
     }
 
-    @Override
     @Bean
     @ConditionalOnMissingBean(CacheManager.class)
     public CacheManager cacheManager() {
@@ -74,26 +67,6 @@ public class SnowdriftRedisConfiguration implements CachingConfigurer {
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(config)
                 .build();
-    }
-
-    /**
-     * 缓存异常降级处理器，缓存故障时不阻断主流程
-     */
-    @Override
-    @Bean
-    @ConditionalOnMissingBean(CacheErrorHandler.class)
-    public CacheErrorHandler errorHandler() {
-        return new SnowdriftCachingErrorHandler();
-    }
-
-    /**
-     * 统一缓存 Key 生成器，格式：[prefix:]ClassName#methodName[:params...]
-     */
-    @Override
-    @Bean
-    @ConditionalOnMissingBean(KeyGenerator.class)
-    public KeyGenerator keyGenerator() {
-        return new SnowdriftKeyGenerator(cacheProperties.getKeyPrefix());
     }
 
     @Bean

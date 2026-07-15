@@ -4,15 +4,10 @@ import com.github.benmanes.caffeine.cache.Caffeine;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.caffeine.service.CaffeineCacheServiceImpl;
 import com.snowdrift.framework.cache.config.CacheProperties;
-import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
-import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
-import org.springframework.cache.interceptor.CacheErrorHandler;
-import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 
 import java.util.concurrent.TimeUnit;
@@ -32,7 +27,8 @@ import java.util.concurrent.TimeUnit;
         "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration",
         "com.snowdrift.framework.cache.redisson.config.SnowdriftRedissonConfiguration"
 })
-public class SnowdriftCaffeineConfiguration implements CachingConfigurer {
+@ConditionalOnMissingBean(ICacheService.class)
+public class SnowdriftCaffeineConfiguration {
 
     private final CacheProperties cacheProperties;
 
@@ -43,8 +39,8 @@ public class SnowdriftCaffeineConfiguration implements CachingConfigurer {
     /**
      * 自定义 CacheManager，使用 CacheProperties 中的 TTL 配置
      */
-    @Override
     @Bean
+    @ConditionalOnMissingBean
     public CacheManager cacheManager() {
         Caffeine<Object, Object> caffeine = Caffeine.newBuilder()
                 .maximumSize(cacheProperties.getMaxSize())
@@ -52,24 +48,6 @@ public class SnowdriftCaffeineConfiguration implements CachingConfigurer {
         CaffeineCacheManager manager = new CaffeineCacheManager();
         manager.setCaffeine(caffeine);
         return manager;
-    }
-
-    /**
-     * 缓存异常降级处理器，缓存故障时不阻断主流程
-     */
-    @Override
-    @Bean
-    public CacheErrorHandler errorHandler() {
-        return new SnowdriftCachingErrorHandler();
-    }
-
-    /**
-     * 统一缓存 Key 生成器，格式：[prefix:]ClassName#methodName[:params...]
-     */
-    @Override
-    @Bean
-    public KeyGenerator keyGenerator() {
-        return new SnowdriftKeyGenerator(cacheProperties.getKeyPrefix());
     }
 
     @Bean

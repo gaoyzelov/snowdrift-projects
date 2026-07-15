@@ -52,10 +52,13 @@ public class AesEncryptTypeHandler implements TypeHandler<String> {
      * @return 密文
      */
     private String doEncrypt(String text) {
-        if (StringUtils.isBlank(text) || text.startsWith(ENCRYPT_FLAG)) {
+        if (StringUtils.isBlank(text)) {
             return text;
         }
-        if (!CryptoKeyHolder.isKeyAvailable()){
+        if (text.startsWith(ENCRYPT_FLAG)) {
+            throw new BizException("orm.crypto.reject.enc.prefix");
+        }
+        if (!CryptoKeyHolder.isKeyAvailable()) {
             throw new BizException("orm.crypto.key.unavailable");
         }
         return ENCRYPT_FLAG + EncryptUtil.aesEncrypt(text, CryptoKeyHolder.getKey());

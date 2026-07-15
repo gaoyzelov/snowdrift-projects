@@ -4,8 +4,6 @@ import com.snowdrift.framework.cache.CacheSerializer;
 import com.snowdrift.framework.cache.DistributedLockService;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
-import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
-import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
 import com.snowdrift.framework.cache.redisson.service.RedissonCacheServiceImpl;
 import com.snowdrift.framework.cache.redisson.service.RedissonLockService;
 import jakarta.annotation.PreDestroy;
@@ -18,9 +16,6 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
-import org.springframework.cache.annotation.CachingConfigurer;
-import org.springframework.cache.interceptor.CacheErrorHandler;
-import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 
 import java.util.List;
@@ -38,7 +33,7 @@ import java.util.List;
  */
 @AutoConfiguration(beforeName = "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration")
 @ConditionalOnClass(RedissonClient.class)
-public class SnowdriftRedissonConfiguration implements CachingConfigurer {
+public class SnowdriftRedissonConfiguration {
 
     /**
      * 看门狗锁续期时间（毫秒）。
@@ -79,7 +74,7 @@ public class SnowdriftRedissonConfiguration implements CachingConfigurer {
         config.setCodec(new JsonJacksonCodec(CacheSerializer.getObjectMapper()));
         String password = redisProperties.getPassword();
 
-        String uriPrefix = Boolean.TRUE.equals(redisProperties.getSsl()) ? "rediss://" : "redis://";
+        String uriPrefix = redisProperties.getSsl() != null && redisProperties.getSsl().isEnabled() ? "rediss://" : "redis://";
 
         if (redisProperties.getCluster() != null) {
             configureCluster(config, redisProperties.getCluster().getNodes(), uriPrefix);
@@ -142,26 +137,6 @@ public class SnowdriftRedissonConfiguration implements CachingConfigurer {
     @ConditionalOnMissingBean(DistributedLockService.class)
     public DistributedLockService distributedLockService(RedissonClient redissonClient) {
         return new RedissonLockService(redissonClient);
-    }
-
-    /**
-     * 缓存异常降级处理器，缓存故障时不阻断主流程
-     */
-    @Override
-    @Bean
-    @ConditionalOnMissingBean(CacheErrorHandler.class)
-    public CacheErrorHandler errorHandler() {
-        return new SnowdriftCachingErrorHandler();
-    }
-
-    /**
-     * 统一缓存 Key 生成器，格式：[prefix:]ClassName#methodName[:params...]
-     */
-    @Override
-    @Bean
-    @ConditionalOnMissingBean(KeyGenerator.class)
-    public KeyGenerator keyGenerator() {
-        return new SnowdriftKeyGenerator(cacheProperties.getKeyPrefix());
     }
 
 }

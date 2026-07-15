@@ -44,6 +44,12 @@ public class MqContextPropagator {
     /** 租户 ID */
     public static final String HEADER_TENANT_ID = "x-snowdrift-tenant-id";
 
+    /** 部门 ID */
+    public static final String HEADER_DEPT_ID = "x-snowdrift-dept-id";
+
+    /** 数据权限 */
+    public static final String HEADER_DATA_SCOPE = "x-snowdrift-data-scope";
+
     /** 签名 */
     private static final String SIGNATURE_HEADER = "x-snowdrift-signature";
 
@@ -84,10 +90,20 @@ public class MqContextPropagator {
             tenantIdStr = ctx.getTenantId().toString();
             builder.setHeader(HEADER_TENANT_ID, tenantIdStr);
         }
+        String deptIdStr = null;
+        String dataScopeStr = null;
+        if (ctx.getDeptId() != null) {
+            deptIdStr = ctx.getDeptId().toString();
+            builder.setHeader(HEADER_DEPT_ID, deptIdStr);
+        }
+        if (ctx.getDataScope() != null) {
+            dataScopeStr = ctx.getDataScope().toString();
+            builder.setHeader(HEADER_DATA_SCOPE, dataScopeStr);
+        }
 
         // 计算签名
         if (Boolean.TRUE.equals(properties.getSign()) && StringUtils.isNotBlank(properties.getSignKey())) {
-            String payload = buildSignPayload(traceId, userIdStr, username, tenantIdStr);
+            String payload = buildSignPayload(traceId, userIdStr, username, tenantIdStr, deptIdStr, dataScopeStr);
             String signature = EncryptUtil.hmacSha256(payload, properties.getSignKey());
             builder.setHeader(SIGNATURE_HEADER, signature);
         }
@@ -126,8 +142,11 @@ public class MqContextPropagator {
         String userIdStr = message.getHeaders().get(HEADER_USER_ID, String.class);
         String username = message.getHeaders().get(HEADER_USERNAME, String.class);
         String tenantIdStr = message.getHeaders().get(HEADER_TENANT_ID, String.class);
+        String deptIdStr = message.getHeaders().get(HEADER_DEPT_ID, String.class);
+        String dataScopeStr = message.getHeaders().get(HEADER_DATA_SCOPE, String.class);
 
-        if (userIdStr != null || StringUtils.isNotBlank(username) || tenantIdStr != null) {
+        if (userIdStr != null || StringUtils.isNotBlank(username) || tenantIdStr != null
+                || deptIdStr != null || dataScopeStr != null) {
             SecurityContext.SecurityContextBuilder builder = SecurityContext.builder();
             if (userIdStr != null) {
                 try {
@@ -144,6 +163,20 @@ public class MqContextPropagator {
                     builder.tenantId(Long.parseLong(tenantIdStr));
                 } catch (NumberFormatException e) {
                     log.debug("解析 tenantId 失败: {}", tenantIdStr);
+                }
+            }
+            if (deptIdStr != null) {
+                try {
+                    builder.deptId(Long.parseLong(deptIdStr));
+                } catch (NumberFormatException e) {
+                    log.debug("解析 deptId 失败: {}", deptIdStr);
+                }
+            }
+            if (dataScopeStr != null) {
+                try {
+                    builder.dataScope(Integer.parseInt(dataScopeStr));
+                } catch (NumberFormatException e) {
+                    log.debug("解析 dataScope 失败: {}", dataScopeStr);
                 }
             }
             SecurityContextHolder.setContext(builder.build());
@@ -189,11 +222,14 @@ public class MqContextPropagator {
      * 构建签名规范字符串（inject 端，从原始值构建）
      * <p>所有上下文字段按固定顺序拼接，空值保留 key 占位，防止通过"省略 header"绕过签名</p>
      */
-    private String buildSignPayload(String traceId, String userId, String username, String tenantId) {
+    private String buildSignPayload(String traceId, String userId, String username, String tenantId,
+                                     String deptId, String dataScope) {
         return "traceId=" + (traceId != null ? traceId : "")
                 + "&userId=" + (userId != null ? userId : "")
                 + "&username=" + (username != null ? username : "")
-                + "&tenantId=" + (tenantId != null ? tenantId : "");
+                + "&tenantId=" + (tenantId != null ? tenantId : "")
+                + "&deptId=" + (deptId != null ? deptId : "")
+                + "&dataScope=" + (dataScope != null ? dataScope : "");
     }
 
     /**
@@ -204,7 +240,9 @@ public class MqContextPropagator {
                 message.getHeaders().get(HEADER_TRACE_ID, String.class),
                 message.getHeaders().get(HEADER_USER_ID, String.class),
                 message.getHeaders().get(HEADER_USERNAME, String.class),
-                message.getHeaders().get(HEADER_TENANT_ID, String.class));
+                message.getHeaders().get(HEADER_TENANT_ID, String.class),
+                message.getHeaders().get(HEADER_DEPT_ID, String.class),
+                message.getHeaders().get(HEADER_DATA_SCOPE, String.class));
     }
 
 }

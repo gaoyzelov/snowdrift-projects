@@ -23,18 +23,24 @@ import java.util.UUID;
  */
 @Slf4j
 @Activate(group = CommonConstants.PROVIDER, order = -200)
-public class DubboProviderContextFilter implements Filter {
+public class DubboProviderContextFilter implements Filter, Filter.Listener {
 
     private static final String TRACE_ID_KEY = "traceId";
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        try {
-            restoreContext();
-            return invoker.invoke(invocation);
-        } finally {
-            clearContext();
-        }
+        restoreContext();
+        return invoker.invoke(invocation);
+    }
+
+    @Override
+    public void onResponse(Result appResponse, Invoker<?> invoker, Invocation invocation) {
+        clearContext();
+    }
+
+    @Override
+    public void onError(Throwable t, Invoker<?> invoker, Invocation invocation) {
+        clearContext();
     }
 
     /**
