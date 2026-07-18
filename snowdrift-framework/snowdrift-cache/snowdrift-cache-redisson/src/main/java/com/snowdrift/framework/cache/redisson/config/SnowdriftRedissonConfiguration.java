@@ -128,8 +128,7 @@ public class SnowdriftRedissonConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ICacheService.class)
-    public ICacheService redissonCacheService(CacheProperties cacheProperties,
-                                               RedissonClient redissonClient) {
+    public ICacheService redissonCacheService(RedissonClient redissonClient) {
         return new RedissonCacheServiceImpl(cacheProperties, redissonClient);
     }
 

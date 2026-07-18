@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Objects;
 import java.util.StringJoiner;
 
 /**
@@ -83,7 +84,7 @@ public class SnowdriftKeyGenerator implements KeyGenerator {
      * </p>
      */
     private String toParamString(Object param) {
-        if (param == null) {
+        if (Objects.isNull(param)) {
             return StrConst.EMPTY;
         }
         if (isSimpleType(param)) {

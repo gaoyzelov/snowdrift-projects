@@ -2,7 +2,7 @@ package com.snowdrift.framework.cache.aspect;
 
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.annotation.RepeatSubmit;
-import com.snowdrift.framework.cache.util.SpelUtil;
+import com.snowdrift.framework.cache.util.SpELUtil;
 import com.snowdrift.framework.common.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -36,7 +36,7 @@ public class RepeatSubmitAspect {
 
     @Around("@annotation(repeatSubmit)")
     public Object around(ProceedingJoinPoint joinPoint, RepeatSubmit repeatSubmit) throws Throwable {
-        String key = SpelUtil.parseExpression(repeatSubmit.key(), joinPoint);
+        String key = SpELUtil.parseExpression(repeatSubmit.key(), joinPoint);
         Duration ttl = Duration.of(repeatSubmit.interval(), repeatSubmit.timeUnit().toChronoUnit());
 
         log.debug("重复提交检查: key={}, interval={}", key, ttl);

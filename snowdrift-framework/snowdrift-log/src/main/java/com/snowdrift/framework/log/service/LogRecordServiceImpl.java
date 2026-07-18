@@ -9,6 +9,7 @@ import com.snowdrift.framework.log.dto.OperateLogCreateDTO;
 import com.snowdrift.framework.log.util.LogTraceUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.List;
 
@@ -38,7 +39,7 @@ public class LogRecordServiceImpl implements ILogRecordService {
                     .content(logRecord.getAction())
                     .userId(context.getUserId())
                     .tenantId(context.getTenantId())
-                    .operator(SecurityContextHolder.getOperatorName())
+                    .operator(StringUtils.isNotBlank(context.getNickname()) ? context.getNickname() : context.getUsername())
                     .operateTime(DateTimeUtil.dateToLocalDateTime(logRecord.getCreateTime()))
                     .build();
             //记录日志

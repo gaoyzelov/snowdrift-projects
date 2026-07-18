@@ -30,7 +30,7 @@ import java.util.concurrent.ExecutionException;
  * @since 1.0.0
  */
 @Slf4j
-public final class SpelUtil {
+public final class SpELUtil {
 
     private static final ExpressionParser PARSER = new SpelExpressionParser();
 
@@ -40,7 +40,7 @@ public final class SpelUtil {
             .maximumSize(1000)
             .build();
 
-    private SpelUtil() {
+    private SpELUtil() {
     }
 
     /**

@@ -6,7 +6,7 @@ import java.util.List;
  *
  * @author gaoyzelov
  * @date 2026/7/2-16:50
- * @description
+ * @description 数据范围提供者
  * @since 1.0.0
  */
 public interface IDataScopeProvider {

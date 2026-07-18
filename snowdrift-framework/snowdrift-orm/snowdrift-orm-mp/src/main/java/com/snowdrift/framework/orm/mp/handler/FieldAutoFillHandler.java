@@ -41,7 +41,7 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
             if (tenantId == null) {
                 throw new BizException("orm.tenant.context.missing");
             }
-            this.strictInsertFill(metaObject, "tenantId", Long.class, tenantId);
+            this.strictInsertFill(metaObject, tenantProperties.getTenantIdColumn(), Long.class, tenantId);
         }
     }
 

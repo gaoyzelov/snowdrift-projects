@@ -24,6 +24,11 @@ public class OrmMpTenantProperties implements Serializable {
     private Boolean enabled;
 
     /**
+     * 租户字段
+     */
+    private String tenantIdColumn = "tenant_id";
+
+    /**
      * 不需要租户过滤的表名集合<br>
      * 例如系统配置表、字典表等全局共享表
      */

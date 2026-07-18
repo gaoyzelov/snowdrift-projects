@@ -2,7 +2,7 @@ package com.snowdrift.framework.cache.aspect;
 
 import com.snowdrift.framework.cache.DistributedLockService;
 import com.snowdrift.framework.cache.annotation.DistributedLock;
-import com.snowdrift.framework.cache.util.SpelUtil;
+import com.snowdrift.framework.cache.util.SpELUtil;
 import com.snowdrift.framework.common.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -40,7 +40,7 @@ public class DistributedLockAspect {
      */
     @Around("@annotation(lockAnno)")
     public Object around(ProceedingJoinPoint joinPoint, DistributedLock lockAnno) throws Throwable {
-        String key = SpelUtil.parseExpression(lockAnno.key(), joinPoint);
+        String key = SpELUtil.parseExpression(lockAnno.key(), joinPoint);
         long waitTime = lockAnno.waitTime();
         long leaseTime = lockAnno.leaseTime();
         TimeUnit timeUnit = lockAnno.timeUnit();

@@ -88,8 +88,7 @@ public class SecurityContextHolder {
      * @return 登录账号，未登录时抛出 BizException
      */
     public static String getUsername() {
-        SecurityContext ctx = getRequiredContext();
-        return ctx.getUsername();
+        return getRequiredContext().getUsername();
     }
 
     /**
@@ -98,8 +97,7 @@ public class SecurityContextHolder {
      * @return 显示名称，未登录时抛出 BizException
      */
     public static String getNickname() {
-        SecurityContext ctx = getRequiredContext();
-        return ctx.getNickname();
+        return getRequiredContext().getNickname();
     }
 
     /**

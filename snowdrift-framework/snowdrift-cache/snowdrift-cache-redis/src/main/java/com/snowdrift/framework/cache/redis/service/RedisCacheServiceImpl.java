@@ -104,7 +104,7 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
     @Override
     public boolean delete(String key) {
         AssertUtil.notBlank(key, "cache.key.required");
-        return Boolean.TRUE.equals(redisTemplate.delete(buildKey(key)));
+        return redisTemplate.delete(buildKey(key));
     }
 
     @Override
@@ -116,14 +116,13 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
         Set<String> realKeys = keys.stream()
                 .map(this::buildKey)
                 .collect(Collectors.toSet());
-        Long count = redisTemplate.delete(realKeys);
-        return count != null ? count : 0;
+        return redisTemplate.delete(realKeys);
     }
 
     @Override
     public boolean exists(String key) {
         AssertUtil.notBlank(key, "cache.key.required");
-        return Boolean.TRUE.equals(redisTemplate.hasKey(buildKey(key)));
+        return redisTemplate.hasKey(buildKey(key));
     }
 
     @Override
@@ -136,8 +135,7 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
     @Override
     public long getExpire(String key) {
         AssertUtil.notBlank(key, "cache.key.required");
-        Long expire = redisTemplate.getExpire(buildKey(key), TimeUnit.SECONDS);
-        return expire != null ? expire : -2;
+        return redisTemplate.getExpire(buildKey(key), TimeUnit.SECONDS);
     }
 
     @Override

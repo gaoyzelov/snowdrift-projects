@@ -23,8 +23,6 @@ import java.util.Set;
 @Slf4j
 public class MultiTenantLineHandler implements TenantLineHandler {
 
-    /** 租户字段名 */
-    private static final String TENANT_ID = "tenant_id";
     private final OrmMpTenantProperties tenantProperties;
 
     public MultiTenantLineHandler(OrmMpTenantProperties properties) {
@@ -53,7 +51,7 @@ public class MultiTenantLineHandler implements TenantLineHandler {
      */
     @Override
     public String getTenantIdColumn() {
-        return TENANT_ID;
+        return tenantProperties.getTenantIdColumn();
     }
 
     /**

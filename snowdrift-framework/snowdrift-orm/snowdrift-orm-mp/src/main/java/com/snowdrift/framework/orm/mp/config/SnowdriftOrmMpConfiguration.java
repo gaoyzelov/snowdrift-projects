@@ -3,6 +3,7 @@ package com.snowdrift.framework.orm.mp.config;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.*;
+import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.orm.core.scope.IDataScopeProvider;
 import com.snowdrift.framework.orm.mp.handler.CryptoKeyHolder;
 import com.snowdrift.framework.orm.mp.handler.DataScopeHandler;
@@ -45,11 +46,11 @@ public class SnowdriftOrmMpConfiguration {
         }
         String key = properties.getCryptoKey();
         if (StringUtils.isBlank(key)) {
-            throw new IllegalStateException("snowdrift.orm.mp.crypto=true 但 cryptoKey 未配置!");
+            throw new BizException("snowdrift.orm.mp.crypto=true 但 cryptoKey 未配置!");
         }
         int keyBytes = key.length() / 2;
         if (keyBytes != 16 && keyBytes != 24 && keyBytes != 32) {
-            throw new IllegalStateException("snowdrift.orm.mp.cryptoKey 长度无效，请使用 16/24/32 位十六进制字符!");
+            throw new BizException("snowdrift.orm.mp.cryptoKey 长度无效，请使用 16/24/32 位十六进制字符!");
         }
         CryptoKeyHolder.setKey(key);
         log.info("AES 加密密钥已初始化，密钥长度: {} 位", keyBytes * 8);
@@ -114,6 +115,10 @@ public class SnowdriftOrmMpConfiguration {
      */
     private TenantLineInnerInterceptor getTenantLineInnerInterceptor(OrmMpTenantProperties properties) {
         if (Boolean.TRUE.equals(properties.getEnabled())) {
+            // 不指定，给定默认租户ID字段值
+            if (StringUtils.isBlank(properties.getTenantIdColumn())) {
+                throw new BizException("snowdrift.orm.mp.tenant.enabled=true, 但未配置租户ID字段");
+            }
             TenantLineInnerInterceptor tenantInterceptor = new TenantLineInnerInterceptor();
             MultiTenantLineHandler tenantHandler = new MultiTenantLineHandler(properties);
             tenantInterceptor.setTenantLineHandler(tenantHandler);
