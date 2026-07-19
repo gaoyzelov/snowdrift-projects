@@ -599,6 +599,7 @@
         .reveal-delay-2 { transition-delay: 0.2s; }
         .reveal-delay-3 { transition-delay: 0.3s; }
         .reveal-delay-4 { transition-delay: 0.4s; }
+        .reveal-delay-4 { transition-delay: 0.4s; }
 
         @media (max-width: 768px) {
             .nav-links { display: none; }
@@ -636,7 +637,7 @@
             <div class="hero-icon">❄️</div>
             <h1>Snow<em>drift</em></h1>
             <p class="hero-subtitle">
-                开箱即用的 Spring Cloud 微服务开发脚手架，集成对象存储、国际化、缓存、安全认证、分布式调度等企业级基础设施。
+                12 个功能模块 · 34 个 Maven 子模块<br>涵盖 ORM 增强、消息队列、XSS 防护、对象存储、安全认证、分布式调度等企业级基础设施。
             </p>
             <div class="hero-actions">
                 <a href="https://github.com/gaoyzelov/snowdrift-projects" target="_blank" class="btn btn-ice">
@@ -653,7 +654,7 @@
         <div class="container">
             <div class="section-eyebrow reveal">· Architecture ·</div>
             <h2 class="section-title reveal reveal-delay-1">模块架构</h2>
-            <p class="section-desc reveal reveal-delay-2">十个模块，职责清晰。每个模块独立自动配置，按需引入。</p>
+            <p class="section-desc reveal reveal-delay-2">12 个功能模块，34 个 Maven 子模块。独立自动配置，按需引入，零代码侵入。</p>
             <div class="module-grid">
                 <div class="module-card reveal reveal-delay-1">
                     <div class="module-head">
@@ -719,13 +720,29 @@
                     <p class="module-desc">分布式调度双实现：Quartz / XXL-JOB 共用 IScheduleService 泛型接口，动态任务 CRUD，XXL-JOB 支持自动登录、多 Admin 故障转移。</p>
                     <div class="module-tags"><span class="module-tag">Quartz</span><span class="module-tag">XXL-JOB</span><span class="module-tag">动态CRUD</span></div>
                 </div>
-                <div class="module-card reveal reveal-delay-3" style="opacity: 0.5;">
+                <div class="module-card reveal reveal-delay-3">
                     <div class="module-head">
                         <span class="module-name">snowdrift-mq</span>
-                        <span class="module-badge badge-wip">规划中</span>
+                        <span class="module-badge badge-done">完成</span>
                     </div>
-                    <p class="module-desc">消息队列模块——规划中，预计支持 RabbitMQ / RocketMQ 等消息中间件的统一抽象。</p>
-                    <div class="module-tags"><span class="module-tag">规划中</span></div>
+                    <p class="module-desc">消息队列模块：基于 Spring Cloud Stream，Kafka / RocketMQ / RabbitMQ 三 binder，@MqListener 自动注册 Consumer，延迟消息、批量发送、HMAC 签名。</p>
+                    <div class="module-tags"><span class="module-tag">Kafka</span><span class="module-tag">RocketMQ</span><span class="module-tag">RabbitMQ</span><span class="module-tag">@MqListener</span></div>
+                </div>
+                <div class="module-card reveal reveal-delay-3">
+                    <div class="module-head">
+                        <span class="module-name">snowdrift-orm</span>
+                        <span class="module-badge badge-done">完成</span>
+                    </div>
+                    <p class="module-desc">ORM 增强模块：MyBatis-Plus 插件体系，多租户隔离、@DataScope 数据权限、AES-GCM 字段加密、自动填充、防全表操作。</p>
+                    <div class="module-tags"><span class="module-tag">多租户</span><span class="module-tag">@DataScope</span><span class="module-tag">AES加密</span><span class="module-tag">自动填充</span></div>
+                </div>
+                <div class="module-card reveal reveal-delay-3">
+                    <div class="module-head">
+                        <span class="module-name">snowdrift-rpc</span>
+                        <span class="module-badge badge-done">完成</span>
+                    </div>
+                    <p class="module-desc">RPC 集成模块：Dubbo 过滤器链，跨服务 traceId + SecurityContext 传播，异常序列化兼容，调用日志记录。</p>
+                    <div class="module-tags"><span class="module-tag">Dubbo</span><span class="module-tag">上下文传播</span><span class="module-tag">过滤器链</span></div>
                 </div>
                 <div class="module-card reveal reveal-delay-3" style="opacity: 0.5;">
                     <div class="module-head">
@@ -778,13 +795,23 @@
                 </div>
                 <div class="feature-card reveal reveal-delay-3">
                     <span class="feature-icon">📝</span>
-                    <h3 class="feature-title">审计日志</h3>
-                    <p class="feature-desc">@ApiLog / @LoginLog 注解驱动，自动记录接口调用和登录行为。支持参数脱敏、traceId 全链路追踪、可插拔存储。</p>
+                    <h3 class="feature-title">ORM 增强</h3>
+                    <p class="feature-desc">MyBatis-Plus 插件体系：多租户自动隔离、@DataScope 数据权限（5 种范围）、AES-GCM 字段透明加解密、自动填充审计字段。</p>
                 </div>
                 <div class="feature-card reveal reveal-delay-3">
-                    <span class="feature-icon">🧵</span>
-                    <h3 class="feature-title">异步上下文</h3>
-                    <p class="feature-desc">@Async 方法自动传播 HTTP 上下文、安全上下文、TraceId，基于 TransmittableThreadLocal 实现线程池安全传递。</p>
+                    <span class="feature-icon">🛡️</span>
+                    <h3 class="feature-title">XSS 防护</h3>
+                    <p class="feature-desc">可插拔 XssCleaner 接口，默认 HTML 实体转义零依赖。支持注入 Jsoup 等实现，覆盖参数、请求头、QueryString 全入口。</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-4">
+                    <span class="feature-icon">📨</span>
+                    <h3 class="feature-title">消息队列</h3>
+                    <p class="feature-desc">Spring Cloud Stream 封装，Kafka / RocketMQ / RabbitMQ 三 binder。@MqListener 自动注册 Consumer、拦截器链、HMAC 签名。</p>
+                </div>
+                <div class="feature-card reveal reveal-delay-4">
+                    <span class="feature-icon">🔗</span>
+                    <h3 class="feature-title">RPC 上下文传播</h3>
+                    <p class="feature-desc">Dubbo 过滤器链自动传播 traceId + SecurityContext，Provider 端 finally 清理。异常智能序列化兼容，调用日志记录。</p>
                 </div>
             </div>
         </div>
@@ -809,7 +836,7 @@
                     <div class="tech-row"><span class="tech-name">MyBatis-Plus</span><span class="tech-ver">3.5.15</span></div>
                     <div class="tech-row"><span class="tech-name">Druid</span><span class="tech-ver">1.2.28</span></div>
                     <div class="tech-row"><span class="tech-name">Redisson</span><span class="tech-ver">4.3.0</span></div>
-                    <div class="tech-row"><span class="tech-name">JetCache</span><span class="tech-ver">2.8.0 RC</span></div>
+                    <div class="tech-row"><span class="tech-name">JetCache</span><span class="tech-ver">2.7.9</span></div>
                 </div>
                 <div class="tech-card reveal reveal-delay-2">
                     <h3>安全认证</h3>
@@ -826,10 +853,10 @@
                 </div>
                 <div class="tech-card reveal reveal-delay-3">
                     <h3>基础设施</h3>
+                    <div class="tech-row"><span class="tech-name">Dubbo</span><span class="tech-ver">3.3.6</span></div>
                     <div class="tech-row"><span class="tech-name">XXL-JOB</span><span class="tech-ver">3.4.1</span></div>
                     <div class="tech-row"><span class="tech-name">Knife4j</span><span class="tech-ver">4.5.0</span></div>
                     <div class="tech-row"><span class="tech-name">TTL</span><span class="tech-ver">2.14.5</span></div>
-                    <div class="tech-row"><span class="tech-name">ip2region</span><span class="tech-ver">2.7.0</span></div>
                 </div>
                 <div class="tech-card reveal reveal-delay-3">
                     <h3>对象存储</h3>
