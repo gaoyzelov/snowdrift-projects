@@ -10,6 +10,7 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -34,6 +35,13 @@ import java.util.List;
 public final class EncryptUtil {
 
     private static final HexFormat HEX_FORMAT = HexFormat.of();
+
+    // ==================== AES/GCM（推荐） ====================
+
+    /** GCM 认证标签长度（位） */
+    private static final int GCM_TAG_LENGTH = 128;
+    /** GCM IV 长度（字节） */
+    private static final int GCM_IV_LENGTH = 12;
 
     private EncryptUtil() {
     }
@@ -161,26 +169,32 @@ public final class EncryptUtil {
     }
 
     /**
-     * aes加密
+     * aes ECB 加密
+     * <p>已废弃，请使用 {@link #aesGcmEncrypt(String, String)} 替代。</p>
      *
      * @param text   待加密文本
      * @param aesKey aes密钥（十六进制字符串）
      * @return 加密后的文本  (Base64格式符串)
+     * @deprecated ECB 模式存在安全隐患，请使用 {@link #aesGcmEncrypt(String, String)}
      */
-    public static String aesEncrypt(String text, String aesKey) {
+    @Deprecated
+    public static String aesEcbEncrypt(String text, String aesKey) {
         AssertUtil.notBlank(text, "待加密文本不能为空");
         AssertUtil.notBlank(aesKey, "秘钥不能为空");
-        return aesEncrypt(text, HEX_FORMAT.parseHex(aesKey));
+        return aesEcbEncrypt(text, HEX_FORMAT.parseHex(aesKey));
     }
 
     /**
-     * aes加密
+     * aes ECB 加密
+     * <p>已废弃，请使用 {@link #aesGcmEncrypt(String, byte[])} 替代。</p>
      *
      * @param text 待加密文本
      * @param key  密钥（16/24/32 字节对应 AES-128/192/256）
      * @return 加密后的文本  (Base64格式符串)
+     * @deprecated ECB 模式存在安全隐患，请使用 {@link #aesGcmEncrypt(String, byte[])}
      */
-    public static String aesEncrypt(String text, byte[] key) {
+    @Deprecated
+    public static String aesEcbEncrypt(String text, byte[] key) {
         AssertUtil.notBlank(text, "待加密文本不能为空");
         AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
         try {
@@ -195,26 +209,32 @@ public final class EncryptUtil {
     }
 
     /**
-     * aes解密
+     * aes ECB 解密
+     * <p>已废弃，仅用于兼容旧 ECB 格式数据。</p>
      *
      * @param text   待解密文本 (Base64格式符串)
      * @param aesKey aes密钥（十六进制字符串）
      * @return 解密后的文本
+     * @deprecated 用于兼容旧 ECB 格式数据
      */
-    public static String aesDecrypt(String text, String aesKey) {
+    @Deprecated
+    public static String aesEcbDecrypt(String text, String aesKey) {
         AssertUtil.notBlank(text, "待解密文本不能为空");
         AssertUtil.notBlank(aesKey, "秘钥不能为空");
-        return aesDecrypt(text, HEX_FORMAT.parseHex(aesKey));
+        return aesEcbDecrypt(text, HEX_FORMAT.parseHex(aesKey));
     }
 
     /**
-     * aes解密
+     * aes ECB 解密
+     * <p>已废弃，仅用于兼容旧 ECB 格式数据。</p>
      *
      * @param text 待解密文本 (Base64格式符串)
      * @param key  密钥（需与加密时使用的密钥一致）
      * @return 解密后的文本
+     * @deprecated 用于兼容旧 ECB 格式数据
      */
-    public static String aesDecrypt(String text, byte[] key) {
+    @Deprecated
+    public static String aesEcbDecrypt(String text, byte[] key) {
         AssertUtil.notBlank(text, "待解密文本不能为空");
         AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
         try {
@@ -222,6 +242,115 @@ public final class EncryptUtil {
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(Cipher.DECRYPT_MODE, keySpec);
             byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(text));
+            return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            throw new BizException(e);
+        }
+    }
+
+
+    /**
+     * aes GCM 加密（推荐）
+     * <p>
+     * 使用 AES/GCM/NoPadding，每次加密生成随机 IV 并写入密文前缀。
+     * 输出格式：{@code Base64(iv[12B] + ciphertext + tag[16B])}。
+     * </p>
+     *
+     * @param text   待加密文本
+     * @param aesKey aes密钥（十六进制字符串，16/24/32 字节对应 AES-128/192/256）
+     * @return 加密后的文本（Base64 格式）
+     */
+    public static String aesGcmEncrypt(String text, String aesKey) {
+        AssertUtil.notBlank(text, "待加密文本不能为空");
+        AssertUtil.notBlank(aesKey, "秘钥不能为空");
+        return aesGcmEncrypt(text, HEX_FORMAT.parseHex(aesKey));
+    }
+
+    /**
+     * aes GCM 加密（推荐）
+     * <p>
+     * 使用 AES/GCM/NoPadding，每次加密生成随机 IV 并写入密文前缀。
+     * 输出格式：{@code Base64(iv[12B] + ciphertext + tag[16B])}。
+     * </p>
+     *
+     * @param text 待加密文本
+     * @param key  密钥（16/24/32 字节对应 AES-128/192/256）
+     * @return 加密后的文本（Base64 格式）
+     */
+    public static String aesGcmEncrypt(String text, byte[] key) {
+        AssertUtil.notBlank(text, "待加密文本不能为空");
+        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
+        try {
+            byte[] iv = new byte[GCM_IV_LENGTH];
+            SecureRandom.getInstanceStrong().nextBytes(iv);
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+
+            SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.ENCRYPT_MODE, keySpec, gcmSpec);
+
+            byte[] ciphertext = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
+            // 输出: iv + ciphertext(含tag)
+            byte[] output = new byte[GCM_IV_LENGTH + ciphertext.length];
+            System.arraycopy(iv, 0, output, 0, GCM_IV_LENGTH);
+            System.arraycopy(ciphertext, 0, output, GCM_IV_LENGTH, ciphertext.length);
+            return Base64.getEncoder().encodeToString(output);
+        } catch (Exception e) {
+            throw new BizException(e);
+        }
+    }
+
+    /**
+     * aes GCM 解密
+     * <p>
+     * 解密 {@link #aesGcmEncrypt(String, byte[])} 生成的密文。
+     * 输入格式：{@code Base64(iv[12B] + ciphertext + tag[16B])}。
+     * </p>
+     *
+     * @param text   待解密文本（Base64 格式）
+     * @param aesKey aes密钥（十六进制字符串，需与加密时使用的密钥一致）
+     * @return 解密后的文本
+     */
+    public static String aesGcmDecrypt(String text, String aesKey) {
+        AssertUtil.notBlank(text, "待解密文本不能为空");
+        AssertUtil.notBlank(aesKey, "秘钥不能为空");
+        return aesGcmDecrypt(text, HEX_FORMAT.parseHex(aesKey));
+    }
+
+    /**
+     * aes GCM 解密
+     * <p>
+     * 解密 {@link #aesGcmEncrypt(String, byte[])} 生成的密文。
+     * 输入格式：{@code Base64(iv[12B] + ciphertext + tag[16B])}。
+     * </p>
+     *
+     * @param text 待解密文本（Base64 格式）
+     * @param key  密钥（需与加密时使用的密钥一致）
+     * @return 解密后的文本
+     */
+    public static String aesGcmDecrypt(String text, byte[] key) {
+        AssertUtil.notBlank(text, "待解密文本不能为空");
+        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
+        try {
+            byte[] raw = Base64.getDecoder().decode(text);
+            if (raw.length < GCM_IV_LENGTH) {
+                throw new BizException("密文长度不足，无法提取 IV");
+            }
+
+            // 提取 IV（前 12 字节）
+            byte[] iv = new byte[GCM_IV_LENGTH];
+            System.arraycopy(raw, 0, iv, 0, GCM_IV_LENGTH);
+
+            // 提取密文（剩余部分，含 GCM 认证标签）
+            byte[] ciphertext = new byte[raw.length - GCM_IV_LENGTH];
+            System.arraycopy(raw, GCM_IV_LENGTH, ciphertext, 0, ciphertext.length);
+
+            GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
+            SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
+            Cipher cipher = Cipher.getInstance("AES/GCM/NoPadding");
+            cipher.init(Cipher.DECRYPT_MODE, keySpec, gcmSpec);
+
+            byte[] decrypted = cipher.doFinal(ciphertext);
             return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
             throw new BizException(e);
