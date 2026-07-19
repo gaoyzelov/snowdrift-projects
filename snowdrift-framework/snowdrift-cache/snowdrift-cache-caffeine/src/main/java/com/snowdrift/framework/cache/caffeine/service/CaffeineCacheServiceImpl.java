@@ -3,6 +3,7 @@ package com.snowdrift.framework.cache.caffeine.service;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.snowdrift.framework.cache.AbstractCacheService;
+import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.cache.config.CacheProperties;
 import com.snowdrift.framework.common.util.AssertUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -35,7 +36,8 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
     /** 通配符 Pattern 缓存，避免每次编译正则 */
     private final Map<String, Pattern> patternCache = new ConcurrentHashMap<>();
 
-    public CaffeineCacheServiceImpl(CacheProperties properties) {
+    public CaffeineCacheServiceImpl(CacheProperties properties, CacheSerializer serializer) {
+        super(serializer);
         AssertUtil.notNull(properties, "cache.config.required");
         setKeyPrefix(properties.getKeyPrefix());
         setDefaultTtl(properties.getKeyTtl());

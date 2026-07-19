@@ -1,8 +1,8 @@
 package com.snowdrift.framework.cache.redis.service;
 
 import com.snowdrift.framework.cache.AbstractCacheService;
+import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.cache.config.CacheProperties;
-import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.common.util.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.redis.core.Cursor;
@@ -19,8 +19,8 @@ import java.util.stream.Collectors;
 /**
  * Redis 缓存实现
  * <p>
- * 基于 {@link RedisTemplate}{@code <String, Object>}，序列化由 RedisTemplate 的 Jackson 序列化器统一处理，
- * 不经过 {@link AbstractCacheService} 的 serialize/deserialize 方法，避免二次序列化。
+ * 基于 {@link RedisTemplate}{@code <String, String>}，统一使用 JSON 字符串存储。
+ * 序列化由 {@link CacheSerializer} 统一处理，与 Caffeine / Redisson 后端数据格式一致。
  * </p>
  *
  * @author gaoyzelov
@@ -29,9 +29,12 @@ import java.util.stream.Collectors;
  */
 public class RedisCacheServiceImpl extends AbstractCacheService {
 
-    private final RedisTemplate<String, Object> redisTemplate;
+    private final RedisTemplate<String, String> redisTemplate;
 
-    public RedisCacheServiceImpl(CacheProperties properties, RedisTemplate<String, Object> redisTemplate) {
+    public RedisCacheServiceImpl(CacheProperties properties,
+                                  CacheSerializer serializer,
+                                  RedisTemplate<String, String> redisTemplate) {
+        super(serializer);
         AssertUtil.notNull(properties, "cache.config.required");
         AssertUtil.notNull(redisTemplate, "cache.redis.template.required");
 
@@ -45,23 +48,18 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
     @Override
     public <T> T get(String key, Class<T> type) {
         AssertUtil.notBlank(key, "cache.key.required");
-        Object value = redisTemplate.opsForValue().get(buildKey(key));
-        if (value == null) {
+        String json = redisTemplate.opsForValue().get(buildKey(key));
+        if (json == null) {
             return null;
         }
-        try {
-            return type.cast(value);
-        } catch (ClassCastException e) {
-            throw new BizException("cache.type.mismatch",
-                    new Object[]{key, type.getName(), value.getClass().getName()});
-        }
+        return deserialize(json, type);
     }
 
     @Override
     public void put(String key, Object value) {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
-        redisTemplate.opsForValue().set(buildKey(key), value);
+        redisTemplate.opsForValue().set(buildKey(key), serialize(value));
     }
 
     @Override
@@ -71,9 +69,9 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
         Duration effectiveTtl = effectiveTtl(ttl);
         String realKey = buildKey(key);
         if (effectiveTtl != null) {
-            redisTemplate.opsForValue().set(realKey, value, effectiveTtl);
+            redisTemplate.opsForValue().set(realKey, serialize(value), effectiveTtl);
         } else {
-            redisTemplate.opsForValue().set(realKey, value);
+            redisTemplate.opsForValue().set(realKey, serialize(value));
         }
     }
 
@@ -82,7 +80,7 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
         String realKey = buildKey(key);
-        Boolean result = redisTemplate.opsForValue().setIfAbsent(realKey, value);
+        Boolean result = redisTemplate.opsForValue().setIfAbsent(realKey, serialize(value));
         return Boolean.TRUE.equals(result);
     }
 
@@ -94,9 +92,9 @@ public class RedisCacheServiceImpl extends AbstractCacheService {
         String realKey = buildKey(key);
         Boolean result;
         if (effectiveTtl != null) {
-            result = redisTemplate.opsForValue().setIfAbsent(realKey, value, effectiveTtl);
+            result = redisTemplate.opsForValue().setIfAbsent(realKey, serialize(value), effectiveTtl);
         } else {
-            result = redisTemplate.opsForValue().setIfAbsent(realKey, value);
+            result = redisTemplate.opsForValue().setIfAbsent(realKey, serialize(value));
         }
         return Boolean.TRUE.equals(result);
     }

@@ -1,5 +1,6 @@
 package com.snowdrift.framework.cache.config;
 
+import com.snowdrift.framework.cache.enums.SerializerType;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
@@ -37,4 +38,9 @@ public class CacheProperties {
      */
     @Min(1)
     private long maxSize = 10000;
+
+    /**
+     * 序列化器类型，默认 Jackson
+     */
+    private SerializerType serializer = SerializerType.JACKSON;
 }

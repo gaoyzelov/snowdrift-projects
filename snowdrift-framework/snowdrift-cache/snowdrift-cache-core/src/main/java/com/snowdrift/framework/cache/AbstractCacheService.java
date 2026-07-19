@@ -1,5 +1,6 @@
 package com.snowdrift.framework.cache;
 
+import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.common.constant.StrConst;
 import org.apache.commons.lang3.StringUtils;
 
@@ -9,8 +10,8 @@ import java.util.Objects;
 /**
  * 缓存服务抽象基类
  * <p>
- * 提供 Jackson 序列化、key 前缀、TTL 默认值等公共逻辑，
- * 通过 {@link CacheSerializer} 确保 Redis / Caffeine 数据格式一致。
+ * 提供序列化、key 前缀、TTL 默认值等公共逻辑。
+ * 序列化统一委托给 {@link CacheSerializer}，确保 Redis / Caffeine 数据格式一致。
  * </p>
  *
  * @author gaoyzelov
@@ -30,17 +31,27 @@ public abstract class AbstractCacheService implements ICacheService {
     protected Duration defaultTtl = Duration.ofMinutes(30);
 
     /**
+     * 序列化器
+     */
+    protected final CacheSerializer serializer;
+
+    protected AbstractCacheService(CacheSerializer serializer) {
+        Objects.requireNonNull(serializer, "cache.serializer.required");
+        this.serializer = serializer;
+    }
+
+    /**
      * 序列化为 JSON 字符串
      */
     protected String serialize(Object value) {
-        return CacheSerializer.serialize(value);
+        return serializer.serialize(value);
     }
 
     /**
      * 反序列化为目标类型
      */
     protected <T> T deserialize(String json, Class<T> type) {
-        return CacheSerializer.deserialize(json, type);
+        return serializer.deserialize(json, type);
     }
 
     /**

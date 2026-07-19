@@ -1,12 +1,14 @@
 package com.snowdrift.framework.cache.redisson.service;
 
 import com.snowdrift.framework.cache.AbstractCacheService;
+import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.cache.config.CacheProperties;
 import com.snowdrift.framework.common.util.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.api.RBucket;
 import org.redisson.api.RedissonClient;
 import org.redisson.api.options.KeysScanOptions;
+import org.redisson.client.codec.StringCodec;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -15,8 +17,8 @@ import java.util.Set;
 /**
  * Redisson 缓存实现
  * <p>
- * 基于 {@link RedissonClient}，利用 Redisson 的 RBucket 实现 ICacheService，
- * Jackson 序列化由 Redisson 内置的 Codec 处理。
+ * 基于 {@link RedissonClient}，统一使用 JSON 字符串（{@link StringCodec}）存储。
+ * 序列化由 {@link CacheSerializer} 统一处理，与 Caffeine / Redis 后端数据格式一致。
  * </p>
  *
  * @author gaoyzelov
@@ -27,7 +29,10 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
 
     private final RedissonClient redissonClient;
 
-    public RedissonCacheServiceImpl(CacheProperties properties, RedissonClient redissonClient) {
+    public RedissonCacheServiceImpl(CacheProperties properties,
+                                     CacheSerializer serializer,
+                                     RedissonClient redissonClient) {
+        super(serializer);
         AssertUtil.notNull(properties, "cache.config.required");
         AssertUtil.notNull(redissonClient, "cache.redisson.client.required");
 
@@ -41,20 +46,20 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
     @Override
     public <T> T get(String key, Class<T> type) {
         AssertUtil.notBlank(key, "cache.key.required");
-        RBucket<Object> bucket = redissonClient.getBucket(buildKey(key));
-        Object value = bucket.get();
-        if (value == null) {
+        RBucket<String> bucket = redissonClient.getBucket(buildKey(key), StringCodec.INSTANCE);
+        String json = bucket.get();
+        if (json == null) {
             return null;
         }
-        return type.cast(value);
+        return deserialize(json, type);
     }
 
     @Override
     public void put(String key, Object value) {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
-        RBucket<Object> bucket = redissonClient.getBucket(buildKey(key));
-        bucket.set(value);
+        RBucket<String> bucket = redissonClient.getBucket(buildKey(key), StringCodec.INSTANCE);
+        bucket.set(serialize(value));
     }
 
     @Override
@@ -62,11 +67,11 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
         Duration effectiveTtl = effectiveTtl(ttl);
-        RBucket<Object> bucket = redissonClient.getBucket(buildKey(key));
+        RBucket<String> bucket = redissonClient.getBucket(buildKey(key), StringCodec.INSTANCE);
         if (effectiveTtl != null) {
-            bucket.set(value, effectiveTtl);
+            bucket.set(serialize(value), effectiveTtl);
         } else {
-            bucket.set(value);
+            bucket.set(serialize(value));
         }
     }
 
@@ -74,8 +79,8 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
     public boolean putIfAbsent(String key, Object value) {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
-        RBucket<Object> bucket = redissonClient.getBucket(buildKey(key));
-        return bucket.setIfAbsent(value);
+        RBucket<String> bucket = redissonClient.getBucket(buildKey(key), StringCodec.INSTANCE);
+        return bucket.setIfAbsent(serialize(value));
     }
 
     @Override
@@ -83,11 +88,11 @@ public class RedissonCacheServiceImpl extends AbstractCacheService {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
         Duration effectiveTtl = effectiveTtl(ttl);
-        RBucket<Object> bucket = redissonClient.getBucket(buildKey(key));
+        RBucket<String> bucket = redissonClient.getBucket(buildKey(key), StringCodec.INSTANCE);
         if (effectiveTtl != null) {
-            return bucket.setIfAbsent(value, effectiveTtl);
+            return bucket.setIfAbsent(serialize(value), effectiveTtl);
         }
-        return bucket.setIfAbsent(value);
+        return bucket.setIfAbsent(serialize(value));
     }
 
     @Override

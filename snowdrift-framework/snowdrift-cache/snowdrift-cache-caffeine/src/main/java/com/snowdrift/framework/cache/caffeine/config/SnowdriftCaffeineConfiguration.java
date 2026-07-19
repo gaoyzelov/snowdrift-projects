@@ -1,6 +1,7 @@
 package com.snowdrift.framework.cache.caffeine.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.caffeine.service.CaffeineCacheServiceImpl;
 import com.snowdrift.framework.cache.config.CacheProperties;
@@ -52,7 +53,7 @@ public class SnowdriftCaffeineConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ICacheService.class)
-    public ICacheService caffeineCacheService() {
-        return new CaffeineCacheServiceImpl(cacheProperties);
+    public ICacheService caffeineCacheService(CacheSerializer serializer) {
+        return new CaffeineCacheServiceImpl(cacheProperties, serializer);
     }
 }

@@ -1,6 +1,6 @@
 package com.snowdrift.framework.cache.redisson.config;
 
-import com.snowdrift.framework.cache.CacheSerializer;
+import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.cache.DistributedLockService;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
@@ -10,7 +10,7 @@ import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
-import org.redisson.codec.JsonJacksonCodec;
+import org.redisson.client.codec.StringCodec;
 import org.redisson.config.Config;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -24,7 +24,8 @@ import java.util.List;
  * Redisson 缓存与分布式锁自动配置
  * <p>
  * 直接从 {@link RedisProperties}（兼容 {@code spring.data.redis.*}）构建 {@link RedissonClient}，
- * 支持单节点、哨兵和集群模式。
+ * 支持单节点、哨兵和集群模式。使用 {@link StringCodec} 存储 JSON 字符串，
+ * 序列化由 {@link CacheSerializer} 统一处理。
  * </p>
  *
  * @author gaoyzelov
@@ -60,7 +61,8 @@ public class SnowdriftRedissonConfiguration {
     /**
      * 初始化 RedissonClient 客户端
      * <p>
-     * 根据配置自动选择集群、哨兵或单节点模式
+     * 根据配置自动选择集群、哨兵或单节点模式。
+     * 使用 {@link StringCodec} 以 JSON 字符串存储，与 Caffeine / Redis 后端数据格式一致。
      * </p>
      *
      * @param redisProperties Spring Boot Redis 配置属性
@@ -70,8 +72,8 @@ public class SnowdriftRedissonConfiguration {
     @ConditionalOnMissingBean
     public RedissonClient redissonClient(RedisProperties redisProperties) {
         Config config = new Config();
-        // 使用 Jackson JSON 序列化，避免默认 MarshallingCodec 产生二进制乱码
-        config.setCodec(new JsonJacksonCodec(CacheSerializer.getObjectMapper()));
+        // 使用 StringCodec，序列化由 CacheSerializer 在服务层统一处理
+        config.setCodec(StringCodec.INSTANCE);
         String password = redisProperties.getPassword();
 
         String uriPrefix = redisProperties.getSsl() != null && redisProperties.getSsl().isEnabled() ? "rediss://" : "redis://";
@@ -128,8 +130,8 @@ public class SnowdriftRedissonConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ICacheService.class)
-    public ICacheService redissonCacheService(RedissonClient redissonClient) {
-        return new RedissonCacheServiceImpl(cacheProperties, redissonClient);
+    public ICacheService redissonCacheService(CacheSerializer serializer, RedissonClient redissonClient) {
+        return new RedissonCacheServiceImpl(cacheProperties, serializer, redissonClient);
     }
 
     @Bean
