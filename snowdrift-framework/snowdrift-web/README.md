@@ -29,10 +29,10 @@ snowdrift:
       - en_US
   async:
     enabled: true
-    core-pool-size: 8
-    max-pool-size: 16
-    queue-capacity: 200
-    keep-alive-seconds: 60
+    core-pool-size: 2                    # 默认 2
+    max-pool-size: 10                    # 默认 10
+    queue-capacity: 256                  # 默认 256
+    await-termination-seconds: 60        # 关闭时等待任务完成的超时，默认 60
 ```
 
 ## 核心功能
@@ -88,8 +88,8 @@ public CompletableFuture<Result<User>> getUser(Long id) {
 
 ### 链路追踪
 
-`LogTraceFilter` 在 `@Order(HIGHEST_PRECEDENCE)` 最先执行，生成 `X-Trace-Id` 写入 MDC 和响应头。`HttpContextFilter` 紧随其后，填充 `HttpContext`。
+`LogTraceFilter` 在配置类中通过 `FilterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE)` 最先执行，生成 `X-Trace-Id` 写入 MDC 和响应头。`HttpContextFilter` 紧随其后，填充 `HttpContext`。
 
 ### JSON 序列化
 
-默认使用 Jackson + `JavaTimeModule`，`LocalDateTime` 使用 ISO-8601 格式不使用 timestamp。
+默认使用 Jackson + `JavaTimeModule`，`LocalDateTime` 使用 `yyyy-MM-dd HH:mm:ss` 格式不使用 timestamp。

@@ -197,7 +197,7 @@ scheduleService.triggerJob(key, Map.of("param", "value"));
 @TableName("sys_user")
 public class User extends BaseEntity {
     private String username;
-    @Encrypted   // 入库加密，出库解密
+    @TableField(typeHandler = AesEncryptTypeHandler.class)   // 入库加密，出库解密
     private String phone;
 }
 ```
@@ -209,7 +209,7 @@ public class User extends BaseEntity {
 | 自动填充 | INSERT/UPDATE 时自动填充 createBy、createTime、updateBy、updateTime、租户ID | — |
 | 多租户隔离 | 自动在 SQL 中注入 `tenant_id = ?` 条件，支持忽略指定表 | `snowdrift.orm.mp.tenant` |
 | 数据权限 | 基于 `@DataScope` 注解，支持 ALL / DEPT / DEPT_AND_SUB / SELF / CUSTOM 五种范围 | 注解驱动 |
-| 字段加密 | 对 `@Encrypted` 字段自动 AES 加解密，密文带 `{ENC}` 前缀防重复 | `snowdrift.orm.mp.crypto` |
+| 字段加密 | 通过 `@TableField(typeHandler = AesEncryptTypeHandler.class)` 对敏感字段透明 AES-GCM 加解密 | `snowdrift.orm.mp.crypto` |
 | 分页 | 多数据库方言、最大条数限制、溢出处理、LEFT JOIN count 优化 | `snowdrift.orm.mp.pagination` |
 | 乐观锁 | 配合 `@Version` 注解，更新时自动版本号校验 | — |
 | 防全表操作 | 阻止不带 WHERE 的 UPDATE/DELETE | — |

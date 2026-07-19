@@ -62,16 +62,18 @@ SecurityContextHolder.clear();
 ```java
 // 获取上下文
 HttpContext ctx = HttpContextHolder.getContext();
-ctx.getTraceId();       // 链路追踪 ID
-ctx.getRequestUri();    // 请求 URI
-ctx.getHttpMethod();    // HTTP 方法
-ctx.getIp();            // 客户端 IP
-ctx.getIpLocation();    // IP 归属地
-ctx.getUserAgent();     // User-Agent
+ctx.getUri();            // 请求 URI
+ctx.getMethod();         // HTTP 方法
+ctx.getIp();             // 客户端 IP
+ctx.getIpLocation();     // IP 归属地
+ctx.getUserAgent();      // User-Agent
+ctx.getParamMap();       // 请求参数
 
 // 清除
 HttpContextHolder.clear();
 ```
+
+> `traceId` 通过 MDC（`LogTraceUtil`）管理，不在 HttpContext 中。
 
 ### TransmittableThreadLocal
 

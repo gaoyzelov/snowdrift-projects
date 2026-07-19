@@ -32,10 +32,10 @@ snowdrift-cache
 ```yaml
 snowdrift:
   cache:
-    key-prefix: app
+    key-prefix: app               # 默认 null，无前缀
     key-ttl: 30m
     max-size: 10000
-    serializer: JACKSON        # JACKSON（默认）或 FASTJSON2
+    serializer: JACKSON           # JACKSON（默认）或 FASTJSON2
 ```
 
 ## 代码示例
@@ -58,21 +58,21 @@ boolean success = cacheService.putIfAbsent("lock:pay:123", "1", Duration.ofSecon
 
 // 删除
 cacheService.delete("user:1");
-cacheService.delete(List.of("key1", "key2"));
+long count = cacheService.delete(List.of("key1", "key2"));  // Collection<String>, 返回删除数量
 
 // 查询
 boolean exists = cacheService.exists("user:1");
-long ttl = cacheService.getExpire("user:1");  // 秒，-1=永不过期，-2=不支持
+long ttl = cacheService.getExpire("user:1");  // 秒，-1=永不过期，-2=key 不存在
 Set<String> keys = cacheService.keys("user:*");  // 通配符：支持 * 和 ?
 ```
 
 ### 分布式锁 — @DistributedLock
 
 ```java
-// SpEL 动态 key
+// key 必填，支持 SpEL 动态 key
 @DistributedLock(key = "'order:pay:' + #orderId", waitTime = 3, leaseTime = 10)
 public void payOrder(Long orderId) {
-    // 获取锁后执行，失败时抛出 BizException(lock.failed)
+    // 获取锁后执行，失败时抛出 BizException
 }
 
 // 注入编程式 API
@@ -86,16 +86,19 @@ lockService.unlock("key");
 
 | 属性 | 默认值 | 说明 |
 |------|--------|------|
-| `key` | "" | SpEL 表达式，锁的 key |
+| `key` | **必填** | SpEL 表达式，锁的 key |
+| `message` | `"cache.lock.failed"` | 失败时的提示信息（i18n key 或直接文本） |
+| `args` | {} | i18n 参数 |
 | `waitTime` | 0 | 等待时间（秒），0=立即失败 |
 | `leaseTime` | -1 | 持有时间（秒），-1=Redisson 看门狗自动续期 |
+| `timeUnit` | SECONDS | 时间单位 |
 
 > 分布式锁仅 Redisson 后端支持。Caffeine/Redis 后端会抛出异常。
 
 ### 防重复提交 — @RepeatSubmit
 
 ```java
-// 5 秒内同一订单号只允许一次提交
+// key 必填，5 秒内同一订单号只允许一次提交
 @RepeatSubmit(key = "#orderNo", interval = 5)
 @PostMapping("/order")
 public Result<Void> createOrder(@RequestBody String orderNo) {
@@ -105,11 +108,11 @@ public Result<Void> createOrder(@RequestBody String orderNo) {
 
 | 属性 | 默认值 | 说明 |
 |------|--------|------|
-| `key` | "" | SpEL 表达式 |
+| `key` | **必填** | SpEL 表达式 |
+| `message` | `"cache.repeat.submit"` | 失败时的提示信息（i18n key 或直接文本） |
+| `args` | {} | i18n 参数 |
 | `interval` | 5 | 时间窗口 |
 | `timeUnit` | SECONDS | 时间单位 |
-| `message` | "repeat.submit" | 失败时的 i18n key |
-| `args` | {} | i18n 参数 |
 
 > **注意：** `interval` 应大于业务方法的最长执行时间。若处理时间超过 TTL，标记会在执行过程中过期，导致并发请求穿透幂等防护。
 
@@ -149,7 +152,7 @@ public class ProtoBufSerializer implements CacheSerializer {
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `key-prefix` | String | "" | key 前缀 |
+| `key-prefix` | String | null | key 前缀 |
 | `key-ttl` | Duration | 30m | 默认 TTL |
 | `max-size` | Long | 10000 | Caffeine 最大条目数 |
 | `serializer` | SerializerType | JACKSON | 序列化器（JACKSON / FASTJSON2） |

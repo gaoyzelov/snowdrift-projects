@@ -32,7 +32,7 @@ public class User extends BaseEntity {
     private String username;
     private String password;
 
-    @Encrypted   // 需要配合 @TableField(typeHandler = AesEncryptTypeHandler.class)
+    // 敏感字段通过 TypeHandler 实现透明加解密
     @TableField(typeHandler = AesEncryptTypeHandler.class)
     private String phone;
 }
@@ -197,7 +197,7 @@ snowdrift:
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `enabled` | Boolean | false | 多租户开关 |
+| `enabled` | Boolean | null | 多租户开关（不配置时不启用） |
 | `tenant-id-column` | String | tenant_id | 租户 ID 字段名 |
 | `ignore-tables` | List\<String\> | [] | 忽略的表名 |
 
@@ -206,6 +206,6 @@ snowdrift:
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `db-type` | DbType | MYSQL | 数据库类型 |
-| `max-limit` | Long | -1 | 单页最大条数 |
-| `overflow` | Boolean | false | 溢出处理 |
-| `optimize-join` | Boolean | false | LEFT JOIN count 优化 |
+| `max-limit` | Long | 1000 | 单页最大条数 |
+| `overflow` | Boolean | true | 溢出处理 |
+| `optimize-join` | Boolean | true | LEFT JOIN count 优化 |

@@ -32,9 +32,6 @@ snowdrift:
     timeout: 86400                     # 绝对超时（秒），默认 24h
     active-timeout: 1800               # 闲置超时（秒），默认 30min
     prefix: Bearer                     # Token 前缀
-    exclude-path-patterns:             # 额外的放行路径
-      - /swagger-ui/**
-      - /v3/api-docs/**
 ```
 
 ### Sa-Token 实现
@@ -44,10 +41,11 @@ snowdrift:
   security:
     sa-token:
       enabled: true
-      token-style: uuid                # token / uuid / simple-uuid 等
-      is-concurrent: true              # 是否允许并发登录
-      is-share: true                   # 是否共享
-      max-login-count: 1               # 最大登录数
+      concurrent: true                # 是否允许多端同时登录
+      is-share: false                 # 多人登录同账号时是否共用 Token
+      max-login-count: 12             # 最大登录数（is-share=false 时生效）
+      token-style: uuid               # Token 风格：uuid / simple-uuid / random-32/64/128 / tik
+      is-log: false                   # 是否输出 Sa-Token 框架日志
 ```
 
 ### Spring Security 实现
@@ -57,12 +55,11 @@ snowdrift:
   security:
     spring:
       enabled: true
-      token-store: redis               # in-memory（默认） / redis
-      csrf:
-        enabled: false
-      cors:
-        enabled: true
+      csrf-enabled: false             # REST API 默认关闭 CSRF
+      cors-enabled: true              # 默认开启 CORS
 ```
+
+> Token 存储自动选择：classpath 中有 `RedisConnectionFactory` 时使用 `RedisTokenStore`，否则使用 `InMemoryTokenStore`。无需单独配置。
 
 ## 代码示例
 
@@ -72,7 +69,14 @@ snowdrift:
 @Autowired
 private ISecurityService securityService;
 
-TokenInfo token = securityService.login(userId, username, nickname, tenantId);
+// 构造 SecurityContext 后传入
+SecurityContext ctx = SecurityContext.builder()
+        .userId(userId)
+        .username(username)
+        .nickname(nickname)
+        .tenantId(tenantId)
+        .build();
+TokenInfo token = securityService.login(ctx);
 // TokenInfo { tokenValue, tokenName, prefix, expiresIn }
 ```
 
@@ -103,7 +107,7 @@ String username = SecurityContextHolder.getUsername();
 Long tenantId = SecurityContextHolder.getTenantId();
 ```
 
-### TokenStore 定制（Spring Security 实现）
+### 自定义 Token 存储（Spring Security 实现）
 
 ```java
 @Component
@@ -118,7 +122,7 @@ public class CustomTokenStore extends AbstractTokenStore {
 |------|----------|-----------------|
 | 框架体积 | 轻量 | 重量 |
 | 注解鉴权 | `@SaCheckLogin` / `@SaCheckRole` / `@SaCheckPermission` | `@PreAuthorize` |
-| Token 存储 | Sa-Token 内置 DAO | 可插拔 TokenStore（InMemory / Redis） |
+| Token 存储 | Sa-Token 内置 DAO | 可插拔 TokenStore（InMemory / Redis，自动选择） |
 | 学习曲线 | 低 | 高 |
 | 企业集成 | — | ✅ 标准安全体系 |
 
@@ -132,17 +136,23 @@ public class CustomTokenStore extends AbstractTokenStore {
 | `timeout` | long | 86400 | 绝对超时（秒） |
 | `active-timeout` | long | 1800 | 闲置超时（秒） |
 | `prefix` | String | Bearer | Token 前缀 |
-| `exclude-path-patterns` | List\<String\> | — | 额外放行路径 |
+| `exclude-path-patterns` | List\<String\> | /favicon.ico, /swagger*/**, /v2/api-docs/**, /v3/api-docs/**, /doc.html, /swagger-ui.html, /error | 放行路径 |
 
 ### snowdrift.security.sa-token
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `enabled` | Boolean | false | 启用开关 |
+| `concurrent` | boolean | true | 多端同时登录 |
+| `is-share` | boolean | false | 多人同账号共用 Token |
+| `max-login-count` | int | 12 | 最大登录数 |
+| `token-style` | String | uuid | Token 风格 |
+| `is-log` | boolean | false | 是否输出 Sa-Token 框架日志 |
 
 ### snowdrift.security.spring
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `enabled` | Boolean | false | 启用开关 |
-| `token-store` | String | in-memory | Token 存储类型（in-memory / redis） |
+| `csrf-enabled` | boolean | false | CSRF 开关 |
+| `cors-enabled` | boolean | true | CORS 开关 |

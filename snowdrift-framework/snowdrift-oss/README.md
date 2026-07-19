@@ -42,7 +42,7 @@ snowdrift:
         domain: http://localhost:9000/my-bucket
         private-bucket: false
         path-prefix: upload/
-        signature-expiry: 30               # 签名 URL 有效期（分钟），默认 30
+        signature-expiry: 60               # 签名 URL 有效期（分钟），默认 60
 ```
 
 多实例配置（如同时对接阿里云和七牛云）：
@@ -162,5 +162,5 @@ boolean exists = ossService.exists("avatar/user-123.jpg");
 | `configs.<name>.region` | String | — | 区域 |
 | `configs.<name>.private-bucket` | Boolean | false | 是否私有 Bucket |
 | `configs.<name>.path-prefix` | String | "" | 上传路径前缀 |
-| `configs.<name>.signature-expiry` | Integer | 30 | 签名过期时间（分钟） |
+| `configs.<name>.signature-expiry` | Integer | 60 | 签名过期时间（分钟） |
 | `configs.<name>.upload-token-expire` | Integer | — | 上传 Token 过期时间（分钟，七牛专用） |
