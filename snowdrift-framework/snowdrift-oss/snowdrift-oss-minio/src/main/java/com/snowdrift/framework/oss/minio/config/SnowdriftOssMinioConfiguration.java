@@ -1,13 +1,10 @@
 package com.snowdrift.framework.oss.minio.config;
 
-import com.snowdrift.framework.oss.core.OssStrategyFactory;
+import com.snowdrift.framework.oss.core.OssServiceRegistration;
 import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.minio.service.MinioOssServiceImpl;
-import com.snowdrift.framework.oss.properties.OssProperties;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.Resource;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.context.annotation.Bean;
 
 /**
  * MinIO 存储自动配置类
@@ -17,19 +14,11 @@ import org.springframework.context.annotation.Configuration;
  * @description 自动注册 MinIO 存储实例到策略工厂
  * @since 1.0.0
  */
-@Slf4j
-@Configuration
+@AutoConfiguration
 public class SnowdriftOssMinioConfiguration {
 
-    @Resource
-    private OssProperties ossProperties;
-
-    @Resource
-    private OssStrategyFactory ossStrategyFactory;
-
-    @PostConstruct
-    public void registerMinioOssService() {
-        ossStrategyFactory.registerFromProperties(ossProperties, OssTypeEnum.MINIO,
-                MinioOssServiceImpl::new);
+    @Bean
+    public OssServiceRegistration minioRegistration() {
+        return new OssServiceRegistration(OssTypeEnum.MINIO, MinioOssServiceImpl::new);
     }
 }

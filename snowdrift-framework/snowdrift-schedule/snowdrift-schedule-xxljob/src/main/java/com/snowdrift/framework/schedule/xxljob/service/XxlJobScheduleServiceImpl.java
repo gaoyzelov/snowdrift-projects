@@ -119,17 +119,8 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     public JobDetails getJob(XxlJobKey jobKey) {
         int groupId = jobKey.getGroupId() != null ? jobKey.getGroupId() : getExecutorGroupId(null);
         int offset = 0;
-        Map<String, String> param = new HashMap<>();
-        param.put("jobGroup", String.valueOf(groupId));
-        param.put("offset", String.valueOf(offset));
-        param.put("pagesize", String.valueOf(PAGE_SIZE));
-        param.put("triggerStatus", "-1");
-        param.put("jobDesc", StrConst.EMPTY);
-        param.put("executorHandler", StrConst.EMPTY);
-        param.put("author", StrConst.EMPTY);
         while (true) {
-            JSONObject resp = callAdminPostApi(XxlJobApiConst.JOB_PAGE_PATH, param);
-            JSONObject content = resp.getJSONObject("data");
+            JSONObject content = fetchJobPage(groupId, offset);
             if (content == null) return null;
             JSONArray data = content.getJSONArray("data");
             if (data == null || data.isEmpty()) return null;
@@ -141,7 +132,6 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
             }
             int total = content.getIntValue("total");
             offset += PAGE_SIZE;
-            param.put("offset", String.valueOf(offset));
             if (offset >= total) return null;
         }
     }
@@ -157,17 +147,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         List<JobDetails> result = new ArrayList<>();
         int offset = 0;
         while (true) {
-            Map<String, String> param = new HashMap<>();
-            param.put("jobGroup", String.valueOf(groupId));
-            param.put("offset", String.valueOf(offset));
-            param.put("pagesize", String.valueOf(PAGE_SIZE));
-            param.put("triggerStatus","-1");
-            param.put("jobDesc", StrConst.EMPTY);
-            param.put("executorHandler", StrConst.EMPTY);
-            param.put("author", StrConst.EMPTY);
-
-            JSONObject resp = callAdminPostApi(XxlJobApiConst.JOB_PAGE_PATH, param);
-            JSONObject content = resp.getJSONObject("data");
+            JSONObject content = fetchJobPage(groupId, offset);
             if (content == null) break;
             JSONArray data = content.getJSONArray("data");
             if (data == null || data.isEmpty()) break;
@@ -179,6 +159,22 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
             if (offset >= total) break;
         }
         return result;
+    }
+
+    /**
+     * 分页查询任务列表
+     */
+    private JSONObject fetchJobPage(int groupId, int offset) {
+        Map<String, String> param = new HashMap<>();
+        param.put("jobGroup", String.valueOf(groupId));
+        param.put("offset", String.valueOf(offset));
+        param.put("pagesize", String.valueOf(PAGE_SIZE));
+        param.put("triggerStatus", "-1");
+        param.put("jobDesc", StrConst.EMPTY);
+        param.put("executorHandler", StrConst.EMPTY);
+        param.put("author", StrConst.EMPTY);
+        JSONObject resp = callAdminPostApi(XxlJobApiConst.JOB_PAGE_PATH, param);
+        return resp.getJSONObject("data");
     }
 
     // ========== 内部方法：参数构建 ==========

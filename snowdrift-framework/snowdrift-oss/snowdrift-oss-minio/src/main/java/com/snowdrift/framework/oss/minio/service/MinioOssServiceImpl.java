@@ -213,15 +213,16 @@ public class MinioOssServiceImpl extends AbstractOssService {
                                 .objects(objects)
                                 .build()
                 );
-                boolean hasErrors = false;
+                int errorCount = 0;
                 for (Result<DeleteResult.Error> result : resultIterable) {
-                    hasErrors = true;
+                    errorCount++;
                     DeleteResult.Error error = result.get();
                     log.error("文件批量删除失败: bucket={}, objectKey={}, error={}", bucket, error.objectName(), error.message());
                 }
-                if (!hasErrors) {
-                    log.debug("文件批量删除成功: bucket={}", bucket);
+                if (errorCount > 0) {
+                    throw new OssException("oss.delete.batch.partial-failed", new Object[]{errorCount});
                 }
+                log.debug("文件批量删除成功: bucket={}", bucket);
             } catch (Exception e) {
                 log.error("文件批量删除失败: bucket={}", bucket, e);
                 throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});

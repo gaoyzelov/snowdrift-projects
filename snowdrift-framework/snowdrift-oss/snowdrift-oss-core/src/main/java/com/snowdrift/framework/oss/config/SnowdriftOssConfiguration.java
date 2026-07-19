@@ -1,5 +1,6 @@
 package com.snowdrift.framework.oss.config;
 
+import com.snowdrift.framework.oss.core.OssServiceRegistration;
 import com.snowdrift.framework.oss.core.OssStrategyFactory;
 import com.snowdrift.framework.oss.properties.OssProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -7,6 +8,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
+import java.util.List;
 
 /**
  * OSS 自动配置类
@@ -29,11 +32,16 @@ public class SnowdriftOssConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(OssStrategyFactory.class)
-    public OssStrategyFactory ossStrategyFactory(OssProperties ossProperties) {
+    public OssStrategyFactory ossStrategyFactory(OssProperties ossProperties,
+                                                  List<OssServiceRegistration> registrations) {
         OssStrategyFactory factory = new OssStrategyFactory();
-        // 设置默认配置标识
         factory.setDefaultConfigKey(ossProperties.getDefaultConfigKey());
-        log.info("OSS 策略工厂初始化完成，默认配置: {}", ossProperties.getDefaultConfigKey());
+        // 各存储提供者模块通过 OssServiceRegistration Bean 声明能力，此处统一收集注册
+        for (OssServiceRegistration r : registrations) {
+            factory.registerFromProperties(ossProperties, r.getType(), r.getCreator());
+        }
+        log.info("OSS 策略工厂初始化完成，默认配置: {}，已注册提供者: {}",
+                ossProperties.getDefaultConfigKey(), registrations.size());
         return factory;
     }
 }

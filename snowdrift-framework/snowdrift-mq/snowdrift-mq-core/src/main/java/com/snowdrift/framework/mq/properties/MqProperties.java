@@ -82,5 +82,15 @@ public class MqProperties {
          * 线程名前缀
          */
         private String threadNamePrefix = "snowdrift-mq-async-";
+
+        /**
+         * 关闭时是否等待任务完成
+         */
+        private boolean waitForTasksToCompleteOnShutdown = true;
+
+        /**
+         * 关闭等待超时（秒）
+         */
+        private int awaitTerminationSeconds = 30;
     }
 }

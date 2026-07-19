@@ -11,9 +11,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -33,8 +31,11 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
 
     private final Cache<String, Object> cache;
 
-    /** 通配符 Pattern 缓存，避免每次编译正则 */
-    private final Map<String, Pattern> patternCache = new ConcurrentHashMap<>();
+    /** 通配符 Pattern 缓存，有界 + TTL 防止内存泄漏 */
+    private final Cache<String, Pattern> patternCache = Caffeine.newBuilder()
+            .maximumSize(256)
+            .expireAfterAccess(Duration.ofHours(1))
+            .build();
 
     public CaffeineCacheServiceImpl(CacheProperties properties, CacheSerializer serializer) {
         super(serializer);
@@ -159,7 +160,7 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
      * 简单通配符匹配（支持 * 和 ?）
      */
     private boolean matchWildcard(String str, String pattern) {
-        Pattern p = patternCache.computeIfAbsent(pattern, ptn -> {
+        Pattern p = patternCache.get(pattern, ptn -> {
             String regex = ptn
                     .replace(".", "\\.")
                     .replace("*", ".*")

@@ -4,6 +4,7 @@ import com.aliyun.oss.OSS;
 import com.aliyun.oss.OSSClientBuilder;
 import com.aliyun.oss.model.DeleteObjectsRequest;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
+import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
 import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
@@ -17,6 +18,8 @@ import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 
+import java.io.FilterInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.time.Duration;
@@ -131,7 +134,19 @@ public class AliyunOssServiceImpl extends AbstractOssService {
         String bucket = super.getBucket();
 
         try {
-            return ossClient.getObject(bucket, objectKey).getObjectContent();
+            OSSObject ossObject = ossClient.getObject(bucket, objectKey);
+            InputStream content = ossObject.getObjectContent();
+            // 包装流：关闭时联动关闭 OSSObject，防止连接泄漏
+            return new FilterInputStream(content) {
+                @Override
+                public void close() throws IOException {
+                    try {
+                        super.close();
+                    } finally {
+                        ossObject.close();
+                    }
+                }
+            };
         } catch (Exception e) {
             log.error("文件下载失败: bucket={}, objectKey={}", bucket, objectKey, e);
             throw new OssException("oss.download.failed", new Object[]{e.getMessage()});

@@ -227,18 +227,22 @@ public class WebExceptionHandler {
         return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), i18nMessage);
     }
 
+    private static final long KB = 1024;
+    private static final long MB = KB * 1024;
+    private static final long GB = MB * 1024;
+
     /**
      * 格式化文件大小
      */
     private String formatFileSize(long size) {
-        if (size < 1024) {
+        if (size < KB) {
             return size + " B";
-        } else if (size < 1024 * 1024) {
-            return String.format("%.2f KB", size / 1024.0);
-        } else if (size < 1024 * 1024 * 1024) {
-            return String.format("%.2f MB", size / (1024.0 * 1024));
+        } else if (size < MB) {
+            return String.format("%.2f KB", size / (double) KB);
+        } else if (size < GB) {
+            return String.format("%.2f MB", size / (double) MB);
         } else {
-            return String.format("%.2f GB", size / (1024.0 * 1024 * 1024));
+            return String.format("%.2f GB", size / (double) GB);
         }
     }
 }

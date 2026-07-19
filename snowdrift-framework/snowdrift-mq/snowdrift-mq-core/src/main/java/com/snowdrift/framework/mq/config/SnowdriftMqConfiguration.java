@@ -44,6 +44,8 @@ public class SnowdriftMqConfiguration {
         executor.setKeepAliveSeconds(exec.getKeepAliveSeconds());
         executor.setThreadNamePrefix(exec.getThreadNamePrefix());
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        executor.setWaitForTasksToCompleteOnShutdown(exec.isWaitForTasksToCompleteOnShutdown());
+        executor.setAwaitTerminationSeconds(exec.getAwaitTerminationSeconds());
         executor.initialize();
         log.info("MQ 异步发送线程池已初始化: core={}, max={}, queue={}",
                 exec.getCoreSize(), exec.getMaxSize(), exec.getQueueCapacity());
