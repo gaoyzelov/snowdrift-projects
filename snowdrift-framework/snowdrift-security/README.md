@@ -13,18 +13,14 @@ snowdrift-security
 
 ## 快速开始
 
-```xml
-<!-- 核心（必选） -->
-<dependency>
-    <groupId>com.snowdrift</groupId>
-    <artifactId>snowdrift-security-core</artifactId>
-</dependency>
+按需引入一个安全实现即可，核心 API（`snowdrift-security-core`）会作为传递依赖自动引入。
 
-<!-- 按需选一个实现 -->
+```xml
 <dependency>
     <groupId>com.snowdrift</groupId>
     <artifactId>snowdrift-security-satoken</artifactId>
 </dependency>
+<!-- 或 security-spring -->
 ```
 
 ## 配置

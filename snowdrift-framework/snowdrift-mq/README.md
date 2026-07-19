@@ -14,18 +14,14 @@ snowdrift-mq
 
 ## 快速开始
 
-```xml
-<!-- 核心（必选） -->
-<dependency>
-    <groupId>com.snowdrift</groupId>
-    <artifactId>snowdrift-mq-core</artifactId>
-</dependency>
+按需引入一个 MQ binder 即可，核心 API（`snowdrift-mq-core`）会作为传递依赖自动引入。
 
-<!-- 按需选一个 binder -->
+```xml
 <dependency>
     <groupId>com.snowdrift</groupId>
     <artifactId>snowdrift-mq-kafka</artifactId>
 </dependency>
+<!-- 或 mq-rocketmq / mq-rabbitmq -->
 ```
 
 ## 配置

@@ -16,18 +16,14 @@ snowdrift-oss
 
 ## 快速开始
 
-```xml
-<!-- 核心（必选） -->
-<dependency>
-    <groupId>com.snowdrift</groupId>
-    <artifactId>snowdrift-oss-core</artifactId>
-</dependency>
+按需引入一个后端实现即可，核心 API（`snowdrift-oss-core`）会作为传递依赖自动引入。
 
-<!-- 按需选一个后端 -->
+```xml
 <dependency>
     <groupId>com.snowdrift</groupId>
     <artifactId>snowdrift-oss-minio</artifactId>
 </dependency>
+<!-- 或 local / aliyun / qiniu / tencent -->
 ```
 
 ## 配置

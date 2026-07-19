@@ -14,18 +14,15 @@ snowdrift-cache
 
 ## 快速开始
 
-```xml
-<!-- 核心（必选） -->
-<dependency>
-    <groupId>com.snowdrift</groupId>
-    <artifactId>snowdrift-cache-core</artifactId>
-</dependency>
+按需引入一个后端实现即可，核心 API（`snowdrift-cache-core`）会作为传递依赖自动引入。
 
-<!-- 按需选一个后端 -->
+```xml
+<!-- 选择一个后端 -->
 <dependency>
     <groupId>com.snowdrift</groupId>
     <artifactId>snowdrift-cache-redisson</artifactId>
 </dependency>
+<!-- 或 caffeine / redis -->
 ```
 
 后端自动选择优先级：**Redisson > Redis > Caffeine**。未引入任何后端时，Caffeine 作为兜底。

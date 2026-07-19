@@ -13,18 +13,14 @@ snowdrift-schedule
 
 ## 快速开始
 
-```xml
-<!-- 核心（必选） -->
-<dependency>
-    <groupId>com.snowdrift</groupId>
-    <artifactId>snowdrift-schedule-core</artifactId>
-</dependency>
+按需引入一个调度后端即可，核心 API（`snowdrift-schedule-core`）会作为传递依赖自动引入。
 
-<!-- 按需选一个后端 -->
+```xml
 <dependency>
     <groupId>com.snowdrift</groupId>
     <artifactId>snowdrift-schedule-quartz</artifactId>
 </dependency>
+<!-- 或 schedule-xxljob -->
 ```
 
 ## 配置
