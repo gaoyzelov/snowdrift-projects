@@ -88,7 +88,62 @@ public CompletableFuture<Result<User>> getUser(Long id) {
 
 ### 链路追踪
 
-`LogTraceFilter` 在配置类中通过 `FilterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE)` 最先执行，生成 `X-Trace-Id` 写入 MDC 和响应头。`HttpContextFilter` 紧随其后，填充 `HttpContext`。
+`LogTraceFilter` 最早执行，生成 `X-Trace-Id` 写入 MDC 和响应头。
+
+### XSS 防护
+
+`XssFilter` 对请求参数、请求头、QueryString、请求属性做 XSS 清洗，阻断存储型 XSS。
+
+```yaml
+snowdrift:
+  web:
+    xss:
+      enabled: true
+      exclude-path-patterns:       # 排除路径（Ant 风格），如富文本接口
+        - /admin/richtext/**
+```
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | Boolean | false | 是否启用 XSS 过滤 |
+| `exclude-path-patterns` | List\<String\> | [] | 排除路径，不进行过滤 |
+
+默认使用 `SimpleXssCleaner` 做 HTML 实体转义（零额外依赖）：
+
+| 原始字符 | 转义后 |
+|---------|--------|
+| `&` | `&amp;` |
+| `<` | `&lt;` |
+| `>` | `&gt;` |
+| `"` | `&quot;` |
+| `'` | `&#39;` |
+
+**可插拔清洗器：** `XssCleaner` 接口支持注入自定义实现。例如管理后台场景可引入 Jsoup，用 Safelist 白名单保留富文本标签同时去掉恶意脚本：
+
+```java
+@Component
+public class JsoupXssCleaner implements XssCleaner {
+    @Override
+    public String clean(String value) {
+        return Jsoup.clean(value, Safelist.relaxed());
+    }
+}
+```
+
+### 请求体重复读取
+
+`CachedBodyFilter` 在 Filter 链前端一次性读取 Body 并缓存为 `byte[]`，后续所有 Filter 和 Controller 均可重复调用 `getInputStream()` / `getReader()`。
+
+### 过滤器链路
+
+```
+请求进入
+  → LogTraceFilter       (HIGHEST_PRECEDENCE)        生成 traceId
+  → CachedBodyFilter     (HIGHEST_PRECEDENCE + 5)    缓存 Body
+  → XssFilter            (HIGHEST_PRECEDENCE + 10)   XSS 清洗（可配开关/排除路径）
+  → HttpContextFilter    (HIGHEST_PRECEDENCE + 1)    填充 HttpContext
+  → Controller
+```
 
 ### JSON 序列化
 

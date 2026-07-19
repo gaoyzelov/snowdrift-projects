@@ -1,15 +1,20 @@
 package com.snowdrift.framework.web.config;
 
 import com.snowdrift.framework.common.util.DateTimeUtil;
+import com.snowdrift.framework.web.filter.CachedBodyFilter;
 import com.snowdrift.framework.web.filter.HttpContextFilter;
 import com.snowdrift.framework.web.filter.LogTraceFilter;
+import com.snowdrift.framework.web.filter.XssFilter;
 import com.snowdrift.framework.web.handler.WebExceptionHandler;
+import com.snowdrift.framework.web.xss.SimpleXssCleaner;
+import com.snowdrift.framework.web.xss.XssCleaner;
 import com.snowdrift.framework.web.properties.CorsProperties;
 import com.snowdrift.framework.web.properties.ResourceProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.Ordered;
@@ -29,16 +34,19 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  */
 @Slf4j
 @AutoConfiguration
-@EnableConfigurationProperties({ResourceProperties.class, CorsProperties.class})
+@EnableConfigurationProperties({ResourceProperties.class, CorsProperties.class, XssProperties.class})
 public class SnowdriftWebConfiguration implements WebMvcConfigurer {
 
     private final ResourceProperties resourceProperties;
-
     private final CorsProperties corsProperties;
+    private final XssProperties xssProperties;
 
-    public SnowdriftWebConfiguration(ResourceProperties resourceProperties, CorsProperties corsProperties) {
+    public SnowdriftWebConfiguration(ResourceProperties resourceProperties,
+                                     CorsProperties corsProperties,
+                                     XssProperties xssProperties) {
         this.resourceProperties = resourceProperties;
         this.corsProperties = corsProperties;
+        this.xssProperties = xssProperties;
     }
 
     /**
@@ -101,6 +109,46 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
     @Bean
     public WebExceptionHandler webExceptionHandler() {
         return new WebExceptionHandler();
+    }
+
+    /**
+     * 请求体缓存过滤器
+     * <p>
+     * 在 Filter 链最前端缓存 Body，后续可重复读取。
+     * </p>
+     */
+    @Bean
+    public FilterRegistrationBean<CachedBodyFilter> cachedBodyFilter() {
+        FilterRegistrationBean<CachedBodyFilter> registration = new FilterRegistrationBean<>(
+                new CachedBodyFilter());
+        registration.addUrlPatterns("/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 5);
+        return registration;
+    }
+
+    /**
+     * XSS 清洗器，默认使用 HTML 实体转义，可覆盖为 Jsoup 等实现
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public XssCleaner xssCleaner() {
+        return new SimpleXssCleaner();
+    }
+
+    /**
+     * XSS 防护过滤器
+     * <p>
+     * 通过 {@code snowdrift.web.xss.enabled=true} 启用，
+     * 对请求参数和请求头做 XSS 清洗。
+     * </p>
+     */
+    @Bean
+    public FilterRegistrationBean<XssFilter> xssFilter(XssCleaner xssCleaner) {
+        FilterRegistrationBean<XssFilter> registration = new FilterRegistrationBean<>(
+                new XssFilter(xssProperties, xssCleaner));
+        registration.addUrlPatterns("/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
+        return registration;
     }
 
     /**

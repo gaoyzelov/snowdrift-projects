@@ -5,8 +5,11 @@ import com.snowdrift.framework.common.util.IpUtil;
 import com.snowdrift.framework.common.util.ServletUtil;
 import com.snowdrift.framework.context.http.HttpContext;
 import com.snowdrift.framework.context.http.HttpContextHolder;
-import jakarta.servlet.*;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
@@ -17,24 +20,24 @@ import java.io.IOException;
  * @description Http请求上下文过滤器
  * @since 1.0.0
  */
-public class HttpContextFilter implements Filter {
+public class HttpContextFilter extends OncePerRequestFilter {
+
     @Override
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+            throws ServletException, IOException {
         try {
-            if (request instanceof HttpServletRequest httpRequest) {
-                String ip = IpUtil.getIp(httpRequest);
-                HttpContext context = HttpContext.builder()
-                        .ip(ip)
-                        .ipLocation(IpUtil.getIpLocation(ip, StrConst.SPACE))
-                        .userAgent(ServletUtil.getUserAgent(httpRequest))
-                        .uri(httpRequest.getRequestURI())
-                        .method(httpRequest.getMethod())
-                        .paramMap(ServletUtil.getParamMap(httpRequest))
-                        .build();
-                HttpContextHolder.setContext(context);
-            }
+            String ip = IpUtil.getIp(request);
+            HttpContext context = HttpContext.builder()
+                    .ip(ip)
+                    .ipLocation(IpUtil.getIpLocation(ip, StrConst.SPACE))
+                    .userAgent(ServletUtil.getUserAgent(request))
+                    .uri(request.getRequestURI())
+                    .method(request.getMethod())
+                    .paramMap(ServletUtil.getParamMap(request))
+                    .build();
+            HttpContextHolder.setContext(context);
             chain.doFilter(request, response);
-        }finally {
+        } finally {
             HttpContextHolder.clear();
         }
     }

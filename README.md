@@ -1,11 +1,24 @@
+<p align="center">
+  <img src="docs/logo.png" alt="Snowdrift Logo" width="700px" />
+</p>
+
 # Snowdrift（雪堆）
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Java](https://img.shields.io/badge/java-17-orange.svg)](https://adoptium.net/)
 [![Spring Boot](https://img.shields.io/badge/spring--boot-3.5.14-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Spring Cloud](https://img.shields.io/badge/spring--cloud-2025.0.2-brightgreen.svg)](https://spring.io/projects/spring-cloud)
+[![MyBatis-Plus](https://img.shields.io/badge/mybatis--plus-3.5.15-blue.svg)](https://baomidou.com/)
+[![Sa-Token](https://img.shields.io/badge/sa--token-1.45.0-5b8c5a.svg)](https://sa-token.cc/)
+[![Redisson](https://img.shields.io/badge/redisson-4.3.0-red.svg)](https://redisson.org/)
+[![Dubbo](https://img.shields.io/badge/dubbo-3.3.6-orange.svg)](https://dubbo.apache.org/)
+[![Knife4j](https://img.shields.io/badge/knife4j-4.5.0-brightgreen.svg)](https://doc.xiaominfo.com/)
+[![Hutool](https://img.shields.io/badge/hutool-5.8.44-6c9d99.svg)](https://hutool.cn/)
+[![XXL-JOB](https://img.shields.io/badge/xxl--job-3.4.1-blue.svg)](https://www.xuxueli.com/xxl-job/)
 
-一个开箱即用的 Spring Cloud 微服务开发脚手架，提供统一响应、国际化、对象存储、缓存、安全、调度等基础设施能力。
+**Snowdrift（雪堆）** 是一个面向 Spring Cloud 微服务架构的开源基础设施脚手架，以"开箱即用、按需引入、安全默认"为设计理念，为 Java 后端开发团队提供经过工程验证的企业级基础能力层。
+
+项目涵盖 **12 个功能模块、34 个 Maven 子模块**，覆盖了微服务开发中最高频的基础设施需求——从统一响应与异常处理，到多后端缓存与分布式锁；从多租户 ORM 增强到消息队列封装；从对象存储策略化接入到 Dubbo RPC 上下文传播。所有模块均在 Spring Boot 3.x 自动配置机制之上构建，通过 `@ConditionalOnProperty` 等条件注解实现按需激活，零代码侵入即可集成到既有项目中。
 
 ## 快速开始
 
@@ -280,7 +293,7 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 | API 文档 | Knife4j（OpenAPI 3） | 4.5.0 |
 | 安全框架 | Sa-Token | 1.45.0 |
 | 分布式锁 | Redisson | 4.3.0 |
-| 多级缓存 | JetCache | 2.8.0 |
+| 多级缓存 | JetCache | 2.7.9 |
 | 分布式调度 | XXL-JOB | 3.4.1 |
 | JSON | FastJson2 | 2.0.61 |
 | Excel | FastExcel | 1.3.0 |

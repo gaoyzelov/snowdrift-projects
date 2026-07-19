@@ -161,7 +161,7 @@ snowdrift:
       pagination:
         db-type: MYSQL
         max-limit: 1000                # 单页最大条数
-        overflow: false                # 溢出处理
+        overflow: true                 # 溢出处理，默认 true
         optimize-join: true            # LEFT JOIN count 优化
 ```
 
