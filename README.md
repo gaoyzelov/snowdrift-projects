@@ -33,7 +33,7 @@ mvn clean install -pl snowdrift-framework/snowdrift-common
 mvn clean install -pl snowdrift-framework/snowdrift-cache/snowdrift-cache-redisson
 ```
 
-**环境要求**：Java 17+、Maven 3.6+
+**环境要求**：Java 17+、Maven 3.8+
 
 ## 模块总览
 
