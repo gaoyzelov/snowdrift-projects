@@ -52,7 +52,7 @@ public enum UrlStyleEnum implements IEnum<String> {
     /**
      * 根据 code 获取枚举（找不到时返回默认值 PATH_STYLE）
      */
-    public static UrlStyleEnum fromCode(String code) {
+    public static UrlStyleEnum from(String code) {
         return getByCode(code).orElse(PATH_STYLE);
     }
 }

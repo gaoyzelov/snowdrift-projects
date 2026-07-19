@@ -64,7 +64,7 @@ public enum OssTypeEnum implements IEnum<String> {
     /**
      * 根据 code 获取枚举（找不到时抛出异常）
      */
-    public static OssTypeEnum fromCode(String code) {
+    public static OssTypeEnum from(String code) {
         return getByCode(code).orElseThrow(() -> 
             new OssException("未知的 OSS 类型: " + code));
     }

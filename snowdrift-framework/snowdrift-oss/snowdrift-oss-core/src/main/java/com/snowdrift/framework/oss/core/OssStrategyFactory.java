@@ -6,6 +6,7 @@ import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.properties.OssProperties;
 import com.snowdrift.framework.oss.util.OssConfigConverter;
 import jakarta.annotation.PreDestroy;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.springframework.util.StringUtils;
@@ -22,6 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @since 1.0.0
  */
 @Slf4j
+@Data
 public class OssStrategyFactory {
     
     /**
@@ -35,28 +37,7 @@ public class OssStrategyFactory {
      * 默认配置标识（使用 volatile 保证可见性）
      */
     private volatile String defaultConfigKey = "default";
-    
-    /**
-     * 设置默认配置标识
-     * <p>
-     * 设置默认 OSS 实例的配置标识
-     * 调用 getDefaultService() 时会返回该标识对应的实例
-     *
-     * @param defaultConfigKey 默认配置标识
-     */
-    public void setDefaultConfigKey(String defaultConfigKey) {
-        this.defaultConfigKey = defaultConfigKey;
-    }
-    
-    /**
-     * 获取默认配置标识
-     *
-     * @return 默认配置标识
-     */
-    public String getDefaultConfigKey() {
-        return defaultConfigKey;
-    }
-    
+
     /**
      * 注册 OSS 实例
      *

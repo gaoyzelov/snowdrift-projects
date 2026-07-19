@@ -29,7 +29,7 @@ public class OssConfigDTO {
     
     /**
      * 上传 Endpoint（内网）
-     * 示例：http://192.168.1.100:9000
+     * 示例：https://192.168.1.100:9000
      */
     private String endpoint;
     
@@ -47,7 +47,7 @@ public class OssConfigDTO {
     
     /**
      * 访问域名（公网/CDN）
-     * 示例：https://oss.example.com
+     * 示例：httpss://oss.example.com
      */
     private String domain;
     
