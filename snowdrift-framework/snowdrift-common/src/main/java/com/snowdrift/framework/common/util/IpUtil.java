@@ -30,20 +30,36 @@ public final class IpUtil {
     }
 
     /**
-     * IP 查询器，启动加载到内存中
+     * IP 查询器，懒加载避免 ip2region.xdb 缺失时阻断应用启动
      */
-    private static final Searcher searcher;
+    private static volatile Searcher searcher;
+    private static volatile boolean searcherInitialized;
 
-    static {
-        long now = System.currentTimeMillis();
-        try (InputStream stream = IpUtil.class.getClassLoader().getResourceAsStream("ip2region.xdb")) {
-            AssertUtil.notNull(stream, "未找到IP2Region数据库文件 (ip2region.xdb)。请确保文件已放置在classpath根目录下。");
-            byte[] dbBinStr = stream.readAllBytes();
-            searcher = Searcher.newWithBuffer(dbBinStr);
-            log.info("IP2Region数据库加载成功，耗时 ({}) ms", System.currentTimeMillis() - now);
-        } catch (Exception e) {
-            throw new BizException("IP2Region初始化失败", e);
+    /**
+     * 获取 IP 查询器（懒加载，首次调用时初始化）
+     */
+    private static Searcher getSearcher() {
+        if (!searcherInitialized) {
+            synchronized (IpUtil.class) {
+                if (!searcherInitialized) {
+                    long now = System.currentTimeMillis();
+                    try (InputStream stream = IpUtil.class.getClassLoader().getResourceAsStream("ip2region.xdb")) {
+                        if (stream == null) {
+                            log.warn("未找到 IP2Region 数据库文件 (ip2region.xdb)，IP 归属地查询将不可用。"
+                                    + "请将文件放置在 classpath 根目录下。");
+                        } else {
+                            byte[] dbBinStr = stream.readAllBytes();
+                            searcher = Searcher.newWithBuffer(dbBinStr);
+                            log.info("IP2Region 数据库加载成功，耗时 ({} ms)", System.currentTimeMillis() - now);
+                        }
+                    } catch (Exception e) {
+                        log.error("IP2Region 初始化失败，IP 归属地查询将不可用", e);
+                    }
+                    searcherInitialized = true;
+                }
+            }
         }
+        return searcher;
     }
 
     /**
@@ -100,8 +116,12 @@ public final class IpUtil {
         if (!isValidIp(ip) || isInternalIp(ip)) {
             return new String[]{"", "", "", "", ""};
         }
+        Searcher s = getSearcher();
+        if (s == null) {
+            return new String[]{"", "", "", "", ""};
+        }
         try {
-            String region = searcher.search(ip);
+            String region = s.search(ip);
             return region.split("\\|");
         } catch (Exception e) {
             log.error("IP解析失败，ip={}", ip, e);
@@ -148,9 +168,13 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isIpv4(String ip) {
-        basicCheck(ip);
-        InetAddress address = InetAddresses.forString(ip);
-        return address instanceof Inet4Address;
+        try {
+            basicCheck(ip);
+            InetAddress address = InetAddresses.forString(ip);
+            return address instanceof Inet4Address;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -160,9 +184,13 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isIpv6(String ip) {
-        basicCheck(ip);
-        InetAddress address = InetAddresses.forString(ip);
-        return address instanceof Inet6Address;
+        try {
+            basicCheck(ip);
+            InetAddress address = InetAddresses.forString(ip);
+            return address instanceof Inet6Address;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**
@@ -172,9 +200,13 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isInternalIp(String ip) {
-        basicCheck(ip);
-        InetAddress address = InetAddresses.forString(ip);
-        return address.isLoopbackAddress() || address.isSiteLocalAddress() || address.isLinkLocalAddress();
+        try {
+            basicCheck(ip);
+            InetAddress address = InetAddresses.forString(ip);
+            return address.isLoopbackAddress() || address.isSiteLocalAddress() || address.isLinkLocalAddress();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

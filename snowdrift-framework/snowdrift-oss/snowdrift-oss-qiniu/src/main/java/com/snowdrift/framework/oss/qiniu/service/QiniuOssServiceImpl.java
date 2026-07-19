@@ -185,7 +185,8 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             } else {
                 try {
                     response.body().close();
-                } catch (Exception ignored) {
+                } catch (Exception e) {
+                    log.warn("关闭错误响应流失败: bucket={}, objectKey={}", bucket, objectKey, e);
                 }
                 throw new OssException("oss.download.failed", new Object[]{response.statusCode()});
             }
@@ -252,9 +253,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             } catch (QiniuException e) {
                 log.error("文件批量删除失败: bucket={}, count={}", bucket, partitionKeys.size(), e);
                 throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
-            }catch (OssException e){
-                throw e;
-            }catch (Exception e){
+            } catch (Exception e) {
                 log.error("文件批量删除失败: bucket={}", bucket, e);
                 throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
             }

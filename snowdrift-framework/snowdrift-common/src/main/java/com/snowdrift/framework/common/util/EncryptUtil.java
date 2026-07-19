@@ -282,7 +282,8 @@ public final class EncryptUtil {
         AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
         try {
             byte[] iv = new byte[GCM_IV_LENGTH];
-            SecureRandom.getInstanceStrong().nextBytes(iv);
+            // 使用 new SecureRandom() 而非 getInstanceStrong()，避免 Linux /dev/random 熵池耗尽时阻塞
+            new SecureRandom().nextBytes(iv);
             GCMParameterSpec gcmSpec = new GCMParameterSpec(GCM_TAG_LENGTH, iv);
 
             SecretKeySpec keySpec = new SecretKeySpec(key, "AES");

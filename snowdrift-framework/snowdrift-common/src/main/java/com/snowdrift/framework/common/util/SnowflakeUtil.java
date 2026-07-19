@@ -2,6 +2,9 @@ package com.snowdrift.framework.common.util;
 
 import com.snowdrift.framework.common.exception.BizException;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 /**
  * SnowflakeUtil
  *
@@ -179,6 +182,13 @@ public final class SnowflakeUtil {
         return System.currentTimeMillis();
     }
 
+    // ==============================Singleton========================================
+
+    /**
+     * 实例缓存（按 workerId:datacenterId 组合复用实例）
+     */
+    private static final Map<String, SnowflakeUtil> INSTANCES = new ConcurrentHashMap<>();
+
     /**
      * 获取实例（使用默认 workerId=0, datacenterId=0）
      * <p>
@@ -187,20 +197,20 @@ public final class SnowflakeUtil {
      * 不同的 workerId 和 datacenterId。
      * </p>
      *
-     * @return SnowflakeUtil 实例
+     * @return SnowflakeUtil 实例（单例）
      */
     public static SnowflakeUtil getInstance() {
-        return new SnowflakeUtil();
+        return getInstance(0, 0);
     }
 
     /**
-     * 获取实例
+     * 获取实例（datacenterId 默认为 0）
      *
-     * @param workerId     工作ID (0~31)
-     * @return SnowflakeUtil
+     * @param workerId 工作ID (0~31)
+     * @return SnowflakeUtil 实例（单例）
      */
     public static SnowflakeUtil getInstance(long workerId) {
-        return new SnowflakeUtil(workerId, 31);
+        return getInstance(workerId, 0);
     }
 
     /**
@@ -208,9 +218,10 @@ public final class SnowflakeUtil {
      *
      * @param workerId     工作ID (0~31)
      * @param datacenterId 数据中心ID (0~31)
-     * @return SnowflakeUtil
+     * @return SnowflakeUtil 实例（单例，相同 workerId+datacenterId 复用同一实例）
      */
     public static SnowflakeUtil getInstance(long workerId, long datacenterId) {
-        return new SnowflakeUtil(workerId, datacenterId);
+        String key = workerId + ":" + datacenterId;
+        return INSTANCES.computeIfAbsent(key, k -> new SnowflakeUtil(workerId, datacenterId));
     }
 }

@@ -66,7 +66,7 @@ public abstract class AbstractCacheService implements ICacheService {
      *
      * @param prefix 原始前缀
      */
-    protected void setKeyPrefix(String prefix) {
+    protected final void setKeyPrefix(String prefix) {
         if (StringUtils.isNotBlank(prefix)) {
             this.keyPrefix = prefix.endsWith(StrConst.COLON) ? prefix : prefix + StrConst.COLON;
         }
@@ -77,7 +77,7 @@ public abstract class AbstractCacheService implements ICacheService {
      *
      * @param defaultTtl 默认过期时间
      */
-    protected void setDefaultTtl(Duration defaultTtl) {
+    protected final void setDefaultTtl(Duration defaultTtl) {
         if (Objects.nonNull(defaultTtl)) {
             this.defaultTtl = defaultTtl;
         }

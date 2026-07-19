@@ -34,17 +34,22 @@ import org.springframework.context.annotation.Bean;
 @EnableConfigurationProperties({OrmMpBaseProperties.class, OrmMpTenantProperties.class, OrmMpPaginationProperties.class})
 public class SnowdriftOrmMpConfiguration {
 
+    private final OrmMpBaseProperties baseProperties;
+
+    public SnowdriftOrmMpConfiguration(OrmMpBaseProperties baseProperties) {
+        this.baseProperties = baseProperties;
+    }
+
     /**
      * AES 加密密钥初始化
-     *
-     * @param properties ORM 基础配置属性
+     * <p>JSR-250 规范要求 @PostConstruct 方法必须无参，属性通过构造器注入。</p>
      */
     @PostConstruct
-    public void cryptoKeyInitializer(OrmMpBaseProperties properties) {
-        if (Boolean.FALSE.equals(properties.getCrypto())){
+    public void cryptoKeyInitializer() {
+        if (Boolean.FALSE.equals(baseProperties.getCrypto())) {
             return;
         }
-        String key = properties.getCryptoKey();
+        String key = baseProperties.getCryptoKey();
         if (StringUtils.isBlank(key)) {
             throw new BizException("snowdrift.orm.mp.crypto=true 但 cryptoKey 未配置!");
         }
@@ -66,7 +71,7 @@ public class SnowdriftOrmMpConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public MybatisPlusInterceptor mybatisPlusInterceptor(OrmMpBaseProperties baseProperties, OrmMpPaginationProperties paginationProperties,
+    public MybatisPlusInterceptor mybatisPlusInterceptor(OrmMpPaginationProperties paginationProperties,
                                                          OrmMpTenantProperties tenantProperties,
                                                          ObjectProvider<IDataScopeProvider> dataScopeProvider) {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();

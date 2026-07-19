@@ -152,7 +152,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
         String bucket = super.getBucket();
 
         try {
-            // 获取对象
+            // 获取对象，COSObjectInputStream 在 close() 时会自动释放底层 HTTP 连接
             COSObject cosObject = cosClient.getObject(bucket, objectKey);
             return cosObject.getObjectContent();
         } catch (CosServiceException e) {

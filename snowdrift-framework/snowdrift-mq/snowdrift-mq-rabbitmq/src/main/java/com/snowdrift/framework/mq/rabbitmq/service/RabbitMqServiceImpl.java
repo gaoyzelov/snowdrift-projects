@@ -64,6 +64,8 @@ public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements Applica
                 builder.setHeader("x-delay", delay.toMillis());
             } else {
                 // 降级方案：设置消息过期时间 + 死信队列，需用提前配置
+                log.warn("RabbitMQ 延迟消息使用 x-message-ttl 降级方案，请确保对应队列已配置 DLX（死信队列），"
+                        + "否则到期消息将被直接丢弃。建议开启 delay-plugin-enabled 使用 x-delay 插件。");
                 builder.setHeader("x-message-ttl", delay.toMillis());
             }
         });

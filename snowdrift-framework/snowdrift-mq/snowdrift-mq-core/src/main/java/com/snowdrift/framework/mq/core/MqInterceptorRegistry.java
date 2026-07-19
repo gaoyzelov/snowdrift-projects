@@ -22,7 +22,7 @@ public class MqInterceptorRegistry {
     /**
      * 注册拦截器（运行时动态添加）
      */
-    public void register(MqSendInterceptor interceptor) {
+    public synchronized void register(MqSendInterceptor interceptor) {
         if (interceptor == null) return;
         interceptors.add(interceptor);
         interceptors.sort(Comparator.comparingInt(MqSendInterceptor::getPriority).reversed());

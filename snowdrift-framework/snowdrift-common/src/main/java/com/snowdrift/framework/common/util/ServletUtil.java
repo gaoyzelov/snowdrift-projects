@@ -83,5 +83,6 @@ public final class ServletUtil {
         response.setContentType("application/json");
         response.setCharacterEncoding(StandardCharsets.UTF_8.name());
         response.getWriter().write(JSON.toJSONString(result));
+        response.getWriter().flush();
     }
 }

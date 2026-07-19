@@ -1,11 +1,11 @@
 package com.snowdrift.framework.cache.redisson.config;
 
-import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.cache.DistributedLockService;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.config.CacheProperties;
 import com.snowdrift.framework.cache.redisson.service.RedissonCacheServiceImpl;
 import com.snowdrift.framework.cache.redisson.service.RedissonLockService;
+import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import jakarta.annotation.PreDestroy;
 import org.apache.commons.lang3.StringUtils;
 import org.redisson.Redisson;
@@ -76,14 +76,19 @@ public class SnowdriftRedissonConfiguration {
         config.setCodec(StringCodec.INSTANCE);
         String password = redisProperties.getPassword();
 
+        // 转发 spring.data.redis.timeout 到 Redisson（Redisson 以毫秒为单位）
+        int timeoutMs = redisProperties.getTimeout() != null ? (int) redisProperties.getTimeout().toMillis() : 3000;
+
         String uriPrefix = redisProperties.getSsl() != null && redisProperties.getSsl().isEnabled() ? "rediss://" : "redis://";
 
         if (redisProperties.getCluster() != null) {
-            configureCluster(config, redisProperties.getCluster().getNodes(), uriPrefix);
+            configureCluster(config, redisProperties.getCluster().getNodes(), uriPrefix, timeoutMs);
         } else if (redisProperties.getSentinel() != null) {
-            configureSentinel(config, redisProperties.getSentinel(), redisProperties.getDatabase(), uriPrefix);
+            configureSentinel(config, redisProperties.getSentinel(), redisProperties.getDatabase(), uriPrefix, timeoutMs);
         } else {
-            configureSingle(config, redisProperties.getHost(), redisProperties.getPort(), redisProperties.getDatabase(), uriPrefix);
+            configureSingle(config, redisProperties.getHost(), redisProperties.getPort(), redisProperties.getDatabase(), uriPrefix, timeoutMs);
+            // 转发 spring.data.redis 连接池配置（兼容 Lettuce 和 Jedis）
+            applyPoolConfig(config, redisProperties);
         }
 
         // 密码统一在 Config 层设置（Redisson 4.x 已废弃各 ServerConfig 的 setPassword）
@@ -97,35 +102,58 @@ public class SnowdriftRedissonConfiguration {
     }
 
     /**
+     * 转发 spring.data.redis 连接池配置到 Redisson（仅单节点模式适用）
+     * <p>兼容 Lettuce 和 Jedis 两种客户端配置。</p>
+     */
+    private void applyPoolConfig(Config config, RedisProperties redisProperties) {
+        // 优先取 Lettuce pool，其次 Jedis pool
+        RedisProperties.Pool pool = null;
+        if (redisProperties.getLettuce() != null && redisProperties.getLettuce().getPool() != null) {
+            pool =  redisProperties.getLettuce().getPool();
+        } else if (redisProperties.getJedis() != null && redisProperties.getJedis().getPool() != null) {
+            pool = redisProperties.getJedis().getPool();
+        }
+        if (pool == null) {
+            return;
+        }
+        config.useSingleServer().setConnectionPoolSize(pool.getMaxActive());
+        config.useSingleServer().setConnectionMinimumIdleSize(pool.getMinIdle());
+    }
+
+    /**
      * 集群模式配置
      */
-    private void configureCluster(Config config, List<String> nodes, String uriPrefix) {
+    private void configureCluster(Config config, List<String> nodes, String uriPrefix, int timeoutMs) {
         String[] addresses = nodes.stream()
                 .map(node -> uriPrefix + node)
                 .toArray(String[]::new);
-        config.useClusterServers().addNodeAddress(addresses);
+        config.useClusterServers()
+                .addNodeAddress(addresses)
+                .setTimeout(timeoutMs);
     }
 
     /**
      * 哨兵模式配置
      */
-    private void configureSentinel(Config config, RedisProperties.Sentinel sentinel, int database, String uriPrefix) {
+    private void configureSentinel(Config config, RedisProperties.Sentinel sentinel, int database, String uriPrefix, int timeoutMs) {
         String[] addresses = sentinel.getNodes().stream()
                 .map(node -> uriPrefix + node)
                 .toArray(String[]::new);
         config.useSentinelServers()
                 .setMasterName(sentinel.getMaster())
                 .addSentinelAddress(addresses)
-                .setDatabase(database);
+                .setDatabase(database)
+                .setTimeout(timeoutMs);
     }
 
     /**
      * 单节点模式配置
      */
-    private void configureSingle(Config config, String host, int port, int database, String uriPrefix) {
+    private void configureSingle(Config config, String host, int port, int database, String uriPrefix, int timeoutMs) {
         config.useSingleServer()
                 .setAddress(uriPrefix + host + ":" + port)
-                .setDatabase(database);
+                .setDatabase(database)
+                .setTimeout(timeoutMs);
     }
 
     @Bean

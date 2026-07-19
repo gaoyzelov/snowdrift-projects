@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * CronUtil
@@ -18,6 +19,12 @@ import java.time.LocalDateTime;
 public final class CronUtil {
 
     private static final String CRON_FORMAT = "ss mm HH dd MM ? yyyy";
+
+    /** 星期缩写映射（MON~SUN → 1~7） */
+    private static final Map<String, Integer> DAY_NAMES = Map.ofEntries(
+            Map.entry("MON", 1), Map.entry("TUE", 2), Map.entry("WED", 3),
+            Map.entry("THU", 4), Map.entry("FRI", 5), Map.entry("SAT", 6), Map.entry("SUN", 7)
+    );
 
     private CronUtil() {
     }
@@ -75,6 +82,11 @@ public final class CronUtil {
             return true;
         }
 
+        // 星期字段（fieldIndex=5）支持 MON-SUN 缩写
+        if (fieldIndex == 5) {
+            return isValidDayOfWeekField(field);
+        }
+
         int min, max;
         switch (fieldIndex) {
             case 0: // 秒 0-59
@@ -97,10 +109,6 @@ public final class CronUtil {
                 min = 1;
                 max = 12;
                 break;
-            case 5: // 周 1-7 或 ?
-                min = 1;
-                max = 7;
-                break;
             case 6: // 年（可选）
                 return field.matches("\\d{4}");
             default:
@@ -119,6 +127,68 @@ public final class CronUtil {
         }
 
         return true;
+    }
+
+    /**
+     * 验证星期字段（支持 MON-SUN 缩写和数字 1-7）
+     */
+    private static boolean isValidDayOfWeekField(String field) {
+        if (field.contains(",")) {
+            for (String part : field.split(",")) {
+                if (!isValidDayOfWeekRange(part)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+        return isValidDayOfWeekRange(field);
+    }
+
+    /**
+     * 验证星期字段的单个值/范围（支持 MON-SUN 缩写）
+     */
+    private static boolean isValidDayOfWeekRange(String value) {
+        try {
+            if (value.contains("/")) {
+                String[] parts = value.split("/");
+                if (parts.length != 2) return false;
+                if (!isDayOfWeekToken(parts[0])) return false;
+                int step = Integer.parseInt(parts[1]);
+                return step > 0;
+            } else if (value.contains("-")) {
+                String[] parts = value.split("-");
+                if (parts.length != 2) return false;
+                int start = resolveDayOfWeek(parts[0]);
+                int end = resolveDayOfWeek(parts[1]);
+                return start > 0 && end > 0 && start <= end;
+            } else {
+                if ("*".equals(value) || "?".equals(value)) return true;
+                return resolveDayOfWeek(value) > 0;
+            }
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
+
+    /**
+     * 检查是否为合法的星期标记（数字 1-7 或 MON-SUN）
+     */
+    private static boolean isDayOfWeekToken(String token) {
+        return "*".equals(token) || resolveDayOfWeek(token) > 0;
+    }
+
+    /**
+     * 将星期标记解析为数字（1-7），无法识别时返回 -1
+     */
+    private static int resolveDayOfWeek(String token) {
+        Integer num = DAY_NAMES.get(token.toUpperCase());
+        if (num != null) return num;
+        try {
+            int n = Integer.parseInt(token);
+            return (n >= 1 && n <= 7) ? n : -1;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 
     /**

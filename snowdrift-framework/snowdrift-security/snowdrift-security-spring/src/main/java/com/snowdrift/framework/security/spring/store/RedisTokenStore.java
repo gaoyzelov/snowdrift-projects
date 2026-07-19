@@ -49,13 +49,15 @@ public class RedisTokenStore extends AbstractTokenStore {
 
     @Override
     protected void touch(String token, TokenEntry entry) {
-        // 刷新 Redis TTL；闲置超时为 0 时使用绝对剩余时间
-        long absoluteRemain = (entry.getExpireAt() - System.currentTimeMillis()) / 1000;
+        // 刷新 lastActiveAt 并写回 Redis，使闲置超时基于真实最后活跃时间计算
+        long now = System.currentTimeMillis();
+        TokenEntry updated = new TokenEntry(entry.getContext(), entry.getExpireAt(), now);
+        long absoluteRemain = (entry.getExpireAt() - now) / 1000;
         long effectiveTtl = idleTimeoutSeconds > 0
             ? Math.min(absoluteRemain, idleTimeoutSeconds)
             : absoluteRemain;
         if (effectiveTtl > 0) {
-            redisTemplate.expire(tokenKey(token), effectiveTtl, TimeUnit.SECONDS);
+            redisTemplate.opsForValue().set(tokenKey(token), updated, effectiveTtl, TimeUnit.SECONDS);
         }
     }
 

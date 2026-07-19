@@ -157,15 +157,27 @@ public class CaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     /**
-     * 简单通配符匹配（支持 * 和 ?）
+     * 简单通配符匹配（支持 * 和 ?），其他正则特殊字符全部转义
      */
     private boolean matchWildcard(String str, String pattern) {
         Pattern p = patternCache.get(pattern, ptn -> {
-            String regex = ptn
-                    .replace(".", "\\.")
-                    .replace("*", ".*")
-                    .replace("?", ".");
-            return Pattern.compile(regex);
+            StringBuilder regex = new StringBuilder();
+            for (int i = 0; i < ptn.length(); i++) {
+                char c = ptn.charAt(i);
+                switch (c) {
+                    case '*': regex.append(".*"); break;
+                    case '?': regex.append('.'); break;
+                    // 正则元字符全部转义
+                    case '.': case '(': case ')': case '[': case ']':
+                    case '+': case '^': case '$': case '|': case '\\':
+                    case '{': case '}':
+                        regex.append('\\').append(c);
+                        break;
+                    default:
+                        regex.append(c);
+                }
+            }
+            return Pattern.compile(regex.toString());
         });
         return p.matcher(str).matches();
     }

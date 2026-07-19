@@ -55,13 +55,6 @@ public class JacksonCacheSerializer implements CacheSerializer {
         }
     }
 
-    /**
-     * 获取底层 ObjectMapper，供 Redis / Redisson 等需要原生 ObjectMapper 的场景使用
-     */
-    public ObjectMapper getObjectMapper() {
-        return objectMapper;
-    }
-
     private static ObjectMapper createObjectMapper() {
         ObjectMapper om = new ObjectMapper();
         // 序列化所有字段（包括 private）

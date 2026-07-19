@@ -38,6 +38,8 @@ public final class ReflectUtil {
      * 根据方法名查找 Method 对象
      * <p>
      * 仅查找当前类的声明方法（不含父类），返回前调用 {@code setAccessible(true)}。
+     * 若存在重载方法，仅返回第一个匹配（JVM 不保证 {@code getDeclaredMethods()} 顺序），
+     * 同时输出 WARN 日志提醒调用方应使用含参数类型的重载方法。
      * </p>
      *
      * @param clazz 目标类
@@ -46,11 +48,21 @@ public final class ReflectUtil {
      * @throws NoSuchMethodException 方法不存在时抛出
      */
     public static Method getMethod(Class<?> clazz, String name) throws NoSuchMethodException {
+        Method result = null;
         for (Method m : clazz.getDeclaredMethods()) {
             if (m.getName().equals(name)) {
-                m.setAccessible(true);
-                return m;
+                if (result == null) {
+                    result = m;
+                } else {
+                    log.warn("类 {} 存在重载方法 {}，getMethod 仅返回第一个匹配，建议使用带参数类型的重载方法",
+                            clazz.getName(), name);
+                    break;
+                }
             }
+        }
+        if (result != null) {
+            result.setAccessible(true);
+            return result;
         }
         throw new NoSuchMethodException(clazz.getName() + "#" + name);
     }

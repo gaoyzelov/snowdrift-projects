@@ -129,11 +129,20 @@ public final class ValidateUtil {
         if (StringUtils.isBlank(idCard) || (idCard.length() != 15 && idCard.length() != 18)) {
             return false;
         }
-        boolean matches = CARD_NO_PATTERN.matcher(idCard).matches();
-        if (!matches) {
-            return false;
+        final int cardLength = idCard.length();
+
+        // 18 位身份证：格式正则校验
+        if (cardLength == 18) {
+            if (!CARD_NO_PATTERN.matcher(idCard).matches()) {
+                return false;
+            }
+        } else {
+            // 15 位身份证：全数字校验
+            if (!idCard.chars().allMatch(Character::isDigit)) {
+                return false;
+            }
         }
-        int cardLength = idCard.length();
+
         // 校验地区码
         String areaCode = idCard.substring(0, 2);
         if (!AREA_SET.contains(areaCode)) {
@@ -162,10 +171,11 @@ public final class ValidateUtil {
         } catch (Exception e) {
             return false;
         }
-        // 校验校验码
+        // 15 位身份证校验通过
         if (cardLength == 15) {
             return true;
         }
+        // 18 位身份证校验码
         int sum = 0;
         for (int i = 0; i < 17; i++) {
             char c = idCard.charAt(i);

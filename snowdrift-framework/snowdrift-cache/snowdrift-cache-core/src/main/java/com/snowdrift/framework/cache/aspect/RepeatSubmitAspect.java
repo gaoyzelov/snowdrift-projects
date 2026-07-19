@@ -18,6 +18,11 @@ import java.time.Duration;
  * 拦截 {@link RepeatSubmit @RepeatSubmit} 注解的方法，
  * 在执行前检查是否重复提交，若已存在则拒绝，否则写入标记并放行。
  * </p>
+ * <p>
+ * <b>注意：</b>幂等标记的 TTL 应大于业务方法的最长执行时间。
+ * 若业务执行时间超过 {@code interval}，标记会在处理过程中过期，
+ * 导致并发请求穿透幂等防护。
+ * </p>
  *
  * @author gaoyzelov
  * @date 2026/6/2
@@ -50,7 +55,7 @@ public class RepeatSubmitAspect {
 
         try {
             return joinPoint.proceed();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             // 业务异常时删除标记，允许用户修正后重新提交
             cacheService.delete(key);
             if (e instanceof InterruptedException) {
