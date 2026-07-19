@@ -43,6 +43,25 @@ snowdrift（雪堆）
 │   └── snowdrift-plugin     ← 插件基础设施（规划中）
 ```
 
+## 📖 文档索引
+
+各模块详细使用说明及配置参考：
+
+| 模块 | 文档 | 说明 |
+|------|------|------|
+| snowdrift-common | [README](snowdrift-framework/snowdrift-common/README.md) | 统一响应、业务异常、加密/校验/雪花ID等工具类 |
+| snowdrift-context | [README](snowdrift-framework/snowdrift-context/README.md) | HTTP/Security 上下文，TTL 跨线程传播 |
+| snowdrift-log | [README](snowdrift-framework/snowdrift-log/README.md) | @ApiLog/@LoginLog 审计日志，可插拔日志存储 |
+| snowdrift-web | [README](snowdrift-framework/snowdrift-web/README.md) | CORS、i18n、异步、全局异常处理 |
+| snowdrift-cache | [README](snowdrift-framework/snowdrift-cache/README.md) | 多后端缓存、@DistributedLock、@RepeatSubmit |
+| snowdrift-oss | [README](snowdrift-framework/snowdrift-oss/README.md) | 对象存储（5 种后端），策略模式驱动 |
+| snowdrift-security | [README](snowdrift-framework/snowdrift-security/README.md) | Sa-Token / Spring Security 双实现 |
+| snowdrift-schedule | [README](snowdrift-framework/snowdrift-schedule/README.md) | Quartz / XXL-JOB 分布式调度 |
+| snowdrift-mq | [README](snowdrift-framework/snowdrift-mq/README.md) | Kafka / RocketMQ / RabbitMQ 消息队列 |
+| snowdrift-orm | [README](snowdrift-framework/snowdrift-orm/README.md) | MyBatis-Plus：多租户、数据权限、字段加密 |
+| snowdrift-rpc | [README](snowdrift-framework/snowdrift-rpc/README.md) | Dubbo 上下文传播、异常处理 |
+| snowdrift-plugin | [README](snowdrift-framework/snowdrift-plugin/README.md) | 插件基础设施（规划中） |
+
 ## 核心特性
 
 ### 统一响应
