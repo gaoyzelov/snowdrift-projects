@@ -71,6 +71,8 @@ public class SnowdriftSecuritySaTokenConfiguration implements WebMvcConfigurer {
         config.setTokenStyle(securityProperties.getTokenStyle());
         // Sa-Token 框架自身日志开关
         config.setIsLog(securityProperties.isLog());
+        // 关闭Banner打印
+        config.setIsPrint(false);
         return config;
     }
 
