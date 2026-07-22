@@ -32,5 +32,11 @@
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-jsqlparser-4.9</artifactId>
         </dependency>
+        <!-- Spring Boot Configuration Processor -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>

@@ -35,5 +35,11 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
             <optional>true</optional>
         </dependency>
+        <!-- Spring Boot Configuration Processor -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
 </project>
