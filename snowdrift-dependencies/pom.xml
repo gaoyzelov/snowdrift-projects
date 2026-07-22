@@ -43,6 +43,8 @@
         <jetcache.version>2.7.9</jetcache.version>
         <fastjson2.version>2.0.61</fastjson2.version>
         <fastexcel.version>1.3.0</fastexcel.version>
+        <tianai-captcha.version>1.5.5</tianai-captcha.version>
+        <liteflow.version>2.16.0</liteflow.version>
         <bizlog.version>3.0.6</bizlog.version>
         <ttl.version>2.14.5</ttl.version>
         <jasypt.version>4.0.4</jasypt.version>
@@ -196,6 +198,19 @@
                 <artifactId>bizlog-sdk</artifactId>
                 <version>${bizlog.version}</version>
             </dependency>
+            <!-- Tianai Captcha -->
+            <dependency>
+                <groupId>cloud.tianai.captcha</groupId>
+                <artifactId>tianai-captcha-springboot-starter</artifactId>
+                <version>${tianai-captcha.version}</version>
+            </dependency>
+            <!-- LiteFlow -->
+            <dependency>
+                <groupId>com.yomahub</groupId>
+                <artifactId>liteflow-spring-boot-starter</artifactId>
+                <version>${liteflow.version}</version>
+            </dependency>
+
             <!-- Transmittable ThreadLocal -->
             <dependency>
                 <groupId>com.alibaba</groupId>
