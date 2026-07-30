@@ -7,7 +7,6 @@ import com.snowdrift.framework.cache.redisson.service.RedissonCacheServiceImpl;
 import com.snowdrift.framework.cache.redisson.service.RedissonLockService;
 import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import jakarta.annotation.PreDestroy;
-import org.apache.commons.lang3.StringUtils;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.codec.StringCodec;
@@ -41,6 +40,7 @@ public class SnowdriftRedissonConfiguration {
      * <p>Redisson 默认 30s，缩短至 15s 可更快释放失联客户端持有的锁。</p>
      */
     private static final long LOCK_WATCHDOG_TIMEOUT_MS = 15_000L;
+    private static final int DEFAULT_TIMEOUT_MS = 3000;
 
     private RedissonClient redissonClient;
 
@@ -74,31 +74,80 @@ public class SnowdriftRedissonConfiguration {
         Config config = new Config();
         // 使用 StringCodec，序列化由 CacheSerializer 在服务层统一处理
         config.setCodec(StringCodec.INSTANCE);
-        String password = redisProperties.getPassword();
-
-        // 转发 spring.data.redis.timeout 到 Redisson（Redisson 以毫秒为单位）
-        int timeoutMs = redisProperties.getTimeout() != null ? (int) redisProperties.getTimeout().toMillis() : 3000;
-
-        String uriPrefix = redisProperties.getSsl() != null && redisProperties.getSsl().isEnabled() ? "rediss://" : "redis://";
 
         if (redisProperties.getCluster() != null) {
-            configureCluster(config, redisProperties.getCluster().getNodes(), uriPrefix, timeoutMs);
+            configureCluster(config, redisProperties);
         } else if (redisProperties.getSentinel() != null) {
-            configureSentinel(config, redisProperties.getSentinel(), redisProperties.getDatabase(), uriPrefix, timeoutMs);
+            configureSentinel(config, redisProperties);
         } else {
-            configureSingle(config, redisProperties.getHost(), redisProperties.getPort(), redisProperties.getDatabase(), uriPrefix, timeoutMs);
-            // 转发 spring.data.redis 连接池配置（兼容 Lettuce 和 Jedis）
-            applyPoolConfig(config, redisProperties);
-        }
-
-        // 密码统一在 Config 层设置（Redisson 4.x 已废弃各 ServerConfig 的 setPassword）
-        if (StringUtils.isNotBlank(password)) {
-            config.setPassword(password);
+            configureSingle(config, redisProperties);
         }
 
         config.setLockWatchdogTimeout(LOCK_WATCHDOG_TIMEOUT_MS);
         this.redissonClient = Redisson.create(config);
         return this.redissonClient;
+    }
+
+    /**
+     * 获取超时时间（毫秒）
+     */
+    private int getTimeout(RedisProperties redisProperties) {
+        return redisProperties.getTimeout() != null ? (int) redisProperties.getTimeout().toMillis() : DEFAULT_TIMEOUT_MS;
+    }
+
+    /**
+     * 获取 URI 前缀
+     */
+    private String getUriPrefix(RedisProperties redisProperties) {
+        return redisProperties.getSsl() != null && redisProperties.getSsl().isEnabled() ? "rediss://" : "redis://";
+    }
+
+    /**
+     * 集群模式配置
+     */
+    private void configureCluster(Config config, RedisProperties redisProperties) {
+        int timeout = getTimeout(redisProperties);
+        String uriPrefix = getUriPrefix(redisProperties);
+        List<String> nodes = redisProperties.getCluster().getNodes();
+        String[] addresses = nodes.stream()
+                .map(node -> uriPrefix + node)
+                .toArray(String[]::new);
+        config.useClusterServers()
+                .addNodeAddress(addresses)
+                .setPassword(redisProperties.getPassword())
+                .setTimeout(timeout);
+    }
+
+    /**
+     * 哨兵模式配置
+     */
+    private void configureSentinel(Config config, RedisProperties redisProperties) {
+        int timeout = getTimeout(redisProperties);
+        String uriPrefix = getUriPrefix(redisProperties);
+        RedisProperties.Sentinel sentinel = redisProperties.getSentinel();
+        String[] addresses = sentinel.getNodes().stream()
+                .map(node -> uriPrefix + node)
+                .toArray(String[]::new);
+        config.useSentinelServers()
+                .setMasterName(sentinel.getMaster())
+                .addSentinelAddress(addresses)
+                .setPassword(redisProperties.getPassword())
+                .setDatabase(redisProperties.getDatabase())
+                .setTimeout(timeout);
+    }
+
+    /**
+     * 单节点模式配置
+     */
+    private void configureSingle(Config config, RedisProperties redisProperties) {
+        int timeout = getTimeout(redisProperties);
+        String uriPrefix = getUriPrefix(redisProperties);
+        config.useSingleServer()
+                .setAddress(uriPrefix + redisProperties.getHost() + ":" + redisProperties.getPort())
+                .setDatabase(redisProperties.getDatabase())
+                .setPassword(redisProperties.getPassword())
+                .setTimeout(timeout);
+        applyPoolConfig(config,redisProperties);
     }
 
     /**
@@ -120,41 +169,6 @@ public class SnowdriftRedissonConfiguration {
         config.useSingleServer().setConnectionMinimumIdleSize(pool.getMinIdle());
     }
 
-    /**
-     * 集群模式配置
-     */
-    private void configureCluster(Config config, List<String> nodes, String uriPrefix, int timeoutMs) {
-        String[] addresses = nodes.stream()
-                .map(node -> uriPrefix + node)
-                .toArray(String[]::new);
-        config.useClusterServers()
-                .addNodeAddress(addresses)
-                .setTimeout(timeoutMs);
-    }
-
-    /**
-     * 哨兵模式配置
-     */
-    private void configureSentinel(Config config, RedisProperties.Sentinel sentinel, int database, String uriPrefix, int timeoutMs) {
-        String[] addresses = sentinel.getNodes().stream()
-                .map(node -> uriPrefix + node)
-                .toArray(String[]::new);
-        config.useSentinelServers()
-                .setMasterName(sentinel.getMaster())
-                .addSentinelAddress(addresses)
-                .setDatabase(database)
-                .setTimeout(timeoutMs);
-    }
-
-    /**
-     * 单节点模式配置
-     */
-    private void configureSingle(Config config, String host, int port, int database, String uriPrefix, int timeoutMs) {
-        config.useSingleServer()
-                .setAddress(uriPrefix + host + ":" + port)
-                .setDatabase(database)
-                .setTimeout(timeoutMs);
-    }
 
     @Bean
     @ConditionalOnMissingBean(ICacheService.class)
