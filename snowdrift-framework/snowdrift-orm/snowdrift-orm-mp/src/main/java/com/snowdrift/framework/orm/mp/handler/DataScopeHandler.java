@@ -11,8 +11,8 @@ import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
-import net.sf.jsqlparser.expression.operators.relational.ExpressionList;
 import net.sf.jsqlparser.expression.operators.relational.InExpression;
+import net.sf.jsqlparser.expression.operators.relational.ParenthesedExpressionList;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import org.apache.commons.collections4.CollectionUtils;
@@ -219,7 +219,7 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
      * @return IN 表达式
      */
     private Expression buildInExpression(String column, List<Long> deptIds) {
-        ExpressionList<LongValue> expressionList = new ExpressionList<>(
+        ParenthesedExpressionList<LongValue> expressionList = new ParenthesedExpressionList<>(
                 deptIds.stream().map(LongValue::new).toList()
         );
         return new InExpression(new Column(column), expressionList);
