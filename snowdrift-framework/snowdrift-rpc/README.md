@@ -133,7 +133,7 @@ Consumer 端调用时自动向 RPC 附件注入 `traceId` 和 `SecurityContext`�
 | 与接口同 JAR 包的异常 | 直接传播 | Consumer 端有对应类 |
 | JDK 异常（`java.*` / `javax.*`） | 直接传播 | 所有 JVM 均有 |
 | `RpcException` | 直接传播 | Dubbo 标准异常 |
-| `BizException` | 直接传播 | Consumer 端必有 `snowdrift-common` |
+| `BizException` | 直接传播 | Consumer 端必有 `snowdrift-base` |
 | 其他未知异常 | 包装为 `BizException` | 防止序列化失败 |
 
 ### 调用日志

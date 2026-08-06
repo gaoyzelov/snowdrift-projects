@@ -57,6 +57,8 @@
         <dingtalk-v2.version>2.2.55</dingtalk-v2.version>
         <dingtalk-v1.version>2.0.0</dingtalk-v1.version>
         <dingtalk-stream-client.version>1.3.12</dingtalk-stream-client.version>
+        <json-schema-generator.version>5.0.0</json-schema-generator.version>
+        <json-schema-validator.version>3.0.6</json-schema-validator.version>
         <swagger-annotations.version>2.2.19</swagger-annotations.version>
         <commons-collections4.version>4.5.0</commons-collections4.version>
         <lombok.mapstruct.binding.version>0.2.0</lombok.mapstruct.binding.version>
@@ -210,7 +212,28 @@
                 <artifactId>liteflow-spring-boot-starter</artifactId>
                 <version>${liteflow.version}</version>
             </dependency>
-
+            <!-- JSON Schema Generator -->
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-generator</artifactId>
+                <version>${json-schema-generator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-module-jackson</artifactId>
+                <version>${json-schema-generator.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.victools</groupId>
+                <artifactId>jsonschema-module-jakarta-validation</artifactId>
+                <version>${json-schema-generator.version}</version>
+            </dependency>
+            <!-- JSON Schema Validator -->
+            <dependency>
+                <groupId>com.networknt</groupId>
+                <artifactId>json-schema-validator</artifactId>
+                <version>${json-schema-validator.version}</version>
+            </dependency>
             <!-- Transmittable ThreadLocal -->
             <dependency>
                 <groupId>com.alibaba</groupId>
@@ -284,7 +307,7 @@
             <!-- Snowdrift Framework -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
-                <artifactId>snowdrift-common</artifactId>
+                <artifactId>snowdrift-base</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

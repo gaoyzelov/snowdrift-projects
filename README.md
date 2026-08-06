@@ -27,7 +27,7 @@
 mvn clean install -DskipTests
 
 # 构建单个模块
-mvn clean install -pl snowdrift-framework/snowdrift-common
+mvn clean install -pl snowdrift-framework/snowdrift-base
 
 # 构建深层子模块
 mvn clean install -pl snowdrift-framework/snowdrift-cache/snowdrift-cache-redisson
@@ -42,7 +42,7 @@ snowdrift（雪堆）
 ├── snowdrift-dependencies   ← BOM：统一管理全部第三方依赖版本
 ├── snowdrift-parent         ← 父 POM：插件管理、编译参数、注解处理器
 ├── snowdrift-framework      ← 框架聚合模块
-│   ├── snowdrift-common     ← 核心基础：Result<T>、ResultCode、BizException、工具类
+│   ├── snowdrift-base     ← 核心基础：Result<T>、ResultCode、BizException、工具类
 │   ├── snowdrift-context    ← 请求上下文：HttpContext / SecurityContext（TTL 跨线程）
 │   ├── snowdrift-log        ← 日志审计：@ApiLog / @LoginLog AOP 切面
 │   ├── snowdrift-web        ← Web 自动配置：CORS、i18n、异常处理、异步上下文传播
@@ -62,7 +62,7 @@ snowdrift（雪堆）
 
 | 模块 | 文档 | 说明 |
 |------|------|------|
-| snowdrift-common | [README](snowdrift-framework/snowdrift-common/README.md) | 统一响应、业务异常、加密/校验/雪花ID等工具类 |
+| snowdrift-base | [README](snowdrift-framework/snowdrift-base/README.md) | 统一响应、业务异常、加密/校验/雪花ID等工具类 |
 | snowdrift-context | [README](snowdrift-framework/snowdrift-context/README.md) | HTTP/Security 上下文，TTL 跨线程传播 |
 | snowdrift-log | [README](snowdrift-framework/snowdrift-log/README.md) | @ApiLog/@LoginLog 审计日志，可插拔日志存储 |
 | snowdrift-web | [README](snowdrift-framework/snowdrift-web/README.md) | CORS、i18n、异步、全局异常处理 |
@@ -267,7 +267,7 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 
 ### 通用工具
 
-`snowdrift-common` 提供开箱即用的工具类：
+`snowdrift-base` 提供开箱即用的工具类：
 
 | 类 | 功能 |
 |----|------|
@@ -308,7 +308,7 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 
 | 模块 | 状态 |
 |------|------|
-| snowdrift-common | ✅ 完成 |
+| snowdrift-base | ✅ 完成 |
 | snowdrift-context | ✅ 完成 |
 | snowdrift-log | ✅ 完成 |
 | snowdrift-web | ✅ 完成 |

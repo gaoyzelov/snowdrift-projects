@@ -10,7 +10,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>snowdrift-common</artifactId>
+    <artifactId>snowdrift-base</artifactId>
 
     <dependencies>
         <!-- Servlet API -->

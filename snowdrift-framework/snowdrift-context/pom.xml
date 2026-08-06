@@ -15,7 +15,7 @@
         <!-- Snowdrift Common -->
         <dependency>
             <groupId>com.snowdrift</groupId>
-            <artifactId>snowdrift-common</artifactId>
+            <artifactId>snowdrift-base</artifactId>
         </dependency>
         <!-- TTL -->
         <dependency>

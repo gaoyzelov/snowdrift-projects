@@ -32,7 +32,7 @@
     </developers>
 
     <modules>
-        <module>snowdrift-common</module>
+        <module>snowdrift-base</module>
         <module>snowdrift-cache</module>
         <module>snowdrift-log</module>
         <module>snowdrift-mq</module>

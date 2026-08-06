@@ -1,4 +1,4 @@
-# snowdrift-common
+# snowdrift-base
 
 核心基础模块，提供统一响应、业务异常、工具类等基础设施能力，所有其他模块均依赖此模块。
 
@@ -7,7 +7,7 @@
 ```xml
 <dependency>
     <groupId>com.snowdrift</groupId>
-    <artifactId>snowdrift-common</artifactId>
+    <artifactId>snowdrift-base</artifactId>
 </dependency>
 ```
 
