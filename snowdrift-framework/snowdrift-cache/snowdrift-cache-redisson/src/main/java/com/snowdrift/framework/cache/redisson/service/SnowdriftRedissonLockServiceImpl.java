@@ -18,11 +18,11 @@ import java.util.function.Supplier;
  * @since 1.0.0
  */
 @Slf4j
-public class RedissonLockService implements DistributedLockService {
+public class SnowdriftRedissonLockServiceImpl implements DistributedLockService {
 
     private final RedissonClient redissonClient;
 
-    public RedissonLockService(RedissonClient redissonClient) {
+    public SnowdriftRedissonLockServiceImpl(RedissonClient redissonClient) {
         this.redissonClient = redissonClient;
     }
 

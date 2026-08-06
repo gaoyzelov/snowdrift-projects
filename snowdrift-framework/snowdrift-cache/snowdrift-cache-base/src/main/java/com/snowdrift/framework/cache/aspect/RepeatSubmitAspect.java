@@ -3,6 +3,7 @@ package com.snowdrift.framework.cache.aspect;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.annotation.RepeatSubmit;
 import com.snowdrift.framework.cache.util.SpELUtil;
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -47,7 +48,7 @@ public class RepeatSubmitAspect {
         log.debug("重复提交检查: key={}, interval={}", key, ttl);
 
         // 尝试写入标记，写入失败表示已存在（重复提交）
-        boolean success = cacheService.putIfAbsent(key, "1", ttl);
+        boolean success = cacheService.putIfAbsent(key, StrConst.TRUE, ttl);
         if (!success) {
             log.warn("检测到重复提交: key={}", key);
             throw new BizException(repeatSubmit.message(), repeatSubmit.args());

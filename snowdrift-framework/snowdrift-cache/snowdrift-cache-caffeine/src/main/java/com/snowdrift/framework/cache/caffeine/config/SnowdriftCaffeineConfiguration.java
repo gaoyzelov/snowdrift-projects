@@ -1,17 +1,15 @@
 package com.snowdrift.framework.cache.caffeine.config;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.cache.ICacheService;
-import com.snowdrift.framework.cache.caffeine.service.CaffeineCacheServiceImpl;
-import com.snowdrift.framework.cache.config.CacheProperties;
+import com.snowdrift.framework.cache.caffeine.service.SnowdriftCaffeineCacheServiceImpl;
+import com.snowdrift.framework.cache.config.SnowdriftCacheProperties;
+import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.caffeine.CaffeineCacheManager;
 import org.springframework.context.annotation.Bean;
-
-import java.util.concurrent.TimeUnit;
 
 /**
  * Caffeine 缓存自动配置
@@ -31,10 +29,10 @@ import java.util.concurrent.TimeUnit;
 @ConditionalOnMissingBean(ICacheService.class)
 public class SnowdriftCaffeineConfiguration {
 
-    private final CacheProperties cacheProperties;
+    private final SnowdriftCacheProperties properties;
 
-    public SnowdriftCaffeineConfiguration(CacheProperties cacheProperties) {
-        this.cacheProperties = cacheProperties;
+    public SnowdriftCaffeineConfiguration(SnowdriftCacheProperties properties) {
+        this.properties = properties;
     }
 
     /**
@@ -44,16 +42,16 @@ public class SnowdriftCaffeineConfiguration {
     @ConditionalOnMissingBean
     public CacheManager cacheManager() {
         Caffeine<Object, Object> caffeine = Caffeine.newBuilder()
-                .maximumSize(cacheProperties.getMaxSize())
-                .expireAfterWrite(cacheProperties.getKeyTtl().toMillis(), TimeUnit.MILLISECONDS);
+                .maximumSize(properties.getMaxSize())
+                .expireAfterAccess(properties.getKeyTtl())
+                .expireAfterWrite(properties.getKeyTtl());
         CaffeineCacheManager manager = new CaffeineCacheManager();
         manager.setCaffeine(caffeine);
         return manager;
     }
 
     @Bean
-    @ConditionalOnMissingBean(ICacheService.class)
     public ICacheService caffeineCacheService(CacheSerializer serializer) {
-        return new CaffeineCacheServiceImpl(cacheProperties, serializer);
+        return new SnowdriftCaffeineCacheServiceImpl(properties, serializer);
     }
 }

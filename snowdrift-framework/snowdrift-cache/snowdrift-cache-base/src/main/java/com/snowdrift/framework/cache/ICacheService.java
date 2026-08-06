@@ -2,7 +2,6 @@ package com.snowdrift.framework.cache;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Set;
 
 /**
  * 统一缓存操作接口
@@ -79,7 +78,7 @@ public interface ICacheService {
      * @param keys 缓存键集合
      * @return 实际删除的数量
      */
-    long delete(Collection<String> keys);
+    long batchDelete(Collection<String> keys);
 
     /**
      * 判断 key 是否存在
@@ -105,12 +104,4 @@ public interface ICacheService {
      * @return 剩余秒数，-1 表示永不过期，-2 表示 key 不存在
      */
     long getExpire(String key);
-
-    /**
-     * 模糊匹配 key
-     *
-     * @param pattern 匹配模式（如 "user:*"）
-     * @return 匹配的 key 集合
-     */
-    Set<String> keys(String pattern);
 }

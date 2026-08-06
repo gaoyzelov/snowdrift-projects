@@ -2,13 +2,14 @@ package com.snowdrift.framework.cache.redis.config;
 
 import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.cache.ICacheService;
-import com.snowdrift.framework.cache.config.CacheProperties;
-import com.snowdrift.framework.cache.redis.service.RedisCacheServiceImpl;
+import com.snowdrift.framework.cache.config.SnowdriftCacheProperties;
+import com.snowdrift.framework.cache.redis.service.SnowdriftRedisCacheServiceImpl;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Primary;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.RedisSerializer;
@@ -27,24 +28,25 @@ import org.springframework.data.redis.serializer.RedisSerializer;
  */
 @AutoConfiguration(after = RedisAutoConfiguration.class)
 @ConditionalOnBean(RedisConnectionFactory.class)
+@ConditionalOnMissingBean(ICacheService.class)
 public class SnowdriftRedisConfiguration {
 
-    private final CacheProperties cacheProperties;
+    private final SnowdriftCacheProperties properties;
 
     private final RedisConnectionFactory connectionFactory;
 
-    public SnowdriftRedisConfiguration(CacheProperties cacheProperties,
-                                        RedisConnectionFactory connectionFactory) {
-        this.cacheProperties = cacheProperties;
+    public SnowdriftRedisConfiguration(SnowdriftCacheProperties properties,
+                                       RedisConnectionFactory connectionFactory) {
+        this.properties = properties;
         this.connectionFactory = connectionFactory;
     }
 
     /**
      * String-String RedisTemplate，序列化由 {@link CacheSerializer} 在服务层统一处理
      */
-    @Bean(name = "stringRedisTemplate")
-    @ConditionalOnMissingBean(name = "stringRedisTemplate")
-    public RedisTemplate<String, String> stringRedisTemplate() {
+    @Bean
+    @Primary
+    public RedisTemplate<String, String> redisTemplate() {
         RedisTemplate<String, String> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(RedisSerializer.string());
@@ -57,8 +59,7 @@ public class SnowdriftRedisConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ICacheService.class)
-    public ICacheService redisCacheService(CacheSerializer serializer,
-                                            RedisTemplate<String, String> stringRedisTemplate) {
-        return new RedisCacheServiceImpl(cacheProperties, serializer, stringRedisTemplate);
+    public ICacheService redisCacheService(CacheSerializer serializer, RedisTemplate<String, String> redisTemplate) {
+        return new SnowdriftRedisCacheServiceImpl(properties, serializer, redisTemplate);
     }
 }

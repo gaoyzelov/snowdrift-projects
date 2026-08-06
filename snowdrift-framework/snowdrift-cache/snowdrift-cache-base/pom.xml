@@ -9,8 +9,8 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-cache-core</artifactId>
-    <description>Snowdrift Cache Core — 统一缓存接口与分布式锁抽象</description>
+    <artifactId>snowdrift-cache-base</artifactId>
+    <description>Snowdrift Cache Base — 统一缓存接口与分布式锁抽象</description>
 
     <dependencies>
         <dependency>

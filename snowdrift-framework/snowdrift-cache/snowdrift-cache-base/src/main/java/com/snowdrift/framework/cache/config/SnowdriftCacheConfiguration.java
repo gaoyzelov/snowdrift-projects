@@ -1,15 +1,15 @@
 package com.snowdrift.framework.cache.config;
 
-import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.cache.DistributedLockService;
-import com.snowdrift.framework.cache.serialize.FastJson2CacheSerializer;
 import com.snowdrift.framework.cache.ICacheService;
-import com.snowdrift.framework.cache.serialize.JacksonCacheSerializer;
-import com.snowdrift.framework.cache.enums.SerializerType;
 import com.snowdrift.framework.cache.aspect.DistributedLockAspect;
 import com.snowdrift.framework.cache.aspect.RepeatSubmitAspect;
+import com.snowdrift.framework.cache.enums.SerializerType;
 import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
 import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
+import com.snowdrift.framework.cache.serialize.CacheSerializer;
+import com.snowdrift.framework.cache.serialize.FastJson2CacheSerializer;
+import com.snowdrift.framework.cache.serialize.JacksonCacheSerializer;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -24,7 +24,7 @@ import org.springframework.context.annotation.Bean;
 /**
  * 缓存核心自动配置
  * <p>
- * 启用 {@link CacheProperties} 配置绑定，注册 AOP 切面和 {@link CacheSerializer} Bean。
+ * 启用 {@link SnowdriftCacheProperties} 配置绑定，注册 AOP 切面和 {@link CacheSerializer} Bean。
  * 具体的 {@link ICacheService} 实现由各后端子模块提供，
  * 按类路径自动检测：Redisson → Redis（Lettuce/Jedis）→ Caffeine。
  * </p>
@@ -34,15 +34,15 @@ import org.springframework.context.annotation.Bean;
  * @since 1.0.0
  */
 @Slf4j
-@AutoConfiguration
 @EnableCaching
-@EnableConfigurationProperties(CacheProperties.class)
+@AutoConfiguration
+@EnableConfigurationProperties(SnowdriftCacheProperties.class)
 public class SnowdriftCacheConfiguration implements CachingConfigurer {
 
-    private final CacheProperties cacheProperties;
+    private final SnowdriftCacheProperties properties;
 
-    public SnowdriftCacheConfiguration(CacheProperties cacheProperties) {
-        this.cacheProperties = cacheProperties;
+    public SnowdriftCacheConfiguration(SnowdriftCacheProperties properties) {
+        this.properties = properties;
     }
 
     /**
@@ -56,7 +56,7 @@ public class SnowdriftCacheConfiguration implements CachingConfigurer {
     @Bean
     @ConditionalOnMissingBean(CacheSerializer.class)
     public CacheSerializer cacheSerializer() {
-        SerializerType type = cacheProperties.getSerializer();
+        SerializerType type = properties.getSerializer();
         if (type == SerializerType.FASTJSON2) {
             log.info("缓存序列化器: Fastjson2");
             return new FastJson2CacheSerializer();
@@ -78,7 +78,7 @@ public class SnowdriftCacheConfiguration implements CachingConfigurer {
      */
     @Override
     public KeyGenerator keyGenerator() {
-        return new SnowdriftKeyGenerator(cacheProperties.getKeyPrefix());
+        return new SnowdriftKeyGenerator(properties.getKeyPrefix());
     }
 
     /**

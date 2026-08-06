@@ -92,6 +92,18 @@ public final class AssertUtil {
      * @param message   错误信息
      */
     public static void isTrue(boolean predicate, String message) {
+        if (predicate) {
+            throw new BizException(message);
+        }
+    }
+
+    /**
+     * 断言条件为假
+     *
+     * @param predicate 断言条件
+     * @param message   错误信息
+     */
+    public static void isFalse(boolean predicate, String message) {
         if (!predicate) {
             throw new BizException(message);
         }

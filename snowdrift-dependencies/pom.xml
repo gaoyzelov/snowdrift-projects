@@ -373,7 +373,7 @@
             <!-- 缓存模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
-                <artifactId>snowdrift-cache-core</artifactId>
+                <artifactId>snowdrift-cache-base</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

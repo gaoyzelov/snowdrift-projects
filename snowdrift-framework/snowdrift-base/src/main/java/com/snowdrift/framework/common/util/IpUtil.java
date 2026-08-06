@@ -2,7 +2,6 @@ package com.snowdrift.framework.common.util;
 
 import com.google.common.net.InetAddresses;
 import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.exception.BizException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -216,6 +215,6 @@ public final class IpUtil {
      */
     private static void basicCheck(String ip) {
         AssertUtil.notBlank(ip, "IP地址不能为空");
-        AssertUtil.isTrue(InetAddresses.isInetAddress(ip), "IP地址格式有误");
+        AssertUtil.isFalse(InetAddresses.isInetAddress(ip), "IP地址格式有误");
     }
 }

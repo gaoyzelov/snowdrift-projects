@@ -2,10 +2,11 @@ package com.snowdrift.framework.cache.redisson.config;
 
 import com.snowdrift.framework.cache.DistributedLockService;
 import com.snowdrift.framework.cache.ICacheService;
-import com.snowdrift.framework.cache.config.CacheProperties;
-import com.snowdrift.framework.cache.redisson.service.RedissonCacheServiceImpl;
-import com.snowdrift.framework.cache.redisson.service.RedissonLockService;
+import com.snowdrift.framework.cache.config.SnowdriftCacheProperties;
+import com.snowdrift.framework.cache.redisson.service.SnowdriftRedissonCacheServiceImpl;
+import com.snowdrift.framework.cache.redisson.service.SnowdriftRedissonLockServiceImpl;
 import com.snowdrift.framework.cache.serialize.CacheSerializer;
+import com.snowdrift.framework.common.constant.StrConst;
 import jakarta.annotation.PreDestroy;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
@@ -44,10 +45,10 @@ public class SnowdriftRedissonConfiguration {
 
     private RedissonClient redissonClient;
 
-    private final CacheProperties cacheProperties;
+    private final SnowdriftCacheProperties properties;
 
-    public SnowdriftRedissonConfiguration(CacheProperties cacheProperties) {
-        this.cacheProperties = cacheProperties;
+    public SnowdriftRedissonConfiguration(SnowdriftCacheProperties properties) {
+        this.properties = properties;
     }
 
 
@@ -86,20 +87,6 @@ public class SnowdriftRedissonConfiguration {
         config.setLockWatchdogTimeout(LOCK_WATCHDOG_TIMEOUT_MS);
         this.redissonClient = Redisson.create(config);
         return this.redissonClient;
-    }
-
-    /**
-     * 获取超时时间（毫秒）
-     */
-    private int getTimeout(RedisProperties redisProperties) {
-        return redisProperties.getTimeout() != null ? (int) redisProperties.getTimeout().toMillis() : DEFAULT_TIMEOUT_MS;
-    }
-
-    /**
-     * 获取 URI 前缀
-     */
-    private String getUriPrefix(RedisProperties redisProperties) {
-        return redisProperties.getSsl() != null && redisProperties.getSsl().isEnabled() ? "rediss://" : "redis://";
     }
 
     /**
@@ -143,7 +130,7 @@ public class SnowdriftRedissonConfiguration {
         int timeout = getTimeout(redisProperties);
         String uriPrefix = getUriPrefix(redisProperties);
         config.useSingleServer()
-                .setAddress(uriPrefix + redisProperties.getHost() + ":" + redisProperties.getPort())
+                .setAddress(uriPrefix + redisProperties.getHost() + StrConst.COLON + redisProperties.getPort())
                 .setDatabase(redisProperties.getDatabase())
                 .setPassword(redisProperties.getPassword())
                 .setTimeout(timeout);
@@ -169,17 +156,30 @@ public class SnowdriftRedissonConfiguration {
         config.useSingleServer().setConnectionMinimumIdleSize(pool.getMinIdle());
     }
 
+    /**
+     * 获取超时时间（毫秒）
+     */
+    private int getTimeout(RedisProperties redisProperties) {
+        return redisProperties.getTimeout() != null ? (int) redisProperties.getTimeout().toMillis() : DEFAULT_TIMEOUT_MS;
+    }
+
+    /**
+     * 获取 URI 前缀
+     */
+    private String getUriPrefix(RedisProperties redisProperties) {
+        return redisProperties.getSsl() != null && redisProperties.getSsl().isEnabled() ? "rediss://" : "redis://";
+    }
 
     @Bean
     @ConditionalOnMissingBean(ICacheService.class)
     public ICacheService redissonCacheService(CacheSerializer serializer, RedissonClient redissonClient) {
-        return new RedissonCacheServiceImpl(cacheProperties, serializer, redissonClient);
+        return new SnowdriftRedissonCacheServiceImpl(properties, serializer, redissonClient);
     }
 
     @Bean
     @ConditionalOnMissingBean(DistributedLockService.class)
     public DistributedLockService distributedLockService(RedissonClient redissonClient) {
-        return new RedissonLockService(redissonClient);
+        return new SnowdriftRedissonLockServiceImpl(redissonClient);
     }
 
 }

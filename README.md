@@ -18,7 +18,7 @@
 
 **Snowdrift（雪堆）** 是一个面向 Spring Cloud 微服务架构的开源基础设施脚手架，以"开箱即用、按需引入、安全默认"为设计理念，为 Java 后端开发团队提供经过工程验证的企业级基础能力层。
 
-项目涵盖 **12 个功能模块、34 个 Maven 子模块**，覆盖了微服务开发中最高频的基础设施需求——从统一响应与异常处理，到多后端缓存与分布式锁；从多租户 ORM 增强到消息队列封装；从对象存储策略化接入到 Dubbo RPC 上下文传播。所有模块均在 Spring Boot 3.x 自动配置机制之上构建，通过 `@ConditionalOnProperty` 等条件注解实现按需激活，零代码侵入即可集成到既有项目中。
+项目涵盖 **13 个功能模块、35 个 Maven 子模块**，覆盖了微服务开发中最高频的基础设施需求——从统一响应与异常处理，到多后端缓存与分布式锁；从多租户 ORM 增强到消息队列封装；从对象存储策略化接入到 Dubbo RPC 上下文传播。所有模块均在 Spring Boot 3.x 自动配置机制之上构建，通过 `@ConditionalOnProperty` 等条件注解实现按需激活，零代码侵入即可集成到既有项目中。
 
 ## 快速开始
 
@@ -53,6 +53,7 @@ snowdrift（雪堆）
 │   ├── snowdrift-schedule   ← 分布式调度：Quartz / XXL-JOB 双实现
 │   ├── snowdrift-mq         ← 消息队列：Kafka / RocketMQ / RabbitMQ
 │   ├── snowdrift-orm        ← ORM 增强：自动填充、多租户、数据权限、字段加密
+│   ├── snowdrift-rpc        ← RPC 集成：Dubbo 上下文传播、异常处理、调用日志
 │   └── snowdrift-plugin     ← 插件基础设施（规划中）
 ```
 
@@ -157,7 +158,7 @@ public Result<Void> createOrder(String orderNo) { ... }
 snowdrift:
   cache:
     key-prefix: app
-    key-ttl: 30m
+    key-ttl: 1h
     max-size: 10000
 ```
 
@@ -222,7 +223,7 @@ public class User extends BaseEntity {
 | 自动填充 | INSERT/UPDATE 时自动填充 createBy、createTime、updateBy、updateTime、租户ID | — |
 | 多租户隔离 | 自动在 SQL 中注入 `tenant_id = ?` 条件，支持忽略指定表 | `snowdrift.orm.mp.tenant` |
 | 数据权限 | 基于 `@DataScope` 注解，支持 ALL / DEPT / DEPT_AND_SUB / SELF / CUSTOM 五种范围 | 注解驱动 |
-| 字段加密 | 通过 `@TableField(typeHandler = AesEncryptTypeHandler.class)` 对敏感字段透明 AES-GCM 加解密 | `snowdrift.orm.mp.crypto` |
+| 字段加密 | 通过 `@TableField(typeHandler = AesEncryptTypeHandler.class)` 对敏感字段透明 AES 加解密 | `snowdrift.orm.mp.crypto` |
 | 分页 | 多数据库方言、最大条数限制、溢出处理、LEFT JOIN count 优化 | `snowdrift.orm.mp.pagination` |
 | 乐观锁 | 配合 `@Version` 注解，更新时自动版本号校验 | — |
 | 防全表操作 | 阻止不带 WHERE 的 UPDATE/DELETE | — |
@@ -302,7 +303,7 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 | 操作日志 | BizLog | 3.0.6 |
 | 上下文传递 | TransmittableThreadLocal | 2.14.5 |
 | IP 归属地 | ip2region | 2.7.0 |
-| RPC | Dubbo（BOM 中可用） | 3.3.6 |
+| RPC | Apache Dubbo | 3.3.6 |
 
 ## 开发进度
 
@@ -318,6 +319,7 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 | snowdrift-schedule | ✅ 完成 |
 | snowdrift-mq | ✅ 完成 |
 | snowdrift-orm | ✅ 完成 |
+| snowdrift-rpc | ✅ 完成 |
 | snowdrift-plugin | 🚧 规划中 |
 
 ## 提交规范

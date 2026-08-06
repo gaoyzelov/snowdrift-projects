@@ -6,7 +6,7 @@
 
 ```
 snowdrift-cache
-├── snowdrift-cache-core        ← 通用层：ICacheService、CacheSerializer、@DistributedLock、@RepeatSubmit
+├── snowdrift-cache-base        ← 通用层：ICacheService、CacheSerializer、@DistributedLock、@RepeatSubmit
 ├── snowdrift-cache-caffeine    ← Caffeine 本地缓存（无外部依赖）
 ├── snowdrift-cache-redis       ← Redis 缓存（基于 RedisTemplate）
 └── snowdrift-cache-redisson    ← Redisson 缓存 + 分布式锁（看门狗自动续期）
@@ -14,7 +14,7 @@ snowdrift-cache
 
 ## 快速开始
 
-按需引入一个后端实现即可，核心 API（`snowdrift-cache-core`）会作为传递依赖自动引入。
+按需引入一个后端实现即可，核心 API（`snowdrift-cache-base`）会作为传递依赖自动引入。
 
 ```xml
 <!-- 选择一个后端 -->
@@ -33,7 +33,7 @@ snowdrift-cache
 snowdrift:
   cache:
     key-prefix: app               # 默认 null，无前缀
-    key-ttl: 30m
+    key-ttl: 1h
     max-size: 10000
     serializer: JACKSON           # JACKSON（默认）或 FASTJSON2
 ```
@@ -58,12 +58,11 @@ boolean success = cacheService.putIfAbsent("lock:pay:123", "1", Duration.ofSecon
 
 // 删除
 cacheService.delete("user:1");
-long count = cacheService.delete(List.of("key1", "key2"));  // Collection<String>, 返回删除数量
+long count = cacheService.batchDelete(List.of("key1", "key2"));
 
 // 查询
 boolean exists = cacheService.exists("user:1");
 long ttl = cacheService.getExpire("user:1");  // 秒，-1=永不过期，-2=key 不存在
-Set<String> keys = cacheService.keys("user:*");  // 通配符：支持 * 和 ?
 ```
 
 ### 分布式锁 — @DistributedLock
@@ -153,6 +152,6 @@ public class ProtoBufSerializer implements CacheSerializer {
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `key-prefix` | String | null | key 前缀 |
-| `key-ttl` | Duration | 30m | 默认 TTL |
+| `key-ttl` | Duration | 1h | 默认 TTL |
 | `max-size` | Long | 10000 | Caffeine 最大条目数 |
 | `serializer` | SerializerType | JACKSON | 序列化器（JACKSON / FASTJSON2） |

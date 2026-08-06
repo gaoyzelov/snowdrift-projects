@@ -19,7 +19,7 @@ import java.time.Duration;
 @Data
 @Validated
 @ConfigurationProperties(prefix = "snowdrift.cache")
-public class CacheProperties {
+public class SnowdriftCacheProperties {
 
     /**
      * key 全局前缀
@@ -30,7 +30,7 @@ public class CacheProperties {
      * 全局默认 TTL
      */
     @NotNull
-    private Duration keyTtl = Duration.ofMinutes(30);
+    private Duration keyTtl = Duration.ofHours(1);
 
     /**
      * 最大缓存条目数

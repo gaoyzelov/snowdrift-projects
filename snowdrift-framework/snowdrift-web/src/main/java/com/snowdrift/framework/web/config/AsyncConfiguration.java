@@ -45,7 +45,7 @@ public class AsyncConfiguration implements AsyncConfigurer {
 
     @Override
     public Executor getAsyncExecutor() {
-        AssertUtil.isTrue(asyncProperties.getCorePoolSize() <= asyncProperties.getMaxPoolSize(),
+        AssertUtil.isTrue(asyncProperties.getCorePoolSize() > asyncProperties.getMaxPoolSize(),
                 "corePoolSize 不能大于 maxPoolSize");
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(asyncProperties.getCorePoolSize()); // 设置核心线程数
