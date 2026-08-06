@@ -43,7 +43,6 @@ public class SnowdriftCaffeineConfiguration {
     public CacheManager cacheManager() {
         Caffeine<Object, Object> caffeine = Caffeine.newBuilder()
                 .maximumSize(properties.getMaxSize())
-                .expireAfterAccess(properties.getKeyTtl())
                 .expireAfterWrite(properties.getKeyTtl());
         CaffeineCacheManager manager = new CaffeineCacheManager();
         manager.setCaffeine(caffeine);

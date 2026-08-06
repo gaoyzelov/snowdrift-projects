@@ -1,6 +1,6 @@
 package com.snowdrift.framework.cache.aspect;
 
-import com.snowdrift.framework.cache.DistributedLockService;
+import com.snowdrift.framework.cache.IDistributedLockService;
 import com.snowdrift.framework.cache.annotation.DistributedLock;
 import com.snowdrift.framework.cache.util.SpELUtil;
 import com.snowdrift.framework.common.exception.BizException;
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * 拦截 {@link DistributedLock @DistributedLock} 注解的方法，
  * 自动进行加锁 → 执行业务 → 释放锁。
- * 仅在容器中存在 {@link DistributedLockService} Bean 时生效（即 Redisson 模块激活时）。
+ * 仅在容器中存在 {@link IDistributedLockService} Bean 时生效（即 Redisson 模块激活时）。
  * </p>
  *
  * @author gaoyzelov
@@ -29,9 +29,9 @@ import java.util.concurrent.TimeUnit;
 @Order(2)
 public class DistributedLockAspect {
 
-    private final DistributedLockService lockService;
+    private final IDistributedLockService lockService;
 
-    public DistributedLockAspect(DistributedLockService lockService) {
+    public DistributedLockAspect(IDistributedLockService lockService) {
         this.lockService = lockService;
     }
 

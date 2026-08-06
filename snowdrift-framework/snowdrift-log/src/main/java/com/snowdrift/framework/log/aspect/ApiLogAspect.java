@@ -11,7 +11,7 @@ import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.log.annotation.ApiLog;
-import com.snowdrift.framework.log.dto.ApiLogCreateDTO;
+import com.snowdrift.framework.log.holder.ApiLogHolder;
 import com.snowdrift.framework.log.service.ILogService;
 import com.snowdrift.framework.log.util.LogTraceUtil;
 import jakarta.servlet.ServletRequest;
@@ -101,22 +101,24 @@ public class ApiLogAspect {
         if (apiLogAnno == null || !apiLogAnno.enable()) {
             return;
         }
-        // 请求信息
+        // 请求信息（非 HTTP 场景为 null）
         HttpContext httpContext = HttpContextHolder.getContext();
+        boolean hasHttpContext = httpContext != null;
         // 用户信息
         SecurityContext securityContext = SecurityContextHolder.getContext();
         // API 日志初始化
-        ApiLogCreateDTO apiLogDTO = ApiLogCreateDTO.builder()
+        ApiLogHolder holder = ApiLogHolder.builder()
                 .traceId(LogTraceUtil.getTraceId())
                 .appName(appName)
                 .bizModule(apiLogAnno.module())
                 .bizType(apiLogAnno.bizType().getCode())
                 .summary(apiLogAnno.summary())
-                .method(httpContext.getMethod())
-                .uri(httpContext.getUri())
-                .requestParams(getRequestParams(apiLogAnno, joinPoint.getArgs(), httpContext.getParamMap()))
-                .ip(httpContext.getIp())
-                .ua(httpContext.getUserAgent())
+                .method(hasHttpContext ? httpContext.getMethod() : null)
+                .uri(hasHttpContext ? httpContext.getUri() : null)
+                .requestParams(getRequestParams(apiLogAnno, joinPoint.getArgs(),
+                        hasHttpContext ? httpContext.getParamMap() : Map.of()))
+                .ip(hasHttpContext ? httpContext.getIp() : null)
+                .ua(hasHttpContext ? httpContext.getUserAgent() : null)
                 .responseBody(getResponseBody(apiLogAnno, result))
                 .duration(stopWatch.getDuration().toMillis())
                 .userId(securityContext.getUserId())
@@ -128,14 +130,14 @@ public class ApiLogAspect {
 
         // 判断是否存在异常
         if (Objects.nonNull(exception)) {
-            apiLogDTO.setStatus(ResultCode.ERR.code());
-            apiLogDTO.setErrorMsg(ExceptionUtils.getRootCauseMessage(exception));
+            holder.setStatus(ResultCode.ERR.code());
+            holder.setErrorMsg(ExceptionUtils.getRootCauseMessage(exception));
         } else {
-            apiLogDTO.setStatus(ResultCode.OK.code());
+            holder.setStatus(ResultCode.OK.code());
         }
 
         // 保存接口日志
-        logService.saveApiLog(apiLogDTO);
+        logService.saveApiLog(holder);
     }
 
     /**

@@ -62,7 +62,7 @@ public class SnowdriftRedisCacheServiceImpl extends AbstractCacheService {
 
     @Override
     public boolean doDelete(String key) {
-        return redisTemplate.delete(buildKey(key));
+        return redisTemplate.delete(key);
     }
 
     @Override

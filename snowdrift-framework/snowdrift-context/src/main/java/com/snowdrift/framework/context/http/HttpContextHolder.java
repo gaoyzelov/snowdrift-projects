@@ -3,8 +3,6 @@ package com.snowdrift.framework.context.http;
 import com.alibaba.ttl.TransmittableThreadLocal;
 import com.snowdrift.framework.common.util.AssertUtil;
 
-import java.util.Objects;
-
 /**
  * HttpContextHolder
  *
@@ -34,12 +32,7 @@ public class HttpContextHolder {
      * @return Http请求上下文
      */
     public static HttpContext getContext() {
-        HttpContext ctx = HTTP_CONTEXT_HOLDER.get();
-        if (Objects.isNull(ctx)){
-            ctx = createEmptyContext();
-            HTTP_CONTEXT_HOLDER.set(ctx);
-        }
-        return ctx;
+        return HTTP_CONTEXT_HOLDER.get();
     }
 
     /**
@@ -47,14 +40,5 @@ public class HttpContextHolder {
      */
     public static void clear() {
         HTTP_CONTEXT_HOLDER.remove();
-    }
-
-    /**
-     * 创建一个空的Http请求上下文
-     *
-     * @return Http请求上下文
-     */
-    public static HttpContext createEmptyContext() {
-        return HttpContext.builder().build();
     }
 }

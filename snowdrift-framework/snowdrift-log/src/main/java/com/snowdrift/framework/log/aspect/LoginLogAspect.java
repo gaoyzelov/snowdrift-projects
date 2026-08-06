@@ -7,7 +7,7 @@ import com.snowdrift.framework.common.result.ResultCode;
 import com.snowdrift.framework.context.http.HttpContext;
 import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.log.annotation.LoginLog;
-import com.snowdrift.framework.log.dto.LoginLogCreateDTO;
+import com.snowdrift.framework.log.holder.LoginLogHolder;
 import com.snowdrift.framework.log.service.ILogService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
@@ -75,31 +75,32 @@ public class LoginLogAspect {
         if (loginLogAnno == null || !loginLogAnno.enable()) {
             return;
         }
-        // 请求信息
+        // 请求信息（非 HTTP 场景为 null）
         HttpContext context = HttpContextHolder.getContext();
+        boolean hasHttpContext = context != null;
         // 登录日志初始化
-        LoginLogCreateDTO loginLogDTO = LoginLogCreateDTO.builder()
+        LoginLogHolder holder = LoginLogHolder.builder()
                 .username(getUsername(joinPoint,loginLogAnno.accountField()))
-                .ip(context.getIp())
-                .ipLocation(context.getIpLocation())
-                .ua(context.getUserAgent())
+                .ip(hasHttpContext ? context.getIp() : null)
+                .ipLocation(hasHttpContext ? context.getIpLocation() : null)
+                .ua(hasHttpContext ? context.getUserAgent() : null)
                 .loginTime(LocalDateTime.now())
                 .build();
 
         // 判断是否存在登录异常
         if (Objects.nonNull(exception)) {
-            loginLogDTO.setStatus(ResultCode.ERR.code());
-            loginLogDTO.setMsg(exception.getMessage());
+            holder.setStatus(ResultCode.ERR.code());
+            holder.setMsg(exception.getMessage());
         } else if (result instanceof Result<?> r && ResultCode.OK.code() != r.getCode()) {
             // 方法正常返回但业务结果为失败时，记录为登录失败
-            loginLogDTO.setStatus(r.getCode());
-            loginLogDTO.setMsg(r.getMsg());
+            holder.setStatus(r.getCode());
+            holder.setMsg(r.getMsg());
         } else {
-            loginLogDTO.setStatus(ResultCode.OK.code());
-            loginLogDTO.setMsg("登录成功");
+            holder.setStatus(ResultCode.OK.code());
+            holder.setMsg("登录成功");
         }
         // 保存登录日志
-        logService.saveLoginLog(loginLogDTO);
+        logService.saveLoginLog(holder);
     }
 
     /**

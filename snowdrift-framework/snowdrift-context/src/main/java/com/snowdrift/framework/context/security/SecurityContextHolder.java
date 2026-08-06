@@ -38,20 +38,6 @@ public class SecurityContextHolder {
     public static SecurityContext getContext() {
         SecurityContext ctx = SECURITY_CONTEXT_HOLDER.get();
         if (Objects.isNull(ctx)) {
-            ctx = createEmptyContext();
-            SECURITY_CONTEXT_HOLDER.set(ctx);
-        }
-        return ctx;
-    }
-
-    /**
-     * 获取安全上下文
-     *
-     * @return SecurityContext
-     */
-    public static SecurityContext getRequiredContext() {
-        SecurityContext ctx = SECURITY_CONTEXT_HOLDER.get();
-        if (Objects.isNull(ctx)) {
             throw new BizException("security.context.null");
         }
         return ctx;
@@ -65,21 +51,12 @@ public class SecurityContextHolder {
     }
 
     /**
-     * 创建一个空的安全上下文
-     *
-     * @return SecurityContext
-     */
-    public static SecurityContext createEmptyContext() {
-        return SecurityContext.builder().build();
-    }
-
-    /**
      * 获取当前用户ID
      *
      * @return 用户ID，未登录时抛出 BizException
      */
     public static Long getUserId() {
-        return getRequiredContext().getUserId();
+        return getContext().getUserId();
     }
 
     /**
@@ -88,7 +65,7 @@ public class SecurityContextHolder {
      * @return 登录账号，未登录时抛出 BizException
      */
     public static String getUsername() {
-        return getRequiredContext().getUsername();
+        return getContext().getUsername();
     }
 
     /**
@@ -97,7 +74,7 @@ public class SecurityContextHolder {
      * @return 显示名称，未登录时抛出 BizException
      */
     public static String getNickname() {
-        return getRequiredContext().getNickname();
+        return getContext().getNickname();
     }
 
     /**
@@ -105,8 +82,8 @@ public class SecurityContextHolder {
      *
      * @return 操作者名称，未登录时抛出 BizException
      */
-    public static String getOperatorName() {
-        SecurityContext ctx = getRequiredContext();
+    public static String getOperator() {
+        SecurityContext ctx = getContext();
         String nickname = ctx.getNickname();
         if (StringUtils.isNotBlank(nickname)) {
             return nickname;
@@ -120,7 +97,7 @@ public class SecurityContextHolder {
      * @return 租户ID，未登录时抛出 BizException
      */
     public static Long getTenantId() {
-        return getRequiredContext().getTenantId();
+        return getContext().getTenantId();
     }
 
     /**
@@ -129,7 +106,7 @@ public class SecurityContextHolder {
      * @return 部门ID，未登录时抛出 BizException
      */
     public static Long getDeptId() {
-        return getRequiredContext().getDeptId();
+        return getContext().getDeptId();
     }
 
     /**
@@ -138,6 +115,6 @@ public class SecurityContextHolder {
      * @return 数据范围，未登录时抛出 BizException
      */
     public static DataScopeEnum getDataScope() {
-        return DataScopeEnum.of(getRequiredContext().getDataScope());
+        return DataScopeEnum.of(getContext().getDataScope());
     }
 }

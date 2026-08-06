@@ -142,8 +142,9 @@ public class ProtoBufSerializer implements CacheSerializer {
 | 部署 | 嵌入应用 | 需 Redis 服务 | 需 Redis 服务 |
 | per-key TTL | ❌ 降级为全局 | ✅ | ✅ |
 | 分布式锁 | ❌ | ❌ | ✅ 看门狗 |
-| key 通配符扫描 | ✅ 正则 | ✅ SCAN | ✅ SCAN |
 | 多实例共享 | ❌ | ✅ | ✅ |
+
+> `keys()` 通配符扫描方法已从 ICacheService 接口移除，有需求的用户可直接使用各后端原生 API。
 
 ## 配置属性参考
 

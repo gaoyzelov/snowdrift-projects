@@ -1,4 +1,4 @@
-package com.snowdrift.framework.log.dto;
+package com.snowdrift.framework.log.holder;
 
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 @ToString
-public class LoginLogCreateDTO implements Serializable {
+public class LoginLogHolder implements Serializable {
 
     /**
      * 用户名

@@ -1,6 +1,6 @@
 package com.snowdrift.framework.cache.redisson.config;
 
-import com.snowdrift.framework.cache.DistributedLockService;
+import com.snowdrift.framework.cache.IDistributedLockService;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.config.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.redisson.service.SnowdriftRedissonCacheServiceImpl;
@@ -177,8 +177,8 @@ public class SnowdriftRedissonConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(DistributedLockService.class)
-    public DistributedLockService distributedLockService(RedissonClient redissonClient) {
+    @ConditionalOnMissingBean(IDistributedLockService.class)
+    public IDistributedLockService distributedLockService(RedissonClient redissonClient) {
         return new SnowdriftRedissonLockServiceImpl(redissonClient);
     }
 

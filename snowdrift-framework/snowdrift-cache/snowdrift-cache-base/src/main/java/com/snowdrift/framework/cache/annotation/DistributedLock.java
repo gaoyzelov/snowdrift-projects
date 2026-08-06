@@ -1,5 +1,7 @@
 package com.snowdrift.framework.cache.annotation;
 
+import com.snowdrift.framework.cache.IDistributedLockService;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -10,7 +12,7 @@ import java.util.concurrent.TimeUnit;
  * 分布式锁注解
  * <p>
  * 通过 AOP 在方法执行前自动获取分布式锁，执行后自动释放。
- * 需要类路径中存在 {@link com.snowdrift.framework.cache.DistributedLockService} 的实现（如 Redisson 模块）。
+ * 需要类路径中存在 {@link IDistributedLockService} 的实现（如 Redisson 模块）。
  * </p>
  *
  * <pre>

@@ -14,7 +14,7 @@ import java.util.function.Supplier;
  * @date 2026/6/2
  * @since 1.0.0
  */
-public interface DistributedLockService {
+public interface IDistributedLockService {
 
     /**
      * 尝试获取锁

@@ -61,27 +61,30 @@ public Result<TokenInfo> login(@RequestBody LoginDTO dto) {
 
 ### 日志输出策略 — ILogService
 
-通过 `ILogService` 接口切换日志存储方式：
+注入 `ILogService` 接口的实现 Bean 即可切换日志存储方式，**必须提供**（无默认实现）：
 
-| 实现 | 说明 | 激活条件 |
-|------|------|---------|
-| `StdoutLogServiceImpl` | 控制台输出（默认） | 无条件，兜底 |
-
-业务方可实现 `ILogService` 接口进行持久化存储：
+```java
+@Component
+public class StdoutLogService implements ILogService {
+    @Override public void saveApiLog(ApiLogHolder dto) { log.info("API: {}", dto); }
+    @Override public void saveLoginLog(LoginLogHolder dto) { log.info("Login: {}", dto); }
+    @Override public void saveOperateLog(OperateLogHolder dto) { log.info("Operate: {}", dto); }
+}
+```
 
 ```java
 @Component
 public class DbLogService implements ILogService {
     @Override
-    public void saveApiLog(ApiLogCreateDTO dto) {
+    public void saveApiLog(ApiLogHolder dto) {
         // 写入数据库
     }
     @Override
-    public void saveLoginLog(LoginLogCreateDTO dto) {
+    public void saveLoginLog(LoginLogHolder dto) {
         // 写入数据库
     }
     @Override
-    public void saveOperateLog(OperateLogCreateDTO dto) {
+    public void saveOperateLog(OperateLogHolder dto) {
         // 写入数据库
     }
 }
@@ -89,9 +92,9 @@ public class DbLogService implements ILogService {
 
 | 方法 | 参数类型 | 说明 |
 |------|---------|------|
-| `saveApiLog` | `ApiLogCreateDTO` | 保存接口日志 |
-| `saveLoginLog` | `LoginLogCreateDTO` | 保存登录日志 |
-| `saveOperateLog` | `OperateLogCreateDTO` | 保存操作日志（基于 bizlog-sdk） |
+| `saveApiLog` | `ApiLogHolder` | 保存接口日志 |
+| `saveLoginLog` | `LoginLogHolder` | 保存登录日志 |
+| `saveOperateLog` | `OperateLogHolder` | 保存操作日志（基于 bizlog-sdk） |
 
 另外，`LogRecordServiceImpl` 基于第三方 bizlog-sdk 实现 `ILogRecordService` 接口，提供开箱即用的持久化能力，业务方只需提供对应的 Repository Bean。
 

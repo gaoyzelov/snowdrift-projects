@@ -5,9 +5,8 @@ import com.mzt.logapi.service.ILogRecordService;
 import com.snowdrift.framework.common.util.DateTimeUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
-import com.snowdrift.framework.log.dto.OperateLogCreateDTO;
+import com.snowdrift.framework.log.holder.OperateLogHolder;
 import com.snowdrift.framework.log.util.LogTraceUtil;
-import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -22,16 +21,19 @@ import java.util.List;
  * @since 1.0.0
  */
 @Slf4j
-public class LogRecordServiceImpl implements ILogRecordService {
+public class SnowdriftLogRecordServiceImpl implements ILogRecordService {
 
-    @Resource
-    private ILogService logService;
+    private final ILogService logService;
+
+    public SnowdriftLogRecordServiceImpl(ILogService logService) {
+        this.logService = logService;
+    }
 
     @Override
     public void record(LogRecord logRecord) {
         try {
             SecurityContext context = SecurityContextHolder.getContext();
-            OperateLogCreateDTO operateLogDTO = OperateLogCreateDTO.builder()
+            OperateLogHolder holder = OperateLogHolder.builder()
                     .traceId(LogTraceUtil.getTraceId())
                     .bizId(logRecord.getBizNo())
                     .bizModule(logRecord.getType())
@@ -43,7 +45,7 @@ public class LogRecordServiceImpl implements ILogRecordService {
                     .operateTime(DateTimeUtil.dateToLocalDateTime(logRecord.getCreateTime()))
                     .build();
             //记录日志
-            logService.saveOperateLog(operateLogDTO);
+            logService.saveOperateLog(holder);
         } catch (Exception e) {
             log.error("记录操作日志失败", e);
         }

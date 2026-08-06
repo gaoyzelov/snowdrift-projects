@@ -1,6 +1,6 @@
 package com.snowdrift.framework.cache.config;
 
-import com.snowdrift.framework.cache.DistributedLockService;
+import com.snowdrift.framework.cache.IDistributedLockService;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.aspect.DistributedLockAspect;
 import com.snowdrift.framework.cache.aspect.RepeatSubmitAspect;
@@ -82,11 +82,11 @@ public class SnowdriftCacheConfiguration implements CachingConfigurer {
     }
 
     /**
-     * 分布式锁 AOP 切面，仅在容器中存在 {@link DistributedLockService} 时激活
+     * 分布式锁 AOP 切面，仅在容器中存在 {@link IDistributedLockService} 时激活
      */
     @Bean
-    @ConditionalOnBean(DistributedLockService.class)
-    public DistributedLockAspect distributedLockAspect(DistributedLockService lockService) {
+    @ConditionalOnBean(IDistributedLockService.class)
+    public DistributedLockAspect distributedLockAspect(IDistributedLockService lockService) {
         return new DistributedLockAspect(lockService);
     }
 

@@ -1,4 +1,4 @@
-package com.snowdrift.framework.log.dto;
+package com.snowdrift.framework.log.holder;
 
 import lombok.Builder;
 import lombok.Data;
@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 @ToString
-public class ApiLogCreateDTO implements Serializable {
+public class ApiLogHolder implements Serializable {
 
     /**
      * 链路追踪编号

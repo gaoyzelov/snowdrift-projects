@@ -1,6 +1,6 @@
 package com.snowdrift.framework.cache.redisson.service;
 
-import com.snowdrift.framework.cache.DistributedLockService;
+import com.snowdrift.framework.cache.IDistributedLockService;
 import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.common.result.ResultCode;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +18,7 @@ import java.util.function.Supplier;
  * @since 1.0.0
  */
 @Slf4j
-public class SnowdriftRedissonLockServiceImpl implements DistributedLockService {
+public class SnowdriftRedissonLockServiceImpl implements IDistributedLockService {
 
     private final RedissonClient redissonClient;
 

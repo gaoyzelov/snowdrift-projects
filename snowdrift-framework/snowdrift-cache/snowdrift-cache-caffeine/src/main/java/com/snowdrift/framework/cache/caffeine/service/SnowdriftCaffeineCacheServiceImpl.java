@@ -31,7 +31,6 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
         this.cache = Caffeine.newBuilder()
                 .maximumSize(properties.getMaxSize())
                 .expireAfterWrite(properties.getKeyTtl())
-                .expireAfterAccess(properties.getKeyTtl())
                 .build();
     }
 
@@ -80,7 +79,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
     public long doBatchDelete(List<String> keys) {
         long count = 0;
         for (String key : keys) {
-            if (delete(key)) {
+            if (doDelete(key)) {
                 count++;
             }
         }
