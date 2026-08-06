@@ -2,8 +2,9 @@ package com.snowdrift.framework.orm.core.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
 /**
  * TenantBaseEntity
@@ -13,8 +14,9 @@ import lombok.Setter;
  * @description 多租户实体基类
  * @since 1.0.0
  */
-@Getter
-@Setter
+@Data
+@EqualsAndHashCode(callSuper = true)
+@ToString(callSuper = true)
 public class TenantBaseEntity extends BaseEntity {
 
     /**

@@ -9,7 +9,7 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-orm-core</artifactId>
+    <artifactId>snowdrift-orm-base</artifactId>
 
     <dependencies>
         <dependency>

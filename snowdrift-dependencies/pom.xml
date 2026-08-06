@@ -431,7 +431,7 @@
             <!-- ORM模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
-                <artifactId>snowdrift-orm-core</artifactId>
+                <artifactId>snowdrift-orm-base</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

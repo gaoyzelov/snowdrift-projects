@@ -15,7 +15,7 @@
         <!-- Snowdrift ORM Core -->
         <dependency>
             <groupId>com.snowdrift</groupId>
-            <artifactId>snowdrift-orm-core</artifactId>
+            <artifactId>snowdrift-orm-base</artifactId>
         </dependency>
         <!-- Snowdrift Context -->
         <dependency>

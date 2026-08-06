@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
     <description>Snowdrift ORM Module</description>
     <modules>
-        <module>snowdrift-orm-core</module>
+        <module>snowdrift-orm-base</module>
         <module>snowdrift-orm-mp</module>
     </modules>
 </project>

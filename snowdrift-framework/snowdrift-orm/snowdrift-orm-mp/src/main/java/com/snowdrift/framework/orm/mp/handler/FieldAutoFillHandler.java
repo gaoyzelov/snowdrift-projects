@@ -31,7 +31,7 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
      */
     @Override
     public void insertFill(MetaObject metaObject) {
-        String operatorName = SecurityContextHolder.getOperatorName();
+        String operatorName = SecurityContextHolder.getOperator();
         this.strictInsertFill(metaObject, "createBy", String.class, operatorName);
         this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, LocalDateTime.now());
         this.strictInsertFill(metaObject, "updateBy", String.class, operatorName);
@@ -52,7 +52,7 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
      */
     @Override
     public void updateFill(MetaObject metaObject) {
-        String operatorName = SecurityContextHolder.getOperatorName();
+        String operatorName = SecurityContextHolder.getOperator();
         this.strictUpdateFill(metaObject, "updateBy", String.class, operatorName);
         this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
     }

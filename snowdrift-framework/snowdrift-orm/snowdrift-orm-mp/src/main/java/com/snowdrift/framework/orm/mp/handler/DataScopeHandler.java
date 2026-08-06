@@ -15,7 +15,6 @@ import net.sf.jsqlparser.expression.operators.relational.InExpression;
 import net.sf.jsqlparser.expression.operators.relational.ParenthesedExpressionList;
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.lang.reflect.Method;
@@ -35,27 +34,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DataScopeHandler implements MultiDataPermissionHandler {
 
     /**
-     * 数据权限提供者，可为 null。
-     * 为 null 时 DEPT_AND_SUB 降级为 DEPT，CUSTOM 降级为SELF。
+     * 数据权限提供者
      */
-    private final IDataScopeProvider dataScopeProvider;
+    private final IDataScopeProvider provider;
 
     private final Map<String, DataScope> annotationCache = new ConcurrentHashMap<>();
 
     /**
-     * 无 provider 构造 — DEPT_AND_SUB 降级为 DEPT，CUSTOM 降级为 SELF
-     */
-    public DataScopeHandler() {
-        this.dataScopeProvider = null;
-    }
-
-    /**
      * 带 provider 构造 — 支持 DEPT_AND_SUB 和 CUSTOM 实时查询
      *
-     * @param dataScopeProvider 数据权限提供者（业务应用实现，用于查询子部门列表和自定义部门列表）
+     * @param provider 数据权限提供者（业务应用实现，用于查询子部门列表和自定义部门列表）
      */
-    public DataScopeHandler(IDataScopeProvider dataScopeProvider) {
-        this.dataScopeProvider = dataScopeProvider;
+    public DataScopeHandler(IDataScopeProvider provider) {
+        this.provider = provider;
     }
 
     @Override
@@ -68,7 +59,7 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         if (!isTargetTable(table, scope)) {
             return null;
         }
-        SecurityContext context = SecurityContextHolder.getRequiredContext();
+        SecurityContext context = SecurityContextHolder.getContext();
         DataScopeEnum dataScope = DataScopeEnum.of(context.getDataScope());
         if (dataScope == DataScopeEnum.ALL) {
             log.debug("数据权限类型为 {}，跳过数据权限过滤", dataScope);
@@ -138,59 +129,12 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         String userColumn = buildColumnName(scope.userColumn(), alias);
 
         return switch (dataScope) {
-            case ALL -> null;
-            case DEPT -> {
-                Long deptId = context.getDeptId();
-                if (deptId == null) {
-                    log.debug("DEPT 模式下 deptId 为空，用户数据权限被拒绝");
-                    yield new EqualsTo(new LongValue(1), new LongValue(0));
-                }
-                yield new EqualsTo(new Column(deptColumn), new LongValue(deptId));
-            }
-            case SELF -> {
-                Long userId = context.getUserId();
-                if (userId == null) {
-                    log.debug("SELF 模式下 userId 为空，用户数据权限被拒绝");
-                    yield new EqualsTo(new LongValue(1), new LongValue(0));
-                }
-                yield new EqualsTo(new Column(userColumn), new LongValue(userId));
-            }
-            case DEPT_AND_SUB -> {
-                Long deptId = context.getDeptId();
-                if (deptId == null) {
-                    log.debug("DEPT_AND_SUB 模式下 deptId 为空，用户数据权限被拒绝");
-                    yield new EqualsTo(new LongValue(1), new LongValue(0));
-                }
-                if (dataScopeProvider == null) {
-                    // 无 provider 时降级为 DEPT 模式
-                    log.debug("DEPT_AND_SUB 模式无 IDataScopeProvider，降级为 DEPT");
-                    yield new EqualsTo(new Column(deptColumn), new LongValue(deptId));
-                }
-                List<Long> childDeptIds = dataScopeProvider.getChildDeptIds(context.getDeptId());
-                if (CollectionUtils.isEmpty(childDeptIds)) {
-                    log.debug("DEPT_AND_SUB 模式下 childDeptIds 为空，用户数据权限被拒绝");
-                    yield new EqualsTo(new LongValue(1), new LongValue(0));
-                }
-                yield buildInExpression(deptColumn, childDeptIds);
-            }
-            case CUSTOM -> {
-                Long userId = context.getUserId();
-                if (userId == null) {
-                    log.debug("CUSTOM 模式下 userId 为空，用户数据权限被拒绝");
-                    yield new EqualsTo(new LongValue(1), new LongValue(0));
-                }
-                if (dataScopeProvider == null) {
-                    // 无 provider 降级为 SELF
-                    log.warn("CUSTOM 模式无 IDataScopeProvider，降级为 SELF");
-                    yield new EqualsTo(new Column(userColumn), new LongValue(userId));
-                }
-                List<Long> customDeptIds = dataScopeProvider.getCustomDeptIds(userId);
-                if (CollectionUtils.isEmpty(customDeptIds)) {
-                    log.debug("CUSTOM 模式下 customDeptIds 为空，用户数据权限被拒绝");
-                    yield new EqualsTo(new LongValue(1), new LongValue(0));
-                }
-                yield buildInExpression(deptColumn, customDeptIds);
-            }
+            case DEPT -> new EqualsTo(new Column(deptColumn), new LongValue(context.getDeptId()));
+            case SELF -> new EqualsTo(new Column(userColumn), new LongValue(context.getUserId()));
+            case DEPT_AND_SUB ->
+                    buildInExpression(deptColumn, provider.getChildDeptIds(context.getDeptId(),true));
+            case CUSTOM -> buildInExpression(deptColumn, provider.getCustomDeptIds(context.getUserId()));
+            default -> new EqualsTo(new LongValue(1), new LongValue(0));
         };
     }
 

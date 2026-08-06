@@ -62,15 +62,7 @@ public class MultiTenantLineHandler implements TenantLineHandler {
      */
     @Override
     public boolean ignoreTable(String tableName) {
-        Long tenantId = SecurityContextHolder.getContext().getTenantId();
-        // 有租户上下文时检查忽略列表；无租户上下文时不过滤（回退到 tenant_id=DEFAULT_TENANT_ID 的 SQL 过滤）
-        if (Objects.nonNull(tenantId)) {
-            // 检查当前表是否在忽略列表中
-            Set<String> ignoreTables = tenantProperties.getIgnoreTables();
-            if (CollectionUtils.isNotEmpty(ignoreTables)) {
-                return ignoreTables.contains(tableName);
-            }
-        }
-        return false;
+        Set<String> ignoreTables = tenantProperties.getIgnoreTables();
+        return CollectionUtils.isNotEmpty(ignoreTables) && ignoreTables.contains(tableName);
     }
 }

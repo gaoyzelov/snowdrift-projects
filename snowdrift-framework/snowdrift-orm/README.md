@@ -125,7 +125,7 @@ public class DeptDataScopeProvider implements IDataScopeProvider {
 
 ### 字段加密 — @TableField(typeHandler = ...)
 
-对敏感字段进行透明 AES-GCM 加密，入库自动加密，出库自动解密。
+对敏感字段进行透明 AES-GCM 加密，入库自动加密，出库自动解密。兼容旧 ECB 格式数据的解密。
 
 ```yaml
 snowdrift:
@@ -142,9 +142,9 @@ snowdrift:
 private String phone;
 ```
 
-- 新加密使用 **AES-256-GCM**，每次加密生成随机 IV
-- 密文带 `{ENC2}` 前缀，旧数据用 `{ENC}` 标记 ECB 模式，向后兼容
-- 双重加密防护：已带 `{ENC2}` 或 `{ENC}` 前缀的数据拒绝再次加密
+- 新加密使用 **AES-256-GCM**，每次加密生成随机 IV，密文带 `{ENC}` 前缀
+- 向后兼容：旧 ECB 格式数据（同 `{ENC}` 前缀）的自动解密，写入时自动升级为 GCM
+- 安全防护：已带 `{ENC}` 前缀的数据拒绝再次加密（大小写不敏感）
 
 > 密码密钥支持 16/24/32 位十六进制字符，对应 AES-128/192/256。
 

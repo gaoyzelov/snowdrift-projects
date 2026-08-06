@@ -5,7 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.*;
 import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.orm.core.scope.IDataScopeProvider;
-import com.snowdrift.framework.orm.mp.handler.CryptoKeyHolder;
+import com.snowdrift.framework.orm.mp.CryptoKeyHolder;
 import com.snowdrift.framework.orm.mp.handler.DataScopeHandler;
 import com.snowdrift.framework.orm.mp.handler.FieldAutoFillHandler;
 import com.snowdrift.framework.orm.mp.handler.MultiTenantLineHandler;
@@ -15,11 +15,12 @@ import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+
+import java.util.Optional;
 
 /**
  * Snowdrift ORM MyBatis-Plus 自动配置
@@ -66,22 +67,23 @@ public class SnowdriftOrmMpConfiguration {
      *
      * @param paginationProperties  分页配置属性
      * @param tenantProperties      多租户配置属性
-     * @param dataScopeProvider     数据权限提供者（可选，业务应用实现后可自动注入）
+     * @param optProvider     数据权限提供者（可选，业务应用实现后可自动注入）
      * @return MybatisPlusInterceptor 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    public MybatisPlusInterceptor mybatisPlusInterceptor(OrmMpPaginationProperties paginationProperties,
-                                                         OrmMpTenantProperties tenantProperties,
-                                                         ObjectProvider<IDataScopeProvider> dataScopeProvider) {
+    public MybatisPlusInterceptor mybatisPlusInterceptor(OrmMpPaginationProperties paginationProperties, OrmMpTenantProperties tenantProperties, Optional<IDataScopeProvider> optProvider) {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
         // 多租户插件
         TenantLineInnerInterceptor tenantInterceptor = this.getTenantLineInnerInterceptor(tenantProperties);
         if (tenantInterceptor != null) {
             interceptor.addInnerInterceptor(tenantInterceptor);
         }
-        // 数据权限插件（无 provider 时自动降级：DEPT_AND_SUB→DEPT，CUSTOM→SELF）
-        interceptor.addInnerInterceptor(new DataPermissionInterceptor(new DataScopeHandler(dataScopeProvider.getIfAvailable())));
+        // 数据权限插件
+        DataPermissionInterceptor dataPermissionInterceptor = this.getDataPermissionInterceptor(optProvider);
+        if (dataPermissionInterceptor != null){
+            interceptor.addInnerInterceptor(dataPermissionInterceptor);
+        }
 
         // 防止全表更新与删除插件
         interceptor.addInnerInterceptor(new BlockAttackInnerInterceptor());
@@ -95,6 +97,20 @@ public class SnowdriftOrmMpConfiguration {
         PaginationInnerInterceptor paginationInterceptor = this.getPaginationInnerInterceptor(paginationProperties);
         interceptor.addInnerInterceptor(paginationInterceptor);
         return interceptor;
+    }
+
+    /**
+     * 构建数据权限插件
+     *
+     * @param optProvider 数据权限提供者
+     * @return 数据权限插件实例
+     */
+    private DataPermissionInterceptor getDataPermissionInterceptor(Optional<IDataScopeProvider> optProvider) {
+        if (optProvider.isEmpty()) {
+            return null;
+        }
+        DataScopeHandler dataScopeHandler = new DataScopeHandler(optProvider.get());
+        return new DataPermissionInterceptor(dataScopeHandler);
     }
 
     /**

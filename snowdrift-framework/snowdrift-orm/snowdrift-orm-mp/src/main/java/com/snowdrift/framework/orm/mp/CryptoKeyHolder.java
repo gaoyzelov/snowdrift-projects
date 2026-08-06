@@ -1,4 +1,4 @@
-package com.snowdrift.framework.orm.mp.handler;
+package com.snowdrift.framework.orm.mp;
 
 import com.snowdrift.framework.common.exception.BizException;
 import org.apache.commons.lang3.StringUtils;
