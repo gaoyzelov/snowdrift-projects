@@ -1,6 +1,8 @@
-package com.snowdrift.framework.mq.core;
+package com.snowdrift.framework.mq.config;
 
 import com.snowdrift.framework.mq.annotation.MqListener;
+import com.snowdrift.framework.mq.context.MqContextPropagator;
+import com.snowdrift.framework.mq.convert.MqMessageConverter;
 import com.snowdrift.framework.mq.exception.MqException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationContext;
@@ -29,7 +31,7 @@ public class MqListenerConsumerWrapper implements Consumer<Message<byte[]>>, App
     private final Class<?> targetParameterType;
     private final MqListener config;
     private final MethodHandle methodHandle;
-    private ApplicationContext applicationContext;
+    private volatile ApplicationContext applicationContext;
     private volatile MqMessageConverter converter;
     private volatile MqContextPropagator contextPropagator;
     private volatile Object cachedTargetBean;
@@ -58,11 +60,9 @@ public class MqListenerConsumerWrapper implements Consumer<Message<byte[]>>, App
 
     @Override
     public void accept(Message<byte[]> message) {
-        long start = System.currentTimeMillis();
-        // 1. 恢复 TTL 上下文（traceId, SecurityContext）
-        getContextPropagator().restore(message);
-
         try {
+            // 1. 恢复 TTL 上下文（traceId, SecurityContext）
+            getContextPropagator().restore(message);
             // 2. 反序列化 payload（通过 MqMessageConverter SPI）
             byte[] body = message.getPayload();
             Object payload;

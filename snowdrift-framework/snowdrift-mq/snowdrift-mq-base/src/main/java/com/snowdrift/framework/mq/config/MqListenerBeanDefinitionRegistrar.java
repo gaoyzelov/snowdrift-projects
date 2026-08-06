@@ -1,4 +1,4 @@
-package com.snowdrift.framework.mq.core;
+package com.snowdrift.framework.mq.config;
 
 import com.snowdrift.framework.mq.annotation.MqListener;
 import lombok.extern.slf4j.Slf4j;

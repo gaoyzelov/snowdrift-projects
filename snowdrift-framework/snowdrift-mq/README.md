@@ -6,7 +6,7 @@
 
 ```
 snowdrift-mq
-├── snowdrift-mq-core        ← 通用层：IMqService、@MqListener、SPI、上下文传播
+├── snowdrift-mq-base        ← 通用层：IMqService、@MqListener、SPI、上下文传播
 ├── snowdrift-mq-kafka       ← Kafka binder 自动配置
 ├── snowdrift-mq-rocketmq    ← RocketMQ binder 自动配置
 └── snowdrift-mq-rabbitmq    ← RabbitMQ binder 自动配置
@@ -14,7 +14,7 @@ snowdrift-mq
 
 ## 快速开始
 
-按需引入一个 MQ binder 即可，核心 API（`snowdrift-mq-core`）会作为传递依赖自动引入。
+按需引入一个 MQ binder 即可，核心 API（`snowdrift-mq-base`）会作为传递依赖自动引入。
 
 ```xml
 <dependency>

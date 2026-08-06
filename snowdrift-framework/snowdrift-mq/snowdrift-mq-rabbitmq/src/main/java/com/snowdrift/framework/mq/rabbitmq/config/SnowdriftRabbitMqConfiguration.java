@@ -1,9 +1,9 @@
 package com.snowdrift.framework.mq.rabbitmq.config;
 
-import com.snowdrift.framework.mq.core.IMqService;
-import com.snowdrift.framework.mq.core.MqContextPropagator;
-import com.snowdrift.framework.mq.core.MqMessageConverter;
-import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
+import com.snowdrift.framework.mq.IMqService;
+import com.snowdrift.framework.mq.context.MqContextPropagator;
+import com.snowdrift.framework.mq.convert.MqMessageConverter;
+import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import com.snowdrift.framework.mq.rabbitmq.service.RabbitMqServiceImpl;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +19,6 @@ import org.springframework.core.env.ConfigurableEnvironment;
 import org.springframework.core.env.MapPropertySource;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executor;
 

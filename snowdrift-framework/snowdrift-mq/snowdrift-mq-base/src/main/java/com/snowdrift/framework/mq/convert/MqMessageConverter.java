@@ -1,10 +1,10 @@
-package com.snowdrift.framework.mq.core;
+package com.snowdrift.framework.mq.convert;
 
 /**
  * MQ 消息转换器 SPI
  * <p>
  * 负责消息体的序列化与反序列化。
- * 默认实现为 {@link com.snowdrift.framework.mq.core.FastJson2MqMessageConverter}（FastJson2），
+ * 默认实现为 {@link FastJson2MqMessageConverter}（FastJson2），
  * 用户可通过注册 {@link MqMessageConverter} 类型的 Bean 覆盖，切换到 Jackson、Protobuf 等方案。
  * </p>
  *

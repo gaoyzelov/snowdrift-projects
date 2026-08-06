@@ -410,7 +410,7 @@
             <!-- 消息队列模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
-                <artifactId>snowdrift-mq-core</artifactId>
+                <artifactId>snowdrift-mq-base</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

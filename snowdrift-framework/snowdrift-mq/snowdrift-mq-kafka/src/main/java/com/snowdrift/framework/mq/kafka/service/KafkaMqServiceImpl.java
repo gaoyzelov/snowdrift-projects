@@ -1,11 +1,11 @@
 package com.snowdrift.framework.mq.kafka.service;
 
-import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
-import com.snowdrift.framework.mq.core.MqContextPropagator;
-import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
-import com.snowdrift.framework.mq.core.MqMessageConverter;
-import com.snowdrift.framework.mq.dto.MqMessage;
-import com.snowdrift.framework.mq.dto.MqSendResult;
+import com.snowdrift.framework.mq.DefaultMqServiceImpl;
+import com.snowdrift.framework.mq.context.MqContextPropagator;
+import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
+import com.snowdrift.framework.mq.convert.MqMessageConverter;
+import com.snowdrift.framework.mq.model.MqMessage;
+import com.snowdrift.framework.mq.model.MqSendResult;
 import com.snowdrift.framework.mq.exception.MqException;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -42,6 +42,7 @@ public class KafkaMqServiceImpl extends DefaultMqServiceImpl implements Applicat
 
     private ApplicationContext applicationContext;
     private volatile KafkaTemplate<byte[], byte[]> kafkaTemplate;
+    private volatile boolean kafkaTemplateLookedUp;
 
     public KafkaMqServiceImpl(StreamBridge streamBridge, MqProperties properties,
                               Executor mqAsyncExecutor, MqMessageConverter converter,
@@ -138,15 +139,16 @@ public class KafkaMqServiceImpl extends DefaultMqServiceImpl implements Applicat
     }
 
     private KafkaTemplate<byte[], byte[]> getKafkaTemplate() {
-        if (this.kafkaTemplate == null) {
+        if (!kafkaTemplateLookedUp) {
             synchronized (this) {
-                if (this.kafkaTemplate == null) {
+                if (!kafkaTemplateLookedUp) {
                     try {
                         //noinspection unchecked
                         this.kafkaTemplate = applicationContext.getBean(KafkaTemplate.class);
                     } catch (Exception e) {
                         log.debug("KafkaTemplate Bean 不存在，批量发送将使用 StreamBridge 循环");
                     }
+                    this.kafkaTemplateLookedUp = true;
                 }
             }
         }

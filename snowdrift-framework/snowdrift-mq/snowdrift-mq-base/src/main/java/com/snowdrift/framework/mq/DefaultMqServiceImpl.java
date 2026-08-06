@@ -1,11 +1,14 @@
-package com.snowdrift.framework.mq.core;
+package com.snowdrift.framework.mq;
 
-import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
-import com.snowdrift.framework.mq.dto.MqMessage;
-import com.snowdrift.framework.mq.dto.MqSendResult;
+import com.snowdrift.framework.mq.context.MqContextPropagator;
+import com.snowdrift.framework.mq.convert.MqMessageConverter;
 import com.snowdrift.framework.mq.exception.MqException;
+import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
+import com.snowdrift.framework.mq.interceptor.MqSendInterceptor;
+import com.snowdrift.framework.mq.model.MqMessage;
+import com.snowdrift.framework.mq.model.MqSendResult;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -157,18 +160,23 @@ public class DefaultMqServiceImpl implements IMqService {
     @Override
     public <T> CompletableFuture<MqSendResult> sendAsync(String topic, String key, T payload, Map<String, String> headers) {
         final String traceId = MDC.get(MqContextPropagator.TRACE_ID_KEY);
-        final SecurityContext context = SecurityContextHolder.getContext();
+        final SecurityContext context;
+        try {
+            context = SecurityContextHolder.getContext();
+        } catch (Exception e) {
+            // 非 HTTP 线程无上下文时降级
+            return CompletableFuture.supplyAsync(
+                    () -> send(topic, key, payload, headers), mqAsyncExecutor);
+        }
         return CompletableFuture.supplyAsync(() -> {
             MDC.put(MqContextPropagator.TRACE_ID_KEY, traceId);
             SecurityContextHolder.setContext(context);
             try {
                 return send(topic, key, payload, headers);
-            } catch (BizException e) {
-                throw e;
             } catch (Exception e) {
                 log.warn("异步发送异常: topic={}, key={}", topic, key, e);
                 throw ExceptionUtils.<RuntimeException>rethrow(e);
-            }finally {
+            } finally {
                 MDC.clear();
                 SecurityContextHolder.clear();
             }
@@ -210,7 +218,7 @@ public class DefaultMqServiceImpl implements IMqService {
     protected <T> MqSendResult doSendDelay(String topic, String key, T payload,
                                             Duration delay, Map<String, String> headers,
                                             java.util.function.Consumer<MessageBuilder<byte[]>> delayHeaderSetter) {
-        if (delay == null) {
+        if (delay == null || delay.isNegative() || delay.isZero()) {
             throw new MqException("mq.send.delay.null");
         }
         fireBeforeSend(topic, key, payload);

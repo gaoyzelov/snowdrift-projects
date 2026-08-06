@@ -1,6 +1,6 @@
-package com.snowdrift.framework.mq.core;
+package com.snowdrift.framework.mq.interceptor;
 
-import com.snowdrift.framework.mq.dto.MqSendResult;
+import com.snowdrift.framework.mq.model.MqSendResult;
 
 /**
  * 消息发送拦截器 SPI

@@ -1,6 +1,12 @@
 package com.snowdrift.framework.mq.config;
 
-import com.snowdrift.framework.mq.core.*;
+import com.snowdrift.framework.mq.DefaultMqServiceImpl;
+import com.snowdrift.framework.mq.IMqService;
+import com.snowdrift.framework.mq.context.MqContextPropagator;
+import com.snowdrift.framework.mq.convert.FastJson2MqMessageConverter;
+import com.snowdrift.framework.mq.convert.MqMessageConverter;
+import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
+import com.snowdrift.framework.mq.interceptor.MqSendInterceptor;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -82,8 +88,7 @@ public class SnowdriftMqConfiguration {
                                            MqContextPropagator contextPropagator,
                                            ConfigurableEnvironment env) {
         mapCoreProperties(properties, env);
-        log.info("Snowdrift MQ 默认模板已注册（StreamBridge），拦截器数量: {}",
-                interceptorRegistry.getInterceptors().size());
+        log.info("Snowdrift MQ 默认模板已注册（StreamBridge），拦截器数量: {}", interceptorRegistry.getInterceptors().size());
         return new DefaultMqServiceImpl(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
     }
 

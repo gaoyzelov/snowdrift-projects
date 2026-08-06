@@ -1,11 +1,11 @@
 package com.snowdrift.framework.mq.rocketmq.service;
 
-import com.snowdrift.framework.mq.core.DefaultMqServiceImpl;
-import com.snowdrift.framework.mq.core.MqContextPropagator;
-import com.snowdrift.framework.mq.core.MqInterceptorRegistry;
-import com.snowdrift.framework.mq.core.MqMessageConverter;
-import com.snowdrift.framework.mq.dto.MqMessage;
-import com.snowdrift.framework.mq.dto.MqSendResult;
+import com.snowdrift.framework.mq.DefaultMqServiceImpl;
+import com.snowdrift.framework.mq.context.MqContextPropagator;
+import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
+import com.snowdrift.framework.mq.convert.MqMessageConverter;
+import com.snowdrift.framework.mq.model.MqMessage;
+import com.snowdrift.framework.mq.model.MqSendResult;
 import com.snowdrift.framework.mq.exception.MqException;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import com.snowdrift.framework.mq.rocketmq.config.RocketMqProperties;
@@ -133,10 +133,9 @@ public class RocketMqServiceImpl extends DefaultMqServiceImpl {
 
         } catch (Exception e) {
             log.error("RocketMQ 批量发送失败: topic={}, count={}", topic, rocketMsgs.size(), e);
-            for (MqMessage<T> ignored : messages) {
-                fireOnSendError(topic, e);
-            }
-            throw new MqException("mq.send.failed", new Object[]{topic + ", count=" + rocketMsgs.size()});
+            fireOnSendError(topic, e);
+            throw new MqException("mq.send.batch.partial-failed",
+                    new Object[]{topic, 0, rocketMsgs.size()});
         }
     }
 

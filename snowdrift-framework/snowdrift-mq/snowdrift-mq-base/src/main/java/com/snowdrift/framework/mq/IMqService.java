@@ -1,7 +1,7 @@
-package com.snowdrift.framework.mq.core;
+package com.snowdrift.framework.mq;
 
-import com.snowdrift.framework.mq.dto.MqMessage;
-import com.snowdrift.framework.mq.dto.MqSendResult;
+import com.snowdrift.framework.mq.model.MqMessage;
+import com.snowdrift.framework.mq.model.MqSendResult;
 
 import java.time.Duration;
 import java.util.List;

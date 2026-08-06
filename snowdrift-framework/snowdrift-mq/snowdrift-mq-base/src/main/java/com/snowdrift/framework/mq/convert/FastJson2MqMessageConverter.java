@@ -1,4 +1,4 @@
-package com.snowdrift.framework.mq.core;
+package com.snowdrift.framework.mq.convert;
 
 import com.alibaba.fastjson2.JSON;
 

@@ -1,6 +1,5 @@
-package com.snowdrift.framework.mq.core;
+package com.snowdrift.framework.mq.context;
 
-import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.util.EncryptUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
@@ -74,8 +73,13 @@ public class MqContextPropagator {
             builder.setHeader(HEADER_TRACE_ID, traceId);
         }
 
-        // 注入安全上下文（getContext() 永不为 null，返回空上下文而非 null）
-        SecurityContext ctx = SecurityContextHolder.getContext();
+        // 注入安全上下文（非 HTTP 线程无上下文时降级为空上下文）
+        SecurityContext ctx;
+        try {
+            ctx = SecurityContextHolder.getContext();
+        } catch (Exception e) {
+            ctx = SecurityContext.builder().build();
+        }
         String userIdStr = null;
         String username = null;
         String tenantIdStr = null;

@@ -1,4 +1,4 @@
-package com.snowdrift.framework.mq.core;
+package com.snowdrift.framework.mq.interceptor;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -32,7 +32,7 @@ public class MqInterceptorRegistry {
     /**
      * 移除拦截器
      */
-    public void unregister(MqSendInterceptor interceptor) {
+    public synchronized void unregister(MqSendInterceptor interceptor) {
         if (interceptor == null) return;
         interceptors.remove(interceptor);
     }

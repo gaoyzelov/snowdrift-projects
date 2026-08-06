@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>com.snowdrift</groupId>
-            <artifactId>snowdrift-mq-core</artifactId>
+            <artifactId>snowdrift-mq-base</artifactId>
         </dependency>
         <dependency>
             <groupId>com.alibaba.cloud</groupId>

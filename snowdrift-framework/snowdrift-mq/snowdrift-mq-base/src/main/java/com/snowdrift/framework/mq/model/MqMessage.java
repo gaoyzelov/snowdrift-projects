@@ -1,4 +1,4 @@
-package com.snowdrift.framework.mq.dto;
+package com.snowdrift.framework.mq.model;
 
 import lombok.Builder;
 import lombok.Data;
