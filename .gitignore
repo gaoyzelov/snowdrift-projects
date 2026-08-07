@@ -32,4 +32,10 @@
 /nbdist/
 /.nb-gradle/
 
+### CLAUDE ###
+.claude/
 CLAUDE.md
+
+### OPENCODE ###
+.openode/
+AGENTS.md
