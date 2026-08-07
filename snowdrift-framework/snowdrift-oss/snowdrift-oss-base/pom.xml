@@ -9,9 +9,9 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-oss-core</artifactId>
+    <artifactId>snowdrift-oss-base</artifactId>
     <name>snowdrift-oss-core</name>
-    <description>Snowdrift OSS Core Module</description>
+    <description>Snowdrift OSS Base Module</description>
 
     <dependencies>
         <!--Snowdrift Common -->

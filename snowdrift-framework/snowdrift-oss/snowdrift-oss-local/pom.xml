@@ -17,7 +17,7 @@
         <!-- OSS Core -->
         <dependency>
             <groupId>com.snowdrift</groupId>
-            <artifactId>snowdrift-oss-core</artifactId>
+            <artifactId>snowdrift-oss-base</artifactId>
         </dependency>
     </dependencies>
 

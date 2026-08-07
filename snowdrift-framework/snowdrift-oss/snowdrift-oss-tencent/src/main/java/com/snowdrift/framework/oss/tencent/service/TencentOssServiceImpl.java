@@ -281,7 +281,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
             return OssUrlBuilder.buildPathStyleUrl(config.getDomain(), bucket, objectKey);
         }
 
-        return OssUrlBuilder.buildPathStyleUrl(config.getEndpoint(), bucket, objectKey);
+        return OssUrlBuilder.buildVirtualHostUrl(bucket,config.getEndpoint(), objectKey);
     }
 
     /**

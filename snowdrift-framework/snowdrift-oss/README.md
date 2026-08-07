@@ -6,7 +6,7 @@
 
 ```
 snowdrift-oss
-├── snowdrift-oss-core        ← 通用层：IOssService、OssStrategyFactory、AbstractOssService
+├── snowdrift-oss-base        ← 通用层：IOssService、OssStrategyFactory、AbstractOssService
 ├── snowdrift-oss-local       ← 本地文件系统存储
 ├── snowdrift-oss-minio       ← MinIO 对象存储
 ├── snowdrift-oss-aliyun      ← 阿里云 OSS
@@ -16,7 +16,7 @@ snowdrift-oss
 
 ## 快速开始
 
-按需引入一个后端实现即可，核心 API（`snowdrift-oss-core`）会作为传递依赖自动引入。
+按需引入一个后端实现即可，核心 API（`snowdrift-oss-base`）会作为传递依赖自动引入。
 
 ```xml
 <dependency>

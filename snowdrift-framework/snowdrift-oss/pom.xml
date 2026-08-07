@@ -14,7 +14,7 @@
     <description>Snowdrift OSS Module</description>
 
     <modules>
-        <module>snowdrift-oss-core</module>
+        <module>snowdrift-oss-base</module>
         <module>snowdrift-oss-local</module>
         <module>snowdrift-oss-minio</module>
         <module>snowdrift-oss-aliyun</module>
