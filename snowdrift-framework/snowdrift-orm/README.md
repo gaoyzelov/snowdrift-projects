@@ -133,7 +133,7 @@ snowdrift:
     mp:
       crypto:
         enabled: true
-        aes-key: 0123456789abcdef0123456789abcdef   # 32 位十六进制 = AES-256
+        crypto-key: 0123456789abcdef0123456789abcdef   # 32 位十六进制 = AES-256
 ```
 
 ```java

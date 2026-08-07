@@ -102,6 +102,9 @@ return Result.err(ResultCode.BAD_REQUEST);
 | snowdrift-security | `security-messages` | 认证/鉴权异常 |
 | snowdrift-cache | `cache-messages` | 缓存操作、分布式锁、防重提交 |
 | snowdrift-schedule | `schedule-messages` | Quartz + XXL-JOB |
+| snowdrift-mq | `mq-messages` | 消息发送、消费、序列化 |
+| snowdrift-orm | `orm-messages` | 多租户、字段加密 |
+| snowdrift-rpc | `rpc-messages` | Dubbo RPC 调用异常 |
 
 ```yaml
 snowdrift:

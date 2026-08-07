@@ -48,7 +48,9 @@ public class WebExceptionHandler {
     @ExceptionHandler(BizException.class)
     public Result<Void> handleBizException(BizException e) {
         log.warn("业务异常: {}", e.getMessage(), e);
-        String message = I18nUtil.getMessage(e.getRawMessage(), e.getArgs());
+        String message = e.getArgs() != null
+                ? I18nUtil.getMessage(e.getRawMessage(), e.getArgs())
+                : I18nUtil.getMessage(e.getRawMessage());
         return Result.err(e.getCode(), message);
     }
 

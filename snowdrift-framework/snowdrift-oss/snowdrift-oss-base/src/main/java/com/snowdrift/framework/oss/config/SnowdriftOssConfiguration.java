@@ -4,10 +4,10 @@ import com.snowdrift.framework.oss.core.OssServiceRegistration;
 import com.snowdrift.framework.oss.core.OssStrategyFactory;
 import com.snowdrift.framework.oss.properties.OssProperties;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
@@ -20,7 +20,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Slf4j
-@Configuration
+@AutoConfiguration
 @EnableConfigurationProperties(OssProperties.class)
 public class SnowdriftOssConfiguration {
     
