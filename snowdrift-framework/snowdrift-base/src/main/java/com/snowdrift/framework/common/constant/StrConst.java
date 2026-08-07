@@ -86,4 +86,13 @@ public final class StrConst {
 
     /** 日志脱敏替换符 */
     public static final String MASK_REPLACEMENT = "******";
+
+    /** 问号 */
+    public static final String QUESTION = "?";
+
+    /** 与号 */
+    public static final String AMPERSAND = "&";
+
+    /** 等号 */
+    public static final String EQUALS = "=";
 }

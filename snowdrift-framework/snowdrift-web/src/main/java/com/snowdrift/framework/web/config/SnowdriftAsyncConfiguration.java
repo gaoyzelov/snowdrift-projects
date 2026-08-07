@@ -22,7 +22,7 @@ import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
 /**
- * AsyncConfiguration
+ * SnowdriftAsyncConfiguration
  *
  * @author gaoyzelov
  * @date 2024/8/19 11:24

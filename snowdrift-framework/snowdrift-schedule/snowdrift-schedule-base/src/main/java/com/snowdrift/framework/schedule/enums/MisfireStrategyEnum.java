@@ -7,10 +7,10 @@ import lombok.Getter;
 /**
  * MisfireStrategyEnum
  *
- * @author gaoye
- * @date 2025/05/19 17:19:30
+ * @author gaoyzelov
+ * @date 2026/5/19-17:19
  * @description 调度过期策略
- * @since 1.0
+ * @since 1.0.0
  */
 @Getter
 @AllArgsConstructor

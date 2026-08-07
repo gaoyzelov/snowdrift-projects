@@ -4,8 +4,8 @@ package com.snowdrift.framework.rpc.dubbo.constant;
  * RpcContextConstants
  *
  * @author gaoyzelov
+ * @date 2026/7/9-16:28
  * @description 定义 Dubbo attachment 中的 key
- * @date 2026/7/9 16:28
  * @since 1.0.0
  */
 public final class RpcContextConstants {

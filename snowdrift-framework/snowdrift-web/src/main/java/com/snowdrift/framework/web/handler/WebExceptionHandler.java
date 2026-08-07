@@ -1,5 +1,6 @@
 package com.snowdrift.framework.web.handler;
 
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.common.result.Result;
 import com.snowdrift.framework.common.result.ResultCode;
@@ -37,6 +38,10 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class WebExceptionHandler {
 
+    private static final long KB = 1024;
+    private static final long MB = KB * 1024;
+    private static final long GB = MB * 1024;
+
     /**
      * 业务异常处理
      */
@@ -54,7 +59,7 @@ public class WebExceptionHandler {
     public Result<Void> handleMethodArgumentNotValidException(MethodArgumentNotValidException e) {
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(StrConst.COMMA));
         log.warn("参数校验失败: {}", message);
         // 使用国际化消息
         String i18nMessage = I18nUtil.getMessage("validation.failed", message);
@@ -68,7 +73,7 @@ public class WebExceptionHandler {
     public Result<Void> handleBindException(BindException e) {
         String message = e.getFieldErrors().stream()
                 .map(FieldError::getDefaultMessage)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(StrConst.COMMA));
         log.warn("参数绑定失败: {}", message);
         // 使用国际化消息
         String i18nMessage = I18nUtil.getMessage("validation.bind.failed", message);
@@ -83,7 +88,7 @@ public class WebExceptionHandler {
         Set<ConstraintViolation<?>> violations = e.getConstraintViolations();
         String message = violations.stream()
                 .map(ConstraintViolation::getMessage)
-                .collect(Collectors.joining(", "));
+                .collect(Collectors.joining(StrConst.COMMA));
         log.warn("约束违反: {}", message);
         // 使用国际化消息
         String i18nMessage = I18nUtil.getMessage("validation.constraint.violated", message);
@@ -226,10 +231,6 @@ public class WebExceptionHandler {
         String i18nMessage = I18nUtil.getMessage("common.error");
         return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), i18nMessage);
     }
-
-    private static final long KB = 1024;
-    private static final long MB = KB * 1024;
-    private static final long GB = MB * 1024;
 
     /**
      * 格式化文件大小

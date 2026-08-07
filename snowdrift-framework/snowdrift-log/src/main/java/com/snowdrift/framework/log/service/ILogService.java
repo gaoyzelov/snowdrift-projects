@@ -15,13 +15,13 @@ public interface ILogService {
 
     /**
      * 保存接口日志
-      * @param holder 创建接口日志DTO
+     * @param holder 创建接口日志DTO
      */
     void saveApiLog(ApiLogHolder holder);
 
     /**
      * 保存登录日志
-      * @param holder 创建登录日志DTO
+     * @param holder 创建登录日志DTO
      */
     void saveLoginLog(LoginLogHolder holder);
 

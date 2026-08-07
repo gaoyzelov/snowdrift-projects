@@ -6,10 +6,11 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 /**
+ * DataScopeEnum
  *
  * @author gaoyzelov
  * @date 2026/7/2-14:09
- * @description
+ * @description 数据权限范围枚举
  * @since 1.0.0
  */
 @Getter

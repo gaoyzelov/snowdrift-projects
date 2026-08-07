@@ -8,7 +8,7 @@ import org.springframework.validation.annotation.Validated;
 import java.io.Serializable;
 
 /**
- * OrmMpCryptoProperties
+ * OrmMpBaseProperties
  *
  * @author gaoyzelov
  * @date 2026/7/1-15:26

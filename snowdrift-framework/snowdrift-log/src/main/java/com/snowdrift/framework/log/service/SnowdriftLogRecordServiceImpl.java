@@ -13,7 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.util.List;
 
 /**
- * LogRecordServiceImpl
+ * SnowdriftLogRecordServiceImpl
  *
  * @author gaoyzelov
  * @date 2026/4/30-14:56

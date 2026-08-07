@@ -2,6 +2,7 @@ package com.snowdrift.framework.common.util;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
@@ -438,22 +439,22 @@ public final class HttpUtil {
         }
 
         StringBuilder sb = new StringBuilder(url);
-        boolean hasQuery = url.contains("?");
+        boolean hasQuery = url.contains(StrConst.QUESTION);
 
         if (!hasQuery) {
-            sb.append("?");
+            sb.append(StrConst.QUESTION);
         } else {
-            if (!url.endsWith("?")) {
-                sb.append("&");
+            if (!url.endsWith(StrConst.QUESTION)) {
+                sb.append(StrConst.AMPERSAND);
             }
         }
 
         params.forEach((key, value) -> {
             if (sb.charAt(sb.length() - 1) != '?' && sb.charAt(sb.length() - 1) != '&') {
-                sb.append("&");
+                sb.append(StrConst.AMPERSAND);
             }
             sb.append(URLEncoder.encode(key, StandardCharsets.UTF_8))
-                    .append("=")
+                    .append(StrConst.EQUALS)
                     .append(URLEncoder.encode(value, StandardCharsets.UTF_8));
         });
 
@@ -548,7 +549,7 @@ public final class HttpUtil {
         AssertUtil.notBlank(username, "用户名不能为空");
         AssertUtil.notBlank(password, "密码不能为空");
 
-        String auth = username + ":" + password;
+        String auth = username + StrConst.COLON + password;
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));
         return "Basic " + encodedAuth;
     }

@@ -24,9 +24,6 @@ public final class DateTimeUtil {
 
     private static final Map<String, DateTimeFormatter> FORMATTER_CACHE = new ConcurrentHashMap<>();
 
-    private DateTimeUtil() {
-    }
-
     public static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
     public static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern(DATETIME_PATTERN);
 
@@ -41,6 +38,9 @@ public final class DateTimeUtil {
     public static final String CHINESE_DATETIME_PATTERN = "yyyy 年 MM 月 dd 日 HH 时 mm 分 ss 秒";
 
     public static final String CHINESE_DATE_PATTERN = "yyyy 年 MM 月 dd 日";
+
+    private DateTimeUtil() {
+    }
 
     private static final ZoneId DEFAULT_ZONE_ID = ZoneId.systemDefault();
 
