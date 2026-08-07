@@ -62,11 +62,6 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
         if (!corsProperties.getEnabled()) {
             return;
         }
-        if (CollectionUtils.isEmpty(corsProperties.getAllowedOriginPatterns())
-                || CollectionUtils.isEmpty(corsProperties.getAllowedMethods())) {
-            log.warn("CORS 已启用但 allowedOriginPatterns 或 allowedMethods 为空，已跳过 CORS 配置");
-            return;
-        }
         registry.addMapping(corsProperties.getPath())
                 .allowedOriginPatterns(corsProperties.getAllowedOriginPatterns().toArray(String[]::new))
                 .allowedMethods(corsProperties.getAllowedMethods().toArray(String[]::new))

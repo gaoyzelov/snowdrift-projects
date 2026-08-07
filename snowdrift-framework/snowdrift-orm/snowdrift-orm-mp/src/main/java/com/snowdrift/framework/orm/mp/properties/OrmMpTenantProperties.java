@@ -1,7 +1,10 @@
 package com.snowdrift.framework.orm.mp.properties;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import java.io.Serializable;
 import java.util.Set;
@@ -15,17 +18,20 @@ import java.util.Set;
  * @since 1.0.0
  */
 @Data
+@Validated
 @ConfigurationProperties(prefix = "snowdrift.orm.mp.tenant")
 public class OrmMpTenantProperties implements Serializable {
 
     /**
      * 是否启用多租户 SQL 拦截（默认关闭）
      */
+    @NotNull
     private Boolean enabled;
 
     /**
      * 租户字段
      */
+    @NotBlank
     private String tenantIdColumn = "tenant_id";
 
     /**

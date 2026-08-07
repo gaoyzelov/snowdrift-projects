@@ -1,7 +1,9 @@
 package com.snowdrift.framework.orm.mp.properties;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import java.io.Serializable;
 
@@ -14,17 +16,20 @@ import java.io.Serializable;
  * @since 1.0.0
  */
 @Data
+@Validated
 @ConfigurationProperties(prefix = "snowdrift.orm.mp")
 public class OrmMpBaseProperties implements Serializable {
 
     /**
      * 是否启用乐观锁（默认关闭）
      */
+    @NotNull
     private Boolean optimisticLock = Boolean.FALSE;
 
     /**
      * 是否启用字段加解密（默认关闭）
      */
+    @NotNull
     private Boolean crypto = Boolean.FALSE;
 
     /**

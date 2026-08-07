@@ -1,7 +1,11 @@
 package com.snowdrift.framework.web.properties;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import java.util.List;
 
@@ -13,27 +17,32 @@ import java.util.List;
  * @since 1.0.0
  */
 @Data
+@Validated
 @ConfigurationProperties(prefix = "snowdrift.web.cors")
 public class CorsProperties {
 
     /**
      * 是否启用 CORS 跨域支持，默认关闭
      */
+    @NotNull
     private Boolean enabled = false;
 
     /**
      * 允许的路径，默认 /**
      */
+    @NotBlank
     private String path = "/**";
 
     /**
      * 允许的源（支持通配符），默认 *
      */
+    @NotEmpty
     private List<String> allowedOriginPatterns = List.of("*");
 
     /**
      * 允许的请求方法，默认 GET,POST,PUT,DELETE,OPTIONS
      */
+    @NotEmpty
     private List<String> allowedMethods = List.of("GET", "POST", "PUT", "DELETE", "OPTIONS");
 
     /**

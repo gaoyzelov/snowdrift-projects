@@ -1,8 +1,11 @@
 package com.snowdrift.framework.orm.mp.properties;
 
 import com.baomidou.mybatisplus.annotation.DbType;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import java.io.Serializable;
 
@@ -15,26 +18,31 @@ import java.io.Serializable;
  * @since 1.0.0
  */
 @Data
+@Validated
 @ConfigurationProperties(prefix = "snowdrift.orm.mp.pagination")
 public class OrmMpPaginationProperties implements Serializable {
 
     /**
      * 数据库类型（如 MYSQL、POSTGRE_SQL、ORACLE 等）
      */
+    @NotNull
     private DbType dbType = DbType.MYSQL;
 
     /**
      * 单页最大条数限制（超过限制自动修正为最大值）
      */
+    @Min(1)
     private Long maxLimit = 1000L;
 
     /**
      * 页码溢出处理：{@code true} 超出最大页数时返回首页，{@code false} 继续请求
      */
+    @NotNull
     private Boolean overflow = true;
 
     /**
      * 是否优化 count SQL 中的 LEFT JOIN（仅支持 left join）
      */
+    @NotNull
     private Boolean optimizeJoin = true;
 }

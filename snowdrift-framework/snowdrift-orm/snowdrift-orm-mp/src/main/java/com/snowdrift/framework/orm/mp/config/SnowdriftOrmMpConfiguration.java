@@ -136,10 +136,6 @@ public class SnowdriftOrmMpConfiguration {
      */
     private TenantLineInnerInterceptor getTenantLineInnerInterceptor(OrmMpTenantProperties properties) {
         if (Boolean.TRUE.equals(properties.getEnabled())) {
-            // 不指定，给定默认租户ID字段值
-            if (StringUtils.isBlank(properties.getTenantIdColumn())) {
-                throw new BizException("snowdrift.orm.mp.tenant.enabled=true, 但未配置租户ID字段");
-            }
             TenantLineInnerInterceptor tenantInterceptor = new TenantLineInnerInterceptor();
             MultiTenantLineHandler tenantHandler = new MultiTenantLineHandler(properties);
             tenantInterceptor.setTenantLineHandler(tenantHandler);
