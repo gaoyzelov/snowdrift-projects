@@ -110,8 +110,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
             log.debug("文件上传成功: objectKey={}, size={}", objectKey, fileSize);
             return result;
         } catch (IOException e) {
-            log.error("文件上传失败: objectKey={}", objectKey, e);
-            throw new OssException("oss.upload.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.upload.failed", storageRoot.toString(), objectKey, e);
         }
     }
 
@@ -139,8 +138,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
         try {
             return Files.newInputStream(resolved);
         } catch (IOException e) {
-            log.error("文件下载失败: objectKey={}", objectKey, e);
-            throw new OssException("oss.download.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.download.failed", storageRoot.toString(), objectKey, e);
         }
     }
 
@@ -167,8 +165,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
                 log.debug("文件删除成功: objectKey={}", objectKey);
             }
         } catch (IOException e) {
-            log.error("文件删除失败: objectKey={}", objectKey, e);
-            throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.delete.failed", storageRoot.toString(), objectKey, e);
         }
     }
 
@@ -190,8 +187,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
         try {
             return Files.exists(resolved);
         }catch (Exception e){
-            log.error("检查文件存在性失败: objectKey={}", objectKey, e);
-            throw new OssException("oss.exists.check.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.exists.check.failed", storageRoot.toString(), objectKey, e);
         }
     }
 

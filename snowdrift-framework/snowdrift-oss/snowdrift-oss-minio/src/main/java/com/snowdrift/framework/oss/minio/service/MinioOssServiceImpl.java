@@ -140,8 +140,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
             log.debug("文件上传成功: bucket={}, objectKey={}, size={}", bucket, objectKey, request.getSize());
             return result;
         } catch (Exception e) {
-            log.error("文件上传失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.upload.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.upload.failed", bucket, objectKey, e);
         }
     }
 
@@ -163,8 +162,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
                             .build()
             );
         } catch (Exception e) {
-            log.error("文件下载失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.download.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.download.failed", bucket, objectKey, e);
         }
     }
 
@@ -187,8 +185,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
             );
             log.debug("文件删除成功: bucket={}, objectKey={}", bucket, objectKey);
         } catch (Exception e) {
-            log.error("文件删除失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.delete.failed", bucket, objectKey, e);
         }
     }
 
@@ -224,8 +221,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
                 }
                 log.debug("文件批量删除成功: bucket={}", bucket);
             } catch (Exception e) {
-                log.error("文件批量删除失败: bucket={}", bucket, e);
-                throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+                throw ossError("oss.delete.failed", bucket, "", e);
             }
         });
     }
@@ -255,7 +251,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
             }
             throw new OssException("oss.exists.check.failed", new Object[]{objectKey}, e);
         } catch (Exception e) {
-            throw new OssException("oss.exists.check.failed", new Object[]{objectKey}, e);
+            throw ossError("oss.exists.check.failed", bucket, objectKey, e);
         }
     }
 
@@ -282,10 +278,9 @@ public class MinioOssServiceImpl extends AbstractOssService {
                                 .expiry((int) validDuration.toMinutes(), TimeUnit.MINUTES)
                                 .build()
                 );
-            } catch (Exception e) {
-                log.error("生成文件访问 URL 失败: bucket={}, objectKey={}", bucket, objectKey, e);
-                throw new OssException("oss.url.generate.failed", new Object[]{e.getMessage()});
-            }
+        } catch (Exception e) {
+            throw ossError("oss.url.generate.failed", bucket, objectKey, e);
+        }
         }
 
         // 如果配置了域名，使用域名

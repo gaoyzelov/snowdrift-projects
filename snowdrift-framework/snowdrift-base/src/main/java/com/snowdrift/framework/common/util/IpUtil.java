@@ -152,12 +152,7 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isValidIp(String ip) {
-        try {
-            basicCheck(ip);
-        } catch (Exception e) {
-            return false;
-        }
-        return true;
+        return ip != null && InetAddresses.isInetAddress(ip);
     }
 
     /**
@@ -167,11 +162,13 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isIpv4(String ip) {
+        if (ip == null) {
+            return false;
+        }
         try {
-            basicCheck(ip);
             InetAddress address = InetAddresses.forString(ip);
             return address instanceof Inet4Address;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return false;
         }
     }
@@ -183,11 +180,13 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isIpv6(String ip) {
+        if (ip == null) {
+            return false;
+        }
         try {
-            basicCheck(ip);
             InetAddress address = InetAddresses.forString(ip);
             return address instanceof Inet6Address;
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return false;
         }
     }
@@ -199,22 +198,15 @@ public final class IpUtil {
      * @return true/false
      */
     public static boolean isInternalIp(String ip) {
+        if (ip == null) {
+            return false;
+        }
         try {
-            basicCheck(ip);
             InetAddress address = InetAddresses.forString(ip);
             return address.isLoopbackAddress() || address.isSiteLocalAddress() || address.isLinkLocalAddress();
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             return false;
         }
     }
 
-    /**
-     * 基本校验
-     *
-     * @param ip ip地址
-     */
-    private static void basicCheck(String ip) {
-        AssertUtil.notBlank(ip, "IP地址不能为空");
-        AssertUtil.isFalse(InetAddresses.isInetAddress(ip), "IP地址格式有误");
-    }
 }

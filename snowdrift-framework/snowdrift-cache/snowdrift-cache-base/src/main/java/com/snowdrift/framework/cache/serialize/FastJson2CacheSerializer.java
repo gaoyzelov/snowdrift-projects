@@ -2,7 +2,6 @@ package com.snowdrift.framework.cache.serialize;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONWriter;
-import com.snowdrift.framework.common.exception.BizException;
 
 /**
  * 基于 Fastjson2 的缓存序列化器
@@ -19,29 +18,15 @@ import com.snowdrift.framework.common.exception.BizException;
  * @date 2026/7/19
  * @since 1.0.0
  */
-public class FastJson2CacheSerializer implements CacheSerializer {
+public class FastJson2CacheSerializer extends AbstractCacheSerializer {
 
     @Override
-    public String serialize(Object value) {
-        if (value == null) {
-            return null;
-        }
-        try {
-            return JSON.toJSONString(value, JSONWriter.Feature.FieldBased);
-        } catch (Exception e) {
-            throw new BizException("cache.serialize.failed", e);
-        }
+    protected String doSerialize(Object value) {
+        return JSON.toJSONString(value, JSONWriter.Feature.FieldBased);
     }
 
     @Override
-    public <T> T deserialize(String json, Class<T> type) {
-        if (json == null) {
-            return null;
-        }
-        try {
-            return JSON.parseObject(json, type);
-        } catch (Exception e) {
-            throw new BizException("cache.deserialize.failed", e);
-        }
+    protected <T> T doDeserialize(String json, Class<T> type) {
+        return JSON.parseObject(json, type);
     }
 }

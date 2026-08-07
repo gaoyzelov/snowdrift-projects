@@ -7,7 +7,7 @@ import com.alibaba.fastjson2.TypeReference;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.schedule.exception.ScheduleException;
 import com.snowdrift.framework.common.util.HttpUtil;
 import com.snowdrift.framework.schedule.core.IScheduleService;
 import com.snowdrift.framework.schedule.dto.JobDetails;
@@ -224,14 +224,14 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
             return;
         }
         if (CollectionUtils.isEmpty(adminUrls)) {
-            throw new BizException("schedule.xxl.admin.unreachable", new Object[]{"未配置 Admin 地址"});
+            throw new ScheduleException("schedule.xxl.admin.unreachable", new Object[]{"未配置 Admin 地址"});
         }
         Exception lastEx = null;
         for (String baseUrl : adminUrls) {
             try {
                 doLogin(baseUrl);
                 return;
-            } catch (BizException e) {
+            } catch (ScheduleException e) {
                 throw e;
             } catch (Exception e) {
                 log.warn("XXL-JOB 登录失败[{}]: {}", baseUrl, e.getMessage());
@@ -239,7 +239,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
             }
         }
         if (lastEx != null) {
-            throw new BizException("schedule.xxl.login.failed", new Object[]{lastEx.getMessage()});
+            throw new ScheduleException("schedule.xxl.login.failed", new Object[]{lastEx.getMessage()});
         }
     }
 
@@ -264,7 +264,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         // 校验登录响应
         JSONObject json = JSON.parseObject(response.body());
         if (json.getIntValue("code", -1) != SUCCESS_CODE) {
-            throw new BizException("schedule.xxl.login.failed", new Object[]{json.getString("msg")});
+            throw new ScheduleException("schedule.xxl.login.failed", new Object[]{json.getString("msg")});
         }
 
         // 从 Set-Cookie 中提取 token
@@ -276,7 +276,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
                 .orElse(null);
 
         if (cookie == null) {
-            throw new BizException("schedule.xxl.login.failed", new Object[]{"未找到 Cookie: " + tokenKey});
+            throw new ScheduleException("schedule.xxl.login.failed", new Object[]{"未找到 Cookie: " + tokenKey});
         }
 
         this.loginCookie = cookie;
@@ -344,7 +344,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
                     return callAdminApi(caller, path, params, true);
                 }
                 return validateApiResponse(json);
-            } catch (BizException e) {
+            } catch (ScheduleException e) {
                 throw e;
             } catch (Exception e) {
                 log.warn("XXL-JOB Admin[{}] 调用失败: {}", baseUrl, e.getMessage());
@@ -352,7 +352,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
             }
         }
         String message = lastEx != null ? lastEx.getMessage() : "unknown";
-        throw new BizException("schedule.xxl.admin.unreachable", new Object[]{message});
+        throw new ScheduleException("schedule.xxl.admin.unreachable", new Object[]{message});
     }
 
     /**
@@ -395,7 +395,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
      */
     private JSONObject validateApiResponse(JSONObject json) {
         if (json.getIntValue("code", -1) != SUCCESS_CODE) {
-            throw new BizException("schedule.xxl.api.error", new Object[]{json.getString("msg", "unknown")});
+            throw new ScheduleException("schedule.xxl.api.error", new Object[]{json.getString("msg", "unknown")});
         }
         return json;
     }
@@ -407,10 +407,10 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         try {
             return executorGroupCache.get(appName, () -> loadExecutorGroupId(appName));
         } catch (ExecutionException e) {
-            if (e.getCause() instanceof BizException) {
-                throw (BizException) e.getCause();
+            if (e.getCause() instanceof ScheduleException) {
+                throw (ScheduleException) e.getCause();
             }
-            throw new BizException("schedule.xxl.group.not.found", new Object[]{appName});
+            throw new ScheduleException("schedule.xxl.group.not.found", new Object[]{appName});
         }
     }
 
@@ -429,7 +429,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
                 }
             }
         }
-        throw new BizException("schedule.xxl.group.not.found", new Object[]{appName});
+        throw new ScheduleException("schedule.xxl.group.not.found", new Object[]{appName});
     }
 
 

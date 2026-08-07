@@ -149,8 +149,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                     .size(request.getSize())
                     .build();
         } catch (Exception e) {
-            log.error("文件上传失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.upload.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.upload.failed", bucket, objectKey, e);
         }
     }
 
@@ -191,8 +190,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                 throw new OssException("oss.download.failed", new Object[]{response.statusCode()});
             }
         } catch (Exception e) {
-            log.error("文件下载失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.download.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.download.failed", bucket, objectKey, e);
         }
     }
 
@@ -254,8 +252,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                 log.error("文件批量删除失败: bucket={}, count={}", bucket, partitionKeys.size(), e);
                 throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
             } catch (Exception e) {
-                log.error("文件批量删除失败: bucket={}", bucket, e);
-                throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+                throw ossError("oss.delete.failed", bucket, "", e);
             }
         });
     }

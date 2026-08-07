@@ -1,6 +1,6 @@
 package com.snowdrift.framework.schedule.quartz.service;
 
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.schedule.exception.ScheduleException;
 import com.snowdrift.framework.common.util.DateTimeUtil;
 import com.snowdrift.framework.schedule.core.IScheduleService;
 import com.snowdrift.framework.schedule.dto.JobDetails;
@@ -46,13 +46,13 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     @Override
     public QuartzJobKey addJob(QuartzJobRequest request) {
         if (request.getJobClass() == null) {
-            throw new BizException("schedule.job.register.failed",
+            throw new ScheduleException("schedule.job.register.failed",
                     new Object[]{request.getName(), "jobClass 不能为空"});
         }
         JobKey jobKey = JobKey.jobKey(request.getName(), request.getGroup());
         try {
             if (scheduler.checkExists(jobKey)) {
-                throw new BizException("schedule.job.already.exists", new Object[]{request.getName()});
+                throw new ScheduleException("schedule.job.already.exists", new Object[]{request.getName()});
             }
 
             JobDetail detail = JobBuilder.newJob(request.getJobClass())
@@ -79,7 +79,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             return QuartzJobKey.newInstance(request.getName(),request.getGroup());
         } catch (SchedulerException e) {
             log.error("Quartz 任务注册失败: name={}, group={}", request.getName(), request.getGroup(), e);
-            throw new BizException("schedule.job.register.failed",
+            throw new ScheduleException("schedule.job.register.failed",
                     new Object[]{request.getName(), e.getMessage()});
         }
     }
@@ -91,7 +91,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             log.info("Quartz 任务删除成功: name={}, group={}", jobKey.getName(), jobKey.getGroup());
         } catch (SchedulerException e) {
             log.error("Quartz 任务删除失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
-            throw new BizException("schedule.job.remove.failed",
+            throw new ScheduleException("schedule.job.remove.failed",
                     new Object[]{jobKey.getName(), e.getMessage()});
         }
     }
@@ -99,14 +99,14 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     @Override
     public void updateJob(QuartzJobKey jobKey, QuartzJobRequest request) {
         if (request.getJobClass() == null) {
-            throw new BizException("schedule.job.update.failed",
+            throw new ScheduleException("schedule.job.update.failed",
                     new Object[]{jobKey.getName(), "jobClass 不能为空"});
         }
         JobKey qJobKey = JobKey.jobKey(jobKey.getName(), jobKey.getGroup());
         TriggerKey triggerKey = TriggerKey.triggerKey(jobKey.getName(), jobKey.getGroup());
         try {
             if (!scheduler.checkExists(qJobKey)) {
-                throw new BizException("schedule.job.update.failed",
+                throw new ScheduleException("schedule.job.update.failed",
                         new Object[]{jobKey.getName(), "任务不存在"});
             }
 
@@ -135,7 +135,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             } catch (SchedulerException e) {
                 log.error("Quartz rescheduleJob 失败，JobDetail 已更新，状态可能不一致: group={}, name={}",
                         jobKey.getGroup(), jobKey.getName(), e);
-                throw new BizException("schedule.job.update.failed",
+                throw new ScheduleException("schedule.job.update.failed",
                         new Object[]{jobKey.getName(), "reschedule 失败"});
             }
 
@@ -143,7 +143,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
                     request.getName(), request.getGroup(), request.getCron());
         } catch (SchedulerException e) {
             log.error("Quartz 任务更新失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
-            throw new BizException("schedule.job.update.failed",
+            throw new ScheduleException("schedule.job.update.failed",
                     new Object[]{jobKey.getName(), e.getMessage()});
         }
     }
@@ -155,7 +155,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             log.info("Quartz 任务暂停: name={}, group={}", jobKey.getName(), jobKey.getGroup());
         } catch (SchedulerException e) {
             log.error("Quartz 任务暂停失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
-            throw new BizException("schedule.job.pause.failed",
+            throw new ScheduleException("schedule.job.pause.failed",
                     new Object[]{jobKey.getName(), e.getMessage()});
         }
     }
@@ -167,7 +167,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             log.info("Quartz 任务恢复: name={}, group={}", jobKey.getName(), jobKey.getGroup());
         } catch (SchedulerException e) {
             log.error("Quartz 任务恢复失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
-            throw new BizException("schedule.job.resume.failed",
+            throw new ScheduleException("schedule.job.resume.failed",
                     new Object[]{jobKey.getName(), e.getMessage()});
         }
     }
@@ -180,7 +180,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             log.info("Quartz 任务手动触发: name={}, group={}", jobKey.getName(), jobKey.getGroup());
         } catch (SchedulerException e) {
             log.error("Quartz 任务触发失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
-            throw new BizException("schedule.job.trigger.failed",
+            throw new ScheduleException("schedule.job.trigger.failed",
                     new Object[]{jobKey.getName(), e.getMessage()});
         }
     }
@@ -193,7 +193,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             return scheduler.checkExists(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()));
         } catch (SchedulerException e) {
             log.error("Quartz 任务查询失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
-            throw new BizException("schedule.job.query.failed",
+            throw new ScheduleException("schedule.job.query.failed",
                     new Object[]{jobKey.getName(), e.getMessage()});
         }
     }
@@ -226,7 +226,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             return info;
         } catch (SchedulerException e) {
             log.error("Quartz 任务详情查询失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
-            throw new BizException("schedule.job.query.failed",
+            throw new ScheduleException("schedule.job.query.failed",
                     new Object[]{jobKey.getName(), e.getMessage()});
         }
     }

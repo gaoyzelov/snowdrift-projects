@@ -132,8 +132,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
                     .size(request.getSize())
                     .build();
         } catch (Exception e) {
-            log.error("文件上传失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.upload.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.upload.failed", bucket, objectKey, e);
         }
     }
 
@@ -159,11 +158,9 @@ public class TencentOssServiceImpl extends AbstractOssService {
             if (e.getStatusCode() == 404) {
                 throw new OssException("oss.tencent.object.not.found", new Object[]{objectKey});
             }
-            log.error("文件下载失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.download.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.download.failed", bucket, objectKey, e);
         } catch (Exception e) {
-            log.error("文件下载失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.download.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.download.failed", bucket, objectKey, e);
         }
     }
 
@@ -221,8 +218,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
                 }
                 throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
             } catch (Exception e) {
-                log.error("文件批量删除失败: bucket={}", bucket, e);
-                throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+                throw ossError("oss.delete.failed", bucket, "", e);
             }
         });
     }
@@ -242,8 +238,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
         try {
             return cosClient.doesObjectExist(bucket, objectKey);
         } catch (Exception e) {
-            log.error("检查文件存在性失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.exists.check.failed", new Object[]{e.getMessage()});
+            throw ossError("oss.exists.check.failed", bucket, objectKey, e);
         }
     }
 
@@ -271,8 +266,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
             try {
                 return cosClient.generatePresignedUrl(request).toString();
             } catch (Exception e) {
-                log.error("生成文件访问 URL 失败: bucket={}, objectKey={}", bucket, objectKey, e);
-                throw new OssException("oss.url.generate.failed", new Object[]{e.getMessage()});
+                throw ossError("oss.url.generate.failed", bucket, objectKey, e);
             }
         }
 

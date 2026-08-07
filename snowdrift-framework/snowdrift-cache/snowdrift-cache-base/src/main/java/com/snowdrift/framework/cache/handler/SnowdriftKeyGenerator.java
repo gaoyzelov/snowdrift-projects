@@ -1,13 +1,11 @@
 package com.snowdrift.framework.cache.handler;
 
 import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.common.util.EncryptUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.interceptor.KeyGenerator;
 
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.Objects;
 import java.util.StringJoiner;
 
@@ -89,10 +87,10 @@ public class SnowdriftKeyGenerator implements KeyGenerator {
         }
         if (isSimpleType(param)) {
             String str = param.toString();
-            return str.length() <= MAX_PARAM_LENGTH ? str : shortDigest(str);
+                return str.length() <= MAX_PARAM_LENGTH ? str : EncryptUtil.sha256(str);
         }
         // 复杂对象使用摘要
-        return shortDigest(param);
+        return EncryptUtil.sha256(param.toString());
     }
 
     /**
@@ -104,23 +102,5 @@ public class SnowdriftKeyGenerator implements KeyGenerator {
                 || param instanceof Boolean
                 || param instanceof Enum
                 || param instanceof Character;
-    }
-
-    /**
-     * 对对象生成 16 位十六进制摘要
-     */
-    private String shortDigest(Object obj) {
-        try {
-            MessageDigest md = MessageDigest.getInstance("SHA-256");
-            byte[] bytes = md.digest(obj.toString().getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder(32);
-            for (int i = 0; i < 16 && i < bytes.length; i++) {
-                hex.append(String.format("%02x", bytes[i]));
-            }
-            return hex.toString();
-        } catch (NoSuchAlgorithmException e) {
-            // SHA-256 在所有 JVM 中均可用，不会发生
-            return Integer.toHexString(obj.hashCode());
-        }
     }
 }

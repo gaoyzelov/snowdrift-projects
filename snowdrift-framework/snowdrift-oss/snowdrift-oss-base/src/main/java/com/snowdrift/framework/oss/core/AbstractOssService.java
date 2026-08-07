@@ -161,4 +161,18 @@ public abstract class AbstractOssService implements IOssService {
         }
         return key;
     }
+
+    /**
+     * 统一异常处理：记录日志并包装为 OssException（保留 cause 链）
+     *
+     * @param i18nKey   国际化消息 key
+     * @param bucket    Bucket 名称
+     * @param objectKey 对象键
+     * @param e         原始异常
+     * @return OssException 实例（子类可直接 throw）
+     */
+    protected OssException ossError(String i18nKey, String bucket, String objectKey, Exception e) {
+        log.error("OSS operation failed: bucket={}, objectKey={}", bucket, objectKey, e);
+        return new OssException(i18nKey, new Object[]{e.getMessage()}, e);
+    }
 }

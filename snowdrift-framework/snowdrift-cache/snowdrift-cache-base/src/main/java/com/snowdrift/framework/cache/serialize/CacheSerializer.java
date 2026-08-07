@@ -13,6 +13,7 @@ package com.snowdrift.framework.cache.serialize;
  *   <li>{@link JacksonCacheSerializer} — 基于 Jackson，默认启用</li>
  *   <li>{@link FastJson2CacheSerializer} — 基于 Fastjson2</li>
  * </ul>
+ * 均继承自 {@link AbstractCacheSerializer}，后者统一处理 null-guard 和异常包装。
  * 通过 {@code snowdrift.cache.serializer=jackson|fastjson2} 切换。
  * 消费者也可自行实现此接口并注册为 Spring Bean 以完全自定义序列化行为。
  * </p>

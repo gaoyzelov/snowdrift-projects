@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.snowdrift.framework.common.exception.BizException;
 
 /**
  * 基于 Jackson 的缓存序列化器
@@ -23,7 +22,7 @@ import com.snowdrift.framework.common.exception.BizException;
  * @date 2026/7/19
  * @since 1.0.0
  */
-public class JacksonCacheSerializer implements CacheSerializer {
+public class JacksonCacheSerializer extends AbstractCacheSerializer {
 
     private final ObjectMapper objectMapper;
 
@@ -32,39 +31,20 @@ public class JacksonCacheSerializer implements CacheSerializer {
     }
 
     @Override
-    public String serialize(Object value) {
-        if (value == null) {
-            return null;
-        }
-        try {
-            return objectMapper.writeValueAsString(value);
-        } catch (Exception e) {
-            throw new BizException("cache.serialize.failed", e);
-        }
+    protected String doSerialize(Object value) throws Exception {
+        return objectMapper.writeValueAsString(value);
     }
 
     @Override
-    public <T> T deserialize(String json, Class<T> type) {
-        if (json == null) {
-            return null;
-        }
-        try {
-            return objectMapper.readValue(json, type);
-        } catch (Exception e) {
-            throw new BizException("cache.deserialize.failed", e);
-        }
+    protected <T> T doDeserialize(String json, Class<T> type) throws Exception {
+        return objectMapper.readValue(json, type);
     }
 
     private static ObjectMapper createObjectMapper() {
         ObjectMapper om = new ObjectMapper();
-        // 序列化所有字段（包括 private）
         om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        // 不启用 DefaultTyping —— 类型信息由调用方 API 参数提供，消除反序列化注入风险
-        // 反序列化忽略未知字段，兼容旧缓存数据中可能存在的 @class 等类型元数据
         om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        // LocalDateTime 不使用 timestamp 格式
         om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        // 支持 Java 8 日期时间类型
         om.registerModule(new JavaTimeModule());
         return om;
     }
