@@ -60,7 +60,7 @@ public class BizException extends RuntimeException {
     }
 
     public BizException(Throwable cause) {
-        super(cause);
+        super("common.error", cause);
         this.code = ResultCode.ERR.code();
     }
 

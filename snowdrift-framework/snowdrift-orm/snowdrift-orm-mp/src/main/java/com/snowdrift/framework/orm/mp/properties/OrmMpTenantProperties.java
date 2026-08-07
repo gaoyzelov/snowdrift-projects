@@ -26,7 +26,7 @@ public class OrmMpTenantProperties implements Serializable {
      * 是否启用多租户 SQL 拦截（默认关闭）
      */
     @NotNull
-    private Boolean enabled;
+    private Boolean enabled = false;
 
     /**
      * 租户字段

@@ -16,6 +16,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum DataScopeEnum implements IEnum<Integer> {
 
+    NONE(-1, "无权限"),
     ALL(0, "全部"),
     DEPT(1, "本部门"),
     DEPT_AND_SUB(2, "本部门及子部门"),
@@ -29,7 +30,10 @@ public enum DataScopeEnum implements IEnum<Integer> {
 
     @JsonCreator
     public static DataScopeEnum of(Integer code) {
+        if (code == null) {
+            return NONE;
+        }
         // 默认仅查看自己数据
-        return IEnum.getByCode(DataScopeEnum.class, code).orElse(SELF);
+        return IEnum.getByCode(DataScopeEnum.class, code).orElse(NONE);
     }
 }

@@ -75,7 +75,7 @@ public final class EncryptUtil {
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("MD5 digest failed: " + e.getMessage(), e);
         }
     }
 
@@ -95,7 +95,7 @@ public final class EncryptUtil {
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("SHA-1 digest failed: " + e.getMessage(), e);
         }
     }
 
@@ -115,7 +115,7 @@ public final class EncryptUtil {
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("SHA-256 digest failed: " + e.getMessage(), e);
         }
     }
 
@@ -136,7 +136,7 @@ public final class EncryptUtil {
             byte[] hmac = mac.doFinal(text.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hmac);
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("HMAC-SHA256 failed: " + e.getMessage(), e);
         }
     }
 
@@ -165,7 +165,7 @@ public final class EncryptUtil {
             keyGenerator.init(keySize);
             return keyGenerator.generateKey();
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("AES key generation failed: " + e.getMessage(), e);
         }
     }
 
@@ -205,7 +205,7 @@ public final class EncryptUtil {
             byte[] encrypted = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(encrypted);
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("AES-ECB encrypt failed: " + e.getMessage(), e);
         }
     }
 
@@ -245,7 +245,7 @@ public final class EncryptUtil {
             byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(text));
             return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("AES-ECB decrypt failed: " + e.getMessage(), e);
         }
     }
 
@@ -298,7 +298,7 @@ public final class EncryptUtil {
             System.arraycopy(ciphertext, 0, output, GCM_IV_LENGTH, ciphertext.length);
             return Base64.getEncoder().encodeToString(output);
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("AES-GCM encrypt failed: " + e.getMessage(), e);
         }
     }
 
@@ -355,7 +355,7 @@ public final class EncryptUtil {
             byte[] decrypted = cipher.doFinal(ciphertext);
             return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("AES-GCM decrypt failed: " + e.getMessage(), e);
         }
     }
 
@@ -372,7 +372,7 @@ public final class EncryptUtil {
             keyPairGenerator.initialize(keySize);
             return keyPairGenerator.generateKeyPair();
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("RSA key pair generation failed: " + e.getMessage(), e);
         }
     }
 
@@ -449,7 +449,7 @@ public final class EncryptUtil {
             byte[] bytes = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(bytes);
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("RSA encrypt failed: " + e.getMessage(), e);
         }
     }
 
@@ -472,7 +472,7 @@ public final class EncryptUtil {
             byte[] bytes = cipher.doFinal(Base64.getDecoder().decode(text));
             return new String(bytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new BizException(e);
+            throw new BizException("RSA decrypt failed: " + e.getMessage(), e);
         }
     }
 

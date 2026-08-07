@@ -92,7 +92,7 @@ public final class AssertUtil {
      * @param message   错误信息
      */
     public static void isTrue(boolean predicate, String message) {
-        if (predicate) {
+        if (!predicate) {
             throw new BizException(message);
         }
     }

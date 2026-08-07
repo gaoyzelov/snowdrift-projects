@@ -94,7 +94,7 @@ public class DubboExceptionFilter implements Filter, Filter.Listener {
                     invocation.getMethodName(),
                     exception.getLocalizedMessage(), exception);
 
-            appResponse.setException(new BizException(exception.getLocalizedMessage(), exception));
+            appResponse.setException(new BizException("rpc.invoke.failed", new Object[]{exception.getMessage()}, exception));
 
         } catch (Throwable e) {
             log.error("RPC异常处理出错，调用方：{}，服务名: {}，方法: {}, 异常信息: {}",
@@ -102,7 +102,7 @@ public class DubboExceptionFilter implements Filter, Filter.Listener {
                     invoker.getInterface().getName(),
                     invocation.getMethodName(),
                     e.getLocalizedMessage(), e);
-            appResponse.setException(new BizException(e.getLocalizedMessage(),e));
+            appResponse.setException(new BizException("rpc.invoke.failed", new Object[]{e.getMessage()}, e));
         }
     }
 

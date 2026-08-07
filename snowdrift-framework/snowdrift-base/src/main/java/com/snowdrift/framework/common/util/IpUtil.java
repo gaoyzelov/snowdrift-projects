@@ -32,15 +32,14 @@ public final class IpUtil {
      * IP 查询器，懒加载避免 ip2region.xdb 缺失时阻断应用启动
      */
     private static volatile Searcher searcher;
-    private static volatile boolean searcherInitialized;
 
     /**
-     * 获取 IP 查询器（懒加载，首次调用时初始化）
+     * 获取 IP 查询器（懒加载，首次调用时初始化，失败后下次调用自动重试）
      */
     private static Searcher getSearcher() {
-        if (!searcherInitialized) {
+        if (searcher == null) {
             synchronized (IpUtil.class) {
-                if (!searcherInitialized) {
+                if (searcher == null) {
                     long now = System.currentTimeMillis();
                     try (InputStream stream = IpUtil.class.getClassLoader().getResourceAsStream("ip2region.xdb")) {
                         if (stream == null) {
@@ -54,7 +53,6 @@ public final class IpUtil {
                     } catch (Exception e) {
                         log.error("IP2Region 初始化失败，IP 归属地查询将不可用", e);
                     }
-                    searcherInitialized = true;
                 }
             }
         }
