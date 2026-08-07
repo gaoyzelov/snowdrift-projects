@@ -78,21 +78,32 @@ public class SnowdriftAsyncConfiguration implements AsyncConfigurer {
     private TaskDecorator taskDecorator() {
         return runnable -> {
             final HttpContext httpContext = HttpContextHolder.getContext();
-            final SecurityContext securityContext = SecurityContextHolder.getContext();
+            final SecurityContext securityContext = getSecurityContext();
             final String traceId = LogTraceUtil.getTraceId();
             return () -> {
                 try {
                     HttpContextHolder.setContext(httpContext);
-                    SecurityContextHolder.setContext(securityContext);
+                    if (securityContext != null) {
+                        SecurityContextHolder.setContext(securityContext);
+                    }
                     LogTraceUtil.setTraceId(traceId);
                     runnable.run();
                 } finally {
-                    // 清理上下文，避免内存泄漏
                     HttpContextHolder.clear();
-                    SecurityContextHolder.clear();
+                    if (securityContext != null) {
+                        SecurityContextHolder.clear();
+                    }
                     LogTraceUtil.clearTraceId();
                 }
             };
         };
+    }
+
+    private static SecurityContext getSecurityContext() {
+        try {
+            return SecurityContextHolder.getContext();
+        } catch (Exception e) {
+            return null;
+        }
     }
 }

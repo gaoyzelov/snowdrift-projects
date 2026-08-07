@@ -82,7 +82,7 @@ String formatted = I18nUtil.getMessage("order.paid", orderNo);
 @Async
 public CompletableFuture<Result<User>> getUser(Long id) {
     // SecurityContext.getUserId() 可用
-    // HttpContext.getTraceId() 可用
+    // LogTraceUtil.getTraceId() 可用
 }
 ```
 

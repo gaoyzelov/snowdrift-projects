@@ -232,7 +232,7 @@ public class ApiLogAspect {
                 }
             }
             for (String key : toMask) {
-                obj.put(key, "******");
+                obj.put(key, StrConst.MASK_REPLACEMENT);
             }
         } else if (value instanceof JSONArray arr) {
             for (Object item : arr) {

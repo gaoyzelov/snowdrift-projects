@@ -458,7 +458,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         try {
             return JSON.parseObject(executorParam, new TypeReference<>() {
             });
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.warn("解析 executorParam 失败: {}", executorParam, e);
             return Collections.emptyMap();
         }

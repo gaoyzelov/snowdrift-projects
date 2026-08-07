@@ -40,8 +40,8 @@ snowdrift:
       username: admin
       password: 123456
       access-token: ""
-      login-token-key: XXL_JOB_LOGIN_IDENTITY
-      login-token-timeout: 30m
+      login-token-key: xxl_job_login_token
+      login-token-timeout: 1h
       admin-timeout: 5            # Admin API 超时（秒）
       ip:                         # 执行器 IP（留空自动探测）
       port: 9999                  # 执行器端口

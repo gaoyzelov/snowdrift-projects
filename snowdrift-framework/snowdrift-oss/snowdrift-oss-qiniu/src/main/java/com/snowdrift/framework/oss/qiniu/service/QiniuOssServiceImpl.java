@@ -11,6 +11,7 @@ import com.qiniu.storage.model.DefaultPutRet;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
 import com.snowdrift.framework.common.util.HttpUtil;
+import com.snowdrift.framework.oss.OssConst;
 import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
@@ -236,7 +237,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             return;
         }
         String bucket = super.getBucket();
-        ListUtils.partition(objectKeys, 1000).forEach(partitionKeys -> {
+        ListUtils.partition(objectKeys, OssConst.BATCH_PARTITION_SIZE).forEach(partitionKeys -> {
             try {
                 BucketManager.BatchOperations batchOperations = new BucketManager.BatchOperations();
                 batchOperations.addDeleteOp(bucket, partitionKeys.toArray(new String[0]));

@@ -6,6 +6,7 @@ import com.aliyun.oss.model.DeleteObjectsRequest;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
+import com.snowdrift.framework.oss.OssConst;
 import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
@@ -186,7 +187,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
             return;
         }
         String bucket = super.getBucket();
-        ListUtils.partition(objectKeys, 1000).forEach(partitionKeys -> {
+        ListUtils.partition(objectKeys, OssConst.BATCH_PARTITION_SIZE).forEach(partitionKeys -> {
             try {
                 DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucket).withKeys(partitionKeys);
                 ossClient.deleteObjects(deleteObjectsRequest);

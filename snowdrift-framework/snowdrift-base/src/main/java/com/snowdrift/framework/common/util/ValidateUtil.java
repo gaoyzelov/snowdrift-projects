@@ -37,6 +37,10 @@ public final class ValidateUtil {
     private static final int[] WEIGHT = {7, 9, 10, 5, 8, 4, 2, 1, 6, 3, 7, 9, 10, 5, 8, 4, 2};
     // 校验码对应值
     private static final String[] CHECK_CODE = {"1", "0", "X", "9", "8", "7", "6", "5", "4", "3", "2"};
+    // 身份证最小出生年份
+    private static final int ID_CARD_MIN_YEAR = 1900;
+    // 身份证中日期字段格式
+    private static final String ID_CARD_DATE_FORMAT = "yyyyMMdd";
 
     private ValidateUtil() {
     }
@@ -151,7 +155,7 @@ public final class ValidateUtil {
         // 校验出生年月日
         String yearStr = cardLength == 15 ? "19" + idCard.substring(6, 8) : idCard.substring(6, 10);
         int year = Integer.parseInt(yearStr);
-        if (year < 1900 || year > LocalDate.now().getYear()) {
+        if (year < ID_CARD_MIN_YEAR || year > LocalDate.now().getYear()) {
             return false;
         }
         String monthStr = cardLength == 15 ? idCard.substring(8, 10) : idCard.substring(10, 12);
@@ -167,7 +171,7 @@ public final class ValidateUtil {
         // 合法日期校验
         String date = yearStr + monthStr + dayStr;
         try {
-            DateTimeUtil.parseLocalDate(date, "yyyyMMdd");
+            DateTimeUtil.parseLocalDate(date, ID_CARD_DATE_FORMAT);
         } catch (Exception e) {
             return false;
         }

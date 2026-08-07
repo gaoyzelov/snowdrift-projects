@@ -35,6 +35,7 @@ import java.util.List;
 public final class EncryptUtil {
 
     private static final HexFormat HEX_FORMAT = HexFormat.of();
+    private static final int DEFAULT_RSA_KEY_SIZE = 2048;
 
     // ==================== AES/GCM（推荐） ====================
 
@@ -381,7 +382,7 @@ public final class EncryptUtil {
      * @return 密钥对对象
      */
     public static KeyPair rsaKeyPair() {
-        return EncryptUtil.rsaKeyPair(2048);
+        return EncryptUtil.rsaKeyPair(DEFAULT_RSA_KEY_SIZE);
     }
 
     /**

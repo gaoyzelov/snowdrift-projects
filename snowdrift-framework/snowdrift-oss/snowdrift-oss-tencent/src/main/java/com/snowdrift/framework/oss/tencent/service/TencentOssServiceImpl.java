@@ -8,6 +8,7 @@ import com.qcloud.cos.exception.CosServiceException;
 import com.qcloud.cos.exception.MultiObjectDeleteException;
 import com.qcloud.cos.model.*;
 import com.qcloud.cos.region.Region;
+import com.snowdrift.framework.oss.OssConst;
 import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
@@ -206,7 +207,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
             return;
         }
         String bucket = super.getBucket();
-        ListUtils.partition(objectKeys, 1000).forEach(partitionKeys -> {
+        ListUtils.partition(objectKeys, OssConst.BATCH_PARTITION_SIZE).forEach(partitionKeys -> {
             try {
                 List<DeleteObjectsRequest.KeyVersion> keys = partitionKeys.stream().map(DeleteObjectsRequest.KeyVersion::new).toList();
                 DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucket).withKeys(keys);

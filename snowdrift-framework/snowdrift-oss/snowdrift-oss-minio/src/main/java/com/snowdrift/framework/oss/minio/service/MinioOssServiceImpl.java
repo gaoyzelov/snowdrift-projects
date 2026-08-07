@@ -1,5 +1,6 @@
 package com.snowdrift.framework.oss.minio.service;
 
+import com.snowdrift.framework.oss.OssConst;
 import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.dto.OssResult;
@@ -201,7 +202,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
             return;
         }
         String bucket = super.getBucket();
-        ListUtils.partition(objectKeys,1000).forEach(partitionKeys -> {
+        ListUtils.partition(objectKeys, OssConst.BATCH_PARTITION_SIZE).forEach(partitionKeys -> {
             try {
                 List<DeleteRequest.Object> objects = partitionKeys.stream().map(DeleteRequest.Object::new).toList();
                 Iterable<Result<DeleteResult.Error>> resultIterable = minioClient.removeObjects(

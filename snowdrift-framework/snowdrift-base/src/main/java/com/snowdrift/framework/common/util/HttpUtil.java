@@ -30,6 +30,10 @@ import java.util.Map;
 @Slf4j
 public final class HttpUtil {
 
+    private static final int HTTP_SUCCESS_MIN = 200;
+    private static final int HTTP_SUCCESS_RANGE = 100;
+    private static final int RESPONSE_BODY_TRUNCATE_SIZE = 500;
+
     public static final String GET = "GET";
     public static final String POST = "POST";
     public static final String PUT = "PUT";
@@ -313,7 +317,7 @@ public final class HttpUtil {
             HttpResponse<byte[]> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
             log.debug("DOWNLOAD {} - Status: {}, Size: {} bytes", url, response.statusCode(), response.body().length);
 
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            if (response.statusCode() >= HTTP_SUCCESS_MIN && response.statusCode() < HTTP_SUCCESS_MIN + HTTP_SUCCESS_RANGE) {
                 return response.body();
             } else {
                 throw new BizException("HTTP download failed with status: " + response.statusCode());
@@ -400,12 +404,12 @@ public final class HttpUtil {
             log.debug("{} {} - Status: {}, Response: {}, Cost: {}ms",
                     request.method(), request.uri(), response.statusCode(), response.body(), costTime);
 
-            if (response.statusCode() >= 200 && response.statusCode() < 300) {
+            if (response.statusCode() >= HTTP_SUCCESS_MIN && response.statusCode() < HTTP_SUCCESS_MIN + HTTP_SUCCESS_RANGE) {
                 return response.body();
             } else {
                 String body = response.body();
-                String truncatedBody = body != null && body.length() > 500
-                        ? body.substring(0, 500) + "..." : body;
+                String truncatedBody = body != null && body.length() > RESPONSE_BODY_TRUNCATE_SIZE
+                        ? body.substring(0, RESPONSE_BODY_TRUNCATE_SIZE) + "..." : body;
                 log.warn("{} request failed with status {}: {}, body: {}",
                         request.method(), response.statusCode(), request.uri(), truncatedBody);
                 throw new BizException("HTTP " + request.method() + " request failed with status: "

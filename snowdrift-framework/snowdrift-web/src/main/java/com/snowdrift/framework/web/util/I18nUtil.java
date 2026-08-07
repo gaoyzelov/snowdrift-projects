@@ -117,7 +117,7 @@ public final class I18nUtil {
             } else {
                 locale = new Locale(language);
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
             log.error("语言字符串格式错误：{}", language, e);
         }
         return locale;

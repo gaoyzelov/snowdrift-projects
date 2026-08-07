@@ -83,4 +83,7 @@ public final class StrConst {
 
     /** 链路追踪 ID */
     public static final String TRACE_ID = "traceId";
+
+    /** 日志脱敏替换符 */
+    public static final String MASK_REPLACEMENT = "******";
 }

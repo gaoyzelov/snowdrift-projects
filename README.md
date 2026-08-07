@@ -176,11 +176,12 @@ snowdrift:
 ```yaml
 snowdrift:
   security:
-    header-name: Authorization
-    timeout: 86400
-    exclude-path-patterns:
-      - /swagger-ui/**
-      - /v3/api-docs/**
+    sa-token:
+      header-name: Authorization
+      timeout: 86400
+      exclude-path-patterns:
+        - /swagger-ui/**
+        - /v3/api-docs/**
 ```
 
 ### 分布式调度
@@ -251,7 +252,7 @@ snowdrift:
           - sys_dict
       crypto:
         enabled: true
-        aes-key: your-16-byte-key!
+        crypto-key: your-16-byte-key!
       pagination:
         db-type: MYSQL
         max-limit: 1000

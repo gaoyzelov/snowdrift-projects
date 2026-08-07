@@ -29,12 +29,9 @@ SecurityContext ctx = SecurityContext.builder()
         .build();
 SecurityContextHolder.setContext(ctx);
 
-// 获取上下文（弱校验，不存在时返回空上下文）
-SecurityContext ctx = SecurityContextHolder.getContext();
-Long userId = ctx.getUserId();
-
 // 获取上下文（强校验，不存在时抛出 BizException）
-SecurityContext ctx = SecurityContextHolder.getRequiredContext();
+SecurityContext ctx = SecurityContextHolder.getContext();
+// ctx.getUserId() — ctx 一定非 null，可安全调用
 
 // 便捷方法
 Long userId = SecurityContextHolder.getUserId();

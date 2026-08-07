@@ -46,7 +46,7 @@ snowdrift:
     rocketmq:
       enabled: false
       name-server: localhost:9876
-      producer-group: ${spring.application.name}-producer
+      producer-group: snowdrift-producer
 
     # RabbitMQ
     rabbitmq:

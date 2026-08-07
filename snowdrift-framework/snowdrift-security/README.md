@@ -25,13 +25,16 @@ snowdrift-security
 
 ## 配置
 
+公共属性通过 `snowdrift.security.sa-token` 或 `snowdrift.security.spring` 前缀均可使用：
+
 ```yaml
 snowdrift:
   security:
-    header-name: Authorization         # Token 所在的请求头名称
-    timeout: 86400                     # 绝对超时（秒），默认 24h
-    active-timeout: 1800               # 闲置超时（秒），默认 30min
-    prefix: Bearer                     # Token 前缀
+    sa-token:
+      header-name: Authorization         # Token 所在的请求头名称
+      timeout: 86400                     # 绝对超时（秒），默认 24h
+      active-timeout: 1800               # 闲置超时（秒），默认 30min
+      prefix: Bearer                     # Token 前缀
 ```
 
 ### Sa-Token 实现
@@ -128,7 +131,7 @@ public class CustomTokenStore extends AbstractTokenStore {
 
 ## 配置属性参考
 
-### snowdrift.security（公共）
+### 公共属性（适用于 sa-token 和 spring 前缀）
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
@@ -142,7 +145,7 @@ public class CustomTokenStore extends AbstractTokenStore {
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `enabled` | Boolean | false | 启用开关 |
+| `enabled` | Boolean | true | 启用开关 |
 | `concurrent` | boolean | true | 多端同时登录 |
 | `is-share` | boolean | false | 多人同账号共用 Token |
 | `max-login-count` | int | 12 | 最大登录数 |
@@ -153,6 +156,6 @@ public class CustomTokenStore extends AbstractTokenStore {
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `enabled` | Boolean | false | 启用开关 |
+| `enabled` | Boolean | true | 启用开关 |
 | `csrf-enabled` | boolean | false | CSRF 开关 |
 | `cors-enabled` | boolean | true | CORS 开关 |
