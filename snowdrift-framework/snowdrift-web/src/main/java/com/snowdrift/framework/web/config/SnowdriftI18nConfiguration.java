@@ -1,13 +1,10 @@
 package com.snowdrift.framework.web.config;
 
 import com.snowdrift.framework.web.advice.ResultI18nAdvice;
-import com.snowdrift.framework.web.i18n.I18nMessageSource;
-import com.snowdrift.framework.web.i18n.I18nMessageSourceImpl;
-import com.snowdrift.framework.web.i18n.I18nUtil;
+import com.snowdrift.framework.web.util.I18nUtil;
 import com.snowdrift.framework.web.interceptor.I18nInterceptor;
 import com.snowdrift.framework.web.properties.I18nProperties;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -28,12 +25,12 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @AutoConfiguration(before = WebMvcAutoConfiguration.class)
 @ConditionalOnProperty(prefix = "snowdrift.i18n", name = "enabled", havingValue = "true", matchIfMissing = true)
 @EnableConfigurationProperties(I18nProperties.class)
-public class I18nConfiguration implements WebMvcConfigurer {
+public class SnowdriftI18nConfiguration implements WebMvcConfigurer {
 
-    private final I18nProperties i18nProperties;
+    private final I18nProperties properties;
 
-    public I18nConfiguration(I18nProperties i18nProperties) {
-        this.i18nProperties = i18nProperties;
+    public SnowdriftI18nConfiguration(I18nProperties i18nProperties) {
+        this.properties = i18nProperties;
     }
 
     /**
@@ -42,14 +39,16 @@ public class I18nConfiguration implements WebMvcConfigurer {
     @Bean
     public MessageSource messageSource() {
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
-        messageSource.addBasenames(i18nProperties.getBaseNames().stream()
+        messageSource.addBasenames(properties.getBaseNames().stream()
                 .map(name -> name.startsWith("classpath:") ? name : "classpath:" + name)
                 .toArray(String[]::new));
-        messageSource.setDefaultEncoding(i18nProperties.getEncoding());
-        messageSource.setUseCodeAsDefaultMessage(i18nProperties.getUseCodeAsDefaultMessage());
+        messageSource.setDefaultEncoding(properties.getEncoding());
+        messageSource.setUseCodeAsDefaultMessage(properties.getUseCodeAsDefaultMessage());
         // 缓存配置：-1 表示永不缓存（开发环境），正数表示缓存秒数（生产环境）
-        messageSource.setCacheSeconds(i18nProperties.getCacheSeconds());
-        messageSource.setDefaultLocale(I18nUtil.parseLocale(i18nProperties.getDefaultLocale()));
+        messageSource.setCacheSeconds(properties.getCacheSeconds());
+        messageSource.setDefaultLocale(I18nUtil.parseLocale(properties.getDefaultLocale()));
+        // 初始化工具类
+        I18nUtil.initMessageSource(messageSource);
         return messageSource;
     }
 
@@ -58,19 +57,7 @@ public class I18nConfiguration implements WebMvcConfigurer {
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new I18nInterceptor(i18nProperties));
-    }
-
-    /**
-     * 配置消息源实现
-     */
-    @Bean
-    @ConditionalOnMissingBean(I18nMessageSource.class)
-    public I18nMessageSource i18nMessageSource(MessageSource messageSource) {
-        I18nMessageSourceImpl source = new I18nMessageSourceImpl(messageSource);
-        // 初始化工具类
-        I18nUtil.initMessageSource(source);
-        return source;
+        registry.addInterceptor(new I18nInterceptor(properties));
     }
 
     /**

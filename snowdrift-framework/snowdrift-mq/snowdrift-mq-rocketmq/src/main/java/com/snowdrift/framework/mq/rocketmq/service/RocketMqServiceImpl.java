@@ -134,7 +134,7 @@ public class RocketMqServiceImpl extends DefaultMqServiceImpl {
         } catch (Exception e) {
             log.error("RocketMQ 批量发送失败: topic={}, count={}", topic, rocketMsgs.size(), e);
             fireOnSendError(topic, e);
-            throw new MqException("mq.send.batch.partial-failed",
+            throw new MqException("mq.send.batch.partial.failed",
                     new Object[]{topic, 0, rocketMsgs.size()});
         }
     }

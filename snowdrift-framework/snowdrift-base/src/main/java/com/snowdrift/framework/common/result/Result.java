@@ -2,6 +2,7 @@ package com.snowdrift.framework.common.result;
 
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -29,6 +30,7 @@ public final class Result<T> implements Serializable {
     /**
      * 信息
      */
+    @Setter
     private String msg;
 
     /**
@@ -85,4 +87,5 @@ public final class Result<T> implements Serializable {
                 .timestamp(System.currentTimeMillis())
                 .build();
     }
+
 }

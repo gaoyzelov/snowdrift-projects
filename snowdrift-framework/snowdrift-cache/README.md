@@ -76,7 +76,7 @@ public void payOrder(Long orderId) {
 
 // 注入编程式 API
 @Autowired
-private DistributedLockService lockService;
+private IDistributedLockService lockService;
 
 boolean locked = lockService.tryLock("key", 3, 10, TimeUnit.SECONDS);
 // ...
@@ -154,5 +154,5 @@ public class ProtoBufSerializer implements CacheSerializer {
 |------|------|--------|------|
 | `key-prefix` | String | null | key 前缀 |
 | `key-ttl` | Duration | 1h | 默认 TTL |
-| `max-size` | Long | 10000 | Caffeine 最大条目数 |
+| `max-size` | long | 10000 | Caffeine 最大条目数 |
 | `serializer` | SerializerType | JACKSON | 序列化器（JACKSON / FASTJSON2） |

@@ -152,7 +152,7 @@ boolean exists = ossService.exists("avatar/user-123.jpg");
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `default-config-key` | String | — | 默认配置的 key |
+| `default-config-key` | String | default | 默认配置的 key |
 | `configs.<name>.oss-type` | String | — | 后端类型（local/minio/aliyun/qiniu/tencent） |
 | `configs.<name>.endpoint` | String | — | 服务端点 |
 | `configs.<name>.access-key` | String | — | 访问密钥 |

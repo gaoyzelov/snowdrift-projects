@@ -127,7 +127,7 @@ public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements Applica
 
         if (!errors.isEmpty()) {
             long successCount = results.stream().filter(java.util.Objects::nonNull).count();
-            throw new MqException("mq.send.batch.partial-failed",
+            throw new MqException("mq.send.batch.partial.failed",
                     new Object[]{topic, successCount, messages.size()});
         }
         log.debug("RabbitMQ 批量发送完成: topic={}, count={}", topic, messages.size());

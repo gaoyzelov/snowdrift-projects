@@ -96,7 +96,7 @@ public class DbLogService implements ILogService {
 | `saveLoginLog` | `LoginLogHolder` | 保存登录日志 |
 | `saveOperateLog` | `OperateLogHolder` | 保存操作日志（基于 bizlog-sdk） |
 
-另外，`LogRecordServiceImpl` 基于第三方 bizlog-sdk 实现 `ILogRecordService` 接口，提供开箱即用的持久化能力，业务方只需提供对应的 Repository Bean。
+另外，`SnowdriftLogRecordServiceImpl` 基于第三方 bizlog-sdk 实现 `ILogRecordService` 接口，提供开箱即用的持久化能力，业务方只需提供对应的 Repository Bean。
 
 ### 链路追踪 ID
 

@@ -137,4 +137,4 @@ SnowflakeUtil sf = SnowflakeUtil.getInstance(1, 2);
 | `YesNoEnum` | 是否枚举（YES=1, NO=0） |
 | `BizTypeEnum` | 业务操作类型（INSERT/UPDATE/DELETE/OTHER 等） |
 | `DataScopeEnum` | 数据权限范围（ALL/DEPT/SELF/DEPT_AND_SUB/CUSTOM），支持 `@JsonCreator/@JsonValue` |
-| `IEnum<T>` | 通用枚举接口，提供 `getByCode()` / `getByNote()` 查找方法 |
+| `IEnum<E>` | 通用枚举接口，提供 `getByCode()` / `getByNote()` 查找方法 |

@@ -1,11 +1,11 @@
 package com.snowdrift.framework.web.advice;
 
+import com.snowdrift.framework.common.constant.RegexConst;
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.result.Result;
-import com.snowdrift.framework.web.i18n.I18nUtil;
+import com.snowdrift.framework.web.util.I18nUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-
-import java.util.regex.Pattern;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.MediaType;
 import org.springframework.http.converter.HttpMessageConverter;
@@ -13,6 +13,9 @@ import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
+
+import java.util.Objects;
+import java.util.regex.Pattern;
 
 /**
  * ResultI18nAdvice
@@ -37,7 +40,7 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseBodyAdvice;
 @RestControllerAdvice
 public class ResultI18nAdvice implements ResponseBodyAdvice<Result<?>> {
 
-    private static final Pattern I18N_KEY_PATTERN = Pattern.compile("^[a-zA-Z0-9._-]+$");
+    private static final Pattern I18N_KEY_PATTERN = Pattern.compile(RegexConst.I18N);
 
     @Override
     public boolean supports(MethodParameter returnType,
@@ -53,24 +56,18 @@ public class ResultI18nAdvice implements ResponseBodyAdvice<Result<?>> {
                                      Class<? extends HttpMessageConverter<?>> selectedConverterType,
                                      ServerHttpRequest request,
                                      ServerHttpResponse response) {
-        if (body == null || StringUtils.isBlank(body.getMsg())) {
+        if (Objects.isNull(body) || StringUtils.isBlank(body.getMsg())) {
             return body;
         }
 
         String msg = body.getMsg();
 
         // 仅当 msg 看起来是 i18n key 时才解析（包含 "." 且不含空格）
-        // 已通过异常处理器解析的自然语言文本（如 "操作成功"）不含 "."，会被跳过
         if (isI18nKey(msg)) {
-            String resolved = I18nUtil.getMessage(msg);
-            if (!msg.equals(resolved)) {
-                log.debug("Result msg i18n 解析: {} -> {}", msg, resolved);
-                return Result.builder()
-                        .code(body.getCode())
-                        .msg(resolved)
-                        .data(body.getData())
-                        .timestamp(body.getTimestamp())
-                        .build();
+            String i18nMsg = I18nUtil.getMessage(msg);
+            if (!msg.equals(i18nMsg)) {
+                log.debug("Result msg i18n 解析: {} -> {}", msg, i18nMsg);
+                body.setMsg(i18nMsg);
             }
         }
 
@@ -86,7 +83,7 @@ public class ResultI18nAdvice implements ResponseBodyAdvice<Result<?>> {
      * </p>
      */
     private boolean isI18nKey(String msg) {
-        if (StringUtils.isBlank(msg) || !msg.contains(".")) {
+        if (StringUtils.isBlank(msg) || !msg.contains(StrConst.DOT)) {
             return false;
         }
         return I18N_KEY_PATTERN.matcher(msg).matches();

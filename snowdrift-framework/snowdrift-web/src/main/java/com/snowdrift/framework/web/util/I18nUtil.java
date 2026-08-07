@@ -1,11 +1,13 @@
-package com.snowdrift.framework.web.i18n;
+package com.snowdrift.framework.web.util;
 
 import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.util.AssertUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 
+import java.text.MessageFormat;
 import java.util.Locale;
 
 /**
@@ -19,7 +21,7 @@ import java.util.Locale;
 @Slf4j
 public final class I18nUtil {
 
-    private static volatile I18nMessageSource messageSource;
+    private static volatile MessageSource messageSource;
 
     private I18nUtil() {
     }
@@ -27,11 +29,11 @@ public final class I18nUtil {
     /**
      * 初始化消息源（由配置类调用）
      *
-     * @param source 消息源
+     * @param messageSource 消息源
      */
-    public static void initMessageSource(I18nMessageSource source) {
-        AssertUtil.notNull(source, "消息源不能为空");
-        I18nUtil.messageSource = source;
+    public static void initMessageSource(MessageSource messageSource) {
+        AssertUtil.notNull(messageSource, "消息源不能为空");
+        I18nUtil.messageSource = messageSource;
     }
 
     /**
@@ -61,11 +63,7 @@ public final class I18nUtil {
      * @return 消息内容
      */
     public static String getMessage(String code, Locale locale) {
-        if (messageSource == null) {
-            log.warn("消息源未初始化");
-            return code;
-        }
-        return messageSource.getMessage(code, locale);
+        return getMessage(code, null, locale);
     }
 
     /**
@@ -93,18 +91,6 @@ public final class I18nUtil {
             return code;
         }
         return messageSource.getMessage(code, args, locale);
-    }
-
-    /**
-     * 获取支持的语言列表
-     *
-     * @return 语言列表
-     */
-    public static Locale[] getSupportedLocales() {
-        if (messageSource == null) {
-            return new Locale[]{Locale.SIMPLIFIED_CHINESE, Locale.US};
-        }
-        return messageSource.getSupportedLocales();
     }
 
     /**
@@ -138,15 +124,21 @@ public final class I18nUtil {
     }
 
     /**
-     * 将 Locale 转换为字符串
+     * 格式化消息（提供公共工具方法）
      *
-     * @param locale Locale 对象
-     * @return 语言字符串
+     * @param message 消息模板
+     * @param args    参数
+     * @return 格式化后的消息
      */
-    public static String localeToString(Locale locale) {
-        if (locale == null) {
-            return Locale.SIMPLIFIED_CHINESE.toString();
+    public static String formatMessage(String message, Object... args) {
+        if (message == null || args == null || args.length == 0) {
+            return message;
         }
-        return locale.toString();
+        try {
+            return MessageFormat.format(message, args);
+        } catch (Exception e) {
+            log.error("格式化消息失败: message={}", message, e);
+            return message;
+        }
     }
 }

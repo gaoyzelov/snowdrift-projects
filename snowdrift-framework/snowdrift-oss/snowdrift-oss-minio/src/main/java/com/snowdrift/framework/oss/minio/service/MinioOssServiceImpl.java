@@ -220,7 +220,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
                     log.error("文件批量删除失败: bucket={}, objectKey={}, error={}", bucket, error.objectName(), error.message());
                 }
                 if (errorCount > 0) {
-                    throw new OssException("oss.delete.batch.partial-failed", new Object[]{errorCount});
+                    throw new OssException("oss.delete.batch.partial.failed", new Object[]{errorCount});
                 }
                 log.debug("文件批量删除成功: bucket={}", bucket);
             } catch (Exception e) {

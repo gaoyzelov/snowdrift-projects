@@ -6,6 +6,7 @@ import com.snowdrift.framework.web.filter.HttpContextFilter;
 import com.snowdrift.framework.web.filter.LogTraceFilter;
 import com.snowdrift.framework.web.filter.XssFilter;
 import com.snowdrift.framework.web.handler.WebExceptionHandler;
+import com.snowdrift.framework.web.properties.XssProperties;
 import com.snowdrift.framework.web.xss.SimpleXssCleaner;
 import com.snowdrift.framework.web.xss.XssCleaner;
 import com.snowdrift.framework.web.properties.CorsProperties;

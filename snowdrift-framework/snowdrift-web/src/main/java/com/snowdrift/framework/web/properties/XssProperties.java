@@ -1,4 +1,4 @@
-package com.snowdrift.framework.web.config;
+package com.snowdrift.framework.web.properties;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;

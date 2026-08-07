@@ -6,14 +6,14 @@
 
 ```
 snowdrift-schedule
-├── snowdrift-schedule-core        ← 通用层：IScheduleService、JobRequest、JobDetails、JobStatusEnum
+├── snowdrift-schedule-base        ← 通用层：IScheduleService、JobRequest、JobDetails、JobStatusEnum
 ├── snowdrift-schedule-quartz      ← Quartz 本地调度
 └── snowdrift-schedule-xxljob      ← XXL-Job 分布式调度
 ```
 
 ## 快速开始
 
-按需引入一个调度后端即可，核心 API（`snowdrift-schedule-core`）会作为传递依赖自动引入。
+按需引入一个调度后端即可，核心 API（`snowdrift-schedule-base`）会作为传递依赖自动引入。
 
 ```xml
 <dependency>

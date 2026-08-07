@@ -39,7 +39,7 @@ snowdrift:
 
 ### 全局异常处理 — WebExceptionHandler
 
-`@RestControllerAdvice` 统一拦截所有异常，包装为 `Result` 返回，覆盖 14 种异常类型：
+`@RestControllerAdvice` 统一拦截所有异常，包装为 `Result` 返回，覆盖 16 种异常类型：
 
 | 异常类型 | HTTP 状态 | 说明 |
 |---------|----------|------|

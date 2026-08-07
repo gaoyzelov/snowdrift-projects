@@ -9,9 +9,9 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-security-core</artifactId>
+    <artifactId>snowdrift-security-base</artifactId>
     <name>snowdrift-security-core</name>
-    <description>Snowdrift Security Core Module - Abstract Layer</description>
+    <description>Snowdrift Security Base Module - Abstract Layer</description>
 
     <dependencies>
         <!-- Snowdrift Context Module -->

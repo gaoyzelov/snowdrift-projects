@@ -1,6 +1,6 @@
 package com.snowdrift.framework.web.interceptor;
 
-import com.snowdrift.framework.web.i18n.I18nUtil;
+import com.snowdrift.framework.web.util.I18nUtil;
 import com.snowdrift.framework.web.properties.I18nProperties;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,40 +25,39 @@ import java.util.Locale;
 @Slf4j
 public class I18nInterceptor implements HandlerInterceptor {
 
-    private final I18nProperties i18nProperties;
+    private final I18nProperties properties;
 
-    public I18nInterceptor(I18nProperties i18nProperties) {
-        this.i18nProperties = i18nProperties;
+    public I18nInterceptor(I18nProperties properties) {
+        this.properties = properties;
     }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         // 1. 从参数获取
-        String lang = request.getParameter(i18nProperties.getParamName());
+        String lang = request.getParameter(properties.getParamName());
 
         // 2. 如果没有，从请求头获取
         if (StringUtils.isBlank(lang)) {
             // 检查 Accept-Language 头部
             Locale requestLocale = request.getLocale();
-            if (requestLocale != null && i18nProperties.getSupportedLocales()
-                    .contains(requestLocale.toString())) {
+            if (requestLocale != null && properties.getSupportedLocales().contains(requestLocale.toString())) {
                 lang = requestLocale.toString();
             } else {
                 // 回退到配置的默认值
-                lang = i18nProperties.getDefaultLocale();
+                lang = properties.getDefaultLocale();
             }
         }
 
         // 3. 验证是否支持该语言
         Locale locale = I18nUtil.parseLocale(lang);
-        if (isSupported(locale, i18nProperties.getSupportedLocales())) {
+        if (isSupported(locale, properties.getSupportedLocales())) {
             LocaleContextHolder.setLocale(locale);
             log.debug("设置语言环境: {}", locale);
-        } else if (isSupported(request.getLocale(), i18nProperties.getSupportedLocales())) {
+        } else if (isSupported(request.getLocale(), properties.getSupportedLocales())) {
             LocaleContextHolder.setLocale(request.getLocale());
         } else {
             log.warn("不支持的语言环境: {}，使用默认语言", lang);
-            LocaleContextHolder.setLocale(I18nUtil.parseLocale(i18nProperties.getDefaultLocale()));
+            LocaleContextHolder.setLocale(I18nUtil.parseLocale(properties.getDefaultLocale()));
         }
 
         return true;

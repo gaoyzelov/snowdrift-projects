@@ -13,7 +13,7 @@
     <packaging>pom</packaging>
     <description>Snowdrift Schedule Module</description>
     <modules>
-        <module>snowdrift-schedule-core</module>
+        <module>snowdrift-schedule-base</module>
         <module>snowdrift-schedule-quartz</module>
         <module>snowdrift-schedule-xxljob</module>
     </modules>

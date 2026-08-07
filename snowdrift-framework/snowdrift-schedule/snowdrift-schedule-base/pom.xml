@@ -9,8 +9,8 @@
         <version>${revision}</version>
     </parent>
 
-    <artifactId>snowdrift-schedule-core</artifactId>
-    <description>Snowdrift Schedule Core — 统一调度接口与抽象</description>
+    <artifactId>snowdrift-schedule-base</artifactId>
+    <description>Snowdrift Schedule Base — 统一调度接口与抽象</description>
 
     <dependencies>
         <dependency>

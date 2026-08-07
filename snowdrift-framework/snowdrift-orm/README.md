@@ -6,7 +6,7 @@ ORM 增强模块，基于 MyBatis-Plus 插件体系提供多租户隔离、数�
 
 ```
 snowdrift-orm
-├── snowdrift-orm-core        ← 通用层：BaseEntity、TenantBaseEntity、@DataScope
+├── snowdrift-orm-base        ← 通用层：BaseEntity、TenantBaseEntity、@DataScope
 └── snowdrift-orm-mp          ← MyBatis-Plus 插件实现
 ```
 
@@ -117,7 +117,7 @@ public class DeptDataScopeProvider implements IDataScopeProvider {
         return deptService.getDeptIdsByUser(userId);
     }
     @Override
-    public List<Long> getChildDeptIds(Long deptId) {
+    public List<Long> getChildDeptIds(Long deptId, boolean inclusive) {
         return deptService.getChildDeptIds(deptId);
     }
 }

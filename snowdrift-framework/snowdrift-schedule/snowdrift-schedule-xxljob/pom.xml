@@ -15,7 +15,7 @@
     <dependencies>
         <dependency>
             <groupId>com.snowdrift</groupId>
-            <artifactId>snowdrift-schedule-core</artifactId>
+            <artifactId>snowdrift-schedule-base</artifactId>
         </dependency>
         <dependency>
             <groupId>com.xuxueli</groupId>

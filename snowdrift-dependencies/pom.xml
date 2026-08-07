@@ -357,7 +357,7 @@
             </dependency>
             <dependency>
                 <groupId>com.snowdrift</groupId>
-                <artifactId>snowdrift-security-core</artifactId>
+                <artifactId>snowdrift-security-base</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
@@ -394,7 +394,7 @@
             <!-- 调度模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
-                <artifactId>snowdrift-schedule-core</artifactId>
+                <artifactId>snowdrift-schedule-base</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>

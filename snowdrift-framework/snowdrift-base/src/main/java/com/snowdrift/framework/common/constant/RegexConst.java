@@ -44,5 +44,8 @@ public final class RegexConst {
 
     // CRON表达式
     public static final String CRON = "^((((\\d+,)+\\d+)|(\\d+(\\/|-)\\d+)|\\d+|\\*) ?){5,7}$";
+
+    // i18n 国际化
+    public static final String I18N = "^[a-zA-Z0-9._-]+$"   ;
 }
 

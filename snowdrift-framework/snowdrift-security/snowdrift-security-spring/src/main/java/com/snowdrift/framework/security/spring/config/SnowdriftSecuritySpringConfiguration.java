@@ -12,7 +12,7 @@ import com.snowdrift.framework.security.spring.store.AbstractTokenStore;
 import com.snowdrift.framework.security.spring.store.InMemoryTokenStore;
 import com.snowdrift.framework.security.spring.store.RedisTokenStore;
 import com.snowdrift.framework.security.spring.store.TokenStore;
-import com.snowdrift.framework.web.i18n.I18nUtil;
+import com.snowdrift.framework.web.util.I18nUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 

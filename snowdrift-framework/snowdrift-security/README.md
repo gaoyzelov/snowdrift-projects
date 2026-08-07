@@ -6,14 +6,14 @@
 
 ```
 snowdrift-security
-├── snowdrift-security-core        ← 通用层：ISecurityService、TokenInfo、SecurityException
+├── snowdrift-security-base        ← 通用层：ISecurityService、TokenInfo、SecurityException
 ├── snowdrift-security-satoken     ← Sa-Token 实现（轻量级）
 └── snowdrift-security-spring      ← Spring Security 实现（企业级）
 ```
 
 ## 快速开始
 
-按需引入一个安全实现即可，核心 API（`snowdrift-security-core`）会作为传递依赖自动引入。
+按需引入一个安全实现即可，核心 API（`snowdrift-security-base`）会作为传递依赖自动引入。
 
 ```xml
 <dependency>
@@ -136,7 +136,7 @@ public class CustomTokenStore extends AbstractTokenStore {
 | `timeout` | long | 86400 | 绝对超时（秒） |
 | `active-timeout` | long | 1800 | 闲置超时（秒） |
 | `prefix` | String | Bearer | Token 前缀 |
-| `exclude-path-patterns` | List\<String\> | /favicon.ico, /swagger*/**, /v2/api-docs/**, /v3/api-docs/**, /doc.html, /swagger-ui.html, /error | 放行路径 |
+| `exclude-path-patterns` | List\<String\> | /favicon.ico, /swagger-resources/**, /v2/api-docs/**, /v3/api-docs/**, /doc.html, /swagger-ui.html, /error | 放行路径 |
 
 ### snowdrift.security.sa-token
 

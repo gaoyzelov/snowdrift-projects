@@ -12,7 +12,7 @@
     <artifactId>snowdrift-security</artifactId>
     <description>Snowdrift Security Module</description>
     <modules>
-        <module>snowdrift-security-core</module>
+        <module>snowdrift-security-base</module>
         <module>snowdrift-security-satoken</module>
         <module>snowdrift-security-spring</module>
     </modules>

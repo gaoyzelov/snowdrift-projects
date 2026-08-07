@@ -26,7 +26,7 @@ import java.time.LocalTime;
  * @since 1.0.0
  */
 @AutoConfiguration(after = JacksonAutoConfiguration.class)
-public class JacksonConfiguration {
+public class SnowdriftJacksonConfiguration {
 
     /**
      * 自定义 Jackson ObjectMapper 配置

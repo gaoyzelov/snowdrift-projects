@@ -274,7 +274,7 @@ public class DefaultMqServiceImpl implements IMqService {
             }
         }
         if (!errors.isEmpty()) {
-            throw new MqException("mq.send.batch.partial-failed",
+            throw new MqException("mq.send.batch.partial.failed",
                     new Object[]{topic, results.stream().filter(Objects::nonNull).count(), messages.size()});
         }
         return results;

@@ -17,7 +17,7 @@
         <!-- Snowdrift Security Core -->
         <dependency>
             <groupId>com.snowdrift</groupId>
-            <artifactId>snowdrift-security-core</artifactId>
+            <artifactId>snowdrift-security-base</artifactId>
         </dependency>
         <!-- Snowdrift Web Module -->
         <dependency>

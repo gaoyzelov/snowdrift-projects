@@ -1,6 +1,6 @@
 package com.snowdrift.framework.web.filter;
 
-import com.snowdrift.framework.web.config.XssProperties;
+import com.snowdrift.framework.web.properties.XssProperties;
 import com.snowdrift.framework.web.wrapper.XssRequestWrapper;
 import com.snowdrift.framework.web.xss.XssCleaner;
 import jakarta.servlet.FilterChain;

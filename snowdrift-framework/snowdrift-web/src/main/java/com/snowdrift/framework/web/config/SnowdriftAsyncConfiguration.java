@@ -34,27 +34,26 @@ import java.util.concurrent.ThreadPoolExecutor;
 @AutoConfiguration
 @EnableConfigurationProperties(AsyncProperties.class)
 @ConditionalOnProperty(prefix = "snowdrift.async", name = "enabled", havingValue = "true")
-public class AsyncConfiguration implements AsyncConfigurer {
+public class SnowdriftAsyncConfiguration implements AsyncConfigurer {
 
-    private final AsyncProperties asyncProperties;
+    private final AsyncProperties properties;
 
-    public AsyncConfiguration(AsyncProperties asyncProperties) {
-        this.asyncProperties = asyncProperties;
+    public SnowdriftAsyncConfiguration(AsyncProperties properties) {
+        this.properties = properties;
     }
-
 
     @Override
     public Executor getAsyncExecutor() {
-        AssertUtil.isTrue(asyncProperties.getCorePoolSize() > asyncProperties.getMaxPoolSize(),
+        AssertUtil.isTrue(properties.getCorePoolSize() > properties.getMaxPoolSize(),
                 "corePoolSize 不能大于 maxPoolSize");
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(asyncProperties.getCorePoolSize()); // 设置核心线程数
-        executor.setMaxPoolSize(asyncProperties.getMaxPoolSize()); // 设置最大线程数
-        executor.setQueueCapacity(asyncProperties.getQueueCapacity()); // 设置队列容量
-        executor.setThreadNamePrefix(asyncProperties.getThreadNamePrefix()); // 设置线程名前缀
+        executor.setCorePoolSize(properties.getCorePoolSize()); // 设置核心线程数
+        executor.setMaxPoolSize(properties.getMaxPoolSize()); // 设置最大线程数
+        executor.setQueueCapacity(properties.getQueueCapacity()); // 设置队列容量
+        executor.setThreadNamePrefix(properties.getThreadNamePrefix()); // 设置线程名前缀
         executor.setTaskDecorator(taskDecorator()); // 设置线程上下文
-        executor.setWaitForTasksToCompleteOnShutdown(asyncProperties.getWaitForTasksToCompleteOnShutdown()); // 设置优雅关闭
-        executor.setAwaitTerminationSeconds(asyncProperties.getAwaitTerminationSeconds()); // 设置等待时间
+        executor.setWaitForTasksToCompleteOnShutdown(properties.getWaitForTasksToCompleteOnShutdown()); // 设置优雅关闭
+        executor.setAwaitTerminationSeconds(properties.getAwaitTerminationSeconds()); // 设置等待时间
         executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy()); // 设置拒绝策略
         executor.initialize();
         return executor;
