@@ -11,7 +11,7 @@
 
     <artifactId>snowdrift-oss-base</artifactId>
     <name>snowdrift-oss-core</name>
-    <description>Snowdrift OSS Base Module</description>
+    <description>Snowdrift OSS Base - OSS文件存储及抽象</description>
 
     <dependencies>
         <!--Snowdrift Common -->

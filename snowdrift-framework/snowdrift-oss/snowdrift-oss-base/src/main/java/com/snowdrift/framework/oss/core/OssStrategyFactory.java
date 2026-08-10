@@ -9,7 +9,7 @@ import jakarta.annotation.PreDestroy;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
-import org.springframework.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,7 +46,7 @@ public class OssStrategyFactory {
      * @throws OssException 当 configKey 为空或 service 为空时抛出
      */
     public synchronized void register(String configKey, IOssService service) {
-        if (!StringUtils.hasText(configKey)) {
+        if (StringUtils.isBlank(configKey)) {
             throw new OssException("oss.config.key.empty");
         }
         if (service == null) {
@@ -152,7 +152,7 @@ public class OssStrategyFactory {
         if (config == null) {
             throw new OssException("oss.config.null");
         }
-        if (!Boolean.TRUE.equals(config.getEnabled())) {
+        if (Boolean.FALSE.equals(config.getEnabled())) {
             log.warn("OSS 配置未启用: configKey={}", config.getConfigKey());
             return;
         }
