@@ -107,16 +107,10 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
                         new Object[]{jobKey.getName(), "任务不存在"});
             }
 
-            // 原地替换 JobDetail（参数、描述等）
-            JobDetail detail = JobBuilder.newJob(request.getJobClass())
-                    .withIdentity(qJobKey)
-                    .withDescription(request.getDescription())
-                    .usingJobData(new JobDataMap(request.getParams() != null ? request.getParams() : new HashMap<>()))
-                    .storeDurably()
-                    .build();
-            scheduler.addJob(detail, true);
+            // 1. 保存原始 Trigger（用于回滚）
+            Trigger originalTrigger = scheduler.getTrigger(triggerKey);
 
-            // 重新构建 CronTrigger 并 reschedule
+            // 2. 先更新 Trigger（可逆操作在前）
             CronScheduleBuilder cronBuilder = CronScheduleBuilder.cronSchedule(request.getCron());
             if (MisfireStrategyEnum.FIRE_ONCE_NOW == request.getMisfireStrategy()) {
                 cronBuilder = cronBuilder.withMisfireHandlingInstructionFireAndProceed();
@@ -127,13 +121,30 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
                     .withIdentity(triggerKey)
                     .withSchedule(cronBuilder)
                     .build();
+            scheduler.rescheduleJob(triggerKey, newTrigger);
+
+            // 3. 再更新 JobDetail，失败时回滚 Trigger
+            JobDetail detail = JobBuilder.newJob(request.getJobClass())
+                    .withIdentity(qJobKey)
+                    .withDescription(request.getDescription())
+                    .usingJobData(new JobDataMap(request.getParams() != null ? request.getParams() : new HashMap<>()))
+                    .storeDurably()
+                    .build();
             try {
-                scheduler.rescheduleJob(triggerKey, newTrigger);
+                scheduler.addJob(detail, true);
             } catch (SchedulerException e) {
-                log.error("Quartz rescheduleJob 失败，JobDetail 已更新，状态可能不一致: group={}, name={}",
-                        jobKey.getGroup(), jobKey.getName(), e);
-                throw new ScheduleException("schedule.job.update.failed",
-                        new Object[]{jobKey.getName(), "reschedule 失败"});
+                // JobDetail 更新失败 → 回滚 Trigger 到原始状态
+                if (originalTrigger != null) {
+                    try {
+                        scheduler.rescheduleJob(triggerKey, originalTrigger);
+                        log.info("Quartz updateJob 回滚成功: Trigger 已恢复: group={}, name={}",
+                                jobKey.getGroup(), jobKey.getName());
+                    } catch (SchedulerException rollbackEx) {
+                        log.error("Quartz updateJob 回滚失败！Trigger 状态异常，需人工介入: group={}, name={}",
+                                jobKey.getGroup(), jobKey.getName(), rollbackEx);
+                    }
+                }
+                throw e;
             }
 
             log.info("Quartz 任务更新成功: name={}, group={}, cron={}",
