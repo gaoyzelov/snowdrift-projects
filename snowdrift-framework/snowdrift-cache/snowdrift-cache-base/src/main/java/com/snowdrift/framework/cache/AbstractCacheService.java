@@ -59,7 +59,8 @@ public abstract class AbstractCacheService implements ICacheService {
     public void put(String key, Object value, Duration ttl) {
         AssertUtil.notBlank(key, "cache.key.required");
         AssertUtil.notNull(value, "cache.value.required");
-        doPut(buildKey(key), serializer.serialize(value), ttl);
+        Duration effectiveTtl = effectiveTtl(ttl);
+        doPut(buildKey(key), serializer.serialize(value), effectiveTtl);
     }
 
     @Override

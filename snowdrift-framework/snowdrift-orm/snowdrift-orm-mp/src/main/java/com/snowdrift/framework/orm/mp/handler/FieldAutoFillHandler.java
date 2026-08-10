@@ -1,9 +1,9 @@
 package com.snowdrift.framework.orm.mp.handler;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
-import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.reflection.MetaObject;
 
 import java.time.LocalDateTime;
@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
  * @description 字段自动填充处理器
  * @since 1.0.0
  */
+@Slf4j
 public class FieldAutoFillHandler implements MetaObjectHandler {
 
     private final OrmMpTenantProperties tenantProperties;
@@ -37,9 +38,15 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
         this.strictInsertFill(metaObject, "updateBy", String.class, operatorName);
         this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
         if (Boolean.TRUE.equals(tenantProperties.getEnabled())){
-            Long tenantId = SecurityContextHolder.getContext().getTenantId();
+            Long tenantId;
+            try {
+                tenantId = SecurityContextHolder.getTenantId();
+            } catch (Exception e) {
+                tenantId = null;
+            }
             if (tenantId == null) {
-                throw new BizException("orm.tenant.context.missing");
+                log.warn("无安全上下文，tenantId 降级为 0（系统租户）");
+                tenantId = 0L;
             }
             this.strictInsertFill(metaObject, tenantProperties.getTenantIdColumn(), Long.class, tenantId);
         }

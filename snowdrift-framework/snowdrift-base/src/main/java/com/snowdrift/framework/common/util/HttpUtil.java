@@ -527,7 +527,7 @@ public final class HttpUtil {
      */
     public static HttpClient createProxyClient(String proxyHost, int proxyPort) {
         AssertUtil.notBlank(proxyHost, "代理主机不能为空");
-        AssertUtil.isFalse(proxyPort > 0 && proxyPort <= 65535, "代理端口必须在1-65535之间");
+        AssertUtil.isFalse(proxyPort <= 0 || proxyPort > 65535, "代理端口必须在1-65535之间");
 
         InetSocketAddress proxyAddress = new InetSocketAddress(proxyHost, proxyPort);
         return HttpClient.newBuilder()
