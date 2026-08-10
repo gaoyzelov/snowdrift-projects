@@ -1,6 +1,7 @@
 package com.snowdrift.framework.rpc.dubbo.filter;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.extension.Activate;
 import org.apache.dubbo.rpc.Invocation;
@@ -24,28 +25,29 @@ public class DubboProviderLogFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        long start = System.currentTimeMillis();
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         String remoteHost = RpcContext.getServiceContext().getRemoteHost();
         String interfaceName = invoker.getInterface().getName();
         String methodName = invocation.getMethodName();
 
         try {
             Result result = invoker.invoke(invocation);
-            long elapsed = System.currentTimeMillis() - start;
+            stopWatch.stop();
 
             if (result.hasException()) {
                 log.error("Dubbo服务异常 [Provider] {}.{}(), caller={}, elapsed={}ms",
-                        interfaceName, methodName, remoteHost, elapsed, result.getException());
+                        interfaceName, methodName, remoteHost, stopWatch.getDuration().toMillis(), result.getException());
             } else {
                 log.debug("Dubbo服务成功 [Provider] {}.{}(), caller={}, elapsed={}ms",
-                        interfaceName, methodName, remoteHost, elapsed);
+                        interfaceName, methodName, remoteHost, stopWatch.getDuration().toMillis());
             }
             return result;
 
         } catch (RpcException e) {
-            long elapsed = System.currentTimeMillis() - start;
+            stopWatch.stop();
             log.error("Dubbo服务失败 [Provider] {}.{}(), caller={}, elapsed={}ms",
-                    interfaceName, methodName, remoteHost, elapsed, e);
+                    interfaceName, methodName, remoteHost, stopWatch.getDuration().toMillis(), e);
             throw e;
         }
     }

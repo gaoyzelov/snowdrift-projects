@@ -1,6 +1,7 @@
 package com.snowdrift.framework.rpc.dubbo.filter;
 
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.dubbo.common.constants.CommonConstants;
 import org.apache.dubbo.common.extension.Activate;
 import org.apache.dubbo.rpc.Invocation;
@@ -23,27 +24,28 @@ public class DubboConsumerLogFilter implements Filter {
 
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
-        long start = System.currentTimeMillis();
+        StopWatch stopWatch = new StopWatch();
+        stopWatch.start();
         String interfaceName = invoker.getInterface().getName();
         String methodName = invocation.getMethodName();
 
         try {
             Result result = invoker.invoke(invocation);
-            long elapsed = System.currentTimeMillis() - start;
+            stopWatch.stop();
 
             if (result.hasException()) {
                 log.error("Dubbo调用异常 [Consumer] {}.{}(), elapsed={}ms",
-                        interfaceName, methodName, elapsed, result.getException());
+                        interfaceName, methodName, stopWatch.getDuration().toMillis(), result.getException());
             } else {
                 log.debug("Dubbo调用成功 [Consumer] {}.{}(), elapsed={}ms",
-                        interfaceName, methodName, elapsed);
+                        interfaceName, methodName, stopWatch.getDuration().toMillis());
             }
             return result;
 
         } catch (RpcException e) {
-            long elapsed = System.currentTimeMillis() - start;
+            stopWatch.stop();
             log.error("Dubbo调用失败 [Consumer] {}.{}(), elapsed={}ms",
-                    interfaceName, methodName, elapsed, e);
+                    interfaceName, methodName, stopWatch.getDuration().toMillis(), e);
             throw e;
         }
     }
