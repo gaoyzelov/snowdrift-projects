@@ -3,7 +3,7 @@ package com.snowdrift.framework.schedule.quartz.service;
 import com.snowdrift.framework.schedule.exception.ScheduleException;
 import com.snowdrift.framework.common.util.DateTimeUtil;
 import com.snowdrift.framework.schedule.core.IScheduleService;
-import com.snowdrift.framework.schedule.dto.JobDetails;
+import com.snowdrift.framework.schedule.model.JobDetails;
 import com.snowdrift.framework.schedule.enums.JobStatusEnum;
 import com.snowdrift.framework.schedule.enums.MisfireStrategyEnum;
 import com.snowdrift.framework.schedule.quartz.config.QuartzProperties;
@@ -13,10 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Quartz 调度服务实现
@@ -45,7 +42,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
 
     @Override
     public QuartzJobKey addJob(QuartzJobRequest request) {
-        if (request.getJobClass() == null) {
+        if (Objects.isNull(request.getJobClass())) {
             throw new ScheduleException("schedule.job.register.failed",
                     new Object[]{request.getName(), "jobClass 不能为空"});
         }

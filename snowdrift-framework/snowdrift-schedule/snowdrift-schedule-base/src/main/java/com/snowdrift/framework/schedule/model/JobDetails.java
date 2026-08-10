@@ -1,4 +1,4 @@
-package com.snowdrift.framework.schedule.dto;
+package com.snowdrift.framework.schedule.model;
 
 import com.snowdrift.framework.schedule.core.IJobKey;
 import com.snowdrift.framework.schedule.enums.JobStatusEnum;

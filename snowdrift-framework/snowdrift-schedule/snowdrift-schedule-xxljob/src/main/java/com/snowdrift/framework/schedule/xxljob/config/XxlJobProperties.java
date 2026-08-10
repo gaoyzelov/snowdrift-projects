@@ -28,7 +28,7 @@ public class XxlJobProperties {
      * 是否启用 XXL-JOB
      */
     @NotNull
-    private Boolean enabled = true;
+    private Boolean enabled = Boolean.FALSE;
 
     /**
      * Admin 控制台地址（如 http://localhost:8080）

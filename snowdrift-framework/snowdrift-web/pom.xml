@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>snowdrift-web</artifactId>
+    <description>Snowdrift Web Module - 基于Spring Boot的Web模块</description>
 
     <dependencies>
         <dependency>

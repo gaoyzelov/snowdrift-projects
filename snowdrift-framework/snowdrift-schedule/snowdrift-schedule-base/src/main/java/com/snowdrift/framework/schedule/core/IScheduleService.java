@@ -1,7 +1,7 @@
 package com.snowdrift.framework.schedule.core;
 
-import com.snowdrift.framework.schedule.dto.JobRequest;
-import com.snowdrift.framework.schedule.dto.JobDetails;
+import com.snowdrift.framework.schedule.model.JobRequest;
+import com.snowdrift.framework.schedule.model.JobDetails;
 
 import java.util.List;
 import java.util.Map;

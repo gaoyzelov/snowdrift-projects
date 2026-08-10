@@ -21,5 +21,5 @@ public class QuartzProperties {
      * 是否启用 Quartz
      */
     @NotNull
-    private Boolean enabled = true;
+    private Boolean enabled = Boolean.FALSE;
 }

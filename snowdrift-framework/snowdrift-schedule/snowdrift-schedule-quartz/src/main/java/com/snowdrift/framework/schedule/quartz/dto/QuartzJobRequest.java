@@ -1,6 +1,6 @@
 package com.snowdrift.framework.schedule.quartz.dto;
 
-import com.snowdrift.framework.schedule.dto.JobRequest;
+import com.snowdrift.framework.schedule.model.JobRequest;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;

@@ -1,6 +1,6 @@
 package com.snowdrift.framework.schedule.xxljob.dto;
 
-import com.snowdrift.framework.schedule.dto.JobRequest;
+import com.snowdrift.framework.schedule.model.JobRequest;
 import com.snowdrift.framework.schedule.xxljob.enums.BlockStrategyEnum;
 import com.snowdrift.framework.schedule.xxljob.enums.RouteStrategyEnum;
 import lombok.EqualsAndHashCode;

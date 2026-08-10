@@ -10,7 +10,7 @@ import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.schedule.exception.ScheduleException;
 import com.snowdrift.framework.common.util.HttpUtil;
 import com.snowdrift.framework.schedule.core.IScheduleService;
-import com.snowdrift.framework.schedule.dto.JobDetails;
+import com.snowdrift.framework.schedule.model.JobDetails;
 import com.snowdrift.framework.schedule.enums.JobStatusEnum;
 import com.snowdrift.framework.schedule.xxljob.config.XxlJobProperties;
 import com.snowdrift.framework.schedule.xxljob.consts.XxlJobApiConst;

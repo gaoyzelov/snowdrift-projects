@@ -11,10 +11,10 @@ package com.snowdrift.framework.schedule.xxljob.consts;
  * @since 1.0.0
  */
 public final class XxlJobApiConst {
+    private XxlJobApiConst() {
+    }
 
-    /**
-     * 登录
-     */
+    /** 登录 */
     public static final String LOGIN_PATH = "/auth/doLogin";
     /** 分页查询 */
     public static final String JOB_PAGE_PATH = "/jobinfo/pageList";
@@ -34,6 +34,5 @@ public final class XxlJobApiConst {
     /** 执行器分组分页 */
     public static final String GROUP_PAGE_PATH = "/jobgroup/pageList";
 
-    private XxlJobApiConst() {
-    }
+
 }

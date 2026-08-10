@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Bean;
 @ConditionalOnClass(Scheduler.class)
 @EnableConfigurationProperties(QuartzProperties.class)
 @AutoConfiguration(afterName = "com.snowdrift.framework.schedule.xxljob.config.SnowdriftXxlJobConfiguration")
-@ConditionalOnProperty(prefix = "snowdrift.schedule.quartz", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "snowdrift.schedule.quartz", name = "enabled", havingValue = "true")
 public class SnowdriftQuartzConfiguration {
 
     @Bean

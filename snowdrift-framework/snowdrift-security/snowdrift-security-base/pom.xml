@@ -11,7 +11,7 @@
 
     <artifactId>snowdrift-security-base</artifactId>
     <name>snowdrift-security-core</name>
-    <description>Snowdrift Security Base Module - Abstract Layer</description>
+    <description>Snowdrift Security Base - 统一安全接口与抽象</description>
 
     <dependencies>
         <!-- Snowdrift Context Module -->
