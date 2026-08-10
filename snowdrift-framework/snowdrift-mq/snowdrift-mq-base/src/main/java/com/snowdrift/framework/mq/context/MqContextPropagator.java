@@ -3,6 +3,7 @@ package com.snowdrift.framework.mq.context;
 import com.snowdrift.framework.common.util.EncryptUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
+import com.snowdrift.framework.mq.exception.MqException;
 import com.snowdrift.framework.mq.properties.MqProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -126,12 +127,12 @@ public class MqContextPropagator {
      * @param message 消息
      */
     public void restore(Message<?> message) {
-        // 验证签名：签名不通过则拒绝恢复上下文，防止伪造身份
+        // 验证签名：签名不通过则拒绝消费消息，防止伪造身份
         if (Boolean.TRUE.equals(properties.getSign())) {
             if (!verifySignature(message)) {
-                log.warn("MQ 消息签名校验不通过，上下文已丢弃");
+                log.warn("MQ 消息签名校验不通过，拒绝消费");
                 clear();
-                return;
+                throw new MqException("mq.signature.verify.failed");
             }
         }
         // 恢复 TraceId 到 MDC

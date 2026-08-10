@@ -74,7 +74,7 @@ public class ApiLogAspect {
         Throwable exception = null;
         try {
             result = joinPoint.proceed();
-        } catch (Throwable e) {
+        } catch (Exception e) {
             exception = e;
             throw e;
         } finally {
@@ -222,13 +222,29 @@ public class ApiLogAspect {
      * 递归脱敏 JSON 中的指定字段
      */
     private void maskValue(Object value, Set<String> maskFields) {
+        maskValue(value, maskFields, 0);
+    }
+
+    /**
+     * 递归脱敏 JSON 中的指定字段（带深度限制）
+     *
+     * @param value      当前处理的 JSON 节点
+     * @param maskFields 需脱敏的字段名
+     * @param depth      当前递归深度
+     */
+    private void maskValue(Object value, Set<String> maskFields, int depth) {
+        // 深度保护：最大 10 层，防止恶意深度嵌套 JSON 导致 StackOverflow
+        if (depth > 10) {
+            log.warn("JSON 脱敏达到最大深度限制(10)，已截断递归");
+            return;
+        }
         if (value instanceof JSONObject obj) {
             List<String> toMask = new ArrayList<>();
             for (String key : obj.keySet()) {
                 if (maskFields.contains(key.toLowerCase())) {
                     toMask.add(key);
                 } else {
-                    maskValue(obj.get(key), maskFields);
+                    maskValue(obj.get(key), maskFields, depth + 1);
                 }
             }
             for (String key : toMask) {
@@ -236,7 +252,7 @@ public class ApiLogAspect {
             }
         } else if (value instanceof JSONArray arr) {
             for (Object item : arr) {
-                maskValue(item, maskFields);
+                maskValue(item, maskFields, depth + 1);
             }
         }
     }
