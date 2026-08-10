@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -30,11 +31,11 @@ import java.util.UUID;
 @Slf4j
 public class SpringSecurityServiceImpl implements ISecurityService {
 
-    private final SpringSecurityProperties securityProperties;
+    private final SpringSecurityProperties properties;
     private final TokenStore tokenStore;
 
-    public SpringSecurityServiceImpl(SpringSecurityProperties securityProperties, TokenStore tokenStore) {
-        this.securityProperties = securityProperties;
+    public SpringSecurityServiceImpl(SpringSecurityProperties properties, TokenStore tokenStore) {
+        this.properties = properties;
         this.tokenStore = tokenStore;
     }
 
@@ -61,14 +62,14 @@ public class SpringSecurityServiceImpl implements ISecurityService {
             context.setAttributes(attributes);
         }
         attributes.put("token", tokenValue);
-        tokenStore.put(tokenValue, context, securityProperties.getTimeout());
+        tokenStore.put(tokenValue, context, Duration.ofSeconds(properties.getTimeout()));
         SpringSecurityHelper.setSpringSecurityAuthentication(context);
 
         return TokenInfo.builder()
                 .tokenValue(tokenValue)
-                .tokenName(securityProperties.getHeaderName())
-                .prefix(securityProperties.getPrefix())
-                .expiresIn(securityProperties.getTimeout())
+                .tokenName(properties.getHeaderName())
+                .prefix(properties.getPrefix())
+                .expiresIn(properties.getTimeout())
                 .build();
     }
 
