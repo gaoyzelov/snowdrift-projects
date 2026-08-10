@@ -30,7 +30,7 @@ snowdrift:
   schedule:
     # Quartz
     quartz:
-      enabled: true               # 默认 true
+      enabled: false              # 默认 false
 
     # XXL-Job
     xxl-job:

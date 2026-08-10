@@ -39,8 +39,8 @@ snowdrift:
     kafka:
       enabled: true
       bootstrap-servers: localhost:9092
-      acks: all
-      compression-type: lz4
+      acks: 1
+      compression-type: none
 
     # RocketMQ
     rocketmq:

@@ -164,3 +164,11 @@ boolean exists = ossService.exists("avatar/user-123.jpg");
 | `configs.<name>.path-prefix` | String | "" | 上传路径前缀 |
 | `configs.<name>.signature-expiry` | Integer | 60 | 签名过期时间（分钟） |
 | `configs.<name>.upload-token-expire` | Integer | — | 上传 Token 过期时间（分钟，七牛专用） |
+| `configs.<name>.enabled` | Boolean | true | 是否启用该实例 |
+| `configs.<name>.is-default` | Boolean | false | 是否为默认配置 |
+| `configs.<name>.remark` | String | — | 配置备注 |
+| `configs.<name>.url-style` | UrlStyleEnum | PATH_STYLE | URL 风格（PATH_STYLE / VIRTUAL_HOSTED_STYLE） |
+| `configs.<name>.chunk-size` | Long | 10485760 | 分片大小（字节），默认 10MB |
+| `configs.<name>.chunk-upload-url-expire` | Integer | 120 | 分片上传 URL 有效期（分钟） |
+| `configs.<name>.orphan-file-cleanup-days` | Integer | 7 | 孤儿文件清理周期（天） |
+| `configs.<name>.multipart-cleanup-hours` | Integer | 24 | 分片上传清理周期（小时） |

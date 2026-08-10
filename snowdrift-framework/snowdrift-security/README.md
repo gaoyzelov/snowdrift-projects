@@ -1,6 +1,6 @@
 # snowdrift-security
 
-安全认证模块，双安全框架实现共用 `ISecurityService` 抽象，`@AnonymousAccess` 标记公开接口。
+安全认证模块，双安全框架实现共用 `ISecurityService` 抽象，`@Anonymous` 标记公开接口。
 
 ## 模块结构
 
@@ -43,8 +43,8 @@ snowdrift:
 snowdrift:
   security:
     sa-token:
-      enabled: true
-      concurrent: true                # 是否允许多端同时登录
+      enabled: false                 # 设为 true 启用
+      concurrent: false               # 是否允许多端同时登录，默认 false
       is-share: false                 # 多人登录同账号时是否共用 Token
       max-login-count: 12             # 最大登录数（is-share=false 时生效）
       token-style: uuid               # Token 风格：uuid / simple-uuid / random-32/64/128 / tik
@@ -57,9 +57,9 @@ snowdrift:
 snowdrift:
   security:
     spring:
-      enabled: true
+      enabled: false                 # 设为 true 启用
       csrf-enabled: false             # REST API 默认关闭 CSRF
-      cors-enabled: true              # 默认开启 CORS
+      cors-enabled: false             # 默认关闭 CORS
 ```
 
 > Token 存储自动选择：classpath 中有 `RedisConnectionFactory` 时使用 `RedisTokenStore`，否则使用 `InMemoryTokenStore`。无需单独配置。
@@ -86,7 +86,7 @@ TokenInfo token = securityService.login(ctx);
 ### 公开接口
 
 ```java
-@AnonymousAccess
+@Anonymous
 @PostMapping("/login")
 public Result<TokenInfo> login(@RequestBody LoginDTO dto) { ... }
 ```
@@ -145,8 +145,8 @@ public class CustomTokenStore extends AbstractTokenStore {
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `enabled` | Boolean | true | 启用开关 |
-| `concurrent` | boolean | true | 多端同时登录 |
+| `enabled` | Boolean | false | 启用开关 |
+| `concurrent` | boolean | false | 多端同时登录 |
 | `is-share` | boolean | false | 多人同账号共用 Token |
 | `max-login-count` | int | 12 | 最大登录数 |
 | `token-style` | String | uuid | Token 风格 |
@@ -156,6 +156,6 @@ public class CustomTokenStore extends AbstractTokenStore {
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `enabled` | Boolean | true | 启用开关 |
+| `enabled` | Boolean | false | 启用开关 |
 | `csrf-enabled` | boolean | false | CSRF 开关 |
-| `cors-enabled` | boolean | true | CORS 开关 |
+| `cors-enabled` | boolean | false | CORS 开关 |

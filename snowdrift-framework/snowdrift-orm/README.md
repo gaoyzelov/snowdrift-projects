@@ -23,7 +23,7 @@ snowdrift-orm
 
 ### BaseEntity — 标准实体
 
-提供自增主键、自动填充、逻辑删除。
+提供自动填充、逻辑删除。
 
 ```java
 @Data
@@ -40,12 +40,12 @@ public class User extends BaseEntity {
 
 | 字段 | 填充策略 | 说明 |
 |------|---------|------|
-| `id` | `IdType.AUTO` | 自增主键 |
 | `createBy` | `FieldFill.INSERT` | 创建人，自动从 SecurityContext 获取 |
 | `createTime` | `FieldFill.INSERT` | 创建时间 |
 | `updateBy` | `FieldFill.INSERT_UPDATE` | 更新人 |
 | `updateTime` | `FieldFill.INSERT_UPDATE` | 更新时间 |
 | `deleted` | `@TableLogic` | 逻辑删除（0=未删，1=已删） |
+| `deletedTime` | — | 逻辑删除时间戳（Long 毫秒） |
 
 ### TenantBaseEntity — 多租户实体
 

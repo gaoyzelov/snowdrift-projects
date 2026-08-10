@@ -104,6 +104,9 @@ Twepoch 为 2015-01-01 的雪花算法实现，单例模式。
 SnowflakeUtil sf = SnowflakeUtil.getInstance();
 long id = sf.nextId();
 
+// 指定 workerId，datacenterId 默认为 0
+SnowflakeUtil sf = SnowflakeUtil.getInstance(1);
+
 // 指定 worker 和 datacenter
 SnowflakeUtil sf = SnowflakeUtil.getInstance(1, 2);
 ```

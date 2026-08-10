@@ -168,7 +168,7 @@ snowdrift:
 
 ### 安全认证
 
-双安全框架实现，共用 `ISecurityService` 抽象，`@AnonymousAccess` 标记公开接口。
+双安全框架实现，共用 `ISecurityService` 抽象，`@Anonymous` 标记公开接口。
 
 | 实现 | 模块 | 激活条件 |
 |------|------|---------|
@@ -207,7 +207,7 @@ scheduleService.triggerJob(key, Map.of("param", "value"));
 
 基于 MyBatis-Plus 插件体系，提供企业级 ORM 增强能力，全部通过配置开关控制。
 
-**实体基类：** `BaseEntity`（自增主键 + 自动填充 + 逻辑删除）和 `TenantBaseEntity`（额外增加租户隔离）。
+**实体基类：** `BaseEntity`（自动填充 + 逻辑删除）和 `TenantBaseEntity`（额外增加租户隔离）。
 
 ```java
 @Data

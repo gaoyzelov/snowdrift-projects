@@ -15,12 +15,11 @@ Web 自动配置模块，提供 CORS、国际化、异步、JSON 序列化、全
 
 ```yaml
 snowdrift:
-  web:
-    cors:
-      enabled: true                      # 默认 false
-      allowed-origin-patterns:
-        - "http://localhost:*"
-      allow-credentials: false
+  cors:
+    enabled: true                      # 默认 false
+    allowed-origin-patterns:
+      - "http://localhost:*"
+    allow-credentials: false
   i18n:
     enabled: true
     default-locale: zh_CN
@@ -33,6 +32,8 @@ snowdrift:
     max-pool-size: 10                    # 默认 10
     queue-capacity: 256                  # 默认 256
     await-termination-seconds: 60        # 关闭时等待任务完成的超时，默认 60
+    thread-name-prefix: async-           # 线程名前缀，默认 async-
+    wait-for-tasks-to-complete-on-shutdown: true  # 关闭时等待任务完成，默认 true
 ```
 
 ## 核心功能
@@ -96,11 +97,10 @@ public CompletableFuture<Result<User>> getUser(Long id) {
 
 ```yaml
 snowdrift:
-  web:
-    xss:
-      enabled: true
-      exclude-path-patterns:       # 排除路径（Ant 风格），如富文本接口
-        - /admin/richtext/**
+  xss:
+    enabled: true
+    exclude-path-patterns:       # 排除路径（Ant 风格），如富文本接口
+      - /admin/richtext/**
 ```
 
 | 属性 | 类型 | 默认值 | 说明 |
@@ -139,9 +139,9 @@ public class JsoupXssCleaner implements XssCleaner {
 ```
 请求进入
   → LogTraceFilter       (HIGHEST_PRECEDENCE)        生成 traceId
+  → HttpContextFilter    (HIGHEST_PRECEDENCE + 1)    填充 HttpContext
   → CachedBodyFilter     (HIGHEST_PRECEDENCE + 5)    缓存 Body
   → XssFilter            (HIGHEST_PRECEDENCE + 10)   XSS 清洗（可配开关/排除路径）
-  → HttpContextFilter    (HIGHEST_PRECEDENCE + 1)    填充 HttpContext
   → Controller
 ```
 
