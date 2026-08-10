@@ -9,6 +9,7 @@ import com.snowdrift.framework.web.handler.WebExceptionHandler;
 import com.snowdrift.framework.web.properties.XssProperties;
 import com.snowdrift.framework.web.xss.SimpleXssCleaner;
 import com.snowdrift.framework.web.xss.XssCleaner;
+import com.snowdrift.framework.web.xss.XssJsonBodyAdvice;
 import com.snowdrift.framework.web.properties.CorsProperties;
 import com.snowdrift.framework.web.properties.ResourceProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -145,6 +146,19 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
         registration.addUrlPatterns("/*");
         registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
         return registration;
+    }
+
+    /**
+     * XSS JSON Body 清洗 Advice
+     * <p>
+     * 在 Spring MVC 层对 {@code @RequestBody} 反序列化后的对象递归清洗 String 值，
+     * 弥补 {@link XssFilter} 仅覆盖参数/Header 而不覆盖 JSON Body 的防护盲区。
+     * 与 XssFilter 共用同一个 {@link XssCleaner}，形成 Filter + MVC 双层防御。
+     * </p>
+     */
+    @Bean
+    public XssJsonBodyAdvice xssJsonBodyAdvice(XssCleaner xssCleaner) {
+        return new XssJsonBodyAdvice(xssProperties, xssCleaner);
     }
 
     /**
