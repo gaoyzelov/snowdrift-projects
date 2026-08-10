@@ -23,14 +23,14 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @since 1.0.0
  */
 @AutoConfiguration(before = WebMvcAutoConfiguration.class)
-@ConditionalOnProperty(prefix = "snowdrift.i18n", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "snowdrift.i18n", name = "enabled", havingValue = "true")
 @EnableConfigurationProperties(I18nProperties.class)
 public class SnowdriftI18nConfiguration implements WebMvcConfigurer {
 
     private final I18nProperties properties;
 
-    public SnowdriftI18nConfiguration(I18nProperties i18nProperties) {
-        this.properties = i18nProperties;
+    public SnowdriftI18nConfiguration(I18nProperties properties) {
+        this.properties = properties;
     }
 
     /**

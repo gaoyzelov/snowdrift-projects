@@ -27,7 +27,7 @@ public class ResourceProperties {
      * 是否启用静态资源映射
      */
     @NotNull
-    private Boolean enabled = false;
+    private Boolean enabled = Boolean.FALSE;
 
     /**
      * 静态资源映射列表

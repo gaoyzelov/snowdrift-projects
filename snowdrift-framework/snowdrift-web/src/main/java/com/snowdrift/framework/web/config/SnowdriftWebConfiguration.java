@@ -59,7 +59,7 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
      */
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        if (!corsProperties.getEnabled()) {
+        if (Boolean.FALSE.equals(corsProperties.getEnabled())) {
             return;
         }
         registry.addMapping(corsProperties.getPath())
@@ -88,7 +88,7 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
      */
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        if (resourceProperties == null || !resourceProperties.getEnabled() || CollectionUtils.isEmpty(resourceProperties.getMappings())) {
+        if (Boolean.FALSE.equals(resourceProperties.getEnabled()) || CollectionUtils.isEmpty(resourceProperties.getMappings())) {
             return;
         }
         for (ResourceProperties.ResourceMapping mapping : resourceProperties.getMappings()) {

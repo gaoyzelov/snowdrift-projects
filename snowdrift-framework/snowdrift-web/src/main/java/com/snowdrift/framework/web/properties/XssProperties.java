@@ -16,14 +16,14 @@ import java.util.List;
  */
 @Data
 @Validated
-@ConfigurationProperties(prefix = "snowdrift.web.xss")
+@ConfigurationProperties(prefix = "snowdrift.xss")
 public class XssProperties {
 
     /**
      * 是否启用 XSS 防护
      */
     @NotNull
-    private Boolean enabled = false;
+    private Boolean enabled = Boolean.FALSE;
 
     /**
      * 排除路径（Ant 风格，如 /admin/richtext/**），不进行 XSS 过滤

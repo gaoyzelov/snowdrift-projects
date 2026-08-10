@@ -18,14 +18,14 @@ import java.util.List;
  */
 @Data
 @Validated
-@ConfigurationProperties(prefix = "snowdrift.web.cors")
+@ConfigurationProperties(prefix = "snowdrift.cors")
 public class CorsProperties {
 
     /**
      * 是否启用 CORS 跨域支持，默认关闭
      */
     @NotNull
-    private Boolean enabled = false;
+    private Boolean enabled = Boolean.FALSE;
 
     /**
      * 允许的路径，默认 /**

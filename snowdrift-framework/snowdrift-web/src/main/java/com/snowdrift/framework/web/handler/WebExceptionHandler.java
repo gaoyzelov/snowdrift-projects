@@ -63,9 +63,7 @@ public class WebExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(StrConst.COMMA));
         log.warn("参数校验失败: {}", message);
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("validation.failed", message);
-        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
+        return Result.err(ResultCode.BAD_REQUEST.code(), I18nUtil.getMessage("validation.failed", message));
     }
 
     /**
@@ -77,9 +75,7 @@ public class WebExceptionHandler {
                 .map(FieldError::getDefaultMessage)
                 .collect(Collectors.joining(StrConst.COMMA));
         log.warn("参数绑定失败: {}", message);
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("validation.bind.failed", message);
-        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
+        return Result.err(ResultCode.BAD_REQUEST.code(), I18nUtil.getMessage("validation.bind.failed", message));
     }
 
     /**
@@ -92,9 +88,7 @@ public class WebExceptionHandler {
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining(StrConst.COMMA));
         log.warn("约束违反: {}", message);
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("validation.constraint.violated", message);
-        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
+        return Result.err(ResultCode.BAD_REQUEST.code(), I18nUtil.getMessage("validation.constraint.violated", message));
     }
 
     /**
@@ -106,9 +100,7 @@ public class WebExceptionHandler {
         String requiredType = e.getRequiredType() != null ? e.getRequiredType().getSimpleName() : "unknown";
         Object value = e.getValue();
         log.warn("参数类型不匹配: paramName={}, requiredType={}, value={}", paramName, requiredType, value);
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("validation.type.mismatch", paramName, requiredType, value);
-        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
+        return Result.err(ResultCode.BAD_REQUEST.code(), I18nUtil.getMessage("validation.type.mismatch", paramName, requiredType, value));
     }
 
     /**
@@ -116,10 +108,8 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Result<Void> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("validation.json.parse.error");
         log.warn("请求数据解析失败: {}", e.getMessage());
-        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
+        return Result.err(ResultCode.BAD_REQUEST.code(), I18nUtil.getMessage("validation.json.parse.error"));
     }
 
     /**
@@ -129,10 +119,8 @@ public class WebExceptionHandler {
     public Result<Void> handleMaxUploadSizeExceededException(MaxUploadSizeExceededException e) {
         long maxSize = e.getMaxUploadSize();
         String maxSizeStr = formatFileSize(maxSize);
-        // 使用国际化消息
-        String message = I18nUtil.getMessage("file.size.exceeded", maxSizeStr);
-        log.warn("文件上传大小超限: {}", message);
-        return Result.err(ResultCode.PAYLOAD_TOO_LARGE.code(), message);
+        log.warn("文件上传大小超限: {}", e.getMessage());
+        return Result.err(ResultCode.PAYLOAD_TOO_LARGE.code(), I18nUtil.getMessage("file.size.exceeded", maxSizeStr));
     }
 
     /**
@@ -141,9 +129,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public Result<Void> handleNoResourceFoundException(NoResourceFoundException e) {
         log.warn("资源不存在: {}", e.getResourcePath());
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("common.not.found");
-        return Result.err(ResultCode.NOT_FOUND.code(), i18nMessage);
+        return Result.err(ResultCode.NOT_FOUND.code(), I18nUtil.getMessage("common.not.found"));
     }
 
     /**
@@ -152,9 +138,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(HttpRequestMethodNotSupportedException.class)
     public Result<Void> handleHttpRequestMethodNotSupportedException(HttpRequestMethodNotSupportedException e) {
         log.warn("请求方法不支持: {}", e.getMethod());
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("common.method.not.allowed");
-        return Result.err(ResultCode.METHOD_NOT_ALLOWED.code(), i18nMessage);
+        return Result.err(ResultCode.METHOD_NOT_ALLOWED.code(), I18nUtil.getMessage("common.method.not.allowed"));
     }
 
     /**
@@ -163,9 +147,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     public Result<Void> handleHttpMediaTypeNotSupportedException(HttpMediaTypeNotSupportedException e) {
         log.warn("媒体类型不支持: {}", e.getContentType());
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("common.media.type.not.supported");
-        return Result.err(ResultCode.UNSUPPORTED_MEDIA_TYPE.code(), i18nMessage);
+        return Result.err(ResultCode.UNSUPPORTED_MEDIA_TYPE.code(), I18nUtil.getMessage("common.media.type.not.supported"));
     }
 
     /**
@@ -174,9 +156,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(MissingServletRequestParameterException.class)
     public Result<Void> handleMissingServletRequestParameterException(MissingServletRequestParameterException e) {
         log.warn("缺少请求参数: {}", e.getParameterName());
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("validation.parameter.missing", e.getParameterName());
-        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
+        return Result.err(ResultCode.BAD_REQUEST.code(), I18nUtil.getMessage("validation.parameter.missing", e.getParameterName()));
     }
 
     /**
@@ -185,9 +165,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(MissingPathVariableException.class)
     public Result<Void> handleMissingPathVariableException(MissingPathVariableException e) {
         log.warn("缺少路径变量: {}", e.getVariableName());
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("validation.path.variable.missing", e.getVariableName());
-        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
+        return Result.err(ResultCode.BAD_REQUEST.code(), I18nUtil.getMessage("validation.path.variable.missing", e.getVariableName()));
     }
 
     /**
@@ -196,9 +174,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(MissingServletRequestPartException.class)
     public Result<Void> handleMissingServletRequestPartException(MissingServletRequestPartException e) {
         log.warn("缺少请求部分: {}", e.getRequestPartName());
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("validation.request.part.missing", e.getRequestPartName());
-        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
+        return Result.err(ResultCode.BAD_REQUEST.code(), I18nUtil.getMessage("validation.request.part.missing", e.getRequestPartName()));
     }
 
     /**
@@ -206,10 +182,8 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(IllegalArgumentException.class)
     public Result<Void> handleIllegalArgumentException(IllegalArgumentException e) {
-        log.warn("非法参数: {}", e.getMessage());
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("common.illegal.argument");
-        return Result.err(ResultCode.BAD_REQUEST.code(), i18nMessage);
+        log.warn("非法参数: {}", e.getMessage());;
+        return Result.err(ResultCode.BAD_REQUEST.code(), I18nUtil.getMessage("common.illegal.argument"));
     }
 
     /**
@@ -218,9 +192,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(NullPointerException.class)
     public Result<Void> handleNullPointerException(NullPointerException e) {
         log.error("空指针异常", e);
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("common.internal.error");
-        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), i18nMessage);
+        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), I18nUtil.getMessage("common.internal.error"));
     }
 
     /**
@@ -228,10 +200,8 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(Exception.class)
     public Result<Void> handleException(Exception e) {
-        log.error("系统异常: {}", e.getMessage(), e);
-        // 使用国际化消息
-        String i18nMessage = I18nUtil.getMessage("common.error");
-        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), i18nMessage);
+        log.error("系统异常: {}", e.getMessage(), e);;
+        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), I18nUtil.getMessage("common.error"));
     }
 
     /**

@@ -27,7 +27,7 @@ public class I18nProperties implements Serializable {
      * 是否开启国际化
      */
     @NotNull
-    private Boolean enabled = Boolean.TRUE;
+    private Boolean enabled = Boolean.FALSE;
 
     /**
      * 默认语言
