@@ -36,10 +36,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @ConditionalOnMissingBean(type = "org.springframework.security.web.SecurityFilterChain")
 public class SnowdriftSecuritySaTokenConfiguration implements WebMvcConfigurer {
 
-    private final SaTokenSecurityProperties securityProperties;
+    private final SaTokenSecurityProperties properties;
 
-    public SnowdriftSecuritySaTokenConfiguration(SaTokenSecurityProperties securityProperties) {
-        this.securityProperties = securityProperties;
+    public SnowdriftSecuritySaTokenConfiguration(SaTokenSecurityProperties properties) {
+        this.properties = properties;
     }
 
     /**
@@ -54,23 +54,23 @@ public class SnowdriftSecuritySaTokenConfiguration implements WebMvcConfigurer {
     public SaTokenConfig saTokenConfig() {
         SaTokenConfig config = new SaTokenConfig();
         // Token 名称（对应请求头字段名）
-        config.setTokenName(securityProperties.getHeaderName());
+        config.setTokenName(properties.getHeaderName());
         // Token 有效期（秒）
-        config.setTimeout(securityProperties.getTimeout());
+        config.setTimeout(properties.getTimeout());
         // Token 最低活跃频率（秒），超时冻结
-        config.setActiveTimeout(securityProperties.getActiveTimeout());
+        config.setActiveTimeout(properties.getActiveTimeout());
         // 是否允许多端并发登录
-        config.setIsConcurrent(securityProperties.isConcurrent());
+        config.setIsConcurrent(properties.getConcurrent());
         // Token 前缀（如 Bearer）
-        config.setTokenPrefix(securityProperties.getPrefix());
+        config.setTokenPrefix(properties.getPrefix());
         // 多人登录是否共用一个 Token
-        config.setIsShare(securityProperties.isShare());
+        config.setIsShare(properties.getIsShare());
         // 同一账号最大登录数
-        config.setMaxLoginCount(securityProperties.getMaxLoginCount());
+        config.setMaxLoginCount(properties.getMaxLoginCount());
         // Token 生成风格（uuid / tik / random-* 等）
-        config.setTokenStyle(securityProperties.getTokenStyle());
+        config.setTokenStyle(properties.getTokenStyle());
         // Sa-Token 框架自身日志开关
-        config.setIsLog(securityProperties.isLog());
+        config.setIsLog(properties.getIsLog());
         // 关闭Banner打印
         config.setIsPrint(false);
         return config;
@@ -85,7 +85,7 @@ public class SnowdriftSecuritySaTokenConfiguration implements WebMvcConfigurer {
     @Bean
     @ConditionalOnMissingBean(ISecurityService.class)
     public ISecurityService securityService() {
-        return new SaTokenSecurityServiceImpl(securityProperties);
+        return new SaTokenSecurityServiceImpl(properties);
     }
 
     /**
@@ -98,7 +98,7 @@ public class SnowdriftSecuritySaTokenConfiguration implements WebMvcConfigurer {
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new SecurityInterceptor(securityService()))
                 .addPathPatterns("/**")
-                .excludePathPatterns(securityProperties.getExcludePathPatterns());
+                .excludePathPatterns(properties.getExcludePathPatterns());
     }
 
     /**

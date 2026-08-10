@@ -29,11 +29,11 @@ public class SpringSecurityProperties extends SecurityProperties {
      * REST API 默认关闭
      */
     @NotNull
-    private boolean csrfEnabled = false;
+    private Boolean csrfEnabled = Boolean.FALSE;
 
     /**
      * 是否启用 CORS 跨域支持
      */
     @NotNull
-    private boolean corsEnabled = true;
+    private Boolean corsEnabled = Boolean.FALSE;
 }

@@ -66,6 +66,12 @@ public class SecurityContext implements Serializable {
      */
     private List<String> permissions;
 
+    // =================== 平台信息 ========================
+    /**
+     * 平台
+     */
+    private String platform;
+
     // =================== 扩展信息 ========================
     /**
      * 属性

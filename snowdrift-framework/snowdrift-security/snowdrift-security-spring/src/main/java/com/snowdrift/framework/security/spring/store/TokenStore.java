@@ -2,6 +2,8 @@ package com.snowdrift.framework.security.spring.store;
 
 import com.snowdrift.framework.context.security.SecurityContext;
 
+import java.time.Duration;
+
 /**
  * Token 存储抽象接口
  * <p>
@@ -27,9 +29,9 @@ public interface TokenStore {
      *
      * @param token   Token 值
      * @param context 安全上下文
-     * @param timeout 过期时间（秒），非正数时使用默认值，由 TokenStore 实现决定
+     * @param timeout 过期时间，由 TokenStore 实现决定
      */
-    void put(String token, SecurityContext context, long timeout);
+    void put(String token, SecurityContext context, Duration timeout);
 
     /**
      * 根据 Token 获取安全上下文

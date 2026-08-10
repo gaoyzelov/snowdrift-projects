@@ -1,9 +1,10 @@
 package com.snowdrift.framework.security.spring.config;
 
+import com.snowdrift.framework.common.constant.StrConst;
 import com.snowdrift.framework.common.result.Result;
 import com.snowdrift.framework.common.util.ServletUtil;
 import com.snowdrift.framework.security.service.ISecurityService;
-import com.snowdrift.framework.security.spring.auth.AnonymousAccessScanner;
+import com.snowdrift.framework.security.spring.util.AnonymousScanner;
 import com.snowdrift.framework.security.spring.filter.SecurityContextFilter;
 import com.snowdrift.framework.security.spring.handler.SpringSecurityExceptionHandler;
 import com.snowdrift.framework.security.spring.properties.SpringSecurityProperties;
@@ -15,13 +16,12 @@ import com.snowdrift.framework.security.spring.store.TokenStore;
 import com.snowdrift.framework.web.util.I18nUtil;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -56,10 +56,10 @@ import java.util.List;
 @ConditionalOnMissingBean(type = "cn.dev33.satoken.config.SaTokenConfig")
 public class SnowdriftSecuritySpringConfiguration {
 
-    private final SpringSecurityProperties securityProperties;
+    private final SpringSecurityProperties properties;
 
-    public SnowdriftSecuritySpringConfiguration(SpringSecurityProperties securityProperties) {
-        this.securityProperties = securityProperties;
+    public SnowdriftSecuritySpringConfiguration(SpringSecurityProperties properties) {
+        this.properties = properties;
     }
 
     /**
@@ -73,17 +73,17 @@ public class SnowdriftSecuritySpringConfiguration {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextFilter securityContextFilter,
                                                    RequestMappingHandlerMapping handlerMapping) throws Exception {
-        List<String> anonymousPaths = AnonymousAccessScanner.scan(handlerMapping);
+        List<String> anonymousPaths = AnonymousScanner.scan(handlerMapping);
         http
                 .csrf(csrf -> {
-                    if (!securityProperties.isCsrfEnabled()) {
+                    if (!properties.getCsrfEnabled()) {
                         csrf.disable();
                     }
                 })
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> {
-                    for (String pattern : securityProperties.getExcludePathPatterns()) {
+                    for (String pattern : properties.getExcludePathPatterns()) {
                         auth.requestMatchers(pattern).permitAll();
                     }
                     for (String pattern : anonymousPaths) {
@@ -105,7 +105,7 @@ public class SnowdriftSecuritySpringConfiguration {
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable);
-        if (securityProperties.isCorsEnabled()) {
+        if (properties.getCorsEnabled()) {
             http.cors(Customizer.withDefaults());
         }
         return http.build();
@@ -126,9 +126,9 @@ public class SnowdriftSecuritySpringConfiguration {
         template.setHashValueSerializer(new Jackson2JsonRedisSerializer<>(AbstractTokenStore.TokenEntry.class));
         template.afterPropertiesSet();
         return new RedisTokenStore(template,
-                securityProperties.getTimeout(),
-                securityProperties.getActiveTimeout(),
-                securityProperties.getHeaderName() + ":token:");
+                properties.getTimeout(),
+                properties.getActiveTimeout(),
+                properties.getHeaderName() + StrConst.COLON + "token");
     }
 
     /**
@@ -137,7 +137,7 @@ public class SnowdriftSecuritySpringConfiguration {
     @Bean
     @ConditionalOnMissingBean(TokenStore.class)
     public TokenStore inMemoryTokenStore() {
-        return new InMemoryTokenStore(securityProperties.getTimeout(), securityProperties.getActiveTimeout());
+        return new InMemoryTokenStore(properties.getTimeout(), properties.getActiveTimeout());
     }
 
     /**
@@ -145,7 +145,7 @@ public class SnowdriftSecuritySpringConfiguration {
      */
     @Bean
     public SecurityContextFilter securityContextFilter(TokenStore tokenStore) {
-        return new SecurityContextFilter(securityProperties, tokenStore);
+        return new SecurityContextFilter(properties, tokenStore);
     }
 
     /**
@@ -154,7 +154,7 @@ public class SnowdriftSecuritySpringConfiguration {
     @Bean
     @ConditionalOnMissingBean(ISecurityService.class)
     public ISecurityService securityService(TokenStore tokenStore) {
-        return new SpringSecurityServiceImpl(securityProperties, tokenStore);
+        return new SpringSecurityServiceImpl(properties, tokenStore);
     }
 
     /**

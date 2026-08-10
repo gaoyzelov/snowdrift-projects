@@ -35,8 +35,7 @@ public class SaTokenExceptionHandler {
     @ExceptionHandler(NotLoginException.class)
     public Result<Void> handleNotLoginException(NotLoginException e) {
         log.warn("[Sa-Token] 未登录: type={}, message={}", e.getType(), e.getMessage());
-        String message = I18nUtil.getMessage("security.not.authenticated");
-        return Result.err(ResultCode.UNAUTHORIZED.code(), message);
+        return Result.err(ResultCode.UNAUTHORIZED.code(), I18nUtil.getMessage("security.not.authenticated"));
     }
 
     /**
@@ -45,8 +44,7 @@ public class SaTokenExceptionHandler {
     @ExceptionHandler(NotPermissionException.class)
     public Result<Void> handleNotPermissionException(NotPermissionException e) {
         log.warn("[Sa-Token] 权限不足: permission={}", e.getPermission());
-        String message = I18nUtil.getMessage("security.permission.denied");
-        return Result.err(ResultCode.FORBIDDEN.code(), message);
+        return Result.err(ResultCode.FORBIDDEN.code(), I18nUtil.getMessage("security.permission.denied"));
     }
 
     /**
@@ -55,8 +53,7 @@ public class SaTokenExceptionHandler {
     @ExceptionHandler(NotRoleException.class)
     public Result<Void> handleNotRoleException(NotRoleException e) {
         log.warn("[Sa-Token] 角色不足: role={}", e.getRole());
-        String message = I18nUtil.getMessage("security.role.required", e.getRole());
-        return Result.err(ResultCode.FORBIDDEN.code(), message);
+        return Result.err(ResultCode.FORBIDDEN.code(), I18nUtil.getMessage("security.role.required", e.getRole()));
     }
 
     /**
@@ -65,7 +62,6 @@ public class SaTokenExceptionHandler {
     @ExceptionHandler(SaTokenException.class)
     public Result<Void> handleSaTokenException(SaTokenException e) {
         log.warn("[Sa-Token] 框架异常: {}", e.getMessage(), e);
-        String message = I18nUtil.getMessage("security.token.invalid");
-        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(), message);
+        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(),  I18nUtil.getMessage("security.token.invalid"));
     }
 }

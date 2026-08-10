@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.Serializable;
+import java.time.Duration;
 
 /**
  * TokenStore 抽象基类
@@ -29,24 +30,24 @@ import java.io.Serializable;
 @Slf4j
 public abstract class AbstractTokenStore implements TokenStore {
 
-    protected final long defaultTimeoutSeconds;
-    protected final long idleTimeoutSeconds;
+    protected final Duration timeout;
+    protected final Duration idle;
 
-    protected AbstractTokenStore(long defaultTimeoutSeconds, long idleTimeoutSeconds) {
-        this.defaultTimeoutSeconds = defaultTimeoutSeconds;
-        this.idleTimeoutSeconds = idleTimeoutSeconds;
+    protected AbstractTokenStore(Duration timeout, Duration idle) {
+        this.timeout = timeout;
+        this.idle = idle;
     }
 
     // =================== 模板方法（final） ===================
 
     @Override
-    public final void put(String token, SecurityContext context, long timeout) {
-        long ttl = resolveTtl(timeout);
+    public final void put(String token, SecurityContext context, Duration timeout) {
+        Duration ttl = resolveTtl(timeout);
         long now = System.currentTimeMillis();
-        long expireAt = now + ttl * 1000;
+        long expireAt = now + ttl.toMillis();
         TokenEntry entry = new TokenEntry(context, expireAt, now);
         doPut(token, entry, ttl);
-        log.trace("TokenStore 写入: token={}, ttl={}s", token, ttl);
+        log.trace("TokenStore 写入: token={}, ttl={}s", token, ttl.getSeconds());
     }
 
     @Override
@@ -66,7 +67,7 @@ public abstract class AbstractTokenStore implements TokenStore {
         }
 
         // 2. 闲置过期检查
-        if ((now - entry.lastActiveAt) > idleTimeoutSeconds * 1000) {
+        if ((now - entry.lastActiveAt) > idle.toMillis()) {
             remove(token);
             log.trace("TokenStore 闲置过期: token={}", token);
             return null;
@@ -83,11 +84,11 @@ public abstract class AbstractTokenStore implements TokenStore {
     /**
      * 存储 TokenEntry
      *
-     * @param token   Token 值
-     * @param entry   TokenEntry（含 context、expireAt、lastActiveAt）
-     * @param ttl     过期时间（秒），子类可按需用于设置 Redis TTL 等
+     * @param token Token 值
+     * @param entry TokenEntry（含 context、expireAt、lastActiveAt）
+     * @param ttl   过期时间（秒），子类可按需用于设置 Redis TTL 等
      */
-    protected abstract void doPut(String token, TokenEntry entry, long ttl);
+    protected abstract void doPut(String token, TokenEntry entry, Duration ttl);
 
     /**
      * 读取 TokenEntry
@@ -111,8 +112,8 @@ public abstract class AbstractTokenStore implements TokenStore {
 
     // =================== 工具方法 ===================
 
-    protected long resolveTtl(long timeout) {
-        return timeout > 0 ? timeout : defaultTimeoutSeconds;
+    protected Duration resolveTtl(Duration ttl) {
+        return ttl.isNegative() ? timeout : ttl;
     }
 
     // =================== 共享数据模型 ===================
@@ -130,7 +131,7 @@ public abstract class AbstractTokenStore implements TokenStore {
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
-    public static class TokenEntry  implements Serializable {
+    public static class TokenEntry implements Serializable {
         private SecurityContext context;
         private long expireAt;
         private long lastActiveAt;

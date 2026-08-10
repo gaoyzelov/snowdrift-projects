@@ -1,6 +1,6 @@
-package com.snowdrift.framework.security.spring.auth;
+package com.snowdrift.framework.security.spring.util;
 
-import com.snowdrift.framework.security.annotation.AnonymousAccess;
+import com.snowdrift.framework.security.annotation.Anonymous;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * @AnonymousAccess 注解路径扫描器
  * <p>
- * 启动时扫描所有 Controller 方法，收集标注了 {@link AnonymousAccess} 的方法 URL 模式，
+ * 启动时扫描所有 Controller 方法，收集标注了 {@link Anonymous} 的方法 URL 模式，
  * 转换为 Ant 风格路径后注入到 Spring Security 的放行列表中。
  * </p>
  *
@@ -19,9 +19,9 @@ import java.util.Map;
  * @date 2026/5/27
  * @since 1.0.0
  */
-public final class AnonymousAccessScanner {
+public final class AnonymousScanner {
 
-    private AnonymousAccessScanner() {
+    private AnonymousScanner() {
     }
 
     /**
@@ -33,9 +33,9 @@ public final class AnonymousAccessScanner {
     public static List<String> scan(RequestMappingHandlerMapping handlerMapping) {
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlerMapping.getHandlerMethods();
         return handlerMethods.entrySet().stream()
-                .filter(e -> e.getValue().hasMethodAnnotation(AnonymousAccess.class))
+                .filter(e -> e.getValue().hasMethodAnnotation(Anonymous.class))
                 .flatMap(e -> e.getKey().getPatternValues().stream())
-                .map(AnonymousAccessScanner::toAntPattern)
+                .map(AnonymousScanner::toAntPattern)
                 .distinct()
                 .toList();
     }

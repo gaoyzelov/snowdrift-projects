@@ -28,10 +28,10 @@ public class SaTokenSecurityServiceImpl implements ISecurityService {
      */
     private static final String CONTEXT_KEY = "context";
 
-    private final SecurityProperties securityProperties;
+    private final SecurityProperties properties;
 
-    public SaTokenSecurityServiceImpl(SecurityProperties securityProperties) {
-        this.securityProperties = securityProperties;
+    public SaTokenSecurityServiceImpl(SecurityProperties properties) {
+        this.properties = properties;
     }
 
     @Override
@@ -40,7 +40,7 @@ public class SaTokenSecurityServiceImpl implements ISecurityService {
             throw new SecurityException("security.context.null");
         }
         // 1. 从 SecurityContext 中取 userId 作为 Sa-Token 的 loginId
-        StpUtil.login(context.getUserId());
+        StpUtil.login(context.getUserId(),context.getPlatform());
 
         // 2. 将 SecurityContext 存入当前会话，后续请求可通过 getContext() 取出
         StpUtil.getTokenSession().set(CONTEXT_KEY, context);
@@ -49,9 +49,9 @@ public class SaTokenSecurityServiceImpl implements ISecurityService {
         String tokenValue = StpUtil.getTokenValue();
         return TokenInfo.builder()
                 .tokenValue(tokenValue)
-                .tokenName(securityProperties.getHeaderName())
-                .prefix(securityProperties.getPrefix())
-                .expiresIn(securityProperties.getTimeout())
+                .tokenName(properties.getHeaderName())
+                .prefix(properties.getPrefix())
+                .expiresIn(properties.getTimeout())
                 .build();
     }
 

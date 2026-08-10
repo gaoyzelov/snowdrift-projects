@@ -23,16 +23,17 @@ public class InMemoryTokenStore extends AbstractTokenStore {
 
     private final Cache<String, TokenEntry> cache;
 
-    public InMemoryTokenStore(long defaultTimeoutSeconds, long idleTimeoutSeconds) {
-        super(defaultTimeoutSeconds, idleTimeoutSeconds);
+    public InMemoryTokenStore(long timeout, long idle) {
+        super(Duration.ofSeconds(timeout), Duration.ofSeconds(idle));
         this.cache = CacheBuilder.newBuilder()
                 .maximumSize(2048)
-                .expireAfterAccess(Duration.ofSeconds(Math.max(defaultTimeoutSeconds, idleTimeoutSeconds)))
+                .expireAfterAccess(Duration.ofSeconds(timeout))
                 .build();
     }
 
     @Override
-    protected void doPut(String token, TokenEntry entry, long ttl) {
+    protected void doPut(String token, TokenEntry entry, Duration ttl) {
+        log.debug("内存 TokenStore 写入: token={}, ttl={}s", token, ttl.getSeconds());
         cache.put(token, entry);
     }
 
@@ -50,6 +51,6 @@ public class InMemoryTokenStore extends AbstractTokenStore {
     @Override
     public void remove(String token) {
         cache.invalidate(token);
-        log.trace("内存 TokenStore 移除: token={}", token);
+        log.debug("内存 TokenStore 移除: token={}", token);
     }
 }

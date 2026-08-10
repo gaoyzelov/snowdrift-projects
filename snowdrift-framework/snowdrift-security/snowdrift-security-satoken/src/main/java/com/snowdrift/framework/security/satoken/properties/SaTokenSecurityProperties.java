@@ -34,7 +34,7 @@ public class SaTokenSecurityProperties extends SecurityProperties {
      * </ul>
      */
     @NotNull
-    private boolean concurrent = true;
+    private Boolean concurrent = Boolean.FALSE;
 
     /**
      * 多人登录同一账号时，是否共用一个 Token
@@ -43,7 +43,7 @@ public class SaTokenSecurityProperties extends SecurityProperties {
      * </p>
      */
     @NotNull
-    private boolean isShare = false;
+    private Boolean isShare = Boolean.FALSE;
 
     /**
      * 同一账号最大登录数量
@@ -69,5 +69,5 @@ public class SaTokenSecurityProperties extends SecurityProperties {
      * 调试阶段可开启，生产环境建议关闭
      */
     @NotNull
-    private boolean isLog = false;
+    private Boolean isLog = Boolean.FALSE;
 }

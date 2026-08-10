@@ -26,7 +26,7 @@ public class SecurityProperties {
      * 是否启用安全模块
      */
     @NotNull
-    private Boolean enabled = true;
+    private Boolean enabled = Boolean.FALSE;
 
     /**
      * Token 所在的请求头名称

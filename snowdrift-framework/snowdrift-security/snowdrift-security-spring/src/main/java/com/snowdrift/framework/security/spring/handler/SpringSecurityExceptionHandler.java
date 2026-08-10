@@ -32,8 +32,7 @@ public class SpringSecurityExceptionHandler {
     @ExceptionHandler(AuthenticationException.class)
     public Result<Void> handleAuthenticationException(AuthenticationException e) {
         log.warn("[Spring Security] 认证失败: {}", e.getMessage());
-        String message = I18nUtil.getMessage("security.not.authenticated");
-        return Result.err(ResultCode.UNAUTHORIZED.code(), message);
+        return Result.err(ResultCode.UNAUTHORIZED.code(), I18nUtil.getMessage("security.not.authenticated"));
     }
 
     /**
@@ -42,7 +41,6 @@ public class SpringSecurityExceptionHandler {
     @ExceptionHandler(AccessDeniedException.class)
     public Result<Void> handleAccessDeniedException(AccessDeniedException e) {
         log.warn("[Spring Security] 权限不足: {}", e.getMessage());
-        String message = I18nUtil.getMessage("security.permission.denied");
-        return Result.err(ResultCode.FORBIDDEN.code(), message);
+        return Result.err(ResultCode.FORBIDDEN.code(), I18nUtil.getMessage("security.permission.denied"));
     }
 }
