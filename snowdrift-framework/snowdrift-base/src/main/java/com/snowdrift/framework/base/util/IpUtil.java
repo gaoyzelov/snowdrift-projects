@@ -1,7 +1,7 @@
-package com.snowdrift.framework.common.util;
+package com.snowdrift.framework.base.util;
 
 import com.google.common.net.InetAddresses;
-import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.base.constant.StrConst;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

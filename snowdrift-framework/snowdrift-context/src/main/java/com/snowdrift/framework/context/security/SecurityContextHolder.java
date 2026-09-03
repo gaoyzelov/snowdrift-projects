@@ -1,9 +1,9 @@
 package com.snowdrift.framework.context.security;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
-import com.snowdrift.framework.common.enums.DataScopeEnum;
-import com.snowdrift.framework.common.exception.BizException;
-import com.snowdrift.framework.common.util.AssertUtil;
+import com.snowdrift.framework.base.enums.DataScopeEnum;
+import com.snowdrift.framework.base.exception.BizException;
+import com.snowdrift.framework.base.util.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;

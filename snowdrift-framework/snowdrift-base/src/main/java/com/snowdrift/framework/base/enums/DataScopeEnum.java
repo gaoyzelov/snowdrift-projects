@@ -1,4 +1,4 @@
-package com.snowdrift.framework.common.enums;
+package com.snowdrift.framework.base.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;

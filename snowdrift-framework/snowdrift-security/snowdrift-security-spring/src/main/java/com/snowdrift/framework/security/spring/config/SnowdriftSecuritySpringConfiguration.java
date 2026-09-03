@@ -1,8 +1,8 @@
 package com.snowdrift.framework.security.spring.config;
 
-import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.result.Result;
-import com.snowdrift.framework.common.util.ServletUtil;
+import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.result.Result;
+import com.snowdrift.framework.base.util.ServletUtil;
 import com.snowdrift.framework.security.service.ISecurityService;
 import com.snowdrift.framework.security.spring.util.AnonymousScanner;
 import com.snowdrift.framework.security.spring.filter.SecurityContextFilter;

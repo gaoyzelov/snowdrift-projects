@@ -1,7 +1,7 @@
 package com.snowdrift.framework.orm.mp.handler;
 
-import com.snowdrift.framework.common.exception.BizException;
-import com.snowdrift.framework.common.util.EncryptUtil;
+import com.snowdrift.framework.base.exception.BizException;
+import com.snowdrift.framework.base.util.EncryptUtil;
 import com.snowdrift.framework.orm.mp.CryptoKeyHolder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.type.JdbcType;

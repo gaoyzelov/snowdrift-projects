@@ -1,4 +1,4 @@
-package com.snowdrift.framework.common.enums;
+package com.snowdrift.framework.base.enums;
 
 import org.apache.commons.lang3.StringUtils;
 

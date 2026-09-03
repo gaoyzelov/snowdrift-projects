@@ -1,6 +1,6 @@
-package com.snowdrift.framework.common.util;
+package com.snowdrift.framework.base.util;
 
-import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.base.constant.StrConst;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
 

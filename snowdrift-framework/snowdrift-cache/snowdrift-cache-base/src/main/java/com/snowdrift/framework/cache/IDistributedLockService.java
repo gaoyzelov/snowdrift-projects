@@ -62,7 +62,7 @@ public interface IDistributedLockService {
      * @param supplier  业务逻辑
      * @param <T>       返回值类型
      * @return 业务执行结果
-     * @throws com.snowdrift.framework.common.exception.BizException 获取锁失败时抛出
+     * @throws com.snowdrift.framework.base.exception.BizException 获取锁失败时抛出
      */
     <T> T executeWithLock(String key, long waitTime, long leaseTime,
                           TimeUnit unit, Supplier<T> supplier);

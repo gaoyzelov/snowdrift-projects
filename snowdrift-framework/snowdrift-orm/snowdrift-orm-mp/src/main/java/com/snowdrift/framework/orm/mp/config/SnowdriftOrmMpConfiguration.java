@@ -3,7 +3,7 @@ package com.snowdrift.framework.orm.mp.config;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.*;
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.orm.core.scope.IDataScopeProvider;
 import com.snowdrift.framework.orm.mp.CryptoKeyHolder;
 import com.snowdrift.framework.orm.mp.handler.DataScopeHandler;

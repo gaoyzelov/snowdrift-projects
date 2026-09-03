@@ -1,4 +1,4 @@
-package com.snowdrift.framework.common.enums;
+package com.snowdrift.framework.base.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -13,7 +13,7 @@ import lombok.Getter;
  */
 @Getter
 @AllArgsConstructor
-public enum EnabledEnum implements IEnum<Integer> {
+public enum StatusEnum implements IEnum<Integer> {
 
     DISABLED(0, "禁用"),
     ENABLED(1, "启用");

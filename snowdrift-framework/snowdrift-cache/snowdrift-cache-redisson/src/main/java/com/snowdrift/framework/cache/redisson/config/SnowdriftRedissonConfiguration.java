@@ -6,7 +6,7 @@ import com.snowdrift.framework.cache.config.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.redisson.service.SnowdriftRedissonCacheServiceImpl;
 import com.snowdrift.framework.cache.redisson.service.SnowdriftRedissonLockServiceImpl;
 import com.snowdrift.framework.cache.serialize.CacheSerializer;
-import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.base.constant.StrConst;
 import jakarta.annotation.PreDestroy;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;

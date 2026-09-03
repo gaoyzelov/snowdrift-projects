@@ -1,6 +1,6 @@
 package com.snowdrift.framework.security.spring.store;
 
-import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.base.constant.StrConst;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 

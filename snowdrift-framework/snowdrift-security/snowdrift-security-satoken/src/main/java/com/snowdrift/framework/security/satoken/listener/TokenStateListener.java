@@ -3,7 +3,7 @@ package com.snowdrift.framework.security.satoken.listener;
 import cn.dev33.satoken.listener.SaTokenListener;
 import cn.dev33.satoken.stp.StpUtil;
 import cn.dev33.satoken.stp.parameter.SaLoginParameter;
-import com.snowdrift.framework.common.util.DesensitizeUtil;
+import com.snowdrift.framework.base.util.DesensitizeUtil;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import lombok.extern.slf4j.Slf4j;
 

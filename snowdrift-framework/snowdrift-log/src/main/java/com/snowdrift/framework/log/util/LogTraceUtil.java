@@ -1,6 +1,6 @@
 package com.snowdrift.framework.log.util;
 
-import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.base.constant.StrConst;
 import org.slf4j.MDC;
 
 import java.util.UUID;

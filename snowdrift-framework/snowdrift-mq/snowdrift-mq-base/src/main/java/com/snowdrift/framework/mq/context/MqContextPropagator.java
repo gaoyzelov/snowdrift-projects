@@ -1,6 +1,6 @@
 package com.snowdrift.framework.mq.context;
 
-import com.snowdrift.framework.common.util.EncryptUtil;
+import com.snowdrift.framework.base.util.EncryptUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.mq.exception.MqException;

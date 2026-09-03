@@ -1,8 +1,8 @@
-package com.snowdrift.framework.common.util;
+package com.snowdrift.framework.base.util;
 
 import com.alibaba.fastjson2.JSON;
-import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.result.Result;
+import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.result.Result;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.StringUtils;

@@ -1,6 +1,6 @@
-package com.snowdrift.framework.common.util;
+package com.snowdrift.framework.base.util;
 
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -296,7 +296,7 @@ public final class CronUtil {
      */
     public static String everyMinutes(int minutes) {
         if (minutes <= 0) {
-            throw new BizException("Minutes must be greater than 0");
+            throw new BizException("分钟数必须大于 0");
         }
         return String.format("0 */%d * * * ?", minutes);
     }
@@ -309,7 +309,7 @@ public final class CronUtil {
      */
     public static String everyHours(int hours) {
         if (hours <= 0) {
-            throw new BizException("Hours must be greater than 0");
+            throw new BizException("小时数必须大于 0");
         }
         return String.format("0 0 */%d * * ?", hours);
     }
@@ -358,13 +358,13 @@ public final class CronUtil {
      */
     private static void validateTime(int hour, int minute, int second) {
         if (hour < 0 || hour > 23) {
-            throw new BizException("Hour must be between 0 and 23");
+            throw new BizException("小时必须在 0 到 23 之间");
         }
         if (minute < 0 || minute > 59) {
-            throw new BizException("Minute must be between 0 and 59");
+            throw new BizException("分钟必须在 0 到 59 之间");
         }
         if (second < 0 || second > 59) {
-            throw new BizException("Second must be between 0 and 59");
+            throw new BizException("秒必须在 0 到 59 之间");
         }
     }
 }

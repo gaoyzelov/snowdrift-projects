@@ -1,6 +1,6 @@
 package com.snowdrift.framework.oss.enums;
 
-import com.snowdrift.framework.common.enums.IEnum;
+import com.snowdrift.framework.base.enums.IEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

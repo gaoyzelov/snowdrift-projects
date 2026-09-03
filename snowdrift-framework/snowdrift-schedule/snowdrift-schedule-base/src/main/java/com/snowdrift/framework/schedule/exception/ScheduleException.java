@@ -1,6 +1,6 @@
 package com.snowdrift.framework.schedule.exception;
 
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 
 /**
  * ScheduleException

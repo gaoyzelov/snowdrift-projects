@@ -1,6 +1,6 @@
 package com.snowdrift.framework.security.exception;
 
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 
 /**
  * Security 异常

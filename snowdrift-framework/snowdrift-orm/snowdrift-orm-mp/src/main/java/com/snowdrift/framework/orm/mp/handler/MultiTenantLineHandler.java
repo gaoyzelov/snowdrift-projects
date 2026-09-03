@@ -1,7 +1,7 @@
 package com.snowdrift.framework.orm.mp.handler;
 
 import com.baomidou.mybatisplus.extension.plugins.handler.TenantLineHandler;
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
 import lombok.extern.slf4j.Slf4j;

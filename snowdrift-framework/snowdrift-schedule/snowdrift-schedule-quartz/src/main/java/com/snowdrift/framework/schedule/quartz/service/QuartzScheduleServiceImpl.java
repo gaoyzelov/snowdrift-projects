@@ -1,7 +1,7 @@
 package com.snowdrift.framework.schedule.quartz.service;
 
 import com.snowdrift.framework.schedule.exception.ScheduleException;
-import com.snowdrift.framework.common.util.DateTimeUtil;
+import com.snowdrift.framework.base.util.DateTimeUtil;
 import com.snowdrift.framework.schedule.core.IScheduleService;
 import com.snowdrift.framework.schedule.model.JobDetails;
 import com.snowdrift.framework.schedule.enums.JobStatusEnum;

@@ -2,8 +2,8 @@ package com.snowdrift.framework.cache;
 
 import com.snowdrift.framework.cache.config.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.serialize.CacheSerializer;
-import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.util.AssertUtil;
+import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.util.AssertUtil;
 
 import java.time.Duration;
 import java.util.Collection;

@@ -1,9 +1,9 @@
-package com.snowdrift.framework.common.util;
+package com.snowdrift.framework.base.util;
 
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.TypeReference;
-import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -316,20 +316,20 @@ public final class HttpUtil {
                     .build();
 
             HttpResponse<byte[]> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            log.debug("DOWNLOAD {} - Status: {}, Size: {} bytes", url, response.statusCode(), response.body().length);
+            log.debug("HTTP下载 {} - Status: {}, Size: {} bytes", url, response.statusCode(), response.body().length);
 
             if (response.statusCode() >= HTTP_SUCCESS_MIN && response.statusCode() < HTTP_SUCCESS_MIN + HTTP_SUCCESS_RANGE) {
                 return response.body();
             } else {
-                throw new BizException("HTTP download failed with status: " + response.statusCode());
+                throw new BizException("HTTP下载失败，status: " + response.statusCode());
             }
         } catch (IOException e) {
-            log.error("Download failed: {}", url, e);
-            throw new BizException("HTTP download failed: " + e.getMessage());
+            log.error("HTTP下载失败: {}", url, e);
+            throw new BizException("HTTP下载失败");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("Download interrupted: {}", url, e);
-            throw new BizException("HTTP download interrupted: " + e.getMessage());
+            log.error("HTTP下载中断: {}", url, e);
+            throw new BizException("HTTP下载中断");
         }
     }
 
@@ -402,7 +402,7 @@ public final class HttpUtil {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             long costTime = System.currentTimeMillis() - startTime;
 
-            log.debug("{} {} - Status: {}, Response: {}, Cost: {}ms",
+            log.debug("HTTP {} {} - Status: {}, Response: {}, Cost: {}ms",
                     request.method(), request.uri(), response.statusCode(), response.body(), costTime);
 
             if (response.statusCode() >= HTTP_SUCCESS_MIN && response.statusCode() < HTTP_SUCCESS_MIN + HTTP_SUCCESS_RANGE) {
@@ -411,18 +411,16 @@ public final class HttpUtil {
                 String body = response.body();
                 String truncatedBody = body != null && body.length() > RESPONSE_BODY_TRUNCATE_SIZE
                         ? body.substring(0, RESPONSE_BODY_TRUNCATE_SIZE) + "..." : body;
-                log.warn("{} request failed with status {}: {}, body: {}",
-                        request.method(), response.statusCode(), request.uri(), truncatedBody);
-                throw new BizException("HTTP " + request.method() + " request failed with status: "
-                        + response.statusCode() + ", body: " + truncatedBody);
+                log.warn("HTTP {} 请求失败，status {}: {}, body: {}", request.method(), response.statusCode(), request.uri(), truncatedBody);
+                throw new BizException("HTTP请求失败，status: " + response.statusCode());
             }
         } catch (IOException e) {
-            log.error("{} request failed: {}", request.method(), request.uri(), e);
-            throw new BizException("HTTP " + request.method() + " request failed: " + e.getMessage());
+            log.error("HTTP {} 请求失败: {}", request.method(), request.uri(), e);
+            throw new BizException("HTTP请求失败");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("{} request interrupted: {}", request.method(), request.uri(), e);
-            throw new BizException("HTTP " + request.method() + " request interrupted: " + e.getMessage());
+            log.error("HTTP {} 请求中断: {}", request.method(), request.uri(), e);
+            throw new BizException("HTTP请求中断");
         }
     }
 
@@ -493,7 +491,6 @@ public final class HttpUtil {
      */
     public static boolean isAccessible(String url, Duration timeout) {
         AssertUtil.notBlank(url, "请求Url不能为空");
-
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -503,7 +500,7 @@ public final class HttpUtil {
             HttpResponse<Void> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
             return response.statusCode() >= 200 && response.statusCode() < 400;
         } catch (Exception e) {
-            log.warn("URL check failed: {}", url, e);
+            log.warn("URL检查失败: {}", url, e);
             return false;
         }
     }

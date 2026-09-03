@@ -1,6 +1,6 @@
-package com.snowdrift.framework.common.util;
+package com.snowdrift.framework.base.util;
 
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;

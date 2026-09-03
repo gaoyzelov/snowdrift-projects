@@ -1,6 +1,6 @@
-package com.snowdrift.framework.common.util;
+package com.snowdrift.framework.base.util;
 
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

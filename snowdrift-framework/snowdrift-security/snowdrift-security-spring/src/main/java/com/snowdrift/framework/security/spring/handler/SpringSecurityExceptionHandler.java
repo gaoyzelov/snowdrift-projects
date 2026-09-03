@@ -1,7 +1,7 @@
 package com.snowdrift.framework.security.spring.handler;
 
-import com.snowdrift.framework.common.result.Result;
-import com.snowdrift.framework.common.result.ResultCode;
+import com.snowdrift.framework.base.result.Result;
+import com.snowdrift.framework.base.result.ResultCode;
 import com.snowdrift.framework.web.util.I18nUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;

@@ -10,7 +10,7 @@ import com.qiniu.storage.UploadManager;
 import com.qiniu.storage.model.DefaultPutRet;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
-import com.snowdrift.framework.common.util.HttpUtil;
+import com.snowdrift.framework.base.util.HttpUtil;
 import com.snowdrift.framework.oss.OssConst;
 import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;

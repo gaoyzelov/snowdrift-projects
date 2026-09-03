@@ -1,11 +1,11 @@
 package com.snowdrift.framework.mq.exception;
 
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 
 /**
  * 消息队列异常
  * <p>
- * message 字段存储 i18n key，配合 {@link com.snowdrift.framework.common.result.ResultCode} 使用。
+ * message 字段存储 i18n key，配合 {@link com.snowdrift.framework.base.result.ResultCode} 使用。
  * </p>
  *
  * @author gaoyzelov

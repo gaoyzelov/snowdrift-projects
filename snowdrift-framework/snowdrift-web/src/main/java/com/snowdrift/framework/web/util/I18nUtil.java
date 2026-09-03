@@ -1,7 +1,7 @@
 package com.snowdrift.framework.web.util;
 
-import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.util.AssertUtil;
+import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.util.AssertUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.MessageSource;

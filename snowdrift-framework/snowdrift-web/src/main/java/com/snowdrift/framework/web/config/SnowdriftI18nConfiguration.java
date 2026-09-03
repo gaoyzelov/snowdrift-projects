@@ -1,9 +1,8 @@
 package com.snowdrift.framework.web.config;
 
-import com.snowdrift.framework.web.advice.ResultI18nAdvice;
-import com.snowdrift.framework.web.util.I18nUtil;
 import com.snowdrift.framework.web.interceptor.I18nInterceptor;
 import com.snowdrift.framework.web.properties.I18nProperties;
+import com.snowdrift.framework.web.util.I18nUtil;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
@@ -58,13 +57,5 @@ public class SnowdriftI18nConfiguration implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(new I18nInterceptor(properties));
-    }
-
-    /**
-     * Result 响应体 i18n 自动解析
-     */
-    @Bean
-    public ResultI18nAdvice resultI18nAdvice() {
-        return new ResultI18nAdvice();
     }
 }

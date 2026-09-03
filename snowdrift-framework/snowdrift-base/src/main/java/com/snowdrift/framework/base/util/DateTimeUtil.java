@@ -1,6 +1,6 @@
-package com.snowdrift.framework.common.util;
+package com.snowdrift.framework.base.util;
 
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.*;
@@ -104,7 +104,7 @@ public final class DateTimeUtil {
             return LocalDateTime.parse(dateTimeStr, getFormatter(pattern));
         } catch (Exception e) {
             log.error("解析时间失败：{}", dateTimeStr, e);
-            throw new BizException("Datetime parse failed: " + dateTimeStr + " \u2014 " + e.getMessage(), e);
+            throw new BizException("解析时间失败: " + dateTimeStr);
         }
     }
 
@@ -121,7 +121,7 @@ public final class DateTimeUtil {
             return LocalDateTime.parse(dateTimeStr, formatter);
         } catch (Exception e) {
             log.error("解析时间失败：{}", dateTimeStr, e);
-            throw new BizException("Datetime parse failed: " + dateTimeStr + " \u2014 " + e.getMessage(), e);
+            throw new BizException("解析时间失败: " + dateTimeStr);
         }
     }
 
@@ -327,7 +327,7 @@ public final class DateTimeUtil {
             return LocalDate.parse(dateStr, getFormatter(pattern));
         } catch (Exception e) {
             log.error("解析日期失败：{}", dateStr, e);
-            throw new BizException("Date parse failed: " + dateStr + " \u2014 " + e.getMessage(), e);
+            throw new BizException("解析日期失败：" + dateStr, e);
         }
     }
 
@@ -344,7 +344,7 @@ public final class DateTimeUtil {
             return LocalDate.parse(dateStr, formatter);
         } catch (Exception e) {
             log.error("解析日期失败：{}", dateStr, e);
-            throw new BizException("Date parse failed: " + dateStr + " \u2014 " + e.getMessage(), e);
+            throw new BizException("解析日期失败：" + dateStr, e);
         }
     }
 
@@ -431,7 +431,7 @@ public final class DateTimeUtil {
             return LocalTime.parse(timeStr, getFormatter(pattern));
         } catch (Exception e) {
             log.error("解析时间失败：{}", timeStr, e);
-            throw new BizException("Time parse failed: " + timeStr + " \u2014 " + e.getMessage(), e);
+            throw new BizException("解析时间失败：" + timeStr, e);
         }
     }
 
@@ -448,7 +448,7 @@ public final class DateTimeUtil {
             return LocalTime.parse(timeStr, formatter);
         } catch (Exception e) {
             log.error("解析时间失败：{}", timeStr, e);
-            throw new BizException("Time parse failed: " + timeStr + " \u2014 " + e.getMessage(), e);
+            throw new BizException("解析时间失败：" + timeStr, e);
         }
     }
 

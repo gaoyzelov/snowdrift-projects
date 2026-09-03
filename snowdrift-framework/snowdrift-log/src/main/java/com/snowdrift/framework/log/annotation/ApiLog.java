@@ -1,6 +1,6 @@
 package com.snowdrift.framework.log.annotation;
 
-import com.snowdrift.framework.common.enums.BizTypeEnum;
+import com.snowdrift.framework.base.enums.BizTypeEnum;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

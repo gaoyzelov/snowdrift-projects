@@ -1,7 +1,7 @@
 package com.snowdrift.framework.cache.handler;
 
-import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.util.EncryptUtil;
+import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.util.EncryptUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.interceptor.KeyGenerator;
 

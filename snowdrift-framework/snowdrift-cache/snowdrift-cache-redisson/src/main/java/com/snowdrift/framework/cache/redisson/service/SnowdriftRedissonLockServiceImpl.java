@@ -1,8 +1,8 @@
 package com.snowdrift.framework.cache.redisson.service;
 
 import com.snowdrift.framework.cache.IDistributedLockService;
-import com.snowdrift.framework.common.exception.BizException;
-import com.snowdrift.framework.common.result.ResultCode;
+import com.snowdrift.framework.base.exception.BizException;
+import com.snowdrift.framework.base.result.ResultCode;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
 import org.redisson.api.RedissonClient;

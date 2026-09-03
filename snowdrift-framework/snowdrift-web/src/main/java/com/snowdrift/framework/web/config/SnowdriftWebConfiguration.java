@@ -1,6 +1,6 @@
 package com.snowdrift.framework.web.config;
 
-import com.snowdrift.framework.common.util.DateTimeUtil;
+import com.snowdrift.framework.base.util.DateTimeUtil;
 import com.snowdrift.framework.web.filter.CachedBodyFilter;
 import com.snowdrift.framework.web.filter.HttpContextFilter;
 import com.snowdrift.framework.web.filter.LogTraceFilter;

@@ -1,9 +1,9 @@
 package com.snowdrift.framework.log.aspect;
 
 import com.alibaba.fastjson2.JSONObject;
-import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.result.Result;
-import com.snowdrift.framework.common.result.ResultCode;
+import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.result.Result;
+import com.snowdrift.framework.base.result.ResultCode;
 import com.snowdrift.framework.context.http.HttpContext;
 import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.log.annotation.LoginLog;

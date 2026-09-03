@@ -1,6 +1,6 @@
 package com.snowdrift.framework.oss.util;
 
-import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.oss.exception.OssException;
 import org.apache.commons.lang3.StringUtils;
 

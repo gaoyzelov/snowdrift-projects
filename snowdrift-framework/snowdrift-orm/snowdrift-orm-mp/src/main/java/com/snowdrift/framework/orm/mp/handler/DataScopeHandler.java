@@ -1,8 +1,8 @@
 package com.snowdrift.framework.orm.mp.handler;
 
 import com.baomidou.mybatisplus.extension.plugins.handler.MultiDataPermissionHandler;
-import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.enums.DataScopeEnum;
+import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.enums.DataScopeEnum;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.orm.core.anno.DataScope;

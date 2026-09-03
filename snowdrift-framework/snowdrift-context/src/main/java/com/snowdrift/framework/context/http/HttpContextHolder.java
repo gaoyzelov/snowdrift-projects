@@ -1,7 +1,7 @@
 package com.snowdrift.framework.context.http;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
-import com.snowdrift.framework.common.util.AssertUtil;
+import com.snowdrift.framework.base.util.AssertUtil;
 
 /**
  * HttpContextHolder

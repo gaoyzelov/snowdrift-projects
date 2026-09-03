@@ -2,7 +2,7 @@ package com.snowdrift.framework.log.service;
 
 import com.mzt.logapi.beans.LogRecord;
 import com.mzt.logapi.service.ILogRecordService;
-import com.snowdrift.framework.common.util.DateTimeUtil;
+import com.snowdrift.framework.base.util.DateTimeUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.log.holder.OperateLogHolder;

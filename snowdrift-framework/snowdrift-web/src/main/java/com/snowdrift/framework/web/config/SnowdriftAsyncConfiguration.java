@@ -1,6 +1,6 @@
 package com.snowdrift.framework.web.config;
 
-import com.snowdrift.framework.common.util.AssertUtil;
+import com.snowdrift.framework.base.util.AssertUtil;
 import com.snowdrift.framework.context.http.HttpContext;
 import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.context.security.SecurityContext;

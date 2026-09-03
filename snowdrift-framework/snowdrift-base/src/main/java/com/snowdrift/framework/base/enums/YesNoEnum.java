@@ -1,4 +1,4 @@
-package com.snowdrift.framework.common.enums;
+package com.snowdrift.framework.base.enums;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

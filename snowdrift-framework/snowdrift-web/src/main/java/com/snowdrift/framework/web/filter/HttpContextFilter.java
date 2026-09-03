@@ -1,8 +1,8 @@
 package com.snowdrift.framework.web.filter;
 
-import com.snowdrift.framework.common.constant.StrConst;
-import com.snowdrift.framework.common.util.IpUtil;
-import com.snowdrift.framework.common.util.ServletUtil;
+import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.util.IpUtil;
+import com.snowdrift.framework.base.util.ServletUtil;
 import com.snowdrift.framework.context.http.HttpContext;
 import com.snowdrift.framework.context.http.HttpContextHolder;
 import jakarta.servlet.FilterChain;

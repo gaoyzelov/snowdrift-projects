@@ -1,4 +1,4 @@
-package com.snowdrift.framework.common.constant;
+package com.snowdrift.framework.base.constant;
 
 /**
  * RegexConst

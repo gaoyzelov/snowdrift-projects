@@ -1,8 +1,9 @@
-package com.snowdrift.framework.common.util;
+package com.snowdrift.framework.base.util;
 
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 import lombok.Builder;
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -32,6 +33,7 @@ import java.util.List;
  * @description 加密工具类
  * @since 1.0.0
  */
+@Slf4j
 public final class EncryptUtil {
 
     private static final HexFormat HEX_FORMAT = HexFormat.of();
@@ -75,7 +77,8 @@ public final class EncryptUtil {
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
-            throw new BizException("MD5 digest failed: " + e.getMessage(), e);
+            log.error("MD5加密失败: {}", text, e);
+            throw new BizException("MD5加密失败", e);
         }
     }
 
@@ -95,7 +98,8 @@ public final class EncryptUtil {
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
-            throw new BizException("SHA-1 digest failed: " + e.getMessage(), e);
+            log.error("SHA-1摘要计算失败: {}", text, e);
+            throw new BizException("SHA-1摘要计算失败", e);
         }
     }
 
@@ -115,7 +119,8 @@ public final class EncryptUtil {
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
-            throw new BizException("SHA-256 digest failed: " + e.getMessage(), e);
+            log.error("SHA-256摘要计算失败: {}", text, e);
+            throw new BizException("SHA-256摘要计算失败", e);
         }
     }
 
@@ -136,7 +141,8 @@ public final class EncryptUtil {
             byte[] hmac = mac.doFinal(text.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hmac);
         } catch (Exception e) {
-            throw new BizException("HMAC-SHA256 failed: " + e.getMessage(), e);
+            log.error("HMAC-SHA256计算失败: {}", text, e);
+            throw new BizException("HMAC-SHA256计算失败", e);
         }
     }
 
@@ -165,7 +171,8 @@ public final class EncryptUtil {
             keyGenerator.init(keySize);
             return keyGenerator.generateKey();
         } catch (Exception e) {
-            throw new BizException("AES key generation failed: " + e.getMessage(), e);
+            log.error("AES密钥生成失败: {}", keySize, e);
+            throw new BizException("AES密钥生成失败", e);
         }
     }
 
@@ -205,7 +212,8 @@ public final class EncryptUtil {
             byte[] encrypted = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(encrypted);
         } catch (Exception e) {
-            throw new BizException("AES-ECB encrypt failed: " + e.getMessage(), e);
+            log.error("AES-ECB加密失败: {}", text, e);
+            throw new BizException("AES-ECB加密失败", e);
         }
     }
 
@@ -245,7 +253,8 @@ public final class EncryptUtil {
             byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(text));
             return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new BizException("AES-ECB decrypt failed: " + e.getMessage(), e);
+            log.error("AES-ECB解密失败: {}", text, e);
+            throw new BizException("AES-ECB解密失败", e);
         }
     }
 
@@ -298,7 +307,8 @@ public final class EncryptUtil {
             System.arraycopy(ciphertext, 0, output, GCM_IV_LENGTH, ciphertext.length);
             return Base64.getEncoder().encodeToString(output);
         } catch (Exception e) {
-            throw new BizException("AES-GCM encrypt failed: " + e.getMessage(), e);
+            log.error("AES-GCM加密失败: {}", text, e);
+            throw new BizException("AES-GCM加密失败", e);
         }
     }
 
@@ -355,7 +365,8 @@ public final class EncryptUtil {
             byte[] decrypted = cipher.doFinal(ciphertext);
             return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new BizException("AES-GCM decrypt failed: " + e.getMessage(), e);
+            log.error("AES-GCM解密失败: {}", text, e);
+            throw new BizException("AES-GCM解密失败", e);
         }
     }
 
@@ -372,7 +383,8 @@ public final class EncryptUtil {
             keyPairGenerator.initialize(keySize);
             return keyPairGenerator.generateKeyPair();
         } catch (Exception e) {
-            throw new BizException("RSA key pair generation failed: " + e.getMessage(), e);
+            log.error("RSA密钥对生成失败: {}", keySize, e);
+            throw new BizException("RSA密钥对生成失败", e);
         }
     }
 
@@ -449,7 +461,8 @@ public final class EncryptUtil {
             byte[] bytes = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(bytes);
         } catch (Exception e) {
-            throw new BizException("RSA encrypt failed: " + e.getMessage(), e);
+            log.error("RSA加密失败: {}", text, e);
+            throw new BizException("RSA加密失败", e);
         }
     }
 
@@ -472,7 +485,8 @@ public final class EncryptUtil {
             byte[] bytes = cipher.doFinal(Base64.getDecoder().decode(text));
             return new String(bytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            throw new BizException("RSA decrypt failed: " + e.getMessage(), e);
+            log.error("RSA解密失败: {}", text, e);
+            throw new BizException("RSA解密失败", e);
         }
     }
 

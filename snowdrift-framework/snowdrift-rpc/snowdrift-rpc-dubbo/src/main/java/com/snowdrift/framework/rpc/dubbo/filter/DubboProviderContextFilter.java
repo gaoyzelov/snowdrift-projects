@@ -1,6 +1,6 @@
 package com.snowdrift.framework.rpc.dubbo.filter;
 
-import com.snowdrift.framework.common.constant.StrConst;
+import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.rpc.dubbo.constant.RpcContextConstants;

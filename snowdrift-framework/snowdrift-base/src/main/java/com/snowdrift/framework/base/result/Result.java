@@ -1,4 +1,4 @@
-package com.snowdrift.framework.common.result;
+package com.snowdrift.framework.base.result;
 
 import lombok.Builder;
 import lombok.Getter;

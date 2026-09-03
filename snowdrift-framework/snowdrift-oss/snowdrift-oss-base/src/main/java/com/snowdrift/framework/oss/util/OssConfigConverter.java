@@ -1,6 +1,5 @@
 package com.snowdrift.framework.oss.util;
 
-import com.snowdrift.framework.common.exception.BizException;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
 import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.properties.OssInstanceProperties;

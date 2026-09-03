@@ -3,7 +3,7 @@ package com.snowdrift.framework.cache.aspect;
 import com.snowdrift.framework.cache.IDistributedLockService;
 import com.snowdrift.framework.cache.annotation.DistributedLock;
 import com.snowdrift.framework.cache.util.SpELUtil;
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;

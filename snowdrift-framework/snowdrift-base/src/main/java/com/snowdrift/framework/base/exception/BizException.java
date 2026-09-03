@@ -1,7 +1,7 @@
-package com.snowdrift.framework.common.exception;
+package com.snowdrift.framework.base.exception;
 
 
-import com.snowdrift.framework.common.result.ResultCode;
+import com.snowdrift.framework.base.result.ResultCode;
 import lombok.Getter;
 
 /**
@@ -23,7 +23,7 @@ public class BizException extends RuntimeException {
     private Object[] args;
 
     public BizException() {
-        super("common.error");
+        super(ResultCode.ERR.msg());
         this.code = ResultCode.ERR.code();
     }
 
@@ -38,7 +38,7 @@ public class BizException extends RuntimeException {
         this.args = args;
     }
 
-    public BizException(ResultCode resultCode){
+    public BizException(ResultCode resultCode) {
         super(resultCode.msg());
         this.code = resultCode.code();
     }
@@ -54,13 +54,13 @@ public class BizException extends RuntimeException {
     }
 
     public BizException(String message, Object[] args, Throwable cause) {
-        super(message,cause);
+        super(message, cause);
         this.code = ResultCode.ERR.code();
         this.args = args;
     }
 
     public BizException(Throwable cause) {
-        super("common.error", cause);
+        super(ResultCode.ERR.msg(), cause);
         this.code = ResultCode.ERR.code();
     }
 
@@ -71,10 +71,6 @@ public class BizException extends RuntimeException {
 
     @Override
     public String getMessage() {
-        return "[" + code + "] " + super.getMessage();
-    }
-
-    public String getRawMessage() {
         return super.getMessage();
     }
 }

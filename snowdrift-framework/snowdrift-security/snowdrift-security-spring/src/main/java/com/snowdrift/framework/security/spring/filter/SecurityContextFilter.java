@@ -1,6 +1,6 @@
 package com.snowdrift.framework.security.spring.filter;
 
-import com.snowdrift.framework.common.util.DesensitizeUtil;
+import com.snowdrift.framework.base.util.DesensitizeUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.security.properties.SecurityProperties;

@@ -1,6 +1,6 @@
-package com.snowdrift.framework.common.util;
+package com.snowdrift.framework.base.util;
 
-import com.snowdrift.framework.common.exception.BizException;
+import com.snowdrift.framework.base.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Field;
@@ -93,7 +93,7 @@ public final class ReflectUtil {
             }
         } catch (Exception e) {
             log.error("获取属性列表失败：{}", t.getClass().getCanonicalName(), e);
-            throw new BizException("Reflection failed: " + e.getMessage(), e);
+            throw new BizException("获取属性列表失败");
         }
         return fields;
     }
