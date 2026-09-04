@@ -16,8 +16,8 @@
     <modules>
         <module>snowdrift-mq-base</module>
         <module>snowdrift-mq-kafka</module>
-        <module>snowdrift-mq-rocketmq</module>
         <module>snowdrift-mq-rabbitmq</module>
+        <module>snowdrift-mq-rocketmq</module>
     </modules>
 
 </project>

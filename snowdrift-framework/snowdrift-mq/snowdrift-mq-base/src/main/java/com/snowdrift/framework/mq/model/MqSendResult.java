@@ -9,10 +9,8 @@ import java.io.Serializable;
 /**
  * 消息发送结果
  * <p>
- * 当前基于 Spring Cloud Stream 的 {@code StreamBridge.send()} 实现，
- * 该 API 的返回值为 {@code boolean}，无法获取 Broker 侧的 messageId、partition 等元数据。
- * 因此 {@link #messageId} 和 {@link #partitionOrQueue} 在当前实现中始终为 {@code null}。
- * 如需这些信息，可直接使用各 MQ 的原生 SDK 发送。
+ * 由各实现模块基于 broker 原生客户端填充；在原生发送路径下 {@link #messageId} 与
+ * {@link #partitionOrQueue} 可拿到真实 broker 元数据（如 Kafka 的 topic-partition-offset）。
  * </p>
  *
  * @author gaoyzelov
@@ -27,11 +25,8 @@ public class MqSendResult implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 消息 ID（MQ broker 返回的消息唯一标识）
-     * <p>
-     * <b>注意：基于 StreamBridge 的实现中此字段始终为 null。</b>
-     * StreamBridge.send() 返回 boolean，不暴露 broker 侧的 messageId。
-     * </p>
+     * 消息 ID（broker 返回的消息唯一标识）
+     * <p>原生路径：Kafka = {@code topic-partition-offset}；其它 broker 按其原生消息 ID 约定。</p>
      */
     private String messageId;
 
@@ -46,9 +41,6 @@ public class MqSendResult implements Serializable {
      * — Kafka: partition<br>
      * — RocketMQ: MessageQueue<br>
      * — RabbitMQ: queue name
-     * </p>
-     * <p>
-     * <b>注意：基于 StreamBridge 的实现中此字段始终为 null。</b>
      * </p>
      */
     private String partitionOrQueue;

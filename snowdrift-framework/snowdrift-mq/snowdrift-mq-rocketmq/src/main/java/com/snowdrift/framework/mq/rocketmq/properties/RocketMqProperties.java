@@ -1,6 +1,5 @@
-package com.snowdrift.framework.mq.rocketmq.config;
+package com.snowdrift.framework.mq.rocketmq.properties;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -22,21 +21,5 @@ public class RocketMqProperties {
      * 是否启用 RocketMQ
      */
     @NotNull
-    private Boolean enabled = true;
-
-    /**
-     * NameServer 地址（如 127.0.0.1:9876）
-     */
-    @NotBlank
-    private String nameServer = "localhost:9876";
-
-    /**
-     * 生产者组名
-     */
-    private String producerGroup = "snowdrift-producer";
-
-    /**
-     * 消费者组名
-     */
-    private String consumerGroup = "snowdrift-consumer";
+    private Boolean enabled = Boolean.FALSE;
 }

@@ -10,21 +10,38 @@
     </parent>
 
     <artifactId>snowdrift-mq-kafka</artifactId>
-    <description>Snowdrift MQ Kafka — Apache Kafka binder 自动配置</description>
+    <description>Snowdrift MQ Kafka — Apache Kafka 原生客户端自动配置</description>
 
     <dependencies>
         <dependency>
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-mq-base</artifactId>
         </dependency>
+        <!-- Spring Kafka 由 spring-boot-dependencies BOM 管理（Boot 3.5 不再提供 spring-boot-starter-kafka，
+             依赖 spring-kafka 即会触发 Boot KafkaAutoConfiguration） -->
         <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-stream-kafka</artifactId>
+            <groupId>org.springframework.kafka</groupId>
+            <artifactId>spring-kafka</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-autoconfigure</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
+        </dependency>
+        <!-- Test -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

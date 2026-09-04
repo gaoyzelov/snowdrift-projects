@@ -5,7 +5,7 @@ import com.snowdrift.framework.base.exception.BizException;
 /**
  * 消息队列异常
  * <p>
- * message 字段存储 i18n key，配合 {@link com.snowdrift.framework.base.result.ResultCode} 使用。
+ * message 使用可直接展示的中文描述（模块不依赖 i18n 国际化）。
  * </p>
  *
  * @author gaoyzelov
@@ -16,6 +16,10 @@ public class MqException extends BizException {
 
     public MqException(String message) {
         super(message);
+    }
+
+    public MqException(String message, Throwable cause) {
+        super(message, cause);
     }
 
     public MqException(String message, Object[] args) {

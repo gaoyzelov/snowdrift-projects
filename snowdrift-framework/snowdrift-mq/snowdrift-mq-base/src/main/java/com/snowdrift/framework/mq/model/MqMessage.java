@@ -42,11 +42,4 @@ public class MqMessage<T> implements Serializable {
      * 自定义消息头
      */
     private Map<String, String> headers;
-
-    /**
-     * 消息时间戳（毫秒）
-     * @deprecated 此字段当前未被框架使用，保留仅为序列化兼容。将在后续大版本中移除。
-     */
-    @Deprecated
-    private Long timestamp;
 }

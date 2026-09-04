@@ -1,34 +1,33 @@
 package com.snowdrift.framework.mq.rabbitmq.service;
 
-import com.snowdrift.framework.mq.DefaultMqServiceImpl;
+import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.mq.AbstractMqService;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
-import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
-import com.snowdrift.framework.mq.model.MqMessage;
+import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.model.MqSendResult;
-import com.snowdrift.framework.mq.exception.MqException;
-import com.snowdrift.framework.mq.properties.MqProperties;
-import com.snowdrift.framework.mq.rabbitmq.config.RabbitMqProperties;
+import com.snowdrift.framework.mq.rabbitmq.properties.RabbitMqProperties;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.amqp.core.Message;
 import org.springframework.amqp.core.MessageProperties;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
-import org.springframework.messaging.Message;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.Executor;
 
 /**
- * RabbitMQ 消息发送模板
+ * RabbitMQ 消息服务实现 — 基于原生 {@link RabbitTemplate}
  * <p>
- * 基于 Spring Cloud Stream Rabbit Binder。
- * 批量发送优先使用 {@link RabbitTemplate}（如可用）。
- * 延迟消息需安装 rabbitmq-delayed-message-exchange 插件，未启用时降级为即时发送。
+ * 统一发送语义映射（交换机模式）：
+ * — {@code topic} = AMQP exchange 名；
+ * — {@code key} = routing key（缺省为空串，适配 fanout / 已绑定空路由的队列）。
+ * 同步发送走原生 {@link RabbitTemplate#send(String, String, Message)}；异步复用基类 executor 包装（Rabbit 无原生异步发送）。
+ * 延迟消息依赖 rabbitmq-delayed-message-exchange 插件（{@code x-delay} 头，目标 exchange 须为 delayed-exchange）；
+ * 未启用插件时 {@link #sendDelay} 直接抛 {@link UnsupportedOperationException}，不做静默 TTL 降级。
+ * 消费请使用原生 {@code @RabbitListener}，框架以 afterReceive 处理器自动恢复上下文。
  * </p>
  *
  * @author gaoyzelov
@@ -36,117 +35,53 @@ import java.util.concurrent.Executor;
  * @since 1.0.0
  */
 @Slf4j
-public class RabbitMqServiceImpl extends DefaultMqServiceImpl implements ApplicationContextAware {
+public class RabbitMqServiceImpl extends AbstractMqService {
+
+    private static final String X_DELAY_HEADER = "x-delay";
 
     private final RabbitMqProperties rabbitProperties;
-    private ApplicationContext applicationContext;
-    private volatile RabbitTemplate rabbitTemplate;
-    private volatile boolean rabbitTemplateLookedUp;
+    private final RabbitTemplate rabbitTemplate;
 
-    public RabbitMqServiceImpl(StreamBridge streamBridge, MqProperties mqProperties,
+    public RabbitMqServiceImpl(RabbitTemplate rabbitTemplate,
                                RabbitMqProperties rabbitProperties,
-                               Executor mqAsyncExecutor, MqMessageConverter converter,
+                               Executor mqAsyncExecutor,
+                               MqMessageConverter converter,
                                MqInterceptorRegistry interceptorRegistry,
                                MqContextPropagator contextPropagator) {
-        super(streamBridge, mqProperties, mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
+        super(mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
+        this.rabbitTemplate = rabbitTemplate;
         this.rabbitProperties = rabbitProperties;
     }
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
+    protected MqSendResult doNativeSend(String topic, String key, byte[] body, Map<String, String> headers) {
+        MessageProperties properties = new MessageProperties();
+        properties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
+        if (headers != null && !headers.isEmpty()) {
+            headers.forEach(properties::setHeader);
+        }
+        // RabbitMQ 同步 send 不返回 broker 消息 ID，自生成 messageId 便于链路追踪
+        String messageId = UUID.randomUUID().toString();
+        properties.setMessageId(messageId);
+
+        String routingKey = StringUtils.defaultIfBlank(key, StrConst.EMPTY);
+        rabbitTemplate.send(topic, routingKey, new Message(body, properties));
+        return MqSendResult.builder()
+                .topic(topic)
+                .messageId(messageId)
+                .timestamp(System.currentTimeMillis())
+                .build();
     }
 
     @Override
     public <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers) {
-        boolean useDelayPlugin = Boolean.TRUE.equals(rabbitProperties.getDelayPluginEnabled());
-        return doSendDelay(topic, key, payload, delay, headers, builder -> {
-            if (useDelayPlugin) {
-                builder.setHeader("x-delay", delay.toMillis());
-            } else {
-                // 降级方案：设置消息过期时间 + 死信队列，需用提前配置
-                log.warn("RabbitMQ 延迟消息使用 x-message-ttl 降级方案，请确保对应队列已配置 DLX（死信队列），"
-                        + "否则到期消息将被直接丢弃。建议开启 delay-plugin-enabled 使用 x-delay 插件。");
-                builder.setHeader("x-message-ttl", delay.toMillis());
-            }
-        });
-    }
-
-    // ========== 批量发送（RabbitTemplate） ==========
-
-    @Override
-    public <T> List<MqSendResult> sendBatch(String topic, List<MqMessage<T>> messages) {
-        if (messages == null || messages.isEmpty()) {
-            return List.of();
+        if (!Boolean.TRUE.equals(rabbitProperties.getDelayPluginEnabled())) {
+            throw new UnsupportedOperationException(
+                    "RabbitMQ 延迟消息需要启用 rabbitmq-delayed-message-exchange 插件"
+                            + "（snowdrift.mq.rabbitmq.delay-plugin-enabled=true）并将发送目标（topic）指向 delayed-exchange，"
+                            + "当前未启用，不支持延迟发送");
         }
-
-        RabbitTemplate template = getRabbitTemplate();
-        if (template != null) {
-            return sendBatchWithRabbitTemplate(topic, messages, template);
-        }
-
-        log.debug("RabbitTemplate 不可用，使用 StreamBridge 循环批量发送");
-        return super.sendBatch(topic, messages);
-    }
-
-    private <T> List<MqSendResult> sendBatchWithRabbitTemplate(String topic,
-                                                                List<MqMessage<T>> messages,
-                                                                RabbitTemplate template) {
-        List<MqSendResult> results = new ArrayList<>(messages.size());
-        List<Exception> errors = new ArrayList<>();
-
-        for (int i = 0; i < messages.size(); i++) {
-            MqMessage<T> mqMsg = messages.get(i);
-            fireBeforeSend(topic, mqMsg.getKey(), mqMsg.getPayload());
-
-            byte[] body = converter.serialize(mqMsg.getPayload());
-            MessageProperties props = new MessageProperties();
-
-            // 使用 buildMessageFromBytes 复用已序列化的 body，避免 buildMessage 内部二次序列化
-            Message<byte[]> springMsg = buildMessageFromBytes(mqMsg.getKey(),
-                    body, mqMsg.getHeaders());
-            springMsg.getHeaders().forEach(props::setHeader);
-
-            org.springframework.amqp.core.Message amqpMsg =
-                    new org.springframework.amqp.core.Message(body, props);
-            try {
-                template.send(topic, "", amqpMsg);
-                MqSendResult result = MqSendResult.builder()
-                        .topic(topic)
-                        .timestamp(System.currentTimeMillis())
-                        .build();
-                results.add(result);
-                fireAfterSend(topic, result);
-            } catch (Exception e) {
-                log.error("RabbitMQ 批量发送第 {} 条失败: topic={}, key={}", i, topic, mqMsg.getKey(), e);
-                fireOnSendError(topic, e);
-                errors.add(e);
-                results.add(null); // 占位，保持索引对齐
-            }
-        }
-
-        if (!errors.isEmpty()) {
-            long successCount = results.stream().filter(java.util.Objects::nonNull).count();
-            throw new MqException("mq.send.batch.partial.failed",
-                    new Object[]{topic, successCount, messages.size()});
-        }
-        log.debug("RabbitMQ 批量发送完成: topic={}, count={}", topic, messages.size());
-        return results;
-    }
-
-    private RabbitTemplate getRabbitTemplate() {
-        if (!rabbitTemplateLookedUp) {
-            synchronized (this) {
-                if (!rabbitTemplateLookedUp) {
-                    try {
-                        this.rabbitTemplate = applicationContext.getBean(RabbitTemplate.class);
-                    } catch (Exception e) {
-                        log.debug("RabbitTemplate Bean 不存在，批量发送将使用 StreamBridge 循环");
-                    }
-                    this.rabbitTemplateLookedUp = true;
-                }
-            }
-        }
-        return this.rabbitTemplate;
+        return sendDelayInternal(topic, key, payload, delay, headers,
+                effectiveHeaders -> effectiveHeaders.put(X_DELAY_HEADER, String.valueOf(delay.toMillis())));
     }
 }

@@ -23,14 +23,7 @@ public class MqProperties {
      * 是否启用消息队列功能
      */
     @NotNull
-    private Boolean enabled = true;
-
-    /**
-     * 动态目的地缓存大小（StreamBridge 内部缓存）
-     * 默认10，每个未预声明的 topic 会占用一个缓存槽位
-     */
-    @NotNull
-    private Integer dynamicDestinationCacheSize = 10;
+    private Boolean enabled = Boolean.TRUE;
 
     /**
      * 消息签名配置

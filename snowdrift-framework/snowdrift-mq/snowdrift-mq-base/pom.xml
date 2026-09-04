@@ -10,18 +10,13 @@
     </parent>
 
     <artifactId>snowdrift-mq-base</artifactId>
-    <description>Snowdrift MQ Base — 统一消息发送/消费接口、上下文传播、i18n</description>
+    <description>Snowdrift MQ Base — 统一消息发送/消费接口、上下文传播、序列化与拦截器</description>
 
     <dependencies>
         <!-- Snowdrift Context (SecurityContextHolder + TTL, 传递带 snowdrift-common) -->
         <dependency>
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-context</artifactId>
-        </dependency>
-        <!-- Spring Cloud Stream (StreamBridge, Message, MessageBuilder) -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-stream</artifactId>
         </dependency>
         <!-- Spring Boot Autoconfigure (@AutoConfiguration) -->
         <dependency>
@@ -33,6 +28,23 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
+        </dependency>
+        <!-- Test -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- logback-classic 提供 SLF4J MDC 实现，供上下文传播测试验证 traceId（生产日志实现由使用方自行提供） -->
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

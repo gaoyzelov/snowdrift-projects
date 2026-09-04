@@ -11,9 +11,12 @@ import java.util.concurrent.CompletableFuture;
 /**
  * 统一消息发送模板接口
  * <p>
- * 屏蔽 Kafka / RocketMQ / RabbitMQ 差异，提供同步 / 异步 / 延迟发送能力。
- * 内部基于 Spring Cloud Stream 的 {@code StreamBridge} 实现，
- * 用户仍可绕过本接口直接使用 StreamBridge 或 @Bean Consumer。
+ * 屏蔽 Kafka / RocketMQ / RabbitMQ 差异，提供同步 / 异步 / 延迟 / 批量发送能力。
+ * 由各实现模块基于 broker 原生客户端（如 spring-kafka / spring-amqp / rocketmq-spring）实现。
+ * 各能力均以「最全参数」版本为唯一抽象（如 {@link #send(String, String, Object, Map)}）；
+ * 少参数版本为接口 {@code default} 便捷委托，实现类无需重复。
+ * {@link MqSendResult#getMessageId()} 与 {@link MqSendResult#getPartitionOrQueue()} 在原生路径下可返回真实 broker 元数据。
+ * 消费端不使用统一注解——请在各实现模块下直接使用 broker 原生监听注解（如 {@code @KafkaListener}）。
  * </p>
  *
  * @author gaoyzelov
@@ -32,7 +35,9 @@ public interface IMqService {
      * @param <T>     消息体类型
      * @return 发送结果
      */
-    <T> MqSendResult send(String topic, T payload);
+    default <T> MqSendResult send(String topic, T payload) {
+        return send(topic, null, payload, null);
+    }
 
     /**
      * 同步发送带 Key 的消息（用于分区 / 分片路由）
@@ -43,10 +48,12 @@ public interface IMqService {
      * @param <T>     消息体类型
      * @return 发送结果
      */
-    <T> MqSendResult send(String topic, String key, T payload);
+    default <T> MqSendResult send(String topic, String key, T payload) {
+        return send(topic, key, payload, null);
+    }
 
     /**
-     * 同步发送带自定义头部的消息
+     * 同步发送带自定义头部的消息（各实现模块的核心抽象方法）
      *
      * @param topic   目标 topic
      * @param key     消息 Key（可空）
@@ -67,7 +74,9 @@ public interface IMqService {
      * @param <T>     消息体类型
      * @return 发送结果 Future
      */
-    <T> CompletableFuture<MqSendResult> sendAsync(String topic, T payload);
+    default <T> CompletableFuture<MqSendResult> sendAsync(String topic, T payload) {
+        return sendAsync(topic, null, payload, null);
+    }
 
     /**
      * 异步发送带 Key 的消息
@@ -78,10 +87,12 @@ public interface IMqService {
      * @param <T>     消息体类型
      * @return 发送结果 Future
      */
-    <T> CompletableFuture<MqSendResult> sendAsync(String topic, String key, T payload);
+    default <T> CompletableFuture<MqSendResult> sendAsync(String topic, String key, T payload) {
+        return sendAsync(topic, key, payload, null);
+    }
 
     /**
-     * 异步发送带自定义头部的消息
+     * 异步发送带自定义头部的消息（各实现模块的核心抽象方法）
      *
      * @param topic   目标 topic
      * @param key     消息 Key（可空）
@@ -97,10 +108,10 @@ public interface IMqService {
     /**
      * 延迟发送消息
      * <p>
-     * 各 MQ 实现不同：
-     * — RocketMQ：原生延迟级别（1-18）
-     * — RabbitMQ：x-delay 插件 或 x-message-ttl + DLX
-     * — Kafka：不支持，降级为即时发送并输出 WARN 日志
+     * 各 MQ 实现能力不同，遵循「原生优先、无原生则显式拒绝」：
+     * — RocketMQ：原生延迟级别（1-18），由实现模块换算延迟级别；
+     * — RabbitMQ：依赖 rabbitmq-delayed-message-exchange 插件（x-delay 头），未启用插件时抛 {@link UnsupportedOperationException}；
+     * — Kafka：无原生延迟能力，抛 {@link UnsupportedOperationException}。
      * </p>
      *
      * @param topic   目标 topic
@@ -109,7 +120,9 @@ public interface IMqService {
      * @param <T>     消息体类型
      * @return 发送结果
      */
-    <T> MqSendResult sendDelay(String topic, T payload, Duration delay);
+    default <T> MqSendResult sendDelay(String topic, T payload, Duration delay) {
+        return sendDelay(topic, null, payload, delay, null);
+    }
 
     /**
      * 延迟发送带 Key 的消息
@@ -121,10 +134,16 @@ public interface IMqService {
      * @param <T>     消息体类型
      * @return 发送结果
      */
-    <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay);
+    default <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay) {
+        return sendDelay(topic, key, payload, delay, null);
+    }
 
     /**
      * 延迟发送带自定义头部的消息
+     * <p>
+     * 默认不支持延迟发送并抛 {@link UnsupportedOperationException}；
+     * 具备原生延迟能力的实现（如 RocketMQ 延迟级别、RabbitMQ x-delay 插件）应覆写本方法。
+     * </p>
      *
      * @param topic   目标 topic
      * @param key     消息 Key（可空）
@@ -134,7 +153,9 @@ public interface IMqService {
      * @param <T>     消息体类型
      * @return 发送结果
      */
-    <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers);
+    default <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers) {
+        throw new UnsupportedOperationException("当前消息中间件不支持延迟消息发送");
+    }
 
     // ========== 批量发送 ==========
 

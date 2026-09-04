@@ -1,36 +1,30 @@
 package com.snowdrift.framework.mq.kafka.service;
 
-import com.snowdrift.framework.mq.DefaultMqServiceImpl;
+import com.snowdrift.framework.mq.AbstractMqService;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
-import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
-import com.snowdrift.framework.mq.model.MqMessage;
-import com.snowdrift.framework.mq.model.MqSendResult;
 import com.snowdrift.framework.mq.exception.MqException;
-import com.snowdrift.framework.mq.properties.MqProperties;
+import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
+import com.snowdrift.framework.mq.kafka.context.KafkaHeaderCodec;
+import com.snowdrift.framework.mq.model.MqSendResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
-import org.springframework.cloud.stream.function.StreamBridge;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
-import org.springframework.messaging.Message;
 
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 
 /**
- * Kafka 消息发送模板
+ * Kafka 消息服务实现 — 基于原生 {@link KafkaTemplate}
  * <p>
- * 基于 Spring Cloud Stream Kafka Binder。
- * 批量发送优先使用 {@link KafkaTemplate}（如可用），Kafka Producer 内部按 linger.ms 自动批次发送。
+ * 同步/异步发送均走 Kafka 原生 producer，可拿到真实 {@code topic-partition-offset} 等元数据；
+ * key 作为 {@link ProducerRecord} 分区键参与分区路由。
+ * Kafka 无原生延迟消息能力，{@link #sendDelay} 继承基类默认：抛 {@link UnsupportedOperationException}。
+ * 消费请直接使用原生 {@code @KafkaListener}，框架以 {@code RecordInterceptor} 自动恢复上下文。
  * </p>
  *
  * @author gaoyzelov
@@ -38,120 +32,80 @@ import java.util.concurrent.Future;
  * @since 1.0.0
  */
 @Slf4j
-public class KafkaMqServiceImpl extends DefaultMqServiceImpl implements ApplicationContextAware {
+public class KafkaMqServiceImpl extends AbstractMqService {
 
-    private ApplicationContext applicationContext;
-    private volatile KafkaTemplate<byte[], byte[]> kafkaTemplate;
-    private volatile boolean kafkaTemplateLookedUp;
+    private final KafkaTemplate<String, byte[]> kafkaTemplate;
 
-    public KafkaMqServiceImpl(StreamBridge streamBridge, MqProperties properties,
-                              Executor mqAsyncExecutor, MqMessageConverter converter,
+    public KafkaMqServiceImpl(KafkaTemplate<String, byte[]> kafkaTemplate,
+                              Executor mqAsyncExecutor,
+                              MqMessageConverter converter,
                               MqInterceptorRegistry interceptorRegistry,
                               MqContextPropagator contextPropagator) {
-        super(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
+        super(mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
+        this.kafkaTemplate = kafkaTemplate;
     }
+
+    // ========== 同步发送（原生，阻塞等待 broker ack） ==========
 
     @Override
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
+    protected MqSendResult doNativeSend(String topic, String key, byte[] body, Map<String, String> headers) {
+        ProducerRecord<String, byte[]> record = buildRecord(topic, key, body, headers);
+        try {
+            SendResult<String, byte[]> sendResult = kafkaTemplate.send(record).join();
+            return toResult(sendResult);
+        } catch (CompletionException e) {
+            Throwable cause = e.getCause() != null ? e.getCause() : e;
+            throw new MqException("Kafka 消息发送失败: topic=" + topic + "，原因=" + cause.getMessage(), cause);
+        }
     }
+
+    // ========== 异步发送（Kafka 原生异步，非线程池包装） ==========
 
     @Override
-    public <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers) {
-        log.warn("Kafka 不支持原生延迟消息，降级为即时发送。topic={}, delay={}", topic, delay);
-        return send(topic, key, payload, headers);
-    }
-
-    // ========== 批量发送（KafkaTemplate，Producer 内部自动批次） ==========
-
-    @Override
-    public <T> List<MqSendResult> sendBatch(String topic, List<MqMessage<T>> messages) {
-        if (messages == null || messages.isEmpty()) {
-            return List.of();
-        }
-
-        KafkaTemplate<byte[], byte[]> template = getKafkaTemplate();
-        if (template != null) {
-            return sendBatchWithKafkaTemplate(topic, messages, template);
-        }
-
-        // 回退到逐条 StreamBridge 循环（Kafka Producer 仍会按 linger.ms 内部批次发送）
-        log.debug("KafkaTemplate 不可用，使用 StreamBridge 循环批量发送");
-        return super.sendBatch(topic, messages);
-    }
-
-    private <T> List<MqSendResult> sendBatchWithKafkaTemplate(String topic,
-                                                               List<MqMessage<T>> messages,
-                                                               KafkaTemplate<byte[], byte[]> template) {
-        // 逐条：触发 beforeSend 拦截器 → 构建消息 → 提交 Kafka send
-        List<Future<RecordMetadata>> futures = new ArrayList<>(messages.size());
-        for (MqMessage<T> mqMsg : messages) {
-            fireBeforeSend(topic, mqMsg.getKey(), mqMsg.getPayload());
-
-            // 使用 buildMessage 统一构建（包含上下文注入和自定义头部）
-            Message<byte[]> springMsg = buildMessage(mqMsg.getKey(),
-                    mqMsg.getPayload(), mqMsg.getHeaders());
-
-            byte[] msgKey = mqMsg.getKey() != null
-                    ? mqMsg.getKey().getBytes(StandardCharsets.UTF_8) : null;
-            ProducerRecord<byte[], byte[]> record = new ProducerRecord<>(topic, null, null, msgKey, springMsg.getPayload());
-
-            // 将 Spring Message headers 写入 Kafka Record headers
-            springMsg.getHeaders().forEach((headerKey, headerValue) -> {
-                byte[] valueBytes = headerValue instanceof byte[]
-                        ? (byte[]) headerValue
-                        : headerValue.toString().getBytes(StandardCharsets.UTF_8);
-                record.headers().add(headerKey, valueBytes);
-            });
-
-            futures.add(template.send(record).thenApply(SendResult::getRecordMetadata));
-        }
-
-        // 逐条等待结果，收集成功/失败信息（不因单条失败丢弃其余结果）
-        List<MqSendResult> results = new ArrayList<>(messages.size());
-        List<Exception> errors = new ArrayList<>();
-        for (int i = 0; i < futures.size(); i++) {
-            try {
-                RecordMetadata meta = futures.get(i).get();
-                MqSendResult result = MqSendResult.builder()
-                        .messageId(topic + "-" + meta.partition() + "-" + meta.offset())
-                        .topic(topic)
-                        .partitionOrQueue(String.valueOf(meta.partition()))
-                        .timestamp(meta.timestamp())
-                        .build();
-                results.add(result);
-                fireAfterSend(topic, result);
-            } catch (Exception e) {
-                log.error("Kafka 批量发送第 {} 条失败: topic={}", i, topic, e);
-                fireOnSendError(topic, e);
-                errors.add(e);
-                results.add(null); // 占位，保持索引对齐
-            }
-        }
-
-        if (!errors.isEmpty()) {
-            long successCount = results.stream().filter(java.util.Objects::nonNull).count();
-            throw new MqException("mq.send.batch.partial.failed",
-                    new Object[]{topic, successCount, messages.size()});
-        }
-        log.debug("Kafka 批量发送完成: topic={}, count={}", topic, messages.size());
-        return results;
-    }
-
-    private KafkaTemplate<byte[], byte[]> getKafkaTemplate() {
-        if (!kafkaTemplateLookedUp) {
-            synchronized (this) {
-                if (!kafkaTemplateLookedUp) {
-                    try {
-                        //noinspection unchecked
-                        this.kafkaTemplate = applicationContext.getBean(KafkaTemplate.class);
-                    } catch (Exception e) {
-                        log.debug("KafkaTemplate Bean 不存在，批量发送将使用 StreamBridge 循环");
-                    }
-                    this.kafkaTemplateLookedUp = true;
+    public <T> CompletableFuture<MqSendResult> sendAsync(String topic, String key, T payload, Map<String, String> headers) {
+        validateSendArgs(topic, payload);
+        fireBeforeSend(topic, key, payload);
+        try {
+            byte[] body = converter.serialize(payload);
+            Map<String, String> effectiveHeaders = buildHeaders(key, headers);
+            ProducerRecord<String, byte[]> record = buildRecord(topic, key, body, effectiveHeaders);
+            return kafkaTemplate.send(record).handle((sendResult, ex) -> {
+                if (ex != null) {
+                    Throwable cause = (ex instanceof CompletionException && ex.getCause() != null) ? ex.getCause() : ex;
+                    fireOnSendError(topic, cause);
+                    throw cause instanceof RuntimeException runtimeException
+                            ? runtimeException
+                            : new MqException("Kafka 消息发送失败: topic=" + topic + "，原因=" + cause.getMessage(), cause);
                 }
-            }
+                MqSendResult result = toResult(sendResult);
+                fireAfterSend(topic, result);
+                return result;
+            });
+        } catch (RuntimeException e) {
+            fireOnSendError(topic, e);
+            throw e;
         }
-        return this.kafkaTemplate;
+    }
+
+    // ========== 组装与映射 ==========
+
+    private ProducerRecord<String, byte[]> buildRecord(String topic, String key, byte[] body, Map<String, String> headers) {
+        ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, key, body);
+        KafkaHeaderCodec.apply(headers, record);
+        return record;
+    }
+
+    /**
+     * 把原生 SendResult 映射为统一 {@link MqSendResult}（messageId = topic-partition-offset）
+     */
+    private MqSendResult toResult(SendResult<String, byte[]> sendResult) {
+        RecordMetadata metadata = sendResult.getRecordMetadata();
+        long timestamp = metadata.timestamp() >= 0 ? metadata.timestamp() : System.currentTimeMillis();
+        return MqSendResult.builder()
+                .topic(metadata.topic())
+                .messageId(metadata.topic() + "-" + metadata.partition() + "-" + metadata.offset())
+                .partitionOrQueue(String.valueOf(metadata.partition()))
+                .timestamp(timestamp)
+                .build();
     }
 }

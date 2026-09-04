@@ -1,5 +1,7 @@
 package com.snowdrift.framework.orm.core.scope;
 
+import com.snowdrift.framework.base.enums.DataScopeEnum;
+
 import java.util.List;
 
 /**
@@ -10,6 +12,13 @@ import java.util.List;
  * @since 1.0.0
  */
 public interface IDataScopeProvider {
+
+    /**
+     * 获取用户数据权限
+     * @param userId 用户ID
+     * @return 数据权限
+     */
+    DataScopeEnum getDataScope(Long userId);
 
     /**
      * 根据用户ID获取自定义部门ID列表

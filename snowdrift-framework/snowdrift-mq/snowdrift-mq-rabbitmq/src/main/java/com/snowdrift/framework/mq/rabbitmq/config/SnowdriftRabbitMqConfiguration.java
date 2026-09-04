@@ -4,29 +4,27 @@ import com.snowdrift.framework.mq.IMqService;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
 import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
-import com.snowdrift.framework.mq.properties.MqProperties;
+import com.snowdrift.framework.mq.rabbitmq.context.MqRabbitContextAdvice;
+import com.snowdrift.framework.mq.rabbitmq.context.MqRabbitListenerContextBinder;
+import com.snowdrift.framework.mq.rabbitmq.properties.RabbitMqProperties;
 import com.snowdrift.framework.mq.rabbitmq.service.RabbitMqServiceImpl;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
- * Snowdrift RabbitMQ MQ 自动配置
+ * Snowdrift RabbitMQ MQ 自动配置 — 基于原生 Spring AMQP
  * <p>
- * 将 {@code snowdrift.mq.rabbitmq.*} 属性自动映射为 Spring Cloud Stream Rabbit Binder 属性。
- * 当 {@code snowdrift.mq.rabbitmq.enabled=true} 且 RabbitMQ Binder 在 classpath 中时激活。
+ * 当 {@code snowdrift.mq.rabbitmq.enabled=true} 且 Spring AMQP 在 classpath 时激活，
+ * 复用 Boot 自动配置的 {@link RabbitTemplate}，注册 {@link IMqService} 的 RabbitMQ 实现，
+ * 并为 {@code @RabbitListener} 容器工厂挂上上下文恢复处理器。连接参数由 {@code spring.rabbitmq.*} 提供。
  * </p>
  *
  * @author gaoyzelov
@@ -34,57 +32,33 @@ import java.util.concurrent.Executor;
  * @since 1.0.0
  */
 @Slf4j
-@AutoConfiguration
+@AutoConfiguration(afterName = "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration")
 @EnableConfigurationProperties(RabbitMqProperties.class)
 @ConditionalOnProperty(prefix = "snowdrift.mq.rabbitmq", name = "enabled", havingValue = "true")
-@ConditionalOnClass(name = "org.springframework.cloud.stream.binder.rabbit.config.RabbitMessageChannelBinderConfiguration")
+@ConditionalOnClass(RabbitTemplate.class)
 public class SnowdriftRabbitMqConfiguration {
-
-    private static final String SCS_RABBIT_BINDER_PREFIX = "spring.cloud.stream.rabbit.binder.";
 
     @Bean
     @ConditionalOnMissingBean(IMqService.class)
-    public RabbitMqServiceImpl rabbitMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
-                                                RabbitMqProperties rabbitProperties,
-                                                Executor mqAsyncExecutor, MqMessageConverter converter,
-                                                ConfigurableEnvironment env,
-                                                MqInterceptorRegistry interceptorRegistry,
-                                                MqContextPropagator contextPropagator) {
-        mapRabbitMqProperties(rabbitProperties, env);
-        log.info("Snowdrift RabbitMQ MQ 模板已注册，拦截器数量: {}", interceptorRegistry.getInterceptors().size());
-        return new RabbitMqServiceImpl(streamBridge, mqProperties, rabbitProperties, mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
+    public RabbitMqServiceImpl rabbitMqService(RabbitTemplate rabbitTemplate,
+                                               RabbitMqProperties rabbitProperties,
+                                               Executor mqAsyncExecutor,
+                                               MqMessageConverter converter,
+                                               MqInterceptorRegistry interceptorRegistry,
+                                               MqContextPropagator contextPropagator) {
+        return new RabbitMqServiceImpl(rabbitTemplate, rabbitProperties, mqAsyncExecutor,
+                converter, interceptorRegistry, contextPropagator);
     }
 
-    /**
-     * 将 snowdrift.mq.rabbitmq.* 映射为 spring.cloud.stream.rabbit.binder.*
-     */
-    private void mapRabbitMqProperties(RabbitMqProperties props, ConfigurableEnvironment env) {
-        Map<String, Object> mapped = new HashMap<>();
-        if (StringUtils.isNotBlank(props.getAddresses())) {
-            setIfAbsent(mapped, env, SCS_RABBIT_BINDER_PREFIX + "addresses",
-                    props.getAddresses());
-        }
-        if (StringUtils.isNotBlank(props.getVirtualHost())) {
-            setIfAbsent(mapped, env, SCS_RABBIT_BINDER_PREFIX + "virtual-host",
-                    props.getVirtualHost());
-        }
-        if (StringUtils.isNotBlank(props.getUsername())) {
-            setIfAbsent(mapped, env, SCS_RABBIT_BINDER_PREFIX + "username",
-                    props.getUsername());
-        }
-        if (StringUtils.isNotBlank(props.getPassword())) {
-            setIfAbsent(mapped, env, SCS_RABBIT_BINDER_PREFIX + "password",
-                    props.getPassword());
-        }
-        if (!mapped.isEmpty()) {
-            env.getPropertySources().addFirst(new MapPropertySource("snowdrift-mq-rabbitmq", mapped));
-        }
+    // ========== 消费上下文自动恢复（原生 @RabbitListener 容器级） ==========
+
+    @Bean
+    public MqRabbitContextAdvice mqRabbitContextAdvice(MqContextPropagator contextPropagator) {
+        return new MqRabbitContextAdvice(contextPropagator);
     }
 
-    private static void setIfAbsent(Map<String, Object> map, ConfigurableEnvironment env,
-                                     String key, String value) {
-        if (env.getProperty(key) == null) {
-            map.put(key, value);
-        }
+    @Bean
+    public MqRabbitListenerContextBinder mqRabbitListenerContextBinder(MqRabbitContextAdvice mqRabbitContextAdvice) {
+        return new MqRabbitListenerContextBinder(mqRabbitContextAdvice);
     }
 }

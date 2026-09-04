@@ -1,4 +1,4 @@
-package com.snowdrift.framework.mq.kafka.config;
+package com.snowdrift.framework.mq.kafka.properties;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -18,23 +18,8 @@ import org.springframework.validation.annotation.Validated;
 public class KafkaMqProperties {
 
     /**
-     * 是否启用 Kafka
+     * 是否启用 Kafka（需显式设为 true，缺省视为未启用，模块由 snowdrift.mq.kafka.enabled=true 激活）
      */
     @NotNull
-    private Boolean enabled = true;
-
-    /**
-     * Kafka Broker 地址列表（逗号分隔）
-     */
-    private String bootstrapServers = "localhost:9092";
-
-    /**
-     * 生产者确认级别: 0, 1, all
-     */
-    private String acks = "1";
-
-    /**
-     * 压缩类型: none, gzip, snappy, lz4, zstd
-     */
-    private String compressionType = "none";
+    private Boolean enabled = Boolean.FALSE;
 }

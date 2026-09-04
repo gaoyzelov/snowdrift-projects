@@ -10,21 +10,40 @@
     </parent>
 
     <artifactId>snowdrift-mq-rocketmq</artifactId>
-    <description>Snowdrift MQ RocketMQ — Apache RocketMQ binder 自动配置</description>
+    <description>Snowdrift MQ RocketMQ — Apache RocketMQ 原生自动配置</description>
 
     <dependencies>
         <dependency>
             <groupId>com.snowdrift</groupId>
             <artifactId>snowdrift-mq-base</artifactId>
         </dependency>
+        <!-- rocketmq-spring-boot-starter 无 Boot BOM 管理，模块内定点 2.3.5（本地仓库版本）。
+             注意：该 starter 面向 Boot2.7/Spring5.3 构建，Boot3.5 下运行时兼容需真机验证（见模块文档）。 -->
         <dependency>
-            <groupId>com.alibaba.cloud</groupId>
-            <artifactId>spring-cloud-starter-stream-rocketmq</artifactId>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-spring-boot-starter</artifactId>
+            <version>2.3.5</version>
+        </dependency>
+        <!-- spring-aop：容器 Bean CGLIB 代理织入消费上下文拦截器所需 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-aop</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-configuration-processor</artifactId>
             <optional>true</optional>
+        </dependency>
+        <!-- Test -->
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 

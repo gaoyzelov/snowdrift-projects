@@ -1,7 +1,5 @@
 package com.snowdrift.framework.mq.config;
 
-import com.snowdrift.framework.mq.DefaultMqServiceImpl;
-import com.snowdrift.framework.mq.IMqService;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.FastJson2MqMessageConverter;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
@@ -13,14 +11,10 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -36,8 +30,6 @@ import java.util.concurrent.ThreadPoolExecutor;
 @EnableConfigurationProperties(MqProperties.class)
 @ConditionalOnProperty(prefix = "snowdrift.mq", name = "enabled", havingValue = "true", matchIfMissing = true)
 public class SnowdriftMqConfiguration {
-
-    private static final String SCS_DYNAMIC_DEST_CACHE = "spring.cloud.stream.dynamic-destination-cache-size";
 
     @Bean
     @ConditionalOnMissingBean(name = "mqAsyncExecutor")
@@ -81,32 +73,15 @@ public class SnowdriftMqConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(IMqService.class)
-    public DefaultMqServiceImpl mqTemplate(StreamBridge streamBridge, MqProperties properties,
-                                           Executor mqAsyncExecutor, MqMessageConverter converter,
-                                           MqInterceptorRegistry interceptorRegistry,
-                                           MqContextPropagator contextPropagator,
-                                           ConfigurableEnvironment env) {
-        mapCoreProperties(properties, env);
-        log.info("Snowdrift MQ 默认模板已注册（StreamBridge），拦截器数量: {}", interceptorRegistry.getInterceptors().size());
-        return new DefaultMqServiceImpl(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
-    }
-
-    @Bean
-    public MqListenerBeanDefinitionRegistrar mqListenerBeanDefinitionRegistrar() {
-        return new MqListenerBeanDefinitionRegistrar();
-    }
-
-    @Bean
     public MqContextPropagator mqContextPropagator(MqProperties properties) {
         return new MqContextPropagator(properties);
     }
 
-    private void mapCoreProperties(MqProperties props, ConfigurableEnvironment env) {
-        if (env.getProperty(SCS_DYNAMIC_DEST_CACHE) == null) {
-            env.getPropertySources().addFirst(new MapPropertySource("snowdrift-mq-core",
-                    Map.of(SCS_DYNAMIC_DEST_CACHE,
-                            String.valueOf(props.getDynamicDestinationCacheSize()))));
-        }
+    /**
+     * 多 binder 同时启用守卫：同一时间只允许一种 {@code snowdrift.mq.<x>.enabled=true}
+     */
+    @Bean
+    public MqBinderActivationGuard mqBinderActivationGuard() {
+        return new MqBinderActivationGuard();
     }
 }

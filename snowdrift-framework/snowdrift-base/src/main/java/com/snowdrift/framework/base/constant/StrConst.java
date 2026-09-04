@@ -73,6 +73,11 @@ public final class StrConst {
     public static final String UNKNOWN = "unknown";
 
     /**
+     * 分号
+     */
+    public static final String SEMICOLON = ";";
+
+    /**
      * 是
      */
     public static final String TRUE = "true";

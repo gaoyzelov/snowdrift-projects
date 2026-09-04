@@ -1,34 +1,35 @@
 package com.snowdrift.framework.mq.rocketmq.service;
 
-import com.snowdrift.framework.mq.DefaultMqServiceImpl;
+import com.snowdrift.framework.mq.AbstractMqService;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
-import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
-import com.snowdrift.framework.mq.model.MqMessage;
+import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.model.MqSendResult;
-import com.snowdrift.framework.mq.exception.MqException;
-import com.snowdrift.framework.mq.properties.MqProperties;
-import com.snowdrift.framework.mq.rocketmq.config.RocketMqProperties;
+import com.snowdrift.framework.mq.rocketmq.support.RocketDelayLevels;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.cloud.stream.function.StreamBridge;
+import org.apache.rocketmq.client.producer.SendCallback;
+import org.apache.rocketmq.client.producer.SendResult;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.apache.rocketmq.spring.support.RocketMQHeaders;
 import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 /**
- * RocketMQ 消息发送模板
+ * RocketMQ 消息服务实现 — 基于原生 {@link RocketMQTemplate}
  * <p>
- * 基于 Spring Cloud Stream RocketMQ Binder。
- * 延迟消息使用 RocketMQ 原生延迟级别（1-18）。
- * 批量发送：若容器中存在 {@link DefaultMQProducer} Bean（如 rocketmq-spring-boot 提供），
- * 则使用原生 {@code send(Collection)} 单次网络请求；否则回退为 StreamBridge 循环。
+ * 同步/异步/延迟发送均走 RocketMQ 原生 producer：
+ * — {@code topic} 直接为 RocketMQ topic（tag 可选：可用消息头 {@code RocketMQHeaders.TAGS} 或 destination {@code topic:tag}）；
+ * — key 经 {@code RocketMQHeaders.KEYS} 映射为 RocketMQ keys（分片/去重键）；
+ * — 延迟使用 RocketMQ 原生延迟级别（1~18），见 {@link RocketDelayLevels}。
+ * 消费请使用原生 {@code @RocketMQMessageListener}；上下文头由 RocketMQTemplate 写入消息 properties，
+ * 监听参数取 {@code org.apache.rocketmq.common.message.MessageExt} 后可用
+ * {@code MqContextPropagator.restore(ext.getProperties())} 恢复。
  * </p>
  *
  * @author gaoyzelov
@@ -36,137 +37,108 @@ import java.util.concurrent.Executor;
  * @since 1.0.0
  */
 @Slf4j
-public class RocketMqServiceImpl extends DefaultMqServiceImpl {
+public class RocketMqServiceImpl extends AbstractMqService {
 
-    private static final String ROCKETMQ_DELAY_LEVEL_HEADER = "DELAY";
+    /** 默认发送超时（毫秒） */
+    private static final long DEFAULT_SEND_TIMEOUT = 3000L;
 
-    // RocketMQ 延迟级别从 1 开始，索引 0 为占位值
-    private static final long[] DELAY_LEVEL_SECONDS = {
-        0, 1, 5, 10, 30, 60, 120, 180, 240, 300,
-        360, 420, 480, 540, 600, 1200, 1800, 3600, 7200
-    };
+    private final RocketMQTemplate rocketMQTemplate;
 
-    private final ObjectProvider<DefaultMQProducer> batchProducerProvider;
-    private final RocketMqProperties rocketProperties;
-    private volatile DefaultMQProducer batchProducer;
-    private volatile boolean batchProducerLookedUp;
-
-    public RocketMqServiceImpl(StreamBridge streamBridge, MqProperties properties,
-                               Executor mqAsyncExecutor, MqMessageConverter converter,
-                               ObjectProvider<DefaultMQProducer> batchProducerProvider,
-                               RocketMqProperties rocketProperties,
+    public RocketMqServiceImpl(RocketMQTemplate rocketMQTemplate,
+                               Executor mqAsyncExecutor,
+                               MqMessageConverter converter,
                                MqInterceptorRegistry interceptorRegistry,
                                MqContextPropagator contextPropagator) {
-        super(streamBridge, properties, mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
-        this.batchProducerProvider = batchProducerProvider;
-        this.rocketProperties = rocketProperties;
+        super(mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
+        this.rocketMQTemplate = rocketMQTemplate;
+    }
+
+    @Override
+    protected MqSendResult doNativeSend(String topic, String key, byte[] body, Map<String, String> headers) {
+        SendResult sendResult = rocketMQTemplate.syncSend(topic, buildMessage(key, body, headers), DEFAULT_SEND_TIMEOUT);
+        return toResult(sendResult);
     }
 
     @Override
     public <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers) {
-        int delayLevel = mapDurationToDelayLevel(delay);
-        return doSendDelay(topic, key, payload, delay, headers, builder ->
-                builder.setHeader(ROCKETMQ_DELAY_LEVEL_HEADER, delayLevel));
+        validateSendArgs(topic, payload);
+        validateDelay(delay);
+        fireBeforeSend(topic, key, payload);
+        try {
+            byte[] body = converter.serialize(payload);
+            Map<String, String> effectiveHeaders = buildHeaders(key, headers);
+            Message<byte[]> message = buildMessage(key, body, effectiveHeaders);
+            int delayLevel = RocketDelayLevels.map(delay);
+            SendResult sendResult = rocketMQTemplate.syncSend(topic, message, DEFAULT_SEND_TIMEOUT, delayLevel);
+            MqSendResult result = toResult(sendResult);
+            fireAfterSend(topic, result);
+            return result;
+        } catch (RuntimeException e) {
+            fireOnSendError(topic, e);
+            throw e;
+        }
     }
-
-    // ========== 批量发送 ==========
 
     @Override
-    public <T> List<MqSendResult> sendBatch(String topic, List<MqMessage<T>> messages) {
-        if (messages == null || messages.isEmpty()) {
-            return List.of();
-        }
-
-        DefaultMQProducer producer = getBatchProducer();
-        if (producer != null) {
-            return sendBatchWithProducer(topic, messages, producer);
-        }
-
-        // 回退：StreamBridge 循环发送，复用 SCS 管理的 Producer 连接
-        log.debug("DefaultMQProducer 不可用，使用 StreamBridge 循环批量发送");
-        return super.sendBatch(topic, messages);
-    }
-
-    private <T> List<MqSendResult> sendBatchWithProducer(String topic,
-                                                          List<MqMessage<T>> messages,
-                                                          DefaultMQProducer producer) {
-        // 逐条触发 beforeSend 拦截器
-        for (MqMessage<T> mqMsg : messages) {
-            fireBeforeSend(topic, mqMsg.getKey(), mqMsg.getPayload());
-        }
-
-        List<org.apache.rocketmq.common.message.Message> rocketMsgs = new ArrayList<>(messages.size());
-        for (MqMessage<T> mqMsg : messages) {
-            byte[] body = converter.serialize(mqMsg.getPayload());
-            org.apache.rocketmq.common.message.Message rocketMsg =
-                    new org.apache.rocketmq.common.message.Message(topic, body);
-            if (StringUtils.isNotBlank(mqMsg.getKey())) {
-                rocketMsg.setKeys(mqMsg.getKey());
-            }
-            // 注入上下文和自定义头部到 RocketMQ properties
-            Message<byte[]> springMsg = buildMessageFromBytes(mqMsg.getKey(),
-                    body, mqMsg.getHeaders());
-            springMsg.getHeaders().forEach((headerKey, headerValue) ->
-                    rocketMsg.getProperties().put(headerKey,
-                            headerValue != null ? headerValue.toString() : ""));
-            rocketMsgs.add(rocketMsg);
-        }
-
+    public <T> CompletableFuture<MqSendResult> sendAsync(String topic, String key, T payload, Map<String, String> headers) {
+        validateSendArgs(topic, payload);
+        fireBeforeSend(topic, key, payload);
         try {
-            org.apache.rocketmq.client.producer.SendResult result = producer.send(rocketMsgs);
-            log.debug("RocketMQ 批量发送成功: topic={}, count={}, msgId={}",
-                    topic, rocketMsgs.size(), result.getMsgId());
+            byte[] body = converter.serialize(payload);
+            Map<String, String> effectiveHeaders = buildHeaders(key, headers);
+            Message<byte[]> message = buildMessage(key, body, effectiveHeaders);
 
-            // 逐条触发 afterSend 拦截器
-            List<MqSendResult> results = new ArrayList<>(rocketMsgs.size());
-            long timestamp = System.currentTimeMillis();
-            for (int i = 0; i < rocketMsgs.size(); i++) {
-                MqSendResult sendResult = MqSendResult.builder()
-                        .messageId(result.getMsgId())
-                        .topic(topic)
-                        .timestamp(timestamp)
-                        .build();
-                results.add(sendResult);
-                fireAfterSend(topic, sendResult);
-            }
-            return results;
+            CompletableFuture<MqSendResult> future = new CompletableFuture<>();
+            rocketMQTemplate.asyncSend(topic, message, new SendCallback() {
+                @Override
+                public void onSuccess(SendResult sendResult) {
+                    MqSendResult result = toResult(sendResult);
+                    fireAfterSend(topic, result);
+                    future.complete(result);
+                }
 
-        } catch (Exception e) {
-            log.error("RocketMQ 批量发送失败: topic={}, count={}", topic, rocketMsgs.size(), e);
+                @Override
+                public void onException(Throwable throwable) {
+                    fireOnSendError(topic, throwable);
+                    future.completeExceptionally(throwable);
+                }
+            }, DEFAULT_SEND_TIMEOUT);
+            return future;
+        } catch (RuntimeException e) {
             fireOnSendError(topic, e);
-            throw new MqException("mq.send.batch.partial.failed",
-                    new Object[]{topic, 0, rocketMsgs.size()});
+            throw e;
         }
     }
+
+    // ========== 组装与映射 ==========
 
     /**
-     * 懒获取 DefaultMQProducer
-     * <p>优先复用容器中已有的 Bean（如 rocketmq-spring-boot 提供），不存在则为 null 并回退</p>
+     * 构建 spring-messaging Message：payload 为已序列化字节；key 映射 RocketMQ keys；字符串头逐个写入
      */
-    private DefaultMQProducer getBatchProducer() {
-        if (!batchProducerLookedUp) {
-            synchronized (this) {
-                if (!batchProducerLookedUp) {
-                    this.batchProducer = batchProducerProvider.getIfAvailable();
-                    this.batchProducerLookedUp = true;
-                    if (this.batchProducer != null) {
-                        log.info("RocketMQ 批量发送复用已有 Producer: group={}",
-                                this.batchProducer.getProducerGroup());
-                    }
-                }
-            }
+    private Message<byte[]> buildMessage(String key, byte[] body, Map<String, String> headers) {
+        MessageBuilder<byte[]> builder = MessageBuilder.withPayload(body);
+        if (StringUtils.isNotBlank(key)) {
+            builder.setHeader(RocketMQHeaders.KEYS, key);
         }
-        return this.batchProducer;
+        if (headers != null) {
+            headers.forEach((headerKey, value) -> {
+                if (headerKey != null && value != null) {
+                    builder.setHeader(headerKey, value);
+                }
+            });
+        }
+        return builder.build();
     }
 
-    private int mapDurationToDelayLevel(Duration delay) {
-        long seconds = delay.getSeconds();
-        for (int i = 1; i < DELAY_LEVEL_SECONDS.length; i++) {
-            if (seconds <= DELAY_LEVEL_SECONDS[i]) {
-                return i;
-            }
-        }
-        log.warn("延迟时长 {} 超过 RocketMQ 最大延迟级别（2h），将使用级别 18", delay);
-        return 18;
+    private MqSendResult toResult(SendResult sendResult) {
+        org.apache.rocketmq.common.message.MessageQueue queue = sendResult.getMessageQueue();
+        String topic = queue != null ? queue.getTopic() : null;
+        String queueId = queue != null ? String.valueOf(queue.getQueueId()) : null;
+        return MqSendResult.builder()
+                .topic(topic)
+                .messageId(sendResult.getMsgId())
+                .partitionOrQueue(queueId)
+                .timestamp(System.currentTimeMillis())
+                .build();
     }
 }

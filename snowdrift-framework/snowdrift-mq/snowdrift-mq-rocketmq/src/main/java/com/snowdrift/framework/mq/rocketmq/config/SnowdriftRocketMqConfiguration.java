@@ -4,80 +4,57 @@ import com.snowdrift.framework.mq.IMqService;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
 import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
-import com.snowdrift.framework.mq.properties.MqProperties;
+import com.snowdrift.framework.mq.rocketmq.context.MqRocketContainerContextBinder;
+import com.snowdrift.framework.mq.rocketmq.properties.RocketMqProperties;
 import com.snowdrift.framework.mq.rocketmq.service.RocketMqServiceImpl;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.springframework.beans.factory.ObjectProvider;
+import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.cloud.stream.function.StreamBridge;
 import org.springframework.context.annotation.Bean;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.Executor;
 
 /**
- * Snowdrift RocketMQ MQ 自动配置
+ * Snowdrift RocketMQ MQ 自动配置 — 基于原生 rocketmq-spring-boot-starter
+ * <p>
+ * 当 {@code snowdrift.mq.rocketmq.enabled=true} 且 {@link RocketMQTemplate} 在 classpath 时激活，
+ * 复用 starter 自动配置的 {@link RocketMQTemplate}（nameServer 等由 {@code rocketmq.name-server} 提供），
+ * 注册 {@link IMqService} 的 RocketMQ 实现。
+ * </p>
+ * <p><b>兼容性说明</b>：rocketmq-spring-boot-starter 2.3.5 面向 Boot2.7/Spring5.3 构建，
+ * 在 Boot3.5 下可编译与自动发现（有 AutoConfiguration.imports、无 jakarta/javax 硬引用），
+ * 但运行时兼容需真实 broker 联调验证。</p>
  *
  * @author gaoyzelov
  * @date 2026/6/20
  * @since 1.0.0
  */
 @Slf4j
-@AutoConfiguration
+@AutoConfiguration(afterName = "org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration")
 @EnableConfigurationProperties(RocketMqProperties.class)
 @ConditionalOnProperty(prefix = "snowdrift.mq.rocketmq", name = "enabled", havingValue = "true")
-@ConditionalOnClass(name = "com.alibaba.cloud.stream.binder.rocketmq.config.RocketMQBinderConfiguration")
+@ConditionalOnClass(RocketMQTemplate.class)
 public class SnowdriftRocketMqConfiguration {
-
-    private static final String SCS_ROCKETMQ_BINDER_PREFIX = "spring.cloud.stream.rocketmq.binder.";
 
     @Bean
     @ConditionalOnMissingBean(IMqService.class)
-    public RocketMqServiceImpl rocketMqTemplate(StreamBridge streamBridge, MqProperties mqProperties,
-                                                Executor mqAsyncExecutor, MqMessageConverter converter,
-                                                RocketMqProperties rocketProperties,
-                                                ObjectProvider<DefaultMQProducer> batchProducerProvider,
-                                                ConfigurableEnvironment env,
-                                                MqInterceptorRegistry interceptorRegistry,
-                                                MqContextPropagator contextPropagator) {
-        mapRocketMqProperties(rocketProperties, env);
-        log.info("Snowdrift RocketMQ MQ 模板已注册，拦截器数量: {}", interceptorRegistry.getInterceptors().size());
-        return new RocketMqServiceImpl(streamBridge, mqProperties, mqAsyncExecutor, converter,
-                batchProducerProvider, rocketProperties, interceptorRegistry, contextPropagator);
+    public RocketMqServiceImpl rocketMqService(RocketMQTemplate rocketMQTemplate,
+                                               Executor mqAsyncExecutor,
+                                               MqMessageConverter converter,
+                                               MqInterceptorRegistry interceptorRegistry,
+                                               MqContextPropagator contextPropagator) {
+        return new RocketMqServiceImpl(rocketMQTemplate, mqAsyncExecutor,
+                converter, interceptorRegistry, contextPropagator);
     }
 
-    private void mapRocketMqProperties(RocketMqProperties props, ConfigurableEnvironment env) {
-        Map<String, Object> mapped = new HashMap<>();
-        if (StringUtils.isNotBlank(props.getNameServer())) {
-            setIfAbsent(mapped, env, SCS_ROCKETMQ_BINDER_PREFIX + "name-server",
-                    props.getNameServer());
-        }
-        if (StringUtils.isNotBlank(props.getProducerGroup())) {
-            setIfAbsent(mapped, env, SCS_ROCKETMQ_BINDER_PREFIX + "producer.group",
-                    props.getProducerGroup());
-        }
-        if (StringUtils.isNotBlank(props.getConsumerGroup())) {
-            setIfAbsent(mapped, env, SCS_ROCKETMQ_BINDER_PREFIX + "consumer.group",
-                    props.getConsumerGroup());
-        }
-        if (!mapped.isEmpty()) {
-            env.getPropertySources().addFirst(new MapPropertySource("snowdrift-mq-rocketmq", mapped));
-        }
-    }
+    // ========== 消费上下文自动恢复（原生 @RocketMQMessageListener 容器级） ==========
 
-    private static void setIfAbsent(Map<String, Object> map, ConfigurableEnvironment env,
-                                     String key, String value) {
-        if (env.getProperty(key) == null) {
-            map.put(key, value);
-        }
+    @Bean
+    public MqRocketContainerContextBinder mqRocketContainerContextBinder(MqContextPropagator contextPropagator) {
+        return new MqRocketContainerContextBinder(contextPropagator);
     }
 }
