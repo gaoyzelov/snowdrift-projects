@@ -22,8 +22,7 @@ import java.util.concurrent.TimeUnit;
  * // SpEL 表达式：动态 key
  * &#064;DistributedLock(key = "'order:pay:' + #orderId", waitTime = 3, leaseTime = 10)
  *
- * // 自定义失败消息（支持 i18n key）
- * &#064;DistributedLock(key = "#id", message = "cache.lock.failed")
+ * // 自定义失败消息
  * &#064;DistributedLock(key = "#id", message = "订单处理中，请稍后重试")
  * </pre>
  *
@@ -42,13 +41,8 @@ public @interface DistributedLock {
 
     /**
      * 获取锁失败时的提示信息
-     * <p>
-     * 支持国际化 key（如 {@code "cache.lock.failed"}）或直接文本（如 {@code "订单处理中"}），
-     * 最终由全局异常拦截器通过 I18nUtil 统一解析：
-     * 能匹配到 i18n 资源时返回对应语言的消息，匹配不到时直接返回原文。
-     * </p>
      */
-    String message() default "cache.lock.failed";
+    String message() default "请求过于频繁，请稍后重试！";
 
     /**
      * 获取锁失败时的提示信息参数（配合 message i18n key 使用）

@@ -28,6 +28,17 @@ public interface ICacheService {
     <T> T get(String key, Class<T> type);
 
     /**
+     * 获取 Hash 中的单个字段
+     *
+     * @param key     Hash 键
+     * @param hashKey Hash 字段名
+     * @param type    返回值类型
+     * @param <T>     泛型
+     * @return 缓存值，不存在返回 null
+     */
+    <T> T hget(String key, String hashKey, Class<T> type);
+
+    /**
      * 设置缓存
      *
      * @param key   缓存键
@@ -44,6 +55,16 @@ public interface ICacheService {
      * @param ttl   过期时间，null 表示使用全局默认 TTL
      */
     void put(String key, Object value, Duration ttl);
+
+    /**
+     * 设置 Hash 中的单个字段
+     *
+     * @param key     Hash 键
+     * @param hashKey Hash 字段名
+     * @param value   缓存值
+     */
+    void hput(String key, String hashKey, Object value);
+
 
     /**
      * 仅当 key 不存在时设置缓存
@@ -71,6 +92,14 @@ public interface ICacheService {
      * @return true=删除成功
      */
     boolean delete(String key);
+
+    /**
+     * 删除 Hash 中的单个字段
+     *
+     * @param key     Hash 键
+     * @param hashKey Hash 字段名
+     */
+    void hdelete(String key, String hashKey);
 
     /**
      * 批量删除缓存
@@ -104,4 +133,15 @@ public interface ICacheService {
      * @return 剩余秒数，-1 表示永不过期，-2 表示 key 不存在
      */
     long getExpire(String key);
+
+
+    /**
+     * 原子自增并刷新过期时间（Lua INCR+EXPIRE 单次往返原子执行）
+     * <p>适用于限流计数、失败次数统计等场景；每次调用都会刷新 TTL，形成滚动窗口</p>
+     *
+     * @param key 缓存键
+     * @param ttl 过期时间（每次自增后刷新），null 表示使用全局默认 TTL
+     * @return 自增后的值，key 不存在时从 0 开始计为 1
+     */
+    long increment(String key, Duration ttl);
 }

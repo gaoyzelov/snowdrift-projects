@@ -3,8 +3,8 @@ package com.snowdrift.framework.cache.caffeine.config;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.caffeine.service.SnowdriftCaffeineCacheServiceImpl;
-import com.snowdrift.framework.cache.config.SnowdriftCacheProperties;
-import com.snowdrift.framework.cache.serialize.CacheSerializer;
+import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
+import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
@@ -50,7 +50,7 @@ public class SnowdriftCaffeineConfiguration {
     }
 
     @Bean
-    public ICacheService caffeineCacheService(CacheSerializer serializer) {
+    public ICacheService caffeineCacheService(ICacheSerializer serializer) {
         return new SnowdriftCaffeineCacheServiceImpl(properties, serializer);
     }
 }

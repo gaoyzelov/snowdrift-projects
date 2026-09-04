@@ -3,8 +3,8 @@ package com.snowdrift.framework.cache.caffeine.service;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.snowdrift.framework.cache.AbstractCacheService;
-import com.snowdrift.framework.cache.config.SnowdriftCacheProperties;
-import com.snowdrift.framework.cache.serialize.CacheSerializer;
+import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
+import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -26,7 +26,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     private final Cache<String, String> cache;
 
-    public SnowdriftCaffeineCacheServiceImpl(SnowdriftCacheProperties properties, CacheSerializer serializer) {
+    public SnowdriftCaffeineCacheServiceImpl(SnowdriftCacheProperties properties, ICacheSerializer serializer) {
         super(properties, serializer);
         this.cache = Caffeine.newBuilder()
                 .maximumSize(properties.getMaxSize())
@@ -42,17 +42,23 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     @Override
+    protected String doHget(String key, String hashKey) {
+        throw new UnsupportedOperationException("Caffeine 不支持hget 操作");
+    }
+
+    @Override
     public void doPut(String key, String value) {
         cache.put(key, value);
     }
 
-    /**
-     * Caffeine 不支持 per-key TTL，静默降级为全局默认 TTL
-     */
+    @Override
+    protected void doHput(String key, String hashKey, String value) {
+        throw new UnsupportedOperationException("Caffeine 不支持hput 操作");
+    }
+
     @Override
     public void doPut(String key, String value, Duration ttl) {
-        log.warn("Caffeine 不支持 per-key TTL，已降级为全局默认 TTL: key={}", key);
-        doPut(key, value);
+        throw new UnsupportedOperationException("Caffeine 不支持 per-key TTL");
     }
 
     @Override
@@ -61,18 +67,19 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
         return existing == null;
     }
 
-    /**
-     * Caffeine 不支持 per-key TTL，静默降级为全局默认 TTL
-     */
     @Override
     public boolean doPutIfAbsent(String key, String value, Duration ttl) {
-        log.warn("Caffeine 不支持 per-key TTL，已降级为全局默认 TTL: key={}", key);
-        return doPutIfAbsent(key, value);
+        throw new UnsupportedOperationException("Caffeine 不支持 per-key TTL");
     }
 
     @Override
     public boolean doDelete(String key) {
         return cache.asMap().remove(key) != null;
+    }
+
+    @Override
+    protected boolean doHdelete(String key, String hashKey) {
+        throw new UnsupportedOperationException("Caffeine 不支持hdelete 操作");
     }
 
     @Override
@@ -96,8 +103,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
      */
     @Override
     public boolean doExpire(String key, Duration ttl) {
-        log.warn("Caffeine 不支持 per-key TTL 修改，操作已忽略: key={}", key);
-        return false;
+        throw new UnsupportedOperationException("Caffeine 不支持 per-key TTL");
     }
 
     /**
@@ -105,7 +111,11 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
      */
     @Override
     public long doGetExpire(String key) {
-        log.debug("Caffeine 不支持查询 per-key TTL: key={}", key);
-        return -2;
+        throw new UnsupportedOperationException("Caffeine 不支持查询 per-key TTL");
+    }
+
+    @Override
+    protected long doIncrement(String key, Duration ttl) {
+        throw new UnsupportedOperationException("Caffeine 不支持 increment 操作");
     }
 }

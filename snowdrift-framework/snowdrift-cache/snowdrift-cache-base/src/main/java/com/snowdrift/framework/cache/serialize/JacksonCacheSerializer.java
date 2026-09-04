@@ -1,10 +1,11 @@
 package com.snowdrift.framework.cache.serialize;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
 /**
@@ -27,7 +28,7 @@ public class JacksonCacheSerializer extends AbstractCacheSerializer {
     private final ObjectMapper objectMapper;
 
     public JacksonCacheSerializer() {
-        this.objectMapper = createObjectMapper();
+        this.objectMapper = defaultMapper();
     }
 
     @Override
@@ -40,12 +41,22 @@ public class JacksonCacheSerializer extends AbstractCacheSerializer {
         return objectMapper.readValue(json, type);
     }
 
-    private static ObjectMapper createObjectMapper() {
+    public static ObjectMapper defaultMapper() {
         ObjectMapper om = new ObjectMapper();
+        // 所有访问权限字段均可序列化（private也可以）
         om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // 反序列化遇到实体不存在字段不抛异常
+        om.configure(com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // 关闭日期输出时间戳，输出ISO字符串
         om.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        // 注册JavaTimeModule，支持LocalDateTime/LocalDate等java.time类
         om.registerModule(new JavaTimeModule());
+        // 开启类型写入，解决Redis反序列化变成LinkedHashMap问题
+        om.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
         return om;
     }
 }

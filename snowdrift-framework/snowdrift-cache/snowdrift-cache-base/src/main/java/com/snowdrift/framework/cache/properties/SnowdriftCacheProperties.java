@@ -1,6 +1,6 @@
-package com.snowdrift.framework.cache.config;
+package com.snowdrift.framework.cache.properties;
 
-import com.snowdrift.framework.cache.enums.SerializerType;
+import com.snowdrift.framework.cache.SerializerType;
 import org.springframework.validation.annotation.Validated;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;

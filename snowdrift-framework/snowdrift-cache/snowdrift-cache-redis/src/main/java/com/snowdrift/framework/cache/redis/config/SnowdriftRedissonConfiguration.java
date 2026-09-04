@@ -1,12 +1,10 @@
-package com.snowdrift.framework.cache.redisson.config;
+package com.snowdrift.framework.cache.redis.config;
 
-import com.snowdrift.framework.cache.IDistributedLockService;
-import com.snowdrift.framework.cache.ICacheService;
-import com.snowdrift.framework.cache.config.SnowdriftCacheProperties;
-import com.snowdrift.framework.cache.redisson.service.SnowdriftRedissonCacheServiceImpl;
-import com.snowdrift.framework.cache.redisson.service.SnowdriftRedissonLockServiceImpl;
-import com.snowdrift.framework.cache.serialize.CacheSerializer;
 import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.cache.IDistributedLockService;
+import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
+import com.snowdrift.framework.cache.redis.service.SnowdriftRedissonDistributedLockServiceImpl;
+import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import jakarta.annotation.PreDestroy;
 import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
@@ -25,14 +23,14 @@ import java.util.List;
  * <p>
  * 直接从 {@link RedisProperties}（兼容 {@code spring.data.redis.*}）构建 {@link RedissonClient}，
  * 支持单节点、哨兵和集群模式。使用 {@link StringCodec} 存储 JSON 字符串，
- * 序列化由 {@link CacheSerializer} 统一处理。
+ * 序列化由 {@link ICacheSerializer} 统一处理。
  * </p>
  *
  * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */
-@AutoConfiguration(beforeName = "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration")
+@AutoConfiguration(before = SnowdriftRedisConfiguration.class)
 @ConditionalOnClass(RedissonClient.class)
 public class SnowdriftRedissonConfiguration {
 
@@ -171,15 +169,9 @@ public class SnowdriftRedissonConfiguration {
     }
 
     @Bean
-    @ConditionalOnMissingBean(ICacheService.class)
-    public ICacheService redissonCacheService(CacheSerializer serializer, RedissonClient redissonClient) {
-        return new SnowdriftRedissonCacheServiceImpl(properties, serializer, redissonClient);
-    }
-
-    @Bean
     @ConditionalOnMissingBean(IDistributedLockService.class)
     public IDistributedLockService distributedLockService(RedissonClient redissonClient) {
-        return new SnowdriftRedissonLockServiceImpl(redissonClient);
+        return new SnowdriftRedissonDistributedLockServiceImpl(redissonClient);
     }
 
 }

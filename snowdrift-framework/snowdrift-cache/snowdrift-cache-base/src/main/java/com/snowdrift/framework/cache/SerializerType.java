@@ -1,4 +1,4 @@
-package com.snowdrift.framework.cache.enums;
+package com.snowdrift.framework.cache;
 
 /**
  * 缓存序列化器类型枚举

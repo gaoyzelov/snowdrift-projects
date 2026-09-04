@@ -10,7 +10,7 @@ import com.snowdrift.framework.base.exception.BizException;
  * @description 缓存序列化器模板类，统一处理 null-guard 和异常包装
  * @since 1.0.0
  */
-public abstract class AbstractCacheSerializer implements CacheSerializer {
+public abstract class AbstractCacheSerializer implements ICacheSerializer {
 
     @Override
     public String serialize(Object value) {
@@ -20,7 +20,7 @@ public abstract class AbstractCacheSerializer implements CacheSerializer {
         try {
             return doSerialize(value);
         } catch (Exception e) {
-            throw new BizException("cache.serialize.failed", e);
+            throw new BizException("缓存序列化失败");
         }
     }
 
@@ -32,7 +32,7 @@ public abstract class AbstractCacheSerializer implements CacheSerializer {
         try {
             return doDeserialize(json, type);
         } catch (Exception e) {
-            throw new BizException("cache.deserialize.failed", e);
+            throw new BizException("缓存反序列化失败");
         }
     }
 

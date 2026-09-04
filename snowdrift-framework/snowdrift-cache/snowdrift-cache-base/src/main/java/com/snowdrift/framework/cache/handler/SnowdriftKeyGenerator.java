@@ -2,7 +2,6 @@ package com.snowdrift.framework.cache.handler;
 
 import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.base.util.EncryptUtil;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.cache.interceptor.KeyGenerator;
 
 import java.lang.reflect.Method;
@@ -39,30 +38,15 @@ public class SnowdriftKeyGenerator implements KeyGenerator {
      */
     private static final int MAX_PARAM_LENGTH = 64;
 
-    /**
-     * key 全局前缀，可为空
-     */
-    private final String keyPrefix;
-
-    public SnowdriftKeyGenerator(String keyPrefix) {
-        this.keyPrefix = keyPrefix;
-    }
-
     @Override
     public Object generate(Object target, Method method, Object... params) {
         StringBuilder sb = new StringBuilder();
-
-        // 1. 前缀
-        if (StringUtils.isNotBlank(keyPrefix)) {
-            sb.append(keyPrefix).append(StrConst.COLON);
-        }
-
-        // 2. 类名#方法名
+        // 1. 类名#方法名
         sb.append(method.getDeclaringClass().getSimpleName())
           .append(StrConst.HASH)
           .append(method.getName());
 
-        // 3. 参数
+        // 2. 参数
         if (params.length > 0) {
             sb.append(StrConst.COLON);
             StringJoiner joiner = new StringJoiner(StrConst.COLON);

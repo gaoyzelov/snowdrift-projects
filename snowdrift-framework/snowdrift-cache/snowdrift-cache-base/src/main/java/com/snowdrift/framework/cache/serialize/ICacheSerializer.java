@@ -22,7 +22,7 @@ package com.snowdrift.framework.cache.serialize;
  * @date 2026/7/19
  * @since 1.0.0
  */
-public interface CacheSerializer {
+public interface ICacheSerializer {
 
     /**
      * 序列化为 JSON 字符串

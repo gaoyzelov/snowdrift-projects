@@ -1,4 +1,4 @@
-package com.snowdrift.framework.cache.redisson.service;
+package com.snowdrift.framework.cache.redis.service;
 
 import com.snowdrift.framework.cache.IDistributedLockService;
 import com.snowdrift.framework.base.exception.BizException;
@@ -18,11 +18,11 @@ import java.util.function.Supplier;
  * @since 1.0.0
  */
 @Slf4j
-public class SnowdriftRedissonLockServiceImpl implements IDistributedLockService {
+public class SnowdriftRedissonDistributedLockServiceImpl implements IDistributedLockService {
 
     private final RedissonClient redissonClient;
 
-    public SnowdriftRedissonLockServiceImpl(RedissonClient redissonClient) {
+    public SnowdriftRedissonDistributedLockServiceImpl(RedissonClient redissonClient) {
         this.redissonClient = redissonClient;
     }
 

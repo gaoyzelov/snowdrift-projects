@@ -4,10 +4,11 @@ import com.snowdrift.framework.cache.IDistributedLockService;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.aspect.DistributedLockAspect;
 import com.snowdrift.framework.cache.aspect.RepeatSubmitAspect;
-import com.snowdrift.framework.cache.enums.SerializerType;
+import com.snowdrift.framework.cache.SerializerType;
 import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
 import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
-import com.snowdrift.framework.cache.serialize.CacheSerializer;
+import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
+import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import com.snowdrift.framework.cache.serialize.FastJson2CacheSerializer;
 import com.snowdrift.framework.cache.serialize.JacksonCacheSerializer;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +25,7 @@ import org.springframework.context.annotation.Bean;
 /**
  * 缓存核心自动配置
  * <p>
- * 启用 {@link SnowdriftCacheProperties} 配置绑定，注册 AOP 切面和 {@link CacheSerializer} Bean。
+ * 启用 {@link SnowdriftCacheProperties} 配置绑定，注册 AOP 切面和 {@link ICacheSerializer} Bean。
  * 具体的 {@link ICacheService} 实现由各后端子模块提供，
  * 按类路径自动检测：Redisson → Redis（Lettuce/Jedis）→ Caffeine。
  * </p>
@@ -50,12 +51,12 @@ public class SnowdriftCacheConfiguration implements CachingConfigurer {
      * <p>
      * 根据 {@code snowdrift.cache.serializer} 配置选择实现：
      * {@code jackson}（默认）或 {@code fastjson2}。
-     * 消费者可注册自定义 {@link CacheSerializer} Bean 完全替换。
+     * 消费者可注册自定义 {@link ICacheSerializer} Bean 完全替换。
      * </p>
      */
     @Bean
-    @ConditionalOnMissingBean(CacheSerializer.class)
-    public CacheSerializer cacheSerializer() {
+    @ConditionalOnMissingBean(ICacheSerializer.class)
+    public ICacheSerializer cacheSerializer() {
         SerializerType type = properties.getSerializer();
         if (type == SerializerType.FASTJSON2) {
             log.info("缓存序列化器: Fastjson2");
@@ -78,7 +79,7 @@ public class SnowdriftCacheConfiguration implements CachingConfigurer {
      */
     @Override
     public KeyGenerator keyGenerator() {
-        return new SnowdriftKeyGenerator(properties.getKeyPrefix());
+        return new SnowdriftKeyGenerator();
     }
 
     /**

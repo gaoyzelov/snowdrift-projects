@@ -48,12 +48,8 @@ public @interface RepeatSubmit {
 
     /**
      * 重复提交时的提示信息
-     * <p>
-     * 支持国际化 key（如 {@code "cache.repeat.submit"}）或直接文本，
-     * 最终由全局异常拦截器通过 I18nUtil 统一解析。
-     * </p>
      */
-    String message() default "cache.repeat.submit";
+    String message() default "请求过于频繁，请稍后重试！";
 
     /**
      * 提示信息参数（配合 message i18n key 使用）

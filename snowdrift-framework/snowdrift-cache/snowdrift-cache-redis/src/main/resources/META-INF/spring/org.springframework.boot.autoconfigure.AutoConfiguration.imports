@@ -1,1 +1,2 @@
 com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration
+com.snowdrift.framework.cache.redis.config.SnowdriftRedissonConfiguration
