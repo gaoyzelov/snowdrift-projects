@@ -21,7 +21,7 @@ public class HttpContextHolder {
      * @param context Http请求上下文
      */
     public static void setContext(HttpContext context) {
-        AssertUtil.notNull(context,"http.context.null");
+        AssertUtil.notNull(context,"HTTP上下文不能为空");
         HTTP_CONTEXT_HOLDER.set(context);
     }
 

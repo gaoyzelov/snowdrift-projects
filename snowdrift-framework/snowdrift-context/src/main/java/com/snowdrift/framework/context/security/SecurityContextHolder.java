@@ -1,7 +1,6 @@
 package com.snowdrift.framework.context.security;
 
 import com.alibaba.ttl.TransmittableThreadLocal;
-import com.snowdrift.framework.base.enums.DataScopeEnum;
 import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.base.util.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -26,7 +25,7 @@ public class SecurityContextHolder {
      * @param context 安全上下文
      */
     public static void setContext(SecurityContext context) {
-        AssertUtil.notNull(context, "security.context.null");
+        AssertUtil.notNull(context, "安全上下文不能为空");
         SECURITY_CONTEXT_HOLDER.set(context);
     }
 
@@ -38,7 +37,7 @@ public class SecurityContextHolder {
     public static SecurityContext getContext() {
         SecurityContext ctx = SECURITY_CONTEXT_HOLDER.get();
         if (Objects.isNull(ctx)) {
-            throw new BizException("security.context.null");
+            throw new BizException("未获取到安全上下文信息");
         }
         return ctx;
     }
@@ -107,14 +106,5 @@ public class SecurityContextHolder {
      */
     public static Long getDeptId() {
         return getContext().getDeptId();
-    }
-
-    /**
-     * 获取数据范围
-     *
-     * @return 数据范围，未登录时抛出 BizException
-     */
-    public static DataScopeEnum getDataScope() {
-        return DataScopeEnum.of(getContext().getDataScope());
     }
 }

@@ -50,12 +50,6 @@ public class SecurityContext implements Serializable {
      */
     private Long deptId;
 
-    // =================== 数据信息 ========================
-    /**
-     * 数据权限
-     */
-    private Integer dataScope;
-
     // ========== 授权信息（RBAC）==========
     /**
      * 角色Key列表
