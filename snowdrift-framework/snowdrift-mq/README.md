@@ -1,66 +1,83 @@
 # snowdrift-mq
 
-基于 Spring Cloud Stream 的统一消息队列模块，提供 Kafka / RocketMQ / RabbitMQ 的自动配置和通用抽象。
+基于**各 broker 原生客户端**（spring-kafka / Spring AMQP / rocketmq-spring）的统一消息队列模块，提供 Kafka / RocketMQ / RabbitMQ 的自动配置与通用发送门面。
+
+设计要点：
+
+- **发送统一**：`IMqService` 屏蔽三种 MQ 差异（同步 / 异步 / 延迟 / 批量），由各实现模块用原生客户端实现；
+- **消费原生**：不提供统一监听注解，直接使用各 broker 原生注解（`@KafkaListener` / `@RabbitListener` / `@RocketMQMessageListener`）；框架以**容器级钩子**自动恢复/清理上下文（见「上下文传播」）；
+- **无 Spring Cloud Stream**：不再依赖 StreamBridge / SCS binder。
 
 ## 模块结构
 
 ```
 snowdrift-mq
-├── snowdrift-mq-base        ← 通用层：IMqService、@MqListener、SPI、上下文传播
-├── snowdrift-mq-kafka       ← Kafka binder 自动配置
-├── snowdrift-mq-rocketmq    ← RocketMQ binder 自动配置
-└── snowdrift-mq-rabbitmq    ← RabbitMQ binder 自动配置
+├── snowdrift-mq-base        ← 通用层：IMqService、序列化、拦截器、上下文传播、参数校验
+├── snowdrift-mq-kafka       ← 原生 spring-kafka 自动配置
+├── snowdrift-mq-rabbitmq    ← 原生 Spring AMQP（spring-boot-starter-amqp）自动配置
+└── snowdrift-mq-rocketmq    ← 原生 rocketmq-spring-boot-starter 自动配置
 ```
 
 ## 快速开始
 
-按需引入一个 MQ binder 即可，核心 API（`snowdrift-mq-base`）会作为传递依赖自动引入。
+按需引入**一个**实现模块即可，`snowdrift-mq-base` 会作为传递依赖自动引入：
 
 ```xml
 <dependency>
     <groupId>com.snowdrift</groupId>
     <artifactId>snowdrift-mq-kafka</artifactId>
 </dependency>
-<!-- 或 mq-rocketmq / mq-rabbitmq -->
+<!-- 或 snowdrift-mq-rabbitmq / snowdrift-mq-rocketmq（同一时间只启用一种） -->
 ```
 
 ## 配置
 
+基础开关默认开启，各实现模块需显式 `enabled=true` 才会装配 `IMqService` 与上下文钩子；**broker 连接参数直接用该 broker 自己的 Spring Boot 配置**，不再二次封装。
+
 ```yaml
 snowdrift:
   mq:
-    enabled: true               # 默认 true
+    # 基础开关，默认 true（依赖 base 时保持开启）
+    # enabled: true
+    # sign: false            # 是否启用消息 HMAC-SHA256 签名
+    # sign-key: xxx          # sign=true 时必填，否则启动失败
     executor:
-      core-size: 4              # 异步发送线程池
+      core-size: 4           # 异步发送线程池
       max-size: 8
       queue-capacity: 100
 
-    # Kafka
+    # 启用 Kafka（连接用 spring.kafka.*）
     kafka:
       enabled: true
-      bootstrap-servers: localhost:9092
-      acks: 1
-      compression-type: none
 
-    # RocketMQ
-    rocketmq:
-      enabled: false
-      name-server: localhost:9876
-      producer-group: snowdrift-producer
-
-    # RabbitMQ
+    # 启用 RabbitMQ（连接用 spring.rabbitmq.*）
     rabbitmq:
       enabled: false
-      addresses: localhost:5672
-      virtual-host: /
-      delay-plugin-enabled: false  # 是否启用 x-delay 插件
+      delay-plugin-enabled: false   # 是否启用 delayed-message-exchange 插件
+
+    # 启用 RocketMQ（连接用 rocketmq.name-server / rocketmq.producer.group）
+    rocketmq:
+      enabled: false
 ```
 
-> `snowdrift.mq.*` 属性会自动映射到 `spring.cloud.stream.*`，仅当用户未显式配置 SCS 属性时才生效。直接用 SCS 原生配置也可。
+```yaml
+# broker 原生连接配置示例（Kafka）
+spring:
+  kafka:
+    bootstrap-servers: localhost:9092
+
+# RabbitMQ
+# spring.rabbitmq.host/port/username/password
+# RocketMQ（rocketmq-spring-boot-starter 前缀）
+# rocketmq.name-server: localhost:9876
+# rocketmq.producer.group: snowdrift-producer
+```
+
+> 同一时间只允许启用一种实现模块；若同时把 `kafka`/`rabbitmq`/`rocketmq` 置为 `enabled=true`，启动将失败（`MqBinderActivationGuard`）。
 
 ## 消息发送
 
-注入 `IMqService` 即可使用：
+注入 `IMqService` 即可：
 
 ```java
 @Autowired
@@ -69,138 +86,79 @@ private IMqService mqService;
 // 1. 同步发送
 mqService.send("order-paid", orderEvent);
 
-// 2. 带 Key 发送（用于分区 / 分片路由）
+// 2. 带 Key 发送（Kafka 分区键 / RocketMQ 分片键）
 mqService.send("order-paid", "order-123", orderEvent);
 
 // 3. 带自定义 Header
-Map<String, String> headers = Map.of("x-trace-id", traceId);
-mqService.send("order-paid", "order-123", orderEvent, headers);
+mqService.send("order-paid", "order-123", orderEvent, Map.of("biz", "pay"));
 
 // 4. 异步发送
 CompletableFuture<MqSendResult> future = mqService.sendAsync("order-paid", orderEvent);
-future.thenAccept(result -> log.info("发送完成: {}", result.getTopic()));
 
-// 5. 批量发送
+// 5. 批量发送（逐条，非原子；失败抛出 MqException）
 List<MqMessage<OrderEvent>> batch = List.of(
     MqMessage.<OrderEvent>builder().payload(event1).key("1").build(),
-    MqMessage.<OrderEvent>builder().payload(event2).key("2").build()
-);
+    MqMessage.<OrderEvent>builder().payload(event2).key("2").build());
 List<MqSendResult> results = mqService.sendBatch("order-topic", batch);
 ```
 
+`IMqService` 的少参数版本均为接口 `default` 便捷委托，最终落到「全参数」抽象方法；`sendBatch` 默认逐条调用 `send`。
+
+### 各 broker 语义与元数据
+
+| 能力 | Kafka | RabbitMQ | RocketMQ |
+|------|-------|----------|----------|
+| `topic` | topic | **exchange** | topic（可用 `RocketMQHeaders.TAGS` 或 `topic:tag` 追加 tag） |
+| `key` | 分区键 | routing key（缺省 `""`） | RocketMQ keys（分片/去重键） |
+| `messageId` | `topic-partition-offset` | 自生成 UUID | `SendResult.msgId` |
+| `partitionOrQueue` | partition | 无（null） | queueId |
+| `sendAsync` | 原生异步 | 基类 executor 包装 | 原生回调 |
+
 ### 延迟消息
 
+| MQ | 行为 |
+|----|------|
+| RocketMQ | 原生延迟级别（1~18），`Duration` 就近向上映射（见 `RocketDelayLevels`），超 2h 钳制到 18 |
+| RabbitMQ | 依赖 delayed-message-exchange 插件：需 `delay-plugin-enabled=true` 且发送目标 exchange 为 delayed-exchange；否则抛 `UnsupportedOperationException` |
+| Kafka | 无原生延迟能力，抛 `UnsupportedOperationException` |
+
 ```java
-// 30 秒后投递
 mqService.sendDelay("order-timeout", orderEvent, Duration.ofSeconds(30));
 ```
 
-| MQ | 实现方式 | 说明 |
-|----|---------|------|
-| RocketMQ | 原生延迟级别 1-18 | Duration 自动映射到最近的上限级别 |
-| RabbitMQ | x-delay 插件 或 x-message-ttl + DLX | 按 `delay-plugin-enabled` 选择策略 |
-| Kafka | 降级为即时发送 | 输出 WARN 日志 |
+## 消息消费（原生注解）
 
-## 消息消费
+框架**不提供**统一监听注解，请按 broker 使用各自原生监听注解；业务方法内无需任何上下文样板代码（框架在容器级自动恢复/清理）。
 
 ```java
+// Kafka
 @Component
-public class OrderEventListener {
+public class OrderKafkaListener {
+    @KafkaListener(topics = "order-paid", groupId = "order-service")
+    public void onOrderPaid(OrderPaidEvent event) { /* ... */ }
+}
 
-    @MqListener(topic = "order-paid", group = "order-service")
-    public void onOrderPaid(OrderPaidEvent event) {
-        // SecurityContext.getUserId() / getTenantId() 自动恢复为发送方的值
-        orderService.process(event);
-    }
+// RabbitMQ：topic 为 exchange 时，监听的是绑定到该 exchange 的 queue
+@Component
+public class OrderRabbitListener {
+    @RabbitListener(queues = "order-paid-queue")
+    public void onOrderPaid(OrderPaidEvent event) { /* ... */ }
+}
 
-    @MqListener(topic = "order-cancel", group = "order-service", maxRetry = 5, concurrency = 3)
-    public void onOrderCancel(OrderCancelEvent event) {
-        orderService.cancel(event);
-    }
+// RocketMQ
+@Component
+@RocketMQMessageListener(consumerGroup = "order-service", topic = "order-paid", selectorExpression = "PAID")
+public class OrderRocketListener implements RocketMQListener<OrderPaidEvent> {
+    @Override
+    public void onMessage(OrderPaidEvent event) { /* ... */ }
 }
 ```
 
-| 属性 | 默认值 | 说明 |
-|------|--------|------|
-| `topic` | — | 监听的 destination |
-| `group` | `""` | 消费组名（Kafka / RocketMQ 生效） |
-| `maxRetry` | `3` | 最大重试次数，0=不重试 |
-| `concurrency` | `1` | 消费线程并发数 |
-
-> `@MqListener` 方法由框架自动包装为 Spring Cloud Stream Consumer Bean，无需手动配置 binding。
-
-## 序列化切换
-
-默认 FastJson2，切换为 Jackson：
-
-```java
-@Component
-public class JacksonMqMessageConverter implements MqMessageConverter {
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
-
-    @Override
-    public byte[] serialize(Object payload) {
-        return MAPPER.writeValueAsBytes(payload);
-    }
-
-    @Override
-    public <T> T deserialize(byte[] data, Class<T> targetType) {
-        return MAPPER.readValue(data, targetType);
-    }
-}
-```
-
-注册同名 Bean 即可全局覆盖。
-
-## 拦截器链
-
-### 基本用法
-
-```java
-@Component
-public class MessageAuditInterceptor implements MqSendInterceptor {
-
-    @Override
-    public int getPriority() {
-        return 100; // 越大越先执行，建议分段：加密 200、审计 100、通知 0
-    }
-
-    @Override
-    public void beforeSend(String topic, String key, Object payload) {
-        log.info("发送前审计: topic={}, payload={}", topic, payload);
-    }
-
-    @Override
-    public void afterSend(String topic, MqSendResult result) {
-        log.info("发送后审计: topic={}, result={}", topic, result);
-    }
-
-    @Override
-    public void onSendError(String topic, Throwable ex) {
-        log.error("发送失败审计: topic={}", topic, ex);
-    }
-}
-```
-
-实现 `MqSendInterceptor` 接口并注册为 Spring Bean 即可自动生效。
-
-### 运行时动态管理
-
-```java
-@Autowired
-private MqInterceptorRegistry registry;
-
-// 热添加
-registry.register(new CustomInterceptor());
-
-// 热移除
-registry.unregister(someInterceptor);
-```
+> Payload 反序列化：发送端将消息体序列化为 JSON 字节；消费端可用 broker 的 deserializer 还原，或监听方法接收原始类型后借助 `MqMessageConverter` 转换。RocketMQ 如需取原始属性（如恢复上下文的手动用法），监听参数可用 `MessageExt`。
 
 ## 上下文传播
 
-Producer 端发送时，以下上下文自动注入消息头，Consumer 端 `@MqListener` 方法执行前自动恢复：
+Producer 发送时自动写入以下消息头（broker 无关的 `x-snowdrift-*` 约定），Consumer 端由框架钩子**自动恢复并在调用结束后清理**，签名校验失败则拒绝消费该消息：
 
 | 传播内容 | Header Key | 来源 |
 |---------|-----------|------|
@@ -210,19 +168,82 @@ Producer 端发送时，以下上下文自动注入消息头，Consumer 端 `@Mq
 | 登录账号 | `x-snowdrift-username` | `SecurityContextHolder` |
 | 租户 ID | `x-snowdrift-tenant-id` | `SecurityContextHolder` |
 | 部门 ID | `x-snowdrift-dept-id` | `SecurityContextHolder` |
-| 数据权限 | `x-snowdrift-data-scope` | `SecurityContextHolder` |
-| 消息签名 | `x-snowdrift-signature` | HMAC-SHA256（`sign=true` 时启用） |
+| 消息签名 | `x-snowdrift-signature` | HMAC-SHA256（`sign=true` 时启用，密钥必填） |
 
-Consumer 端在 `@MqListener` 方法执行完毕后自动清除上下文，避免线程池污染。若签名校验失败，上下文会被拒绝恢复。
+容器级自动恢复的实现：
+
+| MQ | 钩子 |
+|----|------|
+| Kafka | 监听容器工厂 `RecordInterceptor` |
+| RabbitMQ | 监听容器工厂 `adviceChain`（`MqRabbitContextAdvice`） |
+| RocketMQ | 监听容器 Bean 代理拦截 `handleMessage(MessageExt)` |
+
+## 序列化切换
+
+默认 FastJson2（`String`/`byte[]`/POJO 往返对称），注册一个 `MqMessageConverter` Bean 即可全局覆盖：
+
+```java
+@Component
+public class JacksonMqMessageConverter implements MqMessageConverter {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    @Override
+    public byte[] serialize(Object payload) {
+        try {
+            return MAPPER.writeValueAsBytes(payload);
+        } catch (JsonProcessingException e) {
+            throw new IllegalArgumentException("MQ 序列化失败", e);
+        }
+    }
+
+    @Override
+    public <T> T deserialize(byte[] data, Class<T> targetType) {
+        try {
+            return MAPPER.readValue(data, targetType);
+        } catch (IOException e) {
+            throw new IllegalArgumentException("MQ 反序列化失败", e);
+        }
+    }
+}
+```
+
+## 拦截器链
+
+实现 `MqSendInterceptor` 并注册为 Spring Bean 即自动生效（按 `getPriority()` 降序，同优先级按注册先后）：
+
+```java
+@Component
+public class MessageAuditInterceptor implements MqSendInterceptor {
+    @Override
+    public int getPriority() {
+        return 100;
+    }
+
+    @Override
+    public void beforeSend(String topic, String key, Object payload) { /* ... */ }
+
+    @Override
+    public void afterSend(String topic, MqSendResult result) { /* ... */ }
+
+    @Override
+    public void onSendError(String topic, Throwable ex) { /* ... */ }
+}
+```
+
+运行时动态增删（`MqInterceptorRegistry` 为 Spring Bean）：
+
+```java
+registry.register(new CustomInterceptor());
+registry.unregister(someInterceptor);
+```
 
 ## 配置属性参考
 
-### snowdrift.mq（核心）
+### snowdrift.mq（核心，base）
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `enabled` | Boolean | `true` | 总开关 |
-| `dynamic-destination-cache-size` | Integer | `10` | StreamBridge 动态 destination 缓存大小 |
 | `executor.core-size` | int | `4` | 异步发送线程池核心线程数 |
 | `executor.max-size` | int | `8` | 最大线程数 |
 | `executor.queue-capacity` | int | `100` | 队列容量 |
@@ -231,58 +252,52 @@ Consumer 端在 `@MqListener` 方法执行完毕后自动清除上下文，避�
 | `executor.wait-for-tasks-to-complete-on-shutdown` | boolean | `true` | 关闭时等待任务完成 |
 | `executor.await-termination-seconds` | int | `30` | 关闭等待超时 |
 | `sign` | Boolean | `false` | 是否启用消息 HMAC-SHA256 签名 |
-| `sign-key` | String | — | 签名密钥（sign=true 时必填） |
+| `sign-key` | String | — | 签名密钥（`sign=true` 时必填，否则启动失败） |
 
 ### snowdrift.mq.kafka
 
-| 属性 | 类型 | 默认值 | SCS 映射 |
-|------|------|--------|---------|
-| `enabled` | Boolean | `true` | — |
-| `bootstrap-servers` | String | `localhost:9092` | → `spring.cloud.stream.kafka.binder.brokers` |
-| `acks` | String | `1` | → `spring.cloud.stream.kafka.binder.required-acks` |
-| `compression-type` | String | `none` | → `spring.cloud.stream.kafka.binder.configuration.compression.type` |
-
-### snowdrift.mq.rocketmq
-
-| 属性 | 类型 | 默认值 | SCS 映射 |
-|------|------|--------|---------|
-| `enabled` | Boolean | `true` | — |
-| `name-server` | String | `localhost:9876` | → `spring.cloud.stream.rocketmq.binder.name-server` |
-| `producer-group` | String | `snowdrift-producer` | → `spring.cloud.stream.rocketmq.binder.producer.group` |
-| `consumer-group` | String | `snowdrift-consumer` | → `spring.cloud.stream.rocketmq.binder.consumer.group` |
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | Boolean | `false` | 启用 Kafka 实现；连接参数用 `spring.kafka.*` |
 
 ### snowdrift.mq.rabbitmq
 
-| 属性 | 类型 | 默认值 | SCS 映射 |
-|------|------|--------|---------|
-| `enabled` | Boolean | `true` | — |
-| `addresses` | String | `localhost:5672` | → `spring.cloud.stream.rabbit.binder.addresses` |
-| `virtual-host` | String | `/` | → `spring.cloud.stream.rabbit.binder.virtual-host` |
-| `username` | String | `guest` | → `spring.cloud.stream.rabbit.binder.username` |
-| `password` | String | `guest` | → `spring.cloud.stream.rabbit.binder.password` |
-| `delay-plugin-enabled` | Boolean | `false` | 启用 rabbitmq-delayed-message-exchange 插件 |
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | Boolean | `false` | 启用 RabbitMQ 实现；连接参数用 `spring.rabbitmq.*` |
+| `delay-plugin-enabled` | Boolean | `false` | 是否启用 delayed-message-exchange 插件（`x-delay`） |
+
+### snowdrift.mq.rocketmq
+
+| 属性 | 类型 | 默认值 | 说明 |
+|------|------|--------|------|
+| `enabled` | Boolean | `false` | 启用 RocketMQ 实现；连接参数用 `rocketmq.name-server` 等（starter 前缀） |
 
 ## SPI 扩展点
 
 | 接口 | 用途 | 注册方式 |
 |------|------|---------|
-| `MqMessageConverter` | 序列化 / 反序列化 | 注册同名 Bean 覆盖默认 FastJson2 |
+| `MqMessageConverter` | 序列化 / 反序列化 | 注册 Bean 覆盖默认 FastJson2 |
 | `MqSendInterceptor` | 发送前后自定义逻辑 | 注册为 Spring Bean（支持优先级排序） |
 | `MqInterceptorRegistry` | 运行时动态管理拦截器 | 注入后调用 `register()` / `unregister()` |
 
 ## 架构分层
 
 ```
-用户代码        │  @MqListener    │  mqService.send()   │
-────────────────┼─────────────────┼─────────────────────┤
-snowdrift-mq API│  MqSendInterceptor 链                 │
-                │  MqMessageConverter (SPI)             │
-                │  MqContextPropagator (TTL)            │
-────────────────┼─────────────────┼─────────────────────┤
-                │      Spring Cloud Stream              │
-                ├──────────┬───────────┬────────────────┤
-                │  Kafka   │ RocketMQ  │  RabbitMQ      │
-                └──────────┴───────────┴────────────────┘
+用户代码          │  mqService.send()        │  @KafkaListener / @RabbitListener /
+                  │                         │  @RocketMQMessageListener
+──────────────────┼─────────────────────────┼────────────────────────────────
+snowdrift-mq base │  MqSendInterceptor 链 · MqMessageConverter · 上下文传播/签名
+                  │  IMqService 门面（参数校验 · 异步 · 批量 · 延迟默认拒绝）
+──────────────────┼─────────────────────────┼────────────────────────────────
+                  │  原生客户端              │  原生消费 + 容器级上下文恢复
+                  ├──────────┬───────────┬──┴────────────────────────────────
+                  │  Kafka   │ RocketMQ  │  RabbitMQ
+                  └──────────┴───────────┴───────────────────────────────────
 ```
 
-> 用户可随时绕过 snowdrift-mq，直接使用 `StreamBridge` / `@Bean Consumer` 等 Spring Cloud Stream 原生 API。
+## 兼容性说明
+
+- **RocketMQ**：`rocketmq-spring-boot-starter` 在模块内定点 `2.3.5`。该 starter 面向 Boot 2.7/Spring 5.3 构建，在 Boot 3.5 下可编译、自动发现与（经字节码核对）消费拦截成立，但**运行时兼容需真实 broker 联调验证**。
+- 各实现模块的消费上下文自动恢复依赖 broker 库的容器钩子行为，建议在真实中间件环境做一次冒烟。
+- 本模块不再依赖 Spring Cloud Stream；旧版基于 `@MqListener`/StreamBridge 的用法已废弃。

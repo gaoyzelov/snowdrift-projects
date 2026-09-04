@@ -27,7 +27,7 @@ import java.util.concurrent.Executor;
  * 同步发送走原生 {@link RabbitTemplate#send(String, String, Message)}；异步复用基类 executor 包装（Rabbit 无原生异步发送）。
  * 延迟消息依赖 rabbitmq-delayed-message-exchange 插件（{@code x-delay} 头，目标 exchange 须为 delayed-exchange）；
  * 未启用插件时 {@link #sendDelay} 直接抛 {@link UnsupportedOperationException}，不做静默 TTL 降级。
- * 消费请使用原生 {@code @RabbitListener}，框架以 afterReceive 处理器自动恢复上下文。
+ * 消费请使用原生 {@code @RabbitListener}，框架以 adviceChain 拦截器（{@code MqRabbitContextAdvice}）自动恢复/清理上下文。
  * </p>
  *
  * @author gaoyzelov

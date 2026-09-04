@@ -51,6 +51,7 @@
         <druid.version>1.2.28</druid.version>
         <ip2region.version>2.7.0</ip2region.version>
         <minio.version>9.0.0</minio.version>
+        <rocketmq-starter.version>2.3.6</rocketmq-starter.version>
         <aliyun-sdk-oss.version>3.18.4</aliyun-sdk-oss.version>
         <cos_api.version>5.6.269</cos_api.version>
         <qiniu-java-sdk.version>7.19.0</qiniu-java-sdk.version>
@@ -152,6 +153,12 @@
                 <version>${jetcache.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- RocketMQ -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq-starter.version}</version>
             </dependency>
             <!-- Map Struct -->
             <dependency>
