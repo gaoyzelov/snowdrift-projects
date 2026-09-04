@@ -4,9 +4,10 @@ import com.mzt.logapi.service.ILogRecordService;
 import com.snowdrift.framework.log.aspect.ApiLogAspect;
 import com.snowdrift.framework.log.aspect.LoginLogAspect;
 import com.snowdrift.framework.log.service.ILogService;
+import com.snowdrift.framework.log.service.SnowdriftDefaultLogServiceImpl;
 import com.snowdrift.framework.log.service.SnowdriftLogRecordServiceImpl;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
@@ -20,7 +21,6 @@ import org.springframework.context.annotation.Primary;
  * @since 1.0.0
  */
 @AutoConfiguration
-@ConditionalOnBean(ILogService.class)
 @ConditionalOnWebApplication(type = ConditionalOnWebApplication.Type.SERVLET)
 public class SnowdriftLogConfiguration {
 
@@ -38,5 +38,12 @@ public class SnowdriftLogConfiguration {
     @Bean
     public LoginLogAspect loginLogAspect(ILogService logService) {
         return new LoginLogAspect(logService);
+    }
+
+
+    @Bean
+    @ConditionalOnMissingBean(ILogService.class)
+    public ILogService defaultLogService(){
+        return new SnowdriftDefaultLogServiceImpl();
     }
 }
