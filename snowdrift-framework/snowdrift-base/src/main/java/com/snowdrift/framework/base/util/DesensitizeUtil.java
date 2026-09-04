@@ -90,10 +90,26 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(fixedPhone)) {
             return StrConst.EMPTY;
         }
-        if (!ValidateUtil.isFixedPhone(fixedPhone)){
-            return fixedPhone;
+        // 归一化空白，避免号码内部空格干扰识别与掩码
+        String compact = fixedPhone.replaceAll("\\s", StrConst.EMPTY);
+        if (!ValidateUtil.isFixedPhone(compact)) {
+            // 无法识别为固定电话时保守全掩码，避免原样输出造成信息泄漏
+            return StrConst.MASK_REPLACEMENT;
         }
-        return RegExUtils.replaceAll(fixedPhone, "(\\d+-)\\d+(\\d{4})", "$1****$2");
+        // 拆分区号与号码段（兼容 "010-66668888" / "66668888" 两种写法）
+        String area = StrConst.EMPTY;
+        String number = compact;
+        int dashIndex = compact.indexOf(StrConst.MIDLINE);
+        if (dashIndex > 0) {
+            area = compact.substring(0, dashIndex);
+            number = compact.substring(dashIndex + 1);
+        }
+        // 号码段仅保留后 4 位，其余掩码
+        int tailLen = 4;
+        String maskedNumber = number.length() <= tailLen
+                ? StrConst.MASK_REPLACEMENT
+                : "*".repeat(number.length() - tailLen) + number.substring(number.length() - tailLen);
+        return area.isEmpty() ? maskedNumber : area + StrConst.MIDLINE + maskedNumber;
     }
 
     /**
@@ -169,10 +185,19 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(bankCard)) {
             return StrConst.EMPTY;
         }
-        if (!ValidateUtil.isBankCard(bankCard)) {
-            return bankCard;
+        // 归一化空白（如 "6222 8888 ..." 的分组写法），确保识别与掩码作用于连续数字
+        String compact = bankCard.replaceAll("\\s", StrConst.EMPTY);
+        if (!ValidateUtil.isBankCard(compact)) {
+            // 无法识别为合法卡号时保守全掩码，避免原样输出造成信息泄漏
+            return StrConst.MASK_REPLACEMENT;
         }
-        return RegExUtils.replaceAll(bankCard, "(\\d{4})\\d+(\\d{4})", "$1********$2");
+        // 保留前 4 后 4，中间全部掩码（不改变号码长度）
+        int headLen = 4;
+        int tailLen = 4;
+        int len = compact.length();
+        return compact.substring(0, headLen)
+                + "*".repeat(len - headLen - tailLen)
+                + compact.substring(len - tailLen);
     }
 
     /**

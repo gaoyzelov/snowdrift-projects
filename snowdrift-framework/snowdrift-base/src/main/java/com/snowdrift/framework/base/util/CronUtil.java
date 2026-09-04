@@ -52,6 +52,7 @@ public final class CronUtil {
         }
 
         String[] fields = cronExpression.trim().split("\\s+");
+        // 支持 6 段（秒 分 时 日 月 周）与 7 段（秒 分 时 日 月 周 年）两种写法
         if (fields.length < 6 || fields.length > 7) {
             return false;
         }
@@ -59,9 +60,17 @@ public final class CronUtil {
         try {
             for (int i = 0; i < fields.length; i++) {
                 String field = fields[i];
+                // '?' 仅允许出现在日(下标3)与周(下标5)字段，表示该字段不参与匹配
+                if (field.contains("?") && i != 3 && i != 5) {
+                    return false;
+                }
                 if (!isValidField(field, i)) {
                     return false;
                 }
+            }
+            // 日与周字段不能同时生效（Quartz/Spring 约定），二者必须恰有一个为 '?'
+            if (fields[3].equals("?") == fields[5].equals("?")) {
+                return false;
             }
             return true;
         } catch (Exception e) {
@@ -78,8 +87,12 @@ public final class CronUtil {
      * @return true-有效，false-无效
      */
     private static boolean isValidField(String field, int fieldIndex) {
-        if ("*".equals(field) || "?".equals(field)) {
+        if ("*".equals(field)) {
             return true;
+        }
+        // '?' 仅允许出现在日(3)/周(5)字段，且必须占满整个字段
+        if ("?".equals(field)) {
+            return fieldIndex == 3 || fieldIndex == 5;
         }
 
         // 星期字段（fieldIndex=5）支持 MON-SUN 缩写
@@ -202,36 +215,37 @@ public final class CronUtil {
     private static boolean isValidRange(String value, int min, int max) {
         try {
             if (value.contains("/")) {
+                // 步长形式：起始可为 *、单值或 a-b 区间，起始边界与步长都需合法
                 String[] parts = value.split("/");
                 if (parts.length != 2) {
                     return false;
                 }
-                if (!"*".equals(parts[0]) && !parts[0].contains("-")) {
-                    int num = Integer.parseInt(parts[0]);
-                    if (num < min || num > max) {
-                        return false;
-                    }
-                }
-                int step = Integer.parseInt(parts[1]);
-                return step > 0;
-            } else if (value.contains("-")) {
-                String[] parts = value.split("-");
-                if (parts.length != 2) {
-                    return false;
-                }
-                int start = Integer.parseInt(parts[0]);
-                int end = Integer.parseInt(parts[1]);
-                return start >= min && start <= max && end >= min && end <= max && start <= end;
-            } else {
-                if ("*".equals(value)) {
-                    return true;
-                }
-                int num = Integer.parseInt(value);
-                return num >= min && num <= max;
+                return isRangePartValid(parts[0], min, max) && Integer.parseInt(parts[1]) > 0;
             }
+            return isRangePartValid(value, min, max);
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    /**
+     * 校验范围字段的取值部分：支持 *、单值、a-b 区间，取值须落在 [min, max] 内
+     */
+    private static boolean isRangePartValid(String value, int min, int max) {
+        if ("*".equals(value)) {
+            return true;
+        }
+        if (value.contains("-")) {
+            String[] parts = value.split("-");
+            if (parts.length != 2) {
+                return false;
+            }
+            int start = Integer.parseInt(parts[0]);
+            int end = Integer.parseInt(parts[1]);
+            return start >= min && start <= max && end >= min && end <= max && start <= end;
+        }
+        int num = Integer.parseInt(value);
+        return num >= min && num <= max;
     }
 
     /**

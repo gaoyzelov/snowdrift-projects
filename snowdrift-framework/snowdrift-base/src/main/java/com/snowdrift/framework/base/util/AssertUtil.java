@@ -110,13 +110,15 @@ public final class AssertUtil {
     }
 
     /**
-     * 断言条件为真
+     * 断言条件成立（延迟求值）
+     * <p>与 {@link #isTrue} 的区别在于断言条件由调用方惰性提供；
+     * supplier 返回 {@code null} 或 {@code false} 时均视为条件不成立。</p>
      *
      * @param predicate 断言条件
      * @param message   错误信息
      */
     public static void custom(Supplier<Boolean> predicate, String message) {
-        if (Boolean.FALSE.equals(predicate.get())){
+        if (!Boolean.TRUE.equals(predicate.get())) {
             throw new BizException(message);
         }
     }

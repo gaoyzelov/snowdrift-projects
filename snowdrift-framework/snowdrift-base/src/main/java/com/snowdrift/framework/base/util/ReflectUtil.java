@@ -5,11 +5,13 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * ReflectUtil
@@ -46,9 +48,9 @@ public final class ReflectUtil {
      * @param clazz 目标类
      * @param name  方法名
      * @return Method 对象
-     * @throws NoSuchMethodException 方法不存在时抛出
+     * @throws BizException 方法不存在时抛出
      */
-    public static Method getMethod(Class<?> clazz, String name) throws NoSuchMethodException {
+    public static Method getMethod(Class<?> clazz, String name) {
         Method result = null;
         for (Method m : clazz.getDeclaredMethods()) {
             if (m.getName().equals(name)) {
@@ -65,11 +67,13 @@ public final class ReflectUtil {
             result.setAccessible(true);
             return result;
         }
-        throw new NoSuchMethodException(clazz.getName() + "#" + name);
+        throw new BizException("方法不存在：" + clazz.getName() + "#" + name);
     }
 
     /**
-     * 获取类全部属性
+     * 获取类属性
+     * <p>默认排除 static 字段与编译期合成字段；包含父类时按“子类优先”去重
+     * （父子类存在同名属性时只保留子类的）。</p>
      *
      * @param t                 目标类对象
      * @param includeSuperclass 是否包含父类属性
@@ -80,12 +84,20 @@ public final class ReflectUtil {
             return Collections.emptyList();
         }
         List<Field> fields = new ArrayList<>();
+        Set<String> seenNames = new HashSet<>();
         try {
             Class<?> cls = t.getClass();
-            //遍历当前类及其父类属性
+            // 从当前类逐级向上遍历（includeSuperclass=false 时仅取当前类）
             while (Objects.nonNull(cls)) {
-                Field[] declaredFields = cls.getDeclaredFields();
-                fields.addAll(Arrays.asList(declaredFields));
+                for (Field field : cls.getDeclaredFields()) {
+                    int modifiers = field.getModifiers();
+                    if (Modifier.isStatic(modifiers) || field.isSynthetic()) {
+                        continue;
+                    }
+                    if (seenNames.add(field.getName())) {
+                        fields.add(field);
+                    }
+                }
                 if (!includeSuperclass) {
                     break;
                 }

@@ -50,19 +50,41 @@ public final class EncryptUtil {
     }
 
     /**
+     * 将十六进制密钥串解析为字节数组
+     *
+     * @param hex 十六进制密钥串
+     * @return 密钥字节数组
+     * @throws BizException 密钥串不是合法的十六进制时抛出
+     */
+    private static byte[] parseHexKey(String hex) {
+        try {
+            return HEX_FORMAT.parseHex(hex);
+        } catch (IllegalArgumentException e) {
+            throw new BizException("密钥不是合法的十六进制字符串", e);
+        }
+    }
+
+    /**
      * 获取消息摘要实例
      *
      * @param algorithm 算法
      * @return 消息摘要实例
-     * @throws {@link NoSuchAlgorithmException} 找不到算法异常
+     * @throws BizException 指定算法不存在或当前 JDK 不支持时抛出
      */
-    public static MessageDigest getInstance(String algorithm) throws NoSuchAlgorithmException {
+    public static MessageDigest getInstance(String algorithm) {
         AssertUtil.notBlank(algorithm, "算法不能为空");
-        return MessageDigest.getInstance(algorithm);
+        try {
+            return MessageDigest.getInstance(algorithm);
+        } catch (NoSuchAlgorithmException e) {
+            log.error("不支持的摘要算法: {}", algorithm, e);
+            throw new BizException("不支持的摘要算法：" + algorithm, e);
+        }
     }
 
     /**
      * md5加密
+     * <p>MD5 已被证明不安全，仅建议用于简单完整性校验或兼容旧系统；
+     * 切勿用于口令存储或防碰撞场景。</p>
      *
      * @param text 文本
      * @return md5 (16进制字符串)
@@ -77,13 +99,15 @@ public final class EncryptUtil {
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
-            log.error("MD5加密失败: {}", text, e);
-            throw new BizException("MD5加密失败", e);
+            log.error("MD5摘要计算失败", e);
+            throw new BizException("MD5摘要计算失败", e);
         }
     }
 
     /**
      * sha1
+     * <p>SHA-1 已被证明不安全，仅建议用于简单完整性校验或兼容旧系统；
+     * 切勿用于口令存储或防碰撞场景。</p>
      *
      * @param text 文本
      * @return sha1  (16进制字符串)
@@ -98,13 +122,15 @@ public final class EncryptUtil {
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
-            log.error("SHA-1摘要计算失败: {}", text, e);
+            log.error("SHA-1摘要计算失败", e);
             throw new BizException("SHA-1摘要计算失败", e);
         }
     }
 
     /**
      * sha256
+     * <p>无盐原始哈希，仅建议用于数据完整性校验、指纹比对等场景；
+     * 切勿用于口令存储（口令应使用 BCrypt/PBKDF2/Argon2 等带盐慢哈希）。</p>
      *
      * @param text 文本
      * @return sha256  (16进制字符串)
@@ -119,7 +145,7 @@ public final class EncryptUtil {
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
         } catch (Exception e) {
-            log.error("SHA-256摘要计算失败: {}", text, e);
+            log.error("SHA-256摘要计算失败", e);
             throw new BizException("SHA-256摘要计算失败", e);
         }
     }
@@ -141,7 +167,7 @@ public final class EncryptUtil {
             byte[] hmac = mac.doFinal(text.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(hmac);
         } catch (Exception e) {
-            log.error("HMAC-SHA256计算失败: {}", text, e);
+            log.error("HMAC-SHA256计算失败", e);
             throw new BizException("HMAC-SHA256计算失败", e);
         }
     }
@@ -163,11 +189,11 @@ public final class EncryptUtil {
      * @return AES密钥
      */
     public static SecretKey aesKey(int keySize) {
-        AssertUtil.inside(keySize, List.of(128, 192, 256), "秘钥长度仅支持128、192或256");
+        AssertUtil.inside(keySize, List.of(128, 192, 256), "密钥长度仅支持128、192或256");
         try {
             // 获取AES密钥生成器实例
             KeyGenerator keyGenerator = KeyGenerator.getInstance("AES");
-            // 设置秘钥长度
+            // 设置密钥长度
             keyGenerator.init(keySize);
             return keyGenerator.generateKey();
         } catch (Exception e) {
@@ -188,8 +214,8 @@ public final class EncryptUtil {
     @Deprecated
     public static String aesEcbEncrypt(String text, String aesKey) {
         AssertUtil.notBlank(text, "待加密文本不能为空");
-        AssertUtil.notBlank(aesKey, "秘钥不能为空");
-        return aesEcbEncrypt(text, HEX_FORMAT.parseHex(aesKey));
+        AssertUtil.notBlank(aesKey, "密钥不能为空");
+        return aesEcbEncrypt(text, parseHexKey(aesKey));
     }
 
     /**
@@ -204,7 +230,7 @@ public final class EncryptUtil {
     @Deprecated
     public static String aesEcbEncrypt(String text, byte[] key) {
         AssertUtil.notBlank(text, "待加密文本不能为空");
-        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
+        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "密钥不能为空");
         try {
             SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
@@ -212,7 +238,7 @@ public final class EncryptUtil {
             byte[] encrypted = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
             return Base64.getEncoder().encodeToString(encrypted);
         } catch (Exception e) {
-            log.error("AES-ECB加密失败: {}", text, e);
+            log.error("AES-ECB加密失败", e);
             throw new BizException("AES-ECB加密失败", e);
         }
     }
@@ -229,8 +255,8 @@ public final class EncryptUtil {
     @Deprecated
     public static String aesEcbDecrypt(String text, String aesKey) {
         AssertUtil.notBlank(text, "待解密文本不能为空");
-        AssertUtil.notBlank(aesKey, "秘钥不能为空");
-        return aesEcbDecrypt(text, HEX_FORMAT.parseHex(aesKey));
+        AssertUtil.notBlank(aesKey, "密钥不能为空");
+        return aesEcbDecrypt(text, parseHexKey(aesKey));
     }
 
     /**
@@ -245,7 +271,7 @@ public final class EncryptUtil {
     @Deprecated
     public static String aesEcbDecrypt(String text, byte[] key) {
         AssertUtil.notBlank(text, "待解密文本不能为空");
-        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
+        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "密钥不能为空");
         try {
             SecretKeySpec keySpec = new SecretKeySpec(key, "AES");
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
@@ -253,7 +279,7 @@ public final class EncryptUtil {
             byte[] decrypted = cipher.doFinal(Base64.getDecoder().decode(text));
             return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log.error("AES-ECB解密失败: {}", text, e);
+            log.error("AES-ECB解密失败", e);
             throw new BizException("AES-ECB解密失败", e);
         }
     }
@@ -272,8 +298,8 @@ public final class EncryptUtil {
      */
     public static String aesGcmEncrypt(String text, String aesKey) {
         AssertUtil.notBlank(text, "待加密文本不能为空");
-        AssertUtil.notBlank(aesKey, "秘钥不能为空");
-        return aesGcmEncrypt(text, HEX_FORMAT.parseHex(aesKey));
+        AssertUtil.notBlank(aesKey, "密钥不能为空");
+        return aesGcmEncrypt(text, parseHexKey(aesKey));
     }
 
     /**
@@ -289,7 +315,7 @@ public final class EncryptUtil {
      */
     public static String aesGcmEncrypt(String text, byte[] key) {
         AssertUtil.notBlank(text, "待加密文本不能为空");
-        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
+        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "密钥不能为空");
         try {
             byte[] iv = new byte[GCM_IV_LENGTH];
             // 使用 new SecureRandom() 而非 getInstanceStrong()，避免 Linux /dev/random 熵池耗尽时阻塞
@@ -307,7 +333,7 @@ public final class EncryptUtil {
             System.arraycopy(ciphertext, 0, output, GCM_IV_LENGTH, ciphertext.length);
             return Base64.getEncoder().encodeToString(output);
         } catch (Exception e) {
-            log.error("AES-GCM加密失败: {}", text, e);
+            log.error("AES-GCM加密失败", e);
             throw new BizException("AES-GCM加密失败", e);
         }
     }
@@ -325,8 +351,8 @@ public final class EncryptUtil {
      */
     public static String aesGcmDecrypt(String text, String aesKey) {
         AssertUtil.notBlank(text, "待解密文本不能为空");
-        AssertUtil.notBlank(aesKey, "秘钥不能为空");
-        return aesGcmDecrypt(text, HEX_FORMAT.parseHex(aesKey));
+        AssertUtil.notBlank(aesKey, "密钥不能为空");
+        return aesGcmDecrypt(text, parseHexKey(aesKey));
     }
 
     /**
@@ -342,11 +368,11 @@ public final class EncryptUtil {
      */
     public static String aesGcmDecrypt(String text, byte[] key) {
         AssertUtil.notBlank(text, "待解密文本不能为空");
-        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "秘钥不能为空");
+        AssertUtil.custom(() -> ArrayUtils.isNotEmpty(key), "密钥不能为空");
         try {
             byte[] raw = Base64.getDecoder().decode(text);
             if (raw.length < GCM_IV_LENGTH) {
-                throw new BizException("密文长度不足，无法提取 IV");
+                throw new BizException("密文数据长度不足，无法解密");
             }
 
             // 提取 IV（前 12 字节）
@@ -365,7 +391,7 @@ public final class EncryptUtil {
             byte[] decrypted = cipher.doFinal(ciphertext);
             return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log.error("AES-GCM解密失败: {}", text, e);
+            log.error("AES-GCM解密失败", e);
             throw new BizException("AES-GCM解密失败", e);
         }
     }
@@ -377,7 +403,7 @@ public final class EncryptUtil {
      * @return 密钥对
      */
     public static KeyPair rsaKeyPair(int keySize) {
-        AssertUtil.inside(keySize, List.of(512, 1024, 2048, 4096), "秘钥长度仅支持512、1024、2048或4096");
+        AssertUtil.inside(keySize, List.of(512, 1024, 2048, 4096), "密钥长度仅支持512、1024、2048或4096");
         try {
             KeyPairGenerator keyPairGenerator = KeyPairGenerator.getInstance("RSA");
             keyPairGenerator.initialize(keySize);
@@ -444,6 +470,8 @@ public final class EncryptUtil {
 
     /**
      * rsa公钥加密
+     * <p>采用 RSA/ECB/PKCS1Padding，单次明文长度上限为 {@code 密钥位数 / 8 - 11} 字节
+     * （如 2048 位密钥最大 245 字节）。超限明文请先分段加密，或改用对称加密后再用 RSA 保护密钥。</p>
      *
      * @param text   待加密文本
      * @param pubKey 公钥 (Base64格式符串)
@@ -456,12 +484,20 @@ public final class EncryptUtil {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             KeySpec keySpec = new X509EncodedKeySpec(Base64.getDecoder().decode(pubKey));
             RSAPublicKey publicKey = (RSAPublicKey) keyFactory.generatePublic(keySpec);
+            byte[] plain = text.getBytes(StandardCharsets.UTF_8);
+            // PKCS#1 v1.5 填充占用 11 字节，单次可加密上限为 密钥字节数 - 11
+            int maxPlainBytes = publicKey.getModulus().bitLength() / 8 - 11;
+            if (plain.length > maxPlainBytes) {
+                throw new BizException("RSA 明文过长，当前密钥单次最大支持 " + maxPlainBytes + " 字节");
+            }
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipher.init(Cipher.ENCRYPT_MODE, publicKey);
-            byte[] bytes = cipher.doFinal(text.getBytes(StandardCharsets.UTF_8));
+            byte[] bytes = cipher.doFinal(plain);
             return Base64.getEncoder().encodeToString(bytes);
+        } catch (BizException e) {
+            throw e;
         } catch (Exception e) {
-            log.error("RSA加密失败: {}", text, e);
+            log.error("RSA加密失败", e);
             throw new BizException("RSA加密失败", e);
         }
     }
@@ -485,7 +521,7 @@ public final class EncryptUtil {
             byte[] bytes = cipher.doFinal(Base64.getDecoder().decode(text));
             return new String(bytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            log.error("RSA解密失败: {}", text, e);
+            log.error("RSA解密失败", e);
             throw new BizException("RSA解密失败", e);
         }
     }

@@ -18,8 +18,8 @@ public final class RegexConst {
     // 身份证号
     public static final String CARD_NO = "^[1-9]\\d{5}(19|20)\\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\\d{3}[Xx\\d]$";
 
-    // 移动电话
-    public static final String MOBILE_PHONE = "^(13[0-9]|14[01456879]|15[0-35-9]|16[2567]|17[0-8]|18[0-9]|19[0-35-9])\\d{8}$";
+    // 移动电话（中国大陆 11 位，首位 1、次位 3-9；不做号段白名单，避免新增号段无法校验）
+    public static final String MOBILE_PHONE = "^1[3-9]\\d{9}$";
 
     // 固定电话
     public static final String FIXED_PHONE = "^(\\d{3,4}-)?\\d{7,8}$";
@@ -33,8 +33,8 @@ public final class RegexConst {
     //验证密码格式（8-15 位，必须包含字母和数字）
     public static final String PWD = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,15}$";
 
-    //银行卡号
-    public static final String BANK_CARD = "^\\d{4}(\\s?\\d{4}){2,5}$";
+    //银行卡号（16/19 位，支持按 4 位分组、组间以单个空格分隔）
+    public static final String BANK_CARD = "^\\d{4}( ?\\d{4}){3}( ?\\d{3})?$";
 
     //车架号
     public static final String VIN = "^[A-HJ-NPR-Z\\d]{17}$";
@@ -46,6 +46,6 @@ public final class RegexConst {
     public static final String CRON = "^((((\\d+,)+\\d+)|(\\d+(\\/|-)\\d+)|\\d+|\\*) ?){5,7}$";
 
     // i18n 国际化
-    public static final String I18N = "^[a-zA-Z0-9._-]+$"   ;
+    public static final String I18N = "^[a-zA-Z0-9._-]+$";
 }
 

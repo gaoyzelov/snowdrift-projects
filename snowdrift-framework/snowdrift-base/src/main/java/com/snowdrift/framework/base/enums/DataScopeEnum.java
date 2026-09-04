@@ -29,12 +29,19 @@ public enum DataScopeEnum implements IEnum<Integer> {
 
     private final String note;
 
+    /**
+     * 将存储的数值解析为数据权限范围枚举（用于 JSON 反序列化及业务转换）。
+     * <p>入参为 {@code null} 或无法识别的编码时，统一回退到 {@link #NONE}（无权限），
+     * 避免因配置缺失或脏数据意外扩大数据可见范围。</p>
+     *
+     * @param code 数据权限范围编码
+     * @return 对应枚举；缺省/未知时返回 {@link #NONE}
+     */
     @JsonCreator
     public static DataScopeEnum of(Integer code) {
         if (code == null) {
             return NONE;
         }
-        // 默认仅查看自己数据
         return IEnum.getByCode(DataScopeEnum.class, code).orElse(NONE);
     }
 }

@@ -57,6 +57,21 @@ public final class HttpUtil {
     }
 
     /**
+     * 校验并解析请求地址
+     *
+     * @param url 请求地址
+     * @return URI
+     * @throws BizException 地址格式非法时抛出
+     */
+    private static URI toUri(String url) {
+        try {
+            return URI.create(url);
+        } catch (IllegalArgumentException e) {
+            throw new BizException("请求地址格式错误：" + url, e);
+        }
+    }
+
+    /**
      * 获取 HttpClient
      *
      * @return HttpClient
@@ -97,6 +112,7 @@ public final class HttpUtil {
      * @return 响应内容
      */
     public static String get(String url, Map<String, String> params, Map<String, String> headers, long timeout) {
+        AssertUtil.isTrue(timeout > 0, "超时时间必须大于 0");
         String fullUrl = buildUrlWithParams(url, params);
         return request(fullUrl, GET, null, headers, Duration.ofSeconds(timeout));
     }
@@ -151,7 +167,7 @@ public final class HttpUtil {
         String body = buildFormDataBody(formData);
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+                .uri(toUri(url))
                 .timeout(DEFAULT_TIMEOUT)
                 .header("Content-Type", CONTENT_TYPE_FORM)
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
@@ -177,7 +193,7 @@ public final class HttpUtil {
         String json = JSON.toJSONString(data);
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+                .uri(toUri(url))
                 .timeout(DEFAULT_TIMEOUT)
                 .header("Content-Type", CONTENT_TYPE_JSON)
                 .POST(HttpRequest.BodyPublishers.ofString(json, StandardCharsets.UTF_8));
@@ -310,7 +326,7 @@ public final class HttpUtil {
 
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
+                    .uri(toUri(url))
                     .timeout(DEFAULT_TIMEOUT)
                     .GET()
                     .build();
@@ -360,7 +376,7 @@ public final class HttpUtil {
     private static String request(String url, String method, String body, Map<String, String> headers, Duration timeout, HttpClient client) {
         AssertUtil.notBlank(url, "请求Url不能为空");
         HttpRequest.Builder builder = HttpRequest.newBuilder()
-                .uri(URI.create(url))
+                .uri(toUri(url))
                 .timeout(timeout);
         if (StringUtils.isNotBlank(body)) {
             if (POST.equalsIgnoreCase(method) || PUT.equalsIgnoreCase(method)) {
@@ -493,7 +509,7 @@ public final class HttpUtil {
         AssertUtil.notBlank(url, "请求Url不能为空");
         try {
             HttpRequest request = HttpRequest.newBuilder()
-                    .uri(URI.create(url))
+                    .uri(toUri(url))
                     .timeout(timeout)
                     .build();
 

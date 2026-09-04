@@ -19,7 +19,7 @@ import java.util.Objects;
  *
  * @author gaoyzelov
  * @date 2026/4/29-16:44
- * @description 获取请求工具类
+ * @description Servlet 请求头/参数获取与 JSON 响应写出工具
  * @since 1.0.0
  */
 public final class ServletUtil {

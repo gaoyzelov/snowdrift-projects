@@ -72,7 +72,7 @@ public final class ValidateUtil {
     }
 
     /**
-     * 验证银行卡号（支持空格分隔）
+     * 验证银行卡号（16/19 位，支持按 4 位分组、组间以单个空格分隔）
      *
      * @param bankCard 待验证的银行卡号
      * @return true-格式正确，false-格式错误
@@ -98,7 +98,7 @@ public final class ValidateUtil {
     }
 
     /**
-     * 校验手机号
+     * 校验手机号（中国大陆 11 位，首位 1、次位 3-9）
      *
      * @param mobilePhone 手机号
      * @return true/false
