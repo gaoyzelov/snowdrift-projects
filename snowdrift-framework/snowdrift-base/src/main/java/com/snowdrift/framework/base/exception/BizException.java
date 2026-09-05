@@ -20,8 +20,6 @@ public class BizException extends RuntimeException {
      */
     private final Integer code;
 
-    private Object[] args;
-
     public BizException() {
         super(ResultCode.ERR.msg());
         this.code = ResultCode.ERR.code();
@@ -32,11 +30,6 @@ public class BizException extends RuntimeException {
         this.code = ResultCode.ERR.code();
     }
 
-    public BizException(String message, Object[] args) {
-        super(message);
-        this.code = ResultCode.ERR.code();
-        this.args = args;
-    }
 
     public BizException(ResultCode resultCode) {
         super(resultCode.msg());
@@ -53,12 +46,6 @@ public class BizException extends RuntimeException {
         this.code = ResultCode.ERR.code();
     }
 
-    public BizException(String message, Object[] args, Throwable cause) {
-        super(message, cause);
-        this.code = ResultCode.ERR.code();
-        this.args = args;
-    }
-
     public BizException(Throwable cause) {
         super(ResultCode.ERR.msg(), cause);
         this.code = ResultCode.ERR.code();
@@ -67,10 +54,5 @@ public class BizException extends RuntimeException {
     protected BizException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace) {
         super(message, cause, enableSuppression, writableStackTrace);
         this.code = ResultCode.ERR.code();
-    }
-
-    @Override
-    public String getMessage() {
-        return super.getMessage();
     }
 }

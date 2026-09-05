@@ -2,6 +2,7 @@ package com.snowdrift.framework.base.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.snowdrift.framework.base.exception.BizException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 
@@ -31,7 +32,7 @@ public enum BizTypeEnum implements IEnum<Integer> {
 
     /**
      * 反序列化：按编码解析（与 {@link #getCode()} 输出一致）。
-     * <p>无法识别的编码抛 {@link IllegalArgumentException}，由全局异常处理兜底为参数错误。</p>
+     * <p>无法识别的编码抛 {@link BizException}，由全局异常处理兜底为参数错误。</p>
      *
      * @param code 枚举编码
      * @return 对应枚举
@@ -42,6 +43,6 @@ public enum BizTypeEnum implements IEnum<Integer> {
             return null;
         }
         return IEnum.getByCode(BizTypeEnum.class, code)
-                .orElseThrow(() -> new IllegalArgumentException("无法识别的 BizTypeEnum 编码: " + code));
+                .orElseThrow(() -> new BizException("业务类型有误: " + code));
     }
 }
