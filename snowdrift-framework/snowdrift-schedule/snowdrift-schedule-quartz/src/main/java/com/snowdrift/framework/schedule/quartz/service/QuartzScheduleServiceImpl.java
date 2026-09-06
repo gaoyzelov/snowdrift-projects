@@ -132,10 +132,10 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
                 if (originalTrigger != null) {
                     try {
                         scheduler.rescheduleJob(triggerKey, originalTrigger);
-                        log.info("Quartz updateJob 回滚成功: Trigger 已恢复: group={}, name={}",
+                        log.info("Quartz 任务回滚成功，Trigger 已恢复: group={}, name={}",
                                 jobKey.getGroup(), jobKey.getName());
                     } catch (SchedulerException rollbackEx) {
-                        log.error("Quartz updateJob 回滚失败！Trigger 状态异常，需人工介入: group={}, name={}",
+                        log.error("Quartz 任务回滚失败！Trigger 状态异常，需人工介入: group={}, name={}",
                                 jobKey.getGroup(), jobKey.getName(), rollbackEx);
                     }
                 }
