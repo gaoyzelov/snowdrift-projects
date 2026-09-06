@@ -21,12 +21,4 @@ public class MqException extends BizException {
     public MqException(String message, Throwable cause) {
         super(message, cause);
     }
-
-    public MqException(String message, Object[] args) {
-        super(message, args);
-    }
-
-    public MqException(String message, Object[] args, Throwable cause) {
-        super(message, args, cause);
-    }
 }

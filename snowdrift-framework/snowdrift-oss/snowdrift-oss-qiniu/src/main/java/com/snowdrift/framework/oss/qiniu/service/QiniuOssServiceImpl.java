@@ -75,16 +75,16 @@ public class QiniuOssServiceImpl extends AbstractOssService {
         String domain = config.getDomain();
         String region = config.getRegion();
         if (StringUtils.isBlank(accessKey)) {
-            throw new OssException("oss.qiniu.accessKey.empty");
+            throw new OssException("OSS 七牛云访问秘钥不能为空");
         }
         if (StringUtils.isBlank(secretKey)) {
-            throw new OssException("oss.qiniu.secretKey.empty");
+            throw new OssException("OSS 七牛云安全密钥不能为空");
         }
         if (StringUtils.isBlank(bucket)) {
-            throw new OssException("oss.qiniu.bucket.empty");
+            throw new OssException("OSS 七牛云存储桶不能为空");
         }
         if (StringUtils.isBlank(domain)) {
-            throw new OssException("oss.qiniu.domain.empty");
+            throw new OssException("OSS 七牛云域名不能为空");
         }
 
         try {
@@ -102,7 +102,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             // 初始化 Bucket 管理器
             this.bucketManager = new BucketManager(auth, configuration);
         } catch (Exception e) {
-            throw new OssException("oss.qiniu.client.init.failed", new Object[]{e.getMessage()});
+            throw new OssException("OSS 七牛云客户端初始化失败");
         }
     }
 
@@ -134,7 +134,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             if (!response.isOK()) {
                 log.error("文件上传失败: bucket={}, objectKey={}, status={}, body={}",
                         bucket, objectKey, response.statusCode, response.bodyString());
-                throw new OssException("oss.upload.failed", new Object[]{response.statusCode});
+                throw new OssException("OSS 七牛云文件上传失败：" + response.statusCode);
             }
             // 解析返回结果（用于日志记录）
             DefaultPutRet putRet = JSON.parseObject(
@@ -150,7 +150,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                     .size(request.getSize())
                     .build();
         } catch (Exception e) {
-            throw ossError("oss.upload.failed", bucket, objectKey, e);
+            throw ossError("OSS 七牛云文件上传失败", bucket, objectKey, e);
         }
     }
 
@@ -188,10 +188,10 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                 } catch (Exception e) {
                     log.warn("关闭错误响应流失败: bucket={}, objectKey={}", bucket, objectKey, e);
                 }
-                throw new OssException("oss.download.failed", new Object[]{response.statusCode()});
+                throw new OssException("OSS 七牛云文件下载失败：" + response.statusCode());
             }
         } catch (Exception e) {
-            throw ossError("oss.download.failed", bucket, objectKey, e);
+            throw ossError("OSS 七牛云文件下载失败", bucket, objectKey, e);
         }
     }
 
@@ -217,7 +217,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                 return;
             }
             log.error("文件删除失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+            throw new OssException("OSS 七牛云文件删除失败");
         }
     }
 
@@ -247,13 +247,13 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                 } else {
                     log.error("文件批量删除失败: bucket={}, count={}, response={}",
                             bucket, partitionKeys.size(), response.bodyString());
-                    throw new OssException("oss.delete.failed", new Object[]{response.bodyString()});
+                    throw new OssException("OSS 七牛云文件批量删除失败：" + response.bodyString());
                 }
             } catch (QiniuException e) {
                 log.error("文件批量删除失败: bucket={}, count={}", bucket, partitionKeys.size(), e);
-                throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+                throw new OssException("OSS 七牛云文件批量删除失败：" + e.getMessage());
             } catch (Exception e) {
-                throw ossError("oss.delete.failed", bucket, "", e);
+                throw ossError("OSS 七牛云文件批量删除失败", bucket, "", e);
             }
         });
     }
@@ -279,7 +279,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                 return false;
             }
             log.error("检查文件存在性失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.exists.check.failed", new Object[]{e.getMessage()});
+            throw new OssException("OSS 七牛云文件存在性检查失败：" + e.getMessage());
         }
     }
 

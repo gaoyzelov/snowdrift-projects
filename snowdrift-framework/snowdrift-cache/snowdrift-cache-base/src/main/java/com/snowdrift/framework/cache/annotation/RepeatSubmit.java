@@ -50,9 +50,4 @@ public @interface RepeatSubmit {
      * 重复提交时的提示信息
      */
     String message() default "请求过于频繁，请稍后重试！";
-
-    /**
-     * 提示信息参数（配合 message i18n key 使用）
-     */
-    String[] args() default {};
 }

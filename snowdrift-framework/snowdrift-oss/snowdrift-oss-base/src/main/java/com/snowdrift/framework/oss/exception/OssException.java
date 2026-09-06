@@ -16,13 +16,4 @@ public class OssException extends BizException {
     public OssException(String message) {
         super(message);
     }
-
-    public OssException(String message, Object[] args) {
-        super(message, args);
-    }
-
-    public OssException(String message, Object[] args, Throwable cause) {
-        super(message, args, cause);
-    }
-
 }

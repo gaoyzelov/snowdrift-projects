@@ -51,7 +51,7 @@ public class RepeatSubmitAspect {
         boolean success = cacheService.putIfAbsent(key, StrConst.TRUE, ttl);
         if (!success) {
             log.warn("检测到重复提交: key={}", key);
-            throw new BizException(repeatSubmit.message(), repeatSubmit.args());
+            throw new BizException(repeatSubmit.message());
         }
 
         try {

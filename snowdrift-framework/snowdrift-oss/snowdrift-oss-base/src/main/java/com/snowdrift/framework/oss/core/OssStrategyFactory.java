@@ -47,10 +47,10 @@ public class OssStrategyFactory {
      */
     public synchronized void register(String configKey, IOssService service) {
         if (StringUtils.isBlank(configKey)) {
-            throw new OssException("oss.config.key.empty");
+            throw new OssException("OSS 配置键不能为空");
         }
         if (service == null) {
-            throw new OssException("oss.service.null");
+            throw new OssException("OSS 服务实例不能为空");
         }
         
         serviceMap.put(configKey, service);
@@ -70,7 +70,7 @@ public class OssStrategyFactory {
     public synchronized IOssService getService(String configKey) {
         IOssService service = serviceMap.get(configKey);
         if (service == null) {
-            throw new OssException("oss.config.not.found", new Object[]{configKey});
+            throw new OssException("OSS 配置不存在: " + configKey);
         }
         return service;
     }
@@ -150,7 +150,7 @@ public class OssStrategyFactory {
      */
     public synchronized void registerFromConfig(OssConfigDTO config, ServiceCreator serviceCreator) {
         if (config == null) {
-            throw new OssException("oss.config.null");
+            throw new OssException("OSS 配置不能为空");
         }
         if (Boolean.FALSE.equals(config.getEnabled())) {
             log.warn("OSS 配置未启用: configKey={}", config.getConfigKey());
@@ -214,7 +214,7 @@ public class OssStrategyFactory {
      */
     public synchronized void reload(String configKey, OssConfigDTO config, ServiceCreator serviceCreator) {
         if (config == null) {
-            throw new OssException("oss.config.null");
+            throw new OssException("OSS 配置不能为空");
         }
 
         // 移除旧实例

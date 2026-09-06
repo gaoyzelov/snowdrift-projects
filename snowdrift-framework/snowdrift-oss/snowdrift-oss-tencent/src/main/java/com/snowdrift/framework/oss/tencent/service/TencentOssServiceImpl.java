@@ -61,19 +61,19 @@ public class TencentOssServiceImpl extends AbstractOssService {
         String region = config.getRegion();
 
         if (StringUtils.isBlank(accessKey)) {
-            throw new OssException("oss.tencent.accessKey.empty");
+            throw new OssException("OSS 腾讯云访问秘钥不能为空");
         }
         if (StringUtils.isBlank(secretKey)) {
-            throw new OssException("oss.tencent.secretKey.empty");
+            throw new OssException("OSS 腾讯云安全密钥不能为空");
         }
         if (StringUtils.isBlank(bucket)) {
-            throw new OssException("oss.tencent.bucket.empty");
+            throw new OssException("OSS 腾讯云存储桶不能为空");
         }
         if (StringUtils.isBlank(domain)) {
-            throw new OssException("oss.tencent.domain.empty");
+            throw new OssException("OSS 腾讯云域名不能为空");
         }
         if (StringUtils.isBlank(region)) {
-            throw new OssException("oss.tencent.region.empty");
+            throw new OssException("OSS 腾讯云区域不能为空");
         }
 
         try {
@@ -86,7 +86,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
             // 创建 COS 客户端
             this.cosClient = new COSClient(cred, clientConfig);
         } catch (Exception e) {
-            throw new OssException("oss.tencent.client.init.failed", new Object[]{e.getMessage()});
+            throw new OssException("OSS 腾讯云客户端初始化失败");
         }
     }
 
@@ -133,7 +133,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
                     .size(request.getSize())
                     .build();
         } catch (Exception e) {
-            throw ossError("oss.upload.failed", bucket, objectKey, e);
+            throw ossError("OSS 腾讯云上传失败", bucket, objectKey, e);
         }
     }
 
@@ -157,11 +157,11 @@ public class TencentOssServiceImpl extends AbstractOssService {
             return cosObject.getObjectContent();
         } catch (CosServiceException e) {
             if (e.getStatusCode() == 404) {
-                throw new OssException("oss.tencent.object.not.found", new Object[]{objectKey});
+                throw new OssException("OSS 腾讯云对象不存在");
             }
-            throw ossError("oss.download.failed", bucket, objectKey, e);
+            throw ossError("OSS 腾讯云下载失败", bucket, objectKey, e);
         } catch (Exception e) {
-            throw ossError("oss.download.failed", bucket, objectKey, e);
+            throw ossError("OSS 腾讯云下载失败", bucket, objectKey, e);
         }
     }
 
@@ -188,7 +188,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
                 return;
             }
             log.error("文件删除失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+            throw new OssException("OSS 腾讯云删除失败");
         }
     }
 
@@ -217,9 +217,9 @@ public class TencentOssServiceImpl extends AbstractOssService {
                 for (MultiObjectDeleteException.DeleteError error : e.getErrors()) {
                     log.error("文件批量删除失败: bucket={}, objectKey={}, error={}", bucket, error.getKey(), error.getMessage());
                 }
-                throw new OssException("oss.delete.failed", new Object[]{e.getMessage()});
+                throw new OssException("OSS 腾讯云删除失败");
             } catch (Exception e) {
-                throw ossError("oss.delete.failed", bucket, "", e);
+                throw ossError("OSS 腾讯云删除失败", bucket, "", e);
             }
         });
     }
@@ -239,7 +239,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
         try {
             return cosClient.doesObjectExist(bucket, objectKey);
         } catch (Exception e) {
-            throw ossError("oss.exists.check.failed", bucket, objectKey, e);
+            throw ossError("OSS 腾讯云检查失败", bucket, objectKey, e);
         }
     }
 
@@ -267,7 +267,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
             try {
                 return cosClient.generatePresignedUrl(request).toString();
             } catch (Exception e) {
-                throw ossError("oss.url.generate.failed", bucket, objectKey, e);
+                throw ossError("OSS 腾讯云生成 URL 失败", bucket, objectKey, e);
             }
         }
 

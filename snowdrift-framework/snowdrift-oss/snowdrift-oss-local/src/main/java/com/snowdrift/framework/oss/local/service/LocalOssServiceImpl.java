@@ -49,7 +49,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
         String endpoint = config.getEndpoint();
 
         if (StringUtils.isBlank(endpoint)) {
-            throw new OssException("oss.local.endpoint.empty");
+            throw new OssException("OSS 本地端点不能为空");
         }
 
         this.storageRoot = Paths.get(endpoint);
@@ -71,7 +71,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
                 log.info("创建本地存储目录: {}", storageRoot);
             }
         } catch (IOException e) {
-            throw new OssException("oss.local.dir.create.failed", new Object[]{storageRoot});
+            throw new OssException("OSS 本地目录创建失败");
         }
     }
 
@@ -107,10 +107,10 @@ public class LocalOssServiceImpl extends AbstractOssService {
                     .size(fileSize)
                     .build();
 
-            log.debug("文件上传成功: objectKey={}, size={}", objectKey, fileSize);
+            log.debug("OSS 本地文件上传成功: objectKey={}, size={}", objectKey, fileSize);
             return result;
         } catch (IOException e) {
-            throw ossError("oss.upload.failed", storageRoot.toString(), objectKey, e);
+            throw ossError("OSS 本地上传失败", storageRoot.toString(), objectKey, e);
         }
     }
 
@@ -129,16 +129,16 @@ public class LocalOssServiceImpl extends AbstractOssService {
         String normalized = normalizeObjectKey(objectKey);
         Path resolved = storageRoot.resolve(normalized).normalize();
         if (!resolved.startsWith(storageRoot.normalize())) {
-            throw new OssException("oss.object.key.invalid");
+            throw new OssException("OSS 本地文件路径越界");
         }
         if (!Files.exists(resolved)) {
-            throw new OssException("oss.local.file.not.found", new Object[]{objectKey});
+            throw new OssException("OSS 本地文件未找到");
         }
 
         try {
             return Files.newInputStream(resolved);
         } catch (IOException e) {
-            throw ossError("oss.download.failed", storageRoot.toString(), objectKey, e);
+            throw ossError("OSS 本地下载失败", storageRoot.toString(), objectKey, e);
         }
     }
 
@@ -156,16 +156,16 @@ public class LocalOssServiceImpl extends AbstractOssService {
         String normalized = normalizeObjectKey(objectKey);
         Path resolved = storageRoot.resolve(normalized).normalize();
         if (!resolved.startsWith(storageRoot.normalize())) {
-            throw new OssException("oss.object.key.invalid");
+            throw new OssException("OSS 本地文件路径越界");
         }
 
         try {
             if (Files.exists(resolved)) {
                 Files.delete(resolved);
-                log.debug("文件删除成功: objectKey={}", objectKey);
+                log.debug("OSS 本地文件删除成功: objectKey={}", objectKey);
             }
         } catch (IOException e) {
-            throw ossError("oss.delete.failed", storageRoot.toString(), objectKey, e);
+            throw ossError("OSS 本地删除失败", storageRoot.toString(), objectKey, e);
         }
     }
 
@@ -182,12 +182,12 @@ public class LocalOssServiceImpl extends AbstractOssService {
         String normalized = normalizeObjectKey(objectKey);
         Path resolved = storageRoot.resolve(normalized).normalize();
         if (!resolved.startsWith(storageRoot.normalize())) {
-            throw new OssException("oss.object.key.invalid");
+            throw new OssException("OSS 本地文件路径越界");
         }
         try {
             return Files.exists(resolved);
-        }catch (Exception e){
-            throw ossError("oss.exists.check.failed", storageRoot.toString(), objectKey, e);
+        } catch (Exception e) {
+            throw ossError("OSS 本地文件存在检查失败", storageRoot.toString(), objectKey, e);
         }
     }
 
@@ -207,11 +207,11 @@ public class LocalOssServiceImpl extends AbstractOssService {
         String normalized = normalizeObjectKey(objectKey);
         Path resolved = storageRoot.resolve(normalized).normalize();
         if (!resolved.startsWith(storageRoot.normalize())) {
-            throw new OssException("oss.object.key.invalid");
+            throw new OssException("OSS 本地文件路径越界");
         }
         // 必须配置域名，否则无法生成可访问的 URL
         if (StringUtils.isBlank(config.getDomain())) {
-            throw new OssException("oss.local.url.no.domain", new Object[]{objectKey});
+            throw new OssException("OSS 本地文件访问 URL 生成失败，缺少域名配置");
         }
         return OssUrlBuilder.buildUrl(config.getDomain(), objectKey);
     }
@@ -225,6 +225,6 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public void close() {
-        log.info("本地存储无需关闭: configKey={}, endpoint={}", config.getConfigKey(), storageRoot);
+        log.info("OSS 本地存储无需关闭: configKey={}, endpoint={}", config.getConfigKey(), storageRoot);
     }
 }

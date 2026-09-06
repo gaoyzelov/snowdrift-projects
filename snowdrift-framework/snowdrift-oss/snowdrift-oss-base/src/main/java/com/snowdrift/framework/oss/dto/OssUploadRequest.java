@@ -79,13 +79,13 @@ public class OssUploadRequest {
      */
     public void validate() {
         if (StringUtils.isBlank(this.objectKey)) {
-            throw new OssException("oss.object.key.empty");
+            throw new OssException("OSS 对象键不能为空");
         }
         if (this.inputStream == null) {
-            throw new OssException("oss.upload.inputstream.empty");
+            throw new OssException("OSS 上传输入流不能为空");
         }
         if (this.size != null && this.size < 0) {
-            throw new OssException("oss.upload.size.invalid", new Object[]{this.size});
+            throw new OssException("OSS 上传文件大小不能为负");
         }
     }
 }

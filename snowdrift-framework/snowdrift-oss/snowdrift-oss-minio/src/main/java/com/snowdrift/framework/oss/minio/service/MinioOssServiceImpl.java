@@ -54,16 +54,16 @@ public class MinioOssServiceImpl extends AbstractOssService {
         String bucket = config.getBucket();
 
         if (StringUtils.isBlank(endpoint)) {
-            throw new OssException("oss.minio.endpoint.empty");
+            throw new OssException("OSS MINIO 端点不能为空");
         }
         if (StringUtils.isBlank(accessKey)) {
-            throw new OssException("oss.minio.accessKey.empty");
+            throw new OssException("OSS MINIO 访问密钥不能为空");
         }
         if (StringUtils.isBlank(secretKey)) {
-            throw new OssException("oss.minio.secretKey.empty");
+            throw new OssException("OSS MINIO 安全密钥不能为空");
         }
         if (StringUtils.isBlank(bucket)) {
-            throw new OssException("oss.minio.bucket.empty");
+            throw new OssException("OSS MINIO 桶名称不能为空");
         }
 
         // 初始化 MinIO 客户端
@@ -76,7 +76,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
             // 确保 Bucket 存在
             ensureBucketExists(bucket);
         } catch (Exception e) {
-            throw new OssException("oss.minio.client.init.failed", new Object[]{e.getMessage()});
+            throw new OssException("OSS MINIO 客户端初始化失败");
         }
     }
 
@@ -95,11 +95,11 @@ public class MinioOssServiceImpl extends AbstractOssService {
                 minioClient.makeBucket(
                         MakeBucketArgs.builder().bucket(bucketName).build()
                 );
-                log.info("创建 MinIO Bucket: {}", bucketName);
+                log.info("OSS MinIO 桶创建成功: {}", bucketName);
             }
         } catch (Exception e) {
-            log.error("检查或创建 MinIO Bucket 失败: bucket={}", bucketName, e);
-            throw new OssException("oss.minio.bucket.create.failed", new Object[]{bucketName});
+            log.error("OSS MinIO 桶检查或创建失败: bucket={}", bucketName, e);
+            throw new OssException("OSS MINIO 桶创建失败");
         }
     }
 
@@ -138,10 +138,10 @@ public class MinioOssServiceImpl extends AbstractOssService {
                     .size(request.getSize())
                     .build();
 
-            log.debug("文件上传成功: bucket={}, objectKey={}, size={}", bucket, objectKey, request.getSize());
+            log.debug("OSS MINIO 文件上传成功: bucket={}, objectKey={}, size={}", bucket, objectKey, request.getSize());
             return result;
         } catch (Exception e) {
-            throw ossError("oss.upload.failed", bucket, objectKey, e);
+            throw ossError("OSS MINIO 文件上传失败", bucket, objectKey, e);
         }
     }
 
@@ -163,7 +163,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
                             .build()
             );
         } catch (Exception e) {
-            throw ossError("oss.download.failed", bucket, objectKey, e);
+            throw ossError("OSS MINIO 文件下载失败", bucket, objectKey, e);
         }
     }
 
@@ -186,7 +186,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
             );
             log.debug("文件删除成功: bucket={}, objectKey={}", bucket, objectKey);
         } catch (Exception e) {
-            throw ossError("oss.delete.failed", bucket, objectKey, e);
+            throw ossError("OSS MINIO 文件删除失败", bucket, objectKey, e);
         }
     }
 
@@ -218,11 +218,11 @@ public class MinioOssServiceImpl extends AbstractOssService {
                     log.error("文件批量删除失败: bucket={}, objectKey={}, error={}", bucket, error.objectName(), error.message());
                 }
                 if (errorCount > 0) {
-                    throw new OssException("oss.delete.batch.partial.failed", new Object[]{errorCount});
+                    throw new OssException("OSS MINIO 文件批量删除失败："+errorCount);
                 }
                 log.debug("文件批量删除成功: bucket={}", bucket);
             } catch (Exception e) {
-                throw ossError("oss.delete.failed", bucket, "", e);
+                throw ossError("OSS MINIO 文件批量删除失败", bucket, "", e);
             }
         });
     }
@@ -250,9 +250,9 @@ public class MinioOssServiceImpl extends AbstractOssService {
                     "NotFound".equals(e.errorResponse().code())) {
                 return false;
             }
-            throw new OssException("oss.exists.check.failed", new Object[]{objectKey}, e);
+            throw new OssException("OSS MINIO 文件存在检查失败");
         } catch (Exception e) {
-            throw ossError("oss.exists.check.failed", bucket, objectKey, e);
+            throw ossError("OSS MINIO 文件存在检查失败", bucket, objectKey, e);
         }
     }
 
@@ -280,7 +280,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
                                 .build()
                 );
         } catch (Exception e) {
-            throw ossError("oss.url.generate.failed", bucket, objectKey, e);
+            throw ossError("OSS MINIO 文件 URL 生成失败", bucket, objectKey, e);
         }
         }
 

@@ -58,5 +58,5 @@ public class CorsProperties {
     /**
      * 预检请求缓存时间（秒），默认 3600
      */
-    private Long maxAge = 3600;
+    private Long maxAge = 3600L;
 }

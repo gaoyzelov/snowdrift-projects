@@ -45,10 +45,10 @@ public final class OssUrlBuilder {
      */
     public static String buildUrl(String domain, String objectKey) {
         if (StringUtils.isBlank(domain)) {
-            throw new OssException("oss.url.domain.empty");
+            throw new OssException("OSS 域名不能为空");
         }
         if (StringUtils.isBlank(objectKey)) {
-            throw new OssException("oss.object.key.empty");
+            throw new OssException("OSS 对象键不能为空");
         }
 
         String normalizedDomain = removeTrailingSlash(domain);
@@ -77,13 +77,13 @@ public final class OssUrlBuilder {
      */
     public static String buildVirtualHostUrl(String bucket, String endpoint, String objectKey) {
         if (StringUtils.isBlank(bucket)) {
-            throw new OssException("oss.url.bucket.empty");
+            throw new OssException("OSS 桶名称不能为空");
         }
         if (StringUtils.isBlank(endpoint)) {
-            throw new OssException("oss.url.endpoint.empty");
+            throw new OssException("OSS 端点不能为空");
         }
         if (StringUtils.isBlank(objectKey)) {
-            throw new OssException("oss.object.key.empty");
+            throw new OssException("OSS 对象键不能为空");
         }
 
         // 移除协议前缀，但保留原始协议用于最终 URL
@@ -113,13 +113,13 @@ public final class OssUrlBuilder {
      */
     public static String buildPathStyleUrl(String endpoint, String bucket, String objectKey) {
         if (StringUtils.isBlank(endpoint)) {
-            throw new OssException("oss.url.endpoint.empty");
+            throw new OssException("OSS 端点不能为空");
         }
         if (StringUtils.isBlank(bucket)) {
-            throw new OssException("oss.url.bucket.empty");
+            throw new OssException("OSS 桶名称不能为空");
         }
         if (StringUtils.isBlank(objectKey)) {
-            throw new OssException("oss.object.key.empty");
+            throw new OssException("OSS 对象键不能为空");
         }
 
         String normalizedEndpoint = removeTrailingSlash(endpoint);

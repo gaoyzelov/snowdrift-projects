@@ -16,12 +16,4 @@ public class ScheduleException extends BizException {
     public ScheduleException(String message) {
         super(message);
     }
-
-    public ScheduleException(String message, Object[] args) {
-        super(message, args);
-    }
-
-    public ScheduleException(String message, Object[] args, Throwable cause) {
-        super(message, args, cause);
-    }
 }

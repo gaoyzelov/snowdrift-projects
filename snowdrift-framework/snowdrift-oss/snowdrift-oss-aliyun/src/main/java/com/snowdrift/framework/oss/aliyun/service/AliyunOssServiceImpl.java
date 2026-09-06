@@ -60,22 +60,22 @@ public class AliyunOssServiceImpl extends AbstractOssService {
         String secretKey = config.getSecretKey();
         String bucket = config.getBucket();
         if (StringUtils.isBlank(endpoint)) {
-            throw new OssException("oss.aliyun.endpoint.empty");
+            throw new OssException("OSS 阿里云端点不能为空");
         }
         if (StringUtils.isBlank(accessKey)) {
-            throw new OssException("oss.aliyun.accessKey.empty");
+            throw new OssException("OSS 阿里云访问密钥不能为空");
         }
         if (StringUtils.isBlank(secretKey)) {
-            throw new OssException("oss.aliyun.secretKey.empty");
+            throw new OssException("OSS 阿里云安全密钥不能为空");
         }
         if (StringUtils.isBlank(bucket)) {
-            throw new OssException("oss.aliyun.bucket.empty");
+            throw new OssException("OSS 阿里云存储桶不能为空");
         }
 
         try {
             this.ossClient = new OSSClientBuilder().build(endpoint, accessKey, secretKey);
         } catch (Exception e) {
-            throw new OssException("oss.aliyun.client.init.failed", new Object[]{e.getMessage()});
+            throw new OssException("OSS 阿里云客户端初始化失败");
         }
     }
 
@@ -115,7 +115,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
                     .size(request.getSize())
                     .build();
         } catch (Exception e) {
-            throw ossError("oss.upload.failed", bucket, objectKey, e);
+            throw ossError("OSS 阿里云上传失败", bucket, objectKey, e);
         }
     }
 
@@ -148,7 +148,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
                 }
             };
         } catch (Exception e) {
-            throw ossError("oss.download.failed", bucket, objectKey, e);
+            throw ossError("OSS 阿里云下载失败", bucket, objectKey, e);
         }
     }
 
@@ -168,7 +168,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
             ossClient.deleteObject(bucket, objectKey);
             log.debug("文件删除成功: bucket={}, objectKey={}", bucket, objectKey);
         } catch (Exception e) {
-            throw ossError("oss.delete.failed", bucket, objectKey, e);
+            throw ossError("OSS 阿里云删除失败", bucket, objectKey, e);
         }
     }
 
@@ -193,7 +193,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
                 ossClient.deleteObjects(deleteObjectsRequest);
                 log.debug("文件批量删除成功: bucket={}", bucket);
             }catch (Exception e) {
-                throw ossError("oss.delete.failed", bucket, "", e);
+                throw ossError("OSS 阿里云批量删除失败", bucket, "", e);
             }
         });
     }
@@ -213,7 +213,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
         try {
             return ossClient.doesObjectExist(bucket, objectKey);
         } catch (Exception e) {
-            throw ossError("oss.exists.check.failed", bucket, objectKey, e);
+            throw ossError("OSS 阿里云检查桶失败", bucket, objectKey, e);
         }
     }
 
@@ -245,7 +245,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
                 URL url = ossClient.generatePresignedUrl(request);
                 return url.toString();
             } catch (Exception e) {
-                throw ossError("oss.url.generate.failed", bucket, objectKey, e);
+                throw ossError("OSS 阿里云生成 URL 失败", bucket, objectKey, e);
             }
         }
 
