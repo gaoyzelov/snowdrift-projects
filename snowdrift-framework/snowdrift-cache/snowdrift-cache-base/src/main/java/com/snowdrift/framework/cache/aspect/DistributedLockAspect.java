@@ -50,7 +50,6 @@ public class DistributedLockAspect {
         boolean locked = lockService.tryLock(key, waitTime, leaseTime, timeUnit);
         if (!locked) {
             log.warn("获取分布式锁失败: key={}", key);
-            // 由全局 WebExceptionHandler 统一解析
             throw new BizException(lockAnno.message());
         }
 

@@ -32,7 +32,7 @@ public abstract class AbstractCacheService implements ICacheService {
     protected final ICacheSerializer serializer;
 
     protected AbstractCacheService(SnowdriftCacheProperties properties, ICacheSerializer serializer) {
-        AssertUtil.notNull(properties, "缓存配置属性不能为空");
+        AssertUtil.notNull(properties, "缓存属性配置不能为空");
         AssertUtil.notNull(serializer, "缓存序列化器不能为空");
         this.serializer = serializer;
         this.properties = properties;

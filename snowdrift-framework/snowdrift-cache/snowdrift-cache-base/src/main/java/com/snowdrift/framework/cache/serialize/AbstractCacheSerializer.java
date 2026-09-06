@@ -1,6 +1,7 @@
 package com.snowdrift.framework.cache.serialize;
 
 import com.snowdrift.framework.base.exception.BizException;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * AbstractCacheSerializer
@@ -10,6 +11,7 @@ import com.snowdrift.framework.base.exception.BizException;
  * @description 缓存序列化器模板类，统一处理 null-guard 和异常包装
  * @since 1.0.0
  */
+@Slf4j
 public abstract class AbstractCacheSerializer implements ICacheSerializer {
 
     @Override
@@ -20,6 +22,7 @@ public abstract class AbstractCacheSerializer implements ICacheSerializer {
         try {
             return doSerialize(value);
         } catch (Exception e) {
+            log.debug("缓存序列化失败", e);
             throw new BizException("缓存序列化失败");
         }
     }
@@ -32,6 +35,7 @@ public abstract class AbstractCacheSerializer implements ICacheSerializer {
         try {
             return doDeserialize(json, type);
         } catch (Exception e) {
+            log.debug("缓存反序列化失败", e);
             throw new BizException("缓存反序列化失败");
         }
     }

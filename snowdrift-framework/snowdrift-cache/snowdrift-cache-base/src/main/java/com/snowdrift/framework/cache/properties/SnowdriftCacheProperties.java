@@ -1,11 +1,11 @@
 package com.snowdrift.framework.cache.properties;
 
 import com.snowdrift.framework.cache.SerializerType;
-import org.springframework.validation.annotation.Validated;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import java.time.Duration;
 
@@ -43,4 +43,5 @@ public class SnowdriftCacheProperties {
      * 序列化器类型，默认 Jackson
      */
     private SerializerType serializer = SerializerType.JACKSON;
+
 }

@@ -45,11 +45,6 @@ public @interface DistributedLock {
     String message() default "请求过于频繁，请稍后重试！";
 
     /**
-     * 获取锁失败时的提示信息参数（配合 message i18n key 使用）
-     */
-    String[] args() default {};
-
-    /**
      * 获取锁的等待时间（秒），0 表示不等待，获取失败直接抛异常
      */
     long waitTime() default 0;
