@@ -8,7 +8,7 @@ import com.snowdrift.framework.context.http.HttpContext;
 import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.log.annotation.LoginLog;
 import com.snowdrift.framework.log.holder.LoginLogHolder;
-import com.snowdrift.framework.log.service.ILogService;
+import com.snowdrift.framework.log.ILogService;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ArrayUtils;
 import org.aspectj.lang.JoinPoint;

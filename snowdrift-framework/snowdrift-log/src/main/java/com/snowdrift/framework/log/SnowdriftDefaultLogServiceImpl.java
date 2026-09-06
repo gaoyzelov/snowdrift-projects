@@ -1,4 +1,4 @@
-package com.snowdrift.framework.log.service;
+package com.snowdrift.framework.log;
 
 import com.alibaba.fastjson2.JSON;
 import com.snowdrift.framework.log.holder.ApiLogHolder;

@@ -12,7 +12,7 @@ import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.log.annotation.ApiLog;
 import com.snowdrift.framework.log.holder.ApiLogHolder;
-import com.snowdrift.framework.log.service.ILogService;
+import com.snowdrift.framework.log.ILogService;
 import com.snowdrift.framework.log.util.LogTraceUtil;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;

@@ -1,4 +1,4 @@
-package com.snowdrift.framework.log.service;
+package com.snowdrift.framework.log;
 
 import com.snowdrift.framework.log.holder.ApiLogHolder;
 import com.snowdrift.framework.log.holder.LoginLogHolder;

@@ -1,4 +1,4 @@
-package com.snowdrift.framework.log.service;
+package com.snowdrift.framework.log;
 
 import com.mzt.logapi.beans.LogRecord;
 import com.mzt.logapi.service.ILogRecordService;
