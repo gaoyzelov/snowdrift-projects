@@ -2,6 +2,7 @@ package com.snowdrift.framework.security.satoken.interceptor;
 
 import cn.dev33.satoken.interceptor.SaInterceptor;
 import cn.dev33.satoken.strategy.SaAnnotationStrategy;
+import com.snowdrift.framework.base.result.ResultCode;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.security.annotation.Anonymous;
@@ -59,7 +60,7 @@ public class SecurityInterceptor extends SaInterceptor {
             // 3. 从会话中捞出 SecurityContext 并放入 ThreadLocal，供后续业务代码使用
             SecurityContext sc = securityService.getContext();
             if (Objects.isNull(sc)) {
-                throw new SecurityException("security.context.lost");
+                throw new SecurityException(ResultCode.UNAUTHORIZED);
             }
             SecurityContextHolder.setContext(sc);
 

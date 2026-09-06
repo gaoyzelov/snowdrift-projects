@@ -1,5 +1,6 @@
 package com.snowdrift.framework.security.spring.service;
 
+import com.snowdrift.framework.base.result.ResultCode;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.security.exception.SecurityException;
 import com.snowdrift.framework.security.model.TokenInfo;
@@ -52,7 +53,7 @@ public class SpringSecurityServiceImpl implements ISecurityService {
     @Override
     public TokenInfo login(SecurityContext context) {
         if (context == null || context.getUserId() == null) {
-            throw new SecurityException("security.context.null");
+            throw new SecurityException(ResultCode.UNAUTHORIZED);
         }
         String tokenValue = UUID.randomUUID().toString().replace("-", "");
         // 存储token信息
@@ -82,7 +83,7 @@ public class SpringSecurityServiceImpl implements ISecurityService {
     @Override
     public void checkLogin() {
         if (!isAuthenticated()) {
-            throw new SecurityException("security.not.authenticated");
+            throw new SecurityException(ResultCode.UNAUTHORIZED);
         }
     }
 

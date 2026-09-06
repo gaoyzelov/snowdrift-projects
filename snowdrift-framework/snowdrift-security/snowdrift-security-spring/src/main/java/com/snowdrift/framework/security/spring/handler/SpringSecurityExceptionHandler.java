@@ -2,7 +2,8 @@ package com.snowdrift.framework.security.spring.handler;
 
 import com.snowdrift.framework.base.result.Result;
 import com.snowdrift.framework.base.result.ResultCode;
-import com.snowdrift.framework.web.util.I18nUtil;
+import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.access.AccessDeniedException;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @Slf4j
 @Order(1)
+@Hidden
 @RestControllerAdvice
 public class SpringSecurityExceptionHandler {
 
@@ -30,17 +32,17 @@ public class SpringSecurityExceptionHandler {
      * 认证异常（未登录 / Token 无效等）
      */
     @ExceptionHandler(AuthenticationException.class)
-    public Result<Void> handleAuthenticationException(AuthenticationException e) {
-        log.warn("[Spring Security] 认证失败: {}", e.getMessage());
-        return Result.err(ResultCode.UNAUTHORIZED.code(), I18nUtil.getMessage("security.not.authenticated"));
+    public Result<Void> handleAuthenticationException(AuthenticationException e, HttpServletRequest request) {
+        log.warn("[Spring Security] 认证失败: uri={}, msg={}", request.getRequestURI(), e.getMessage());
+        return Result.err(ResultCode.UNAUTHORIZED);
     }
 
     /**
      * 鉴权异常（无权限 / 无角色）
      */
     @ExceptionHandler(AccessDeniedException.class)
-    public Result<Void> handleAccessDeniedException(AccessDeniedException e) {
-        log.warn("[Spring Security] 权限不足: {}", e.getMessage());
-        return Result.err(ResultCode.FORBIDDEN.code(), I18nUtil.getMessage("security.permission.denied"));
+    public Result<Void> handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request) {
+        log.warn("[Spring Security] 权限不足: uri={}, msg={}", request.getRequestURI(), e.getMessage());
+        return Result.err(ResultCode.FORBIDDEN);
     }
 }
