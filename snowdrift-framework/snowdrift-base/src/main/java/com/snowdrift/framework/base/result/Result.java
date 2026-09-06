@@ -1,5 +1,6 @@
 package com.snowdrift.framework.base.result;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -16,6 +17,7 @@ import java.io.Serializable;
  */
 @Getter
 @Builder
+@Schema(description = "统一返回结果")
 public final class Result<T> implements Serializable {
 
     @Serial
@@ -24,21 +26,25 @@ public final class Result<T> implements Serializable {
     /**
      * 状态码
      */
+    @Schema(description = "状态码")
     private Integer code;
 
     /**
      * 信息
      */
+    @Schema(description = "响应信息")
     private String msg;
 
     /**
      * 数据
      */
+    @Schema(description = "响应数据")
     private T data;
 
     /**
      * 时间戳
      */
+    @Schema(description = "时间戳")
     private long timestamp;
 
     public static <T> Result<T> ok() {

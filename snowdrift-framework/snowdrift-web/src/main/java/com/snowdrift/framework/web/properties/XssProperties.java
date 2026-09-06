@@ -5,7 +5,6 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -28,5 +27,5 @@ public class XssProperties {
     /**
      * 排除路径（Ant 风格，如 /admin/richtext/**），不进行 XSS 过滤
      */
-    private List<String> excludePathPatterns = new ArrayList<>();
+    private List<String> excludePathPatterns = List.of();
 }

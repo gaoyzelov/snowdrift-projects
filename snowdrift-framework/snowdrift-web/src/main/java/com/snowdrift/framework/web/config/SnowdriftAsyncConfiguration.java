@@ -54,7 +54,7 @@ public class SnowdriftAsyncConfiguration implements AsyncConfigurer {
         executor.setTaskDecorator(taskDecorator()); // 设置线程上下文
         executor.setWaitForTasksToCompleteOnShutdown(properties.getWaitForTasksToCompleteOnShutdown()); // 设置优雅关闭
         executor.setAwaitTerminationSeconds(properties.getAwaitTerminationSeconds()); // 设置等待时间
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy()); // 设置拒绝策略
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy()); // 设置拒绝策略
         executor.initialize();
         return executor;
     }

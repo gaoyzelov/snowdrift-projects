@@ -67,7 +67,7 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
                 .allowedOriginPatterns(corsProperties.getAllowedOriginPatterns().toArray(String[]::new))
                 .allowedMethods(corsProperties.getAllowedMethods().toArray(String[]::new))
                 .allowedHeaders(corsProperties.getAllowedHeaders().toArray(String[]::new))
-                .allowCredentials(corsProperties.isAllowCredentials())
+                .allowCredentials(corsProperties.getAllowCredentials())
                 .maxAge(corsProperties.getMaxAge());
     }
 

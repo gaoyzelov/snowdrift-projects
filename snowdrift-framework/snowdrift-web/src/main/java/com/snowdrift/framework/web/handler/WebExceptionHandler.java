@@ -4,6 +4,7 @@ import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.base.result.Result;
 import com.snowdrift.framework.base.result.ResultCode;
+import io.swagger.v3.oas.annotations.Hidden;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -35,12 +36,9 @@ import java.util.stream.Collectors;
  * @since 1.0.0
  */
 @Slf4j
+@Hidden
 @RestControllerAdvice
 public class WebExceptionHandler {
-
-    private static final long KB = 1024;
-    private static final long MB = KB * 1024;
-    private static final long GB = MB * 1024;
 
     /**
      * 业务异常处理
@@ -178,7 +176,7 @@ public class WebExceptionHandler {
     @ExceptionHandler(IllegalArgumentException.class)
     public Result<Void> handleIllegalArgumentException(IllegalArgumentException e, HttpServletRequest request) {
         log.warn("非法参数: uri={}, msg={}", request.getRequestURI(), e.getMessage(), e);
-        return Result.err(ResultCode.BAD_REQUEST.code(), "非法参数");
+        return Result.err(ResultCode.BAD_REQUEST);
     }
 
     /**

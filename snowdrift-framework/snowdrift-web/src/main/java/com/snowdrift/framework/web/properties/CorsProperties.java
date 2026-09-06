@@ -53,10 +53,10 @@ public class CorsProperties {
     /**
      * 是否允许携带凭证（Cookie），默认 false
      */
-    private boolean allowCredentials = false;
+    private Boolean allowCredentials = Boolean.FALSE;
 
     /**
      * 预检请求缓存时间（秒），默认 3600
      */
-    private long maxAge = 3600;
+    private Long maxAge = 3600;
 }

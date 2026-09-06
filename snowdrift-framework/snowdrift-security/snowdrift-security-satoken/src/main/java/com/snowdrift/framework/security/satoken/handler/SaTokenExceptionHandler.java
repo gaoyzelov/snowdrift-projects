@@ -6,7 +6,8 @@ import cn.dev33.satoken.exception.NotRoleException;
 import cn.dev33.satoken.exception.SaTokenException;
 import com.snowdrift.framework.base.result.Result;
 import com.snowdrift.framework.base.result.ResultCode;
-import com.snowdrift.framework.web.util.I18nUtil;
+import io.swagger.v3.oas.annotations.Hidden;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.annotation.Order;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -26,6 +27,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  */
 @Slf4j
 @Order(1)
+@Hidden
 @RestControllerAdvice
 public class SaTokenExceptionHandler {
 
@@ -33,35 +35,35 @@ public class SaTokenExceptionHandler {
      * 未登录异常（含 Token 过期、被踢、被顶等子类型）
      */
     @ExceptionHandler(NotLoginException.class)
-    public Result<Void> handleNotLoginException(NotLoginException e) {
-        log.warn("[Sa-Token] 未登录: type={}, message={}", e.getType(), e.getMessage());
-        return Result.err(ResultCode.UNAUTHORIZED.code(), I18nUtil.getMessage("security.not.authenticated"));
+    public Result<Void> handleNotLoginException(NotLoginException e, HttpServletRequest request) {
+        log.warn("[Sa-Token] 未登录: uri={}, type={}, message={}", request.getRequestURI(), e.getType(), e.getMessage());
+        return Result.err(ResultCode.UNAUTHORIZED);
     }
 
     /**
      * 权限不足异常
      */
     @ExceptionHandler(NotPermissionException.class)
-    public Result<Void> handleNotPermissionException(NotPermissionException e) {
-        log.warn("[Sa-Token] 权限不足: permission={}", e.getPermission());
-        return Result.err(ResultCode.FORBIDDEN.code(), I18nUtil.getMessage("security.permission.denied"));
+    public Result<Void> handleNotPermissionException(NotPermissionException e, HttpServletRequest request) {
+        log.warn("[Sa-Token] 权限不足: uri={}, permission={}", request.getRequestURI(), e.getPermission());
+        return Result.err(ResultCode.FORBIDDEN);
     }
 
     /**
      * 角色不足异常
      */
     @ExceptionHandler(NotRoleException.class)
-    public Result<Void> handleNotRoleException(NotRoleException e) {
-        log.warn("[Sa-Token] 角色不足: role={}", e.getRole());
-        return Result.err(ResultCode.FORBIDDEN.code(), I18nUtil.getMessage("security.role.required", e.getRole()));
+    public Result<Void> handleNotRoleException(NotRoleException e, HttpServletRequest request) {
+        log.warn("[Sa-Token] 角色不足: uri={}, role={}", request.getRequestURI(), e.getRole());
+        return Result.err(ResultCode.FORBIDDEN);
     }
 
     /**
      * 其他 Sa-Token 异常（兜底）
      */
     @ExceptionHandler(SaTokenException.class)
-    public Result<Void> handleSaTokenException(SaTokenException e) {
-        log.warn("[Sa-Token] 框架异常: {}", e.getMessage(), e);
-        return Result.err(ResultCode.INTERNAL_SERVER_ERROR.code(),  I18nUtil.getMessage("security.token.invalid"));
+    public Result<Void> handleSaTokenException(SaTokenException e, HttpServletRequest request) {
+        log.warn("[Sa-Token] 框架异常: uri={}, {}", request.getRequestURI(), e.getMessage(), e);
+        return Result.err(ResultCode.INTERNAL_SERVER_ERROR);
     }
 }
