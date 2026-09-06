@@ -35,5 +35,5 @@ public interface IDataScopeProvider {
      * @param inclusive 是否包含当前部门
      * @return 子部门ID列表
      */
-    List<Long> getChildDeptIds(Long deptId,boolean inclusive);
+    List<Long> getChildDeptIds(Long deptId, boolean inclusive);
 }

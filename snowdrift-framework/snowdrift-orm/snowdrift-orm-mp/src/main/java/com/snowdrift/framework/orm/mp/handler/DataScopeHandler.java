@@ -3,6 +3,7 @@ package com.snowdrift.framework.orm.mp.handler;
 import com.baomidou.mybatisplus.extension.plugins.handler.MultiDataPermissionHandler;
 import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.base.enums.DataScopeEnum;
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.orm.core.anno.DataScope;
@@ -59,9 +60,14 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         if (!isTargetTable(table, scope)) {
             return null;
         }
-        SecurityContext context = SecurityContextHolder.getContext();
+        SecurityContext context;
+        try {
+            context = SecurityContextHolder.getContext();
+        } catch (BizException e) {
+            return new EqualsTo(new LongValue(1), new LongValue(0));
+        }
         DataScopeEnum dataScope = provider.getDataScope(context.getUserId());
-        if(dataScope == DataScopeEnum.ALL){
+        if (dataScope == DataScopeEnum.ALL) {
             log.debug("数据权限类型为 {}，跳过数据权限过滤", dataScope);
             return null;
         }
@@ -103,7 +109,7 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         String methodName = mappedStatementId.substring(lastDot + 1);
         // 移除 MyBatis-Plus 分页插件自动生成的 _mpCount 后缀
         if (methodName.endsWith("_mpCount")) {
-            methodName =  methodName.substring(0, methodName.length() - 8);
+            methodName = methodName.substring(0, methodName.length() - 8);
         }
 
         try {
@@ -131,8 +137,7 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         return switch (dataScope) {
             case DEPT -> new EqualsTo(new Column(deptColumn), new LongValue(context.getDeptId()));
             case SELF -> new EqualsTo(new Column(userColumn), new LongValue(context.getUserId()));
-            case DEPT_AND_SUB ->
-                    buildInExpression(deptColumn, provider.getChildDeptIds(context.getDeptId(),true));
+            case DEPT_AND_SUB -> buildInExpression(deptColumn, provider.getChildDeptIds(context.getDeptId(), true));
             case CUSTOM -> buildInExpression(deptColumn, provider.getCustomDeptIds(context.getUserId()));
             default -> new EqualsTo(new LongValue(1), new LongValue(0));
         };

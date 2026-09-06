@@ -4,8 +4,8 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableLogic;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -17,7 +17,8 @@ import java.time.LocalDateTime;
  * @since 1.0.0
  */
 @Data
-public class BaseEntity implements Serializable {
+@EqualsAndHashCode(callSuper = true)
+public class BaseEntity extends IdEntity {
 
     /**
      * 创建人（INSERT 时自动填充当前操作者名称）

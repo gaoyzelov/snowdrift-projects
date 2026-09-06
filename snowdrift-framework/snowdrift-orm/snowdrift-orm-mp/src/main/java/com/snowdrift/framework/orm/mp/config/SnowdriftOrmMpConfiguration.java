@@ -52,11 +52,11 @@ public class SnowdriftOrmMpConfiguration {
         }
         String key = baseProperties.getCryptoKey();
         if (StringUtils.isBlank(key)) {
-            throw new BizException("orm.crypto.key.not.configured");
+            throw new BizException("数据加密密钥未配置");
         }
         int keyBytes = key.length() / 2;
         if (keyBytes != 16 && keyBytes != 24 && keyBytes != 32) {
-            throw new BizException("orm.crypto.key.invalid.length");
+            throw new BizException("数据加密密钥长度无效");
         }
         CryptoKeyHolder.setKey(key);
         log.info("AES 加密密钥已初始化，密钥长度: {} 位", keyBytes * 8);

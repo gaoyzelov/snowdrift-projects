@@ -46,7 +46,7 @@ public final class CryptoKeyHolder {
      */
     public static String getKey() {
         if (StringUtils.isBlank(cryptoKey)) {
-            throw new BizException("orm.crypto.key.not.configured");
+            throw new BizException("数据加密密钥未配置");
         }
         return cryptoKey;
     }

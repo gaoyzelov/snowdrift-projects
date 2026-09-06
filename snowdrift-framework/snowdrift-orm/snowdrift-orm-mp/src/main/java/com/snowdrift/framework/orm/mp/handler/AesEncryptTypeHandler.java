@@ -66,10 +66,10 @@ public class AesEncryptTypeHandler implements TypeHandler<String> {
             return text;
         }
         if (StringUtils.startsWithIgnoreCase(text, ENC_FLAG)) {
-            throw new BizException("orm.crypto.reject.enc.prefix");
+            throw new BizException("不能加密已加密的数据");
         }
         if (!CryptoKeyHolder.isKeyAvailable()) {
-            throw new BizException("orm.crypto.key.unavailable");
+            throw new BizException("数据加密密钥不可用");
         }
         return ENC_FLAG + EncryptUtil.aesGcmEncrypt(text, CryptoKeyHolder.getKey());
     }
@@ -82,7 +82,7 @@ public class AesEncryptTypeHandler implements TypeHandler<String> {
             return encryptedValue;
         }
         if (!CryptoKeyHolder.isKeyAvailable()) {
-            throw new BizException("orm.crypto.key.unavailable");
+            throw new BizException("数据加密密钥不可用");
         }
         // GCM 格式
         if (encryptedValue.startsWith(ENC_FLAG)) {

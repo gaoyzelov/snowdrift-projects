@@ -41,7 +41,7 @@ public class MultiTenantLineHandler implements TenantLineHandler {
         if (Objects.nonNull(tenantId)) {
             return new LongValue(tenantId);
         }
-        throw new BizException("orm.tenant.context.missing");
+        throw new BizException("未获取到租户上下文信息");
     }
 
     /**
