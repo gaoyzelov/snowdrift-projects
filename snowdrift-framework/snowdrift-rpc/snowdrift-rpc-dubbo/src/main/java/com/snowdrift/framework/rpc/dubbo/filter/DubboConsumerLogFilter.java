@@ -34,17 +34,17 @@ public class DubboConsumerLogFilter implements Filter {
             stopWatch.stop();
 
             if (result.hasException()) {
-                log.error("Dubbo调用异常 [Consumer] {}.{}(), elapsed={}ms",
+                log.error("Dubbo RPC调用异常 [Consumer] {}.{}(), elapsed={}ms",
                         interfaceName, methodName, stopWatch.getDuration().toMillis(), result.getException());
             } else {
-                log.debug("Dubbo调用成功 [Consumer] {}.{}(), elapsed={}ms",
+                log.debug("Dubbo RPC调用成功 [Consumer] {}.{}(), elapsed={}ms",
                         interfaceName, methodName, stopWatch.getDuration().toMillis());
             }
             return result;
 
         } catch (RpcException e) {
             stopWatch.stop();
-            log.error("Dubbo调用失败 [Consumer] {}.{}(), elapsed={}ms",
+            log.error("Dubbo RPC调用失败 [Consumer] {}.{}(), elapsed={}ms",
                     interfaceName, methodName, stopWatch.getDuration().toMillis(), e);
             throw e;
         }

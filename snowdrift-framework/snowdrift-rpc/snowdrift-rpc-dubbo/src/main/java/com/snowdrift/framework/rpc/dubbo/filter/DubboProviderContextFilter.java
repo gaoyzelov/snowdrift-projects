@@ -52,7 +52,7 @@ public class DubboProviderContextFilter implements Filter, Filter.Listener {
         // 检查 Consumer 端上下文注入失败标记
         String contextError = rpcContext.getAttachment(RpcContextConstants.CONTEXT_ERROR);
         if (StrConst.TRUE.equals(contextError)) {
-            log.warn("Consumer 端上下文注入失败，跳过上下文恢复");
+            log.warn("Dubbo 服务端上下文注入失败，跳过上下文恢复");
             return;
         }
 

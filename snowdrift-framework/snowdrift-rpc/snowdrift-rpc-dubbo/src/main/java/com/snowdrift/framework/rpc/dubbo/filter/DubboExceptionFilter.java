@@ -88,7 +88,7 @@ public class DubboExceptionFilter implements Filter, Filter.Listener {
             }
 
             // 不可反序列化的异常，打印日志并包装
-            log.error("RPC调用异常，调用方：{}，服务名: {}，方法: {}, 异常信息: {}",
+            log.error("Dubbo RPC调用异常，调用方：{}，服务名: {}，方法: {}, 异常信息: {}",
                     RpcContext.getServiceContext().getRemoteHost(),
                     invoker.getInterface().getName(),
                     invocation.getMethodName(),
@@ -97,7 +97,7 @@ public class DubboExceptionFilter implements Filter, Filter.Listener {
             appResponse.setException(new BizException("RPC 调用异常", exception));
 
         } catch (Throwable e) {
-            log.error("RPC异常处理出错，调用方：{}，服务名: {}，方法: {}, 异常信息: {}",
+            log.error("Dubbo RPC异常处理出错，调用方：{}，服务名: {}，方法: {}, 异常信息: {}",
                     RpcContext.getServiceContext().getRemoteHost(),
                     invoker.getInterface().getName(),
                     invocation.getMethodName(),
@@ -108,7 +108,7 @@ public class DubboExceptionFilter implements Filter, Filter.Listener {
 
     @Override
     public void onError(Throwable e, Invoker<?> invoker, Invocation invocation) {
-        log.error("RPC调用异常，调用方：{}，服务名: {}，方法: {}, 异常信息: {}",
+        log.error("Dubbo RPC调用异常，调用方：{}，服务名: {}，方法: {}, 异常信息: {}",
                 RpcContext.getServiceContext().getRemoteHost(),
                 invoker.getInterface().getName(),
                 invocation.getMethodName(),

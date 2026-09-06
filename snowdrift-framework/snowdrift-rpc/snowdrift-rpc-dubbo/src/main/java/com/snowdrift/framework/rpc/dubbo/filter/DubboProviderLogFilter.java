@@ -36,17 +36,17 @@ public class DubboProviderLogFilter implements Filter {
             stopWatch.stop();
 
             if (result.hasException()) {
-                log.error("Dubbo服务异常 [Provider] {}.{}(), caller={}, elapsed={}ms",
+                log.error("Dubbo RPC服务异常 [Provider] {}.{}(), caller={}, elapsed={}ms",
                         interfaceName, methodName, remoteHost, stopWatch.getDuration().toMillis(), result.getException());
             } else {
-                log.debug("Dubbo服务成功 [Provider] {}.{}(), caller={}, elapsed={}ms",
+                log.debug("Dubbo RPC服务成功 [Provider] {}.{}(), caller={}, elapsed={}ms",
                         interfaceName, methodName, remoteHost, stopWatch.getDuration().toMillis());
             }
             return result;
 
         } catch (RpcException e) {
             stopWatch.stop();
-            log.error("Dubbo服务失败 [Provider] {}.{}(), caller={}, elapsed={}ms",
+            log.error("Dubbo RPC服务失败 [Provider] {}.{}(), caller={}, elapsed={}ms",
                     interfaceName, methodName, remoteHost, stopWatch.getDuration().toMillis(), e);
             throw e;
         }
