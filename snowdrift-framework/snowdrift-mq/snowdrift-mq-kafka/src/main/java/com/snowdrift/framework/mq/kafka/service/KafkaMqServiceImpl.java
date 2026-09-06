@@ -55,7 +55,7 @@ public class KafkaMqServiceImpl extends AbstractMqService {
             return toResult(sendResult);
         } catch (CompletionException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
-            throw new MqException("Kafka 消息发送失败: topic=" + topic + "，原因=" + cause.getMessage(), cause);
+            throw new MqException("Kafka 消息发送失败: topic=" + topic + "，msg=" + cause.getMessage());
         }
     }
 
@@ -75,7 +75,7 @@ public class KafkaMqServiceImpl extends AbstractMqService {
                     fireOnSendError(topic, cause);
                     throw cause instanceof RuntimeException runtimeException
                             ? runtimeException
-                            : new MqException("Kafka 消息发送失败: topic=" + topic + "，原因=" + cause.getMessage(), cause);
+                            : new MqException("Kafka 消息发送失败: topic=" + topic + "，msg=" + cause.getMessage());
                 }
                 MqSendResult result = toResult(sendResult);
                 fireAfterSend(topic, result);

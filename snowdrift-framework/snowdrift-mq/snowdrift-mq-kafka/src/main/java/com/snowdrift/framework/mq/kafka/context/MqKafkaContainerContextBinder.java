@@ -26,10 +26,9 @@ public class MqKafkaContainerContextBinder implements BeanPostProcessor {
     }
 
     @Override
+    @SuppressWarnings({"rawtypes", "unchecked"})
     public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
-        if (bean instanceof AbstractKafkaListenerContainerFactory) {
-            @SuppressWarnings({"rawtypes", "unchecked"})
-            AbstractKafkaListenerContainerFactory factory = (AbstractKafkaListenerContainerFactory) bean;
+        if (bean instanceof AbstractKafkaListenerContainerFactory factory) {
             factory.setRecordInterceptor(recordInterceptor);
             log.debug("已为 Kafka 监听容器工厂挂载 MQ 上下文拦截器: {}", beanName);
         }
