@@ -12,6 +12,8 @@ import java.util.concurrent.TimeUnit;
  * 在方法执行前将请求标识写入缓存，若在指定时间窗口内再次提交相同请求则拒绝，
  * 用于实现接口幂等性。
  * </p>
+ * <p><b>后端要求：</b>防重依赖 per-key 过期能力，仅在 Redis/Redisson 缓存后端下生效；
+ * Caffeine 本地后备实现不支持，使用时会抛出 {@code UnsupportedOperationException}。</p>
  *
  * <pre>
  * // 基于方法参数防重
@@ -49,5 +51,5 @@ public @interface RepeatSubmit {
     /**
      * 重复提交时的提示信息
      */
-    String message() default "请求过于频繁，请稍后重试！";
+    String message() default "请勿重复提交，请稍后重试";
 }

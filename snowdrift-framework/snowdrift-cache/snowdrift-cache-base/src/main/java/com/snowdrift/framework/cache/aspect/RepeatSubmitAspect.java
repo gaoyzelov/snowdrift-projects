@@ -57,8 +57,13 @@ public class RepeatSubmitAspect {
         try {
             return joinPoint.proceed();
         } catch (Exception e) {
-            // 业务异常时删除标记，允许用户修正后重新提交
-            cacheService.delete(key);
+            // 执行失败时删除标记，允许用户修正后重新提交；
+            // 删除失败仅记录日志，不覆盖原始业务异常
+            try {
+                cacheService.delete(key);
+            } catch (Exception deleteEx) {
+                log.error("重复提交标记删除失败: key={}", key, deleteEx);
+            }
             if (e instanceof InterruptedException) {
                 Thread.currentThread().interrupt();
             }

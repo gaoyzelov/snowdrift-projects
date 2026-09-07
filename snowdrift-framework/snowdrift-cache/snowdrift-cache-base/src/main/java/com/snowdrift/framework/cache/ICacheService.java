@@ -130,7 +130,7 @@ public interface ICacheService {
      * 获取剩余过期时间
      *
      * @param key 缓存键
-     * @return 剩余秒数，-1 表示永不过期，-2 表示 key 不存在
+     * @return 剩余秒数，-1 表示永不过期
      */
     long getExpire(String key);
 

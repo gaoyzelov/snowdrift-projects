@@ -8,6 +8,7 @@ import com.snowdrift.framework.cache.redis.serialize.FastJson2RedisSerializer;
 import com.snowdrift.framework.cache.redis.service.SnowdriftRedisCacheServiceImpl;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import com.snowdrift.framework.cache.serialize.JacksonCacheSerializer;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -83,8 +84,10 @@ public class SnowdriftRedisConfiguration {
                 .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(keySerializer))
                 // value序列化：Jackson JSON
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(valueSerializer))
-                // key前缀，prefix:cacheName:key
-                .computePrefixWith(name -> properties.getKeyPrefix() + StrConst.COLON + name + StrConst.COLON)
+                // key前缀，prefix:cacheName:key（未配置前缀时省略前缀）
+                .computePrefixWith(name -> StringUtils.isBlank(properties.getKeyPrefix())
+                        ? name + StrConst.COLON
+                        : properties.getKeyPrefix() + StrConst.COLON + name + StrConst.COLON)
                 // 全局缓存过期时间
                 .entryTtl(properties.getKeyTtl());
 

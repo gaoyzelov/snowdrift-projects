@@ -22,9 +22,9 @@ import java.time.Duration;
 public class SnowdriftCacheProperties {
 
     /**
-     * key 全局前缀
+     * key 全局前缀（可选，默认空串；未配置时使用裸 key，不带前缀分隔符）
      */
-    private String keyPrefix;
+    private String keyPrefix = "";
 
     /**
      * 全局默认 TTL

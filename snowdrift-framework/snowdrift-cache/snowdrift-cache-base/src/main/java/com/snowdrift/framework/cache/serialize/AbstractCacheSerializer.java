@@ -23,7 +23,7 @@ public abstract class AbstractCacheSerializer implements ICacheSerializer {
             return doSerialize(value);
         } catch (Exception e) {
             log.debug("缓存序列化失败", e);
-            throw new BizException("缓存序列化失败");
+            throw new BizException("缓存序列化失败", e);
         }
     }
 
@@ -36,7 +36,7 @@ public abstract class AbstractCacheSerializer implements ICacheSerializer {
             return doDeserialize(json, type);
         } catch (Exception e) {
             log.debug("缓存反序列化失败", e);
-            throw new BizException("缓存反序列化失败");
+            throw new BizException("缓存反序列化失败", e);
         }
     }
 

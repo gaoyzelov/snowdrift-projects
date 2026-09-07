@@ -80,7 +80,7 @@ throw new BizException("订单 {0} 不存在", new Object[]{orderId});
 base 内四个枚举均已标注 `@JsonValue`（按 `code` 序列化）+ `@JsonCreator`（按 `code` 反序列化）：
 
 - `DataScopeEnum`：`null` 或未知编码回退 `NONE`（无权限），避免缺省配置意外扩大数据可见范围；
-- `StatusEnum` / `YesNoEnum` / `BizTypeEnum`：`null` 映射为 `null`，未知编码抛参数错误。
+- `StatusEnum` / `YesNoEnum` / `BizTypeEnum`：`null` 映射为 `null`，未知编码抛 `BizException`（默认码 `ERR`，由全局异常处理兜底为参数错误）。
 
 > 注意：`schedule` / `oss` 等模块自定义的 `IEnum` 目前仍走 Jackson 默认（按枚举名），如需统一请在其实现类补充上述注解。
 

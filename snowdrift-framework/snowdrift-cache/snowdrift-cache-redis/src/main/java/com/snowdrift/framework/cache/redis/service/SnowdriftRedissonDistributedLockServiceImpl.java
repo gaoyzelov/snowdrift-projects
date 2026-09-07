@@ -34,7 +34,8 @@ public class SnowdriftRedissonDistributedLockServiceImpl implements IDistributed
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.warn("获取分布式锁被中断: key={}", key, e);
-            return false;
+            // 中断属取消而非“锁竞争失败”，抛出独立异常以免上层误报“操作处理中，请勿重复提交”
+            throw new BizException("获取分布式锁被中断", e);
         }
     }
 

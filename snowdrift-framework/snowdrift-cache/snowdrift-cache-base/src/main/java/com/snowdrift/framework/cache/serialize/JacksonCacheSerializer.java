@@ -11,11 +11,13 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 /**
  * 基于 Jackson 的缓存序列化器
  * <p>
- * 安全设计：
+ * 设计取舍：
  * <ul>
- *   <li>不启用 {@code DefaultTyping}，不向 JSON 写入 {@code @class} 类型元数据</li>
- *   <li>反序列化依赖调用方传入的 {@link Class} 参数，而非 JSON 内嵌类型</li>
- *   <li>忽略未知字段（兼容旧版本缓存数据中可能存在的 {@code @class} 字段）</li>
+ *   <li>启用 {@code DefaultTyping(NON_FINAL)}，序列化时写入 {@code @class} 类型元数据，
+ *       保证接口/父类类型反序列化不会退化为 {@code LinkedHashMap}</li>
+ *   <li>因此缓存 JSON 内含全限定类名：实体类重命名/移动包会导致旧缓存读取失败，需清理后重建</li>
+ *   <li>忽略未知字段（{@code FAIL_ON_UNKNOWN_PROPERTIES=false}），兼容结构演进</li>
+ *   <li>信任前提是缓存数据由本应用自身写入；若缓存存在被外部篡改风险，请勿启用类型写入</li>
  * </ul>
  * </p>
  *

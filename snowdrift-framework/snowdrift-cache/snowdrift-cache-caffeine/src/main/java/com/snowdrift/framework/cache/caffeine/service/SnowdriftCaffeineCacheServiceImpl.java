@@ -43,7 +43,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     @Override
     protected String doHget(String key, String hashKey) {
-        throw new UnsupportedOperationException("Caffeine 不支持hget 操作");
+        throw new UnsupportedOperationException("Caffeine 不支持 hget 操作");
     }
 
     @Override
@@ -53,7 +53,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     @Override
     protected void doHput(String key, String hashKey, String value) {
-        throw new UnsupportedOperationException("Caffeine 不支持hput 操作");
+        throw new UnsupportedOperationException("Caffeine 不支持 hput 操作");
     }
 
     @Override
@@ -79,7 +79,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     @Override
     protected boolean doHdelete(String key, String hashKey) {
-        throw new UnsupportedOperationException("Caffeine 不支持hdelete 操作");
+        throw new UnsupportedOperationException("Caffeine 不支持 hdelete 操作");
     }
 
     @Override
@@ -107,7 +107,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     /**
-     * Caffeine 原生不支持查询剩余 TTL，返回 -2 表示不支持该操作
+     * Caffeine 原生不支持查询剩余 TTL，调用将抛出 {@link UnsupportedOperationException}
      */
     @Override
     public long doGetExpire(String key) {

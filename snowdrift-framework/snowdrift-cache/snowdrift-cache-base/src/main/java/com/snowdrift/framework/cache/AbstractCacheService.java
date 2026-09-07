@@ -4,6 +4,7 @@ import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.base.util.AssertUtil;
+import org.apache.commons.lang3.StringUtils;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -150,7 +151,9 @@ public abstract class AbstractCacheService implements ICacheService {
      * 拼接 key 前缀
      */
     protected String buildKey(String key) {
-        return properties.getKeyPrefix() + StrConst.COLON + key;
+        return StringUtils.isBlank(properties.getKeyPrefix())
+                ? key
+                : properties.getKeyPrefix() + StrConst.COLON + key;
     }
 
     /**
