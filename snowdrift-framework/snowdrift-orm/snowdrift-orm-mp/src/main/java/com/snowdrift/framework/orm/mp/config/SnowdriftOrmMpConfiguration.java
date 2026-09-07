@@ -54,6 +54,10 @@ public class SnowdriftOrmMpConfiguration {
         if (StringUtils.isBlank(key)) {
             throw new BizException("数据加密密钥未配置");
         }
+        // 十六进制密钥必须为偶数位，且对应 AES-128/192/256
+        if (key.length() % 2 != 0) {
+            throw new BizException("数据加密密钥长度无效（十六进制字符串需为偶数位）");
+        }
         int keyBytes = key.length() / 2;
         if (keyBytes != 16 && keyBytes != 24 && keyBytes != 32) {
             throw new BizException("数据加密密钥长度无效");

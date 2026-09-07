@@ -64,7 +64,8 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         try {
             context = SecurityContextHolder.getContext();
         } catch (BizException e) {
-            return new EqualsTo(new LongValue(1), new LongValue(0));
+            // 无登录上下文：按“无权限”处理（1=0，不返回任何行）
+            return noAccess();
         }
         DataScopeEnum dataScope = provider.getDataScope(context.getUserId());
         if (dataScope == DataScopeEnum.ALL) {
@@ -135,12 +136,27 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         String userColumn = buildColumnName(scope.userColumn(), alias);
 
         return switch (dataScope) {
-            case DEPT -> new EqualsTo(new Column(deptColumn), new LongValue(context.getDeptId()));
-            case SELF -> new EqualsTo(new Column(userColumn), new LongValue(context.getUserId()));
-            case DEPT_AND_SUB -> buildInExpression(deptColumn, provider.getChildDeptIds(context.getDeptId(), true));
-            case CUSTOM -> buildInExpression(deptColumn, provider.getCustomDeptIds(context.getUserId()));
-            default -> new EqualsTo(new LongValue(1), new LongValue(0));
+            case DEPT -> context.getDeptId() != null
+                    ? new EqualsTo(new Column(deptColumn), new LongValue(context.getDeptId()))
+                    : noAccess();
+            case SELF -> context.getUserId() != null
+                    ? new EqualsTo(new Column(userColumn), new LongValue(context.getUserId()))
+                    : noAccess();
+            case DEPT_AND_SUB -> context.getDeptId() != null
+                    ? buildInExpression(deptColumn, provider.getChildDeptIds(context.getDeptId(), true))
+                    : noAccess();
+            case CUSTOM -> context.getUserId() != null
+                    ? buildInExpression(deptColumn, provider.getCustomDeptIds(context.getUserId()))
+                    : noAccess();
+            default -> noAccess();
         };
+    }
+
+    /**
+     * 生成“无权限”表达式：{@code 1 = 0}，用于无登录上下文、缺少过滤字段或过滤列表为空时返回空集
+     */
+    private Expression noAccess() {
+        return new EqualsTo(new LongValue(1), new LongValue(0));
     }
 
     /**
@@ -162,12 +178,16 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
 
     /**
      * 构建 IN 表达式：{@code column IN (id1, id2, ...)}
+     * <p>列表为空时返回 {@code 1=0}（空集），避免拼出非法的 {@code IN ()}。</p>
      *
      * @param column  列引用（可含表别名前缀）
-     * @param deptIds 部门ID列表（调用前需确保非空）
-     * @return IN 表达式
+     * @param deptIds 部门ID列表
+     * @return IN 表达式；列表为空时返回 {@code 1=0}
      */
     private Expression buildInExpression(String column, List<Long> deptIds) {
+        if (deptIds == null || deptIds.isEmpty()) {
+            return noAccess();
+        }
         ParenthesedExpressionList<LongValue> expressionList = new ParenthesedExpressionList<>(
                 deptIds.stream().map(LongValue::new).toList()
         );

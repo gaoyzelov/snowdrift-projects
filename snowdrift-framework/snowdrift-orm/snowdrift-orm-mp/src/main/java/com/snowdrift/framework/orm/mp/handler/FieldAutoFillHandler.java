@@ -1,9 +1,11 @@
 package com.snowdrift.framework.orm.mp.handler;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.reflection.MetaObject;
 
 import java.time.LocalDateTime;
@@ -19,6 +21,9 @@ import java.time.LocalDateTime;
 @Slf4j
 public class FieldAutoFillHandler implements MetaObjectHandler {
 
+    /** 无登录上下文时的默认操作人（系统任务/匿名写库，避免审计列写入被阻断） */
+    private static final String SYSTEM_OPERATOR = "system";
+
     private final OrmMpTenantProperties tenantProperties;
 
     public FieldAutoFillHandler(OrmMpTenantProperties tenantProperties) {
@@ -32,7 +37,7 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
      */
     @Override
     public void insertFill(MetaObject metaObject) {
-        String operatorName = SecurityContextHolder.getOperator();
+        String operatorName = resolveOperator();
         this.strictInsertFill(metaObject, "createBy", String.class, operatorName);
         this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, LocalDateTime.now());
         this.strictInsertFill(metaObject, "updateBy", String.class, operatorName);
@@ -45,7 +50,7 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
                 tenantId = null;
             }
             if (tenantId == null) {
-                log.warn("无安全上下文，tenantId 降级为 0（系统租户）");
+                log.debug("无安全上下文，tenantId 降级为 0（系统租户）");
                 tenantId = 0L;
             }
             this.strictInsertFill(metaObject, tenantProperties.getTenantIdColumn(), Long.class, tenantId);
@@ -59,8 +64,24 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
      */
     @Override
     public void updateFill(MetaObject metaObject) {
-        String operatorName = SecurityContextHolder.getOperator();
+        String operatorName = resolveOperator();
         this.strictUpdateFill(metaObject, "updateBy", String.class, operatorName);
         this.strictUpdateFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
+    }
+
+    /**
+     * 解析当前操作人：优先昵称，无则账号；无登录上下文或两者皆空时降级为 {@link #SYSTEM_OPERATOR}。
+     * <p>系统任务/匿名（如注册）写库不允许抛异常阻断 SQL，审计列统一记 system。</p>
+     */
+    private String resolveOperator() {
+        SecurityContext context = SecurityContextHolder.peekContext();
+        if (context == null) {
+            log.debug("无安全上下文，操作人降级为 system");
+            return SYSTEM_OPERATOR;
+        }
+        String name = StringUtils.isNotBlank(context.getNickname())
+                ? context.getNickname()
+                : context.getUsername();
+        return StringUtils.isBlank(name) ? SYSTEM_OPERATOR : name;
     }
 }

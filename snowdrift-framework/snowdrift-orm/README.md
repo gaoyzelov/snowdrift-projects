@@ -86,6 +86,8 @@ TenantUtil.ignore(() -> {
 });
 ```
 
+> **安全语义（fail-closed）：** 查询/写库若取不到当前租户上下文会抛 `BizException`，避免跨租户读写；系统任务需放行时用 `TenantUtil.ignore(...)` 显式跳过。INSERT 在无上下文时由自动填充写入 `tenant_id = 0`（系统租户）。
+
 ### 数据权限 — @DataScope
 
 基于注解的声明式行级权限控制，支持五种范围。
@@ -123,6 +125,8 @@ public class DeptDataScopeProvider implements IDataScopeProvider {
 }
 ```
 
+> **安全语义（fail-closed）：** 无登录上下文、缺少 `deptId/userId`，或部门列表为空时，一律按 `1=0` 返回空集，不误放行任何数据。
+
 ### 字段加密 — @TableField(typeHandler = ...)
 
 对敏感字段进行透明 AES-GCM 加密，入库自动加密，出库自动解密。兼容旧 ECB 格式数据的解密。
@@ -146,11 +150,14 @@ private String phone;
 - 向后兼容：旧 ECB 格式数据（同 `{ENC}` 前缀）的自动解密，写入时自动升级为 GCM
 - 安全防护：已带 `{ENC}` 前缀的数据拒绝再次加密（大小写不敏感）
 
-> 密码密钥支持 16/24/32 位十六进制字符，对应 AES-128/192/256。
+> 密钥为十六进制字符串，长度需为 **32/48/64 位**（对应 AES-128/192/256），且为偶数位；无效长度在启动期即报错。
 
 ### 自动填充
 
-`FieldAutoFillHandler` 在 INSERT / UPDATE 时自动从 `SecurityContext` 填充审计字段和租户 ID，字段已有值时不会覆盖。
+`FieldAutoFillHandler` 在 INSERT / UPDATE 时自动填充审计字段和租户 ID（实体字段需标注 `@TableField(fill = ...)`），**字段已有值时不会覆盖**。
+
+- `createBy` / `updateBy`：取自 `SecurityContext`（昵称优先，否则账号）；
+- **无登录上下文（匿名/系统任务）写库不抛错**：操作人降级为 `system`，INSERT 租户填 `0`（系统租户）；日志按 debug 记录，避免批量写入刷屏。
 
 ### 分页
 
@@ -191,13 +198,13 @@ snowdrift:
 |------|------|--------|------|
 | `optimistic-lock` | Boolean | false | 乐观锁开关 |
 | `crypto` | Boolean | false | 字段加密开关 |
-| `crypto-key` | String | — | AES 密钥（16/24/32 位十六进制） |
+| `crypto-key` | String | — | AES 密钥（十六进制，32/48/64 位对应 AES-128/192/256） |
 
 ### snowdrift.orm.mp.tenant
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `enabled` | Boolean | null | 多租户开关（不配置时不启用） |
+| `enabled` | Boolean | false | 多租户开关（默认关闭） |
 | `tenant-id-column` | String | tenant_id | 租户 ID 字段名 |
 | `ignore-tables` | List\<String\> | [] | 忽略的表名 |
 
