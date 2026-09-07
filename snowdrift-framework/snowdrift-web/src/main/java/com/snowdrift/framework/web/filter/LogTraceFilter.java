@@ -5,6 +5,7 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -23,8 +24,13 @@ public class LogTraceFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
-        // 生成 TraceId
-        LogTraceUtil.setTraceId();
+        // 复用入站 X-Trace-Id（网关/上游传递的链路 ID），否则生成新的
+        String inbound = request.getHeader(TRACE_HEADER);
+        if (StringUtils.isNotBlank(inbound)) {
+            LogTraceUtil.setTraceId(inbound);
+        } else {
+            LogTraceUtil.setTraceId();
+        }
         // 写入响应头，方便客户端关联报错
         response.setHeader(TRACE_HEADER, LogTraceUtil.getTraceId());
         try {

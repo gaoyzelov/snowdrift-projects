@@ -54,7 +54,7 @@ public class SnowdriftAsyncConfiguration implements AsyncConfigurer {
         executor.setTaskDecorator(taskDecorator()); // 设置线程上下文
         executor.setWaitForTasksToCompleteOnShutdown(properties.getWaitForTasksToCompleteOnShutdown()); // 设置优雅关闭
         executor.setAwaitTerminationSeconds(properties.getAwaitTerminationSeconds()); // 设置等待时间
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy()); // 设置拒绝策略
+        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy()); // 拒绝时由提交线程执行，避免同步抛 500
         executor.initialize();
         return executor;
     }
@@ -77,12 +77,16 @@ public class SnowdriftAsyncConfiguration implements AsyncConfigurer {
      */
     private TaskDecorator taskDecorator() {
         return runnable -> {
+            // HttpContext 可能为 null（定时任务/MQ 等非 HTTP 线程触发 @Async）：有则携带、无则不设置，
+            // 避免对 null 调用 setContext 抛“HTTP上下文不能为空”
             final HttpContext httpContext = HttpContextHolder.getContext();
-            final SecurityContext securityContext = getSecurityContext();
+            final SecurityContext securityContext = SecurityContextHolder.peekContext();
             final String traceId = LogTraceUtil.getTraceId();
             return () -> {
                 try {
-                    HttpContextHolder.setContext(httpContext);
+                    if (httpContext != null) {
+                        HttpContextHolder.setContext(httpContext);
+                    }
                     if (securityContext != null) {
                         SecurityContextHolder.setContext(securityContext);
                     }
@@ -90,20 +94,10 @@ public class SnowdriftAsyncConfiguration implements AsyncConfigurer {
                     runnable.run();
                 } finally {
                     HttpContextHolder.clear();
-                    if (securityContext != null) {
-                        SecurityContextHolder.clear();
-                    }
+                    SecurityContextHolder.clear();
                     LogTraceUtil.clearTraceId();
                 }
             };
         };
-    }
-
-    private static SecurityContext getSecurityContext() {
-        try {
-            return SecurityContextHolder.getContext();
-        } catch (Exception e) {
-            return null;
-        }
     }
 }

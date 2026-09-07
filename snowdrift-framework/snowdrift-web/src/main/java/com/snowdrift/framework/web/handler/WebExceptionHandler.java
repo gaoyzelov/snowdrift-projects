@@ -9,6 +9,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.MissingPathVariableException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.HandlerMethodValidationException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.multipart.support.MissingServletRequestPartException;
@@ -83,6 +85,25 @@ public class WebExceptionHandler {
                 .map(ConstraintViolation::getMessage)
                 .collect(Collectors.joining(StrConst.COMMA));
         log.warn("约束违反: uri={}, msg={}", request.getRequestURI(), message, e);
+        return Result.err(ResultCode.BAD_REQUEST.code(), message);
+    }
+
+    /**
+     * 方法级参数校验异常处理（Boot 3.x：方法签名上的 @RequestParam/@PathVariable/@RequestBody 校验）
+     * 避免校验失败落入通用 Exception 兜底被当成 500
+     */
+    @ExceptionHandler(HandlerMethodValidationException.class)
+    public Result<Void> handleHandlerMethodValidationException(HandlerMethodValidationException e, HttpServletRequest request) {
+        String message = e.getAllValidationResults().stream()
+                .flatMap(r -> r.getResolvableErrors().stream())
+                .map(err -> err.getDefaultMessage())
+                .filter(StringUtils::isNotBlank)
+                .distinct()
+                .collect(Collectors.joining(StrConst.COMMA));
+        if (message.isEmpty()) {
+            message = "请求参数校验失败，请检查后重试";
+        }
+        log.warn("方法参数校验失败: uri={}, msg={}", request.getRequestURI(), message, e);
         return Result.err(ResultCode.BAD_REQUEST.code(), message);
     }
 

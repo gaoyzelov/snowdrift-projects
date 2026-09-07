@@ -40,44 +40,45 @@ snowdrift:
 
 ### 全局异常处理 — WebExceptionHandler
 
-`@RestControllerAdvice` 统一拦截所有异常，包装为 `Result` 返回，覆盖 16 种异常类型：
+`@RestControllerAdvice` 统一拦截异常并包装为 `Result` 返回。
 
-| 异常类型 | HTTP 状态 | 说明 |
+**响应语义（重点）：**
+- **HTTP 状态**：本 advice 返回 `Result`，HTTP 状态统一为 **200**（业务成败由 body.code 区分）；安全模块在 filter 级会单独设置 HTTP 401/403。
+- **body.code**：遵循 `ResultCode`——成功 `1`、失败 `0`、`1xxx` 客户端/资源侧、`2xxx` 服务端。
+- **body.msg**：为 `ResultCode` 内置中文或业务抛出的中文直文，**不依赖 i18n 开关**，不会把 i18n key 透给前端。
+
+| 异常类型 | body.code | 说明 |
 |---------|----------|------|
-| `BizException` | 动态 | 业务异常，取 `e.getCode()` |
-| `MethodArgumentNotValidException` | 400 | `@Valid` 校验失败 |
-| `BindException` | 400 | 参数绑定失败 |
-| `ConstraintViolationException` | 400 | `@Validated` 方法参数校验失败 |
-| `MethodArgumentTypeMismatchException` | 400 | 参数类型不匹配 |
-| `HttpMessageNotReadableException` | 400 | JSON 解析失败 |
-| `MissingServletRequestParameterException` | 400 | 缺少请求参数 |
-| `MissingPathVariableException` | 400 | 缺少路径变量 |
-| `MissingServletRequestPartException` | 400 | 缺少 multipart 部分 |
-| `IllegalArgumentException` | 400 | 非法参数 |
-| `MaxUploadSizeExceededException` | 413 | 文件上传超限 |
-| `NoResourceFoundException` | 404 | 资源不存在 |
-| `HttpRequestMethodNotSupportedException` | 405 | 方法不支持 |
-| `HttpMediaTypeNotSupportedException` | 415 | 媒体类型不支持 |
-| `NullPointerException` | 500 | 空指针 |
-| `Exception` | 500 | 通用兜底 |
+| `BizException` | `e.getCode()` | 业务异常 |
+| `MethodArgumentNotValidException` | `BAD_REQUEST(1000)` | `@Valid` 校验失败 |
+| `BindException` | `BAD_REQUEST(1000)` | 参数绑定失败 |
+| `ConstraintViolationException` | `BAD_REQUEST(1000)` | `@Validated` 方法参数校验 |
+| `HandlerMethodValidationException` | `BAD_REQUEST(1000)` | Boot 3.x 方法签名参数校验（已覆盖，不再落 500） |
+| `MethodArgumentTypeMismatchException` | `BAD_REQUEST(1000)` | 参数类型不匹配 |
+| `HttpMessageNotReadableException` | `BAD_REQUEST(1000)` | JSON 解析失败 |
+| `MissingServletRequestParameterException` | `BAD_REQUEST(1000)` | 缺少请求参数 |
+| `MissingPathVariableException` | `BAD_REQUEST(1000)` | 缺少路径变量 |
+| `MissingServletRequestPartException` | `BAD_REQUEST(1000)` | 缺少 multipart 部分 |
+| `IllegalArgumentException` | `BAD_REQUEST(1000)` | 非法参数 |
+| `MaxUploadSizeExceededException` | `PAYLOAD_TOO_LARGE(1007)` | 文件上传超限 |
+| `NoResourceFoundException` | `NOT_FOUND(1003)` | 资源不存在 |
+| `HttpRequestMethodNotSupportedException` | `METHOD_NOT_ALLOWED(1004)` | 方法不支持 |
+| `HttpMediaTypeNotSupportedException` | `UNSUPPORTED_MEDIA_TYPE(1008)` | 媒体类型不支持 |
+| `NullPointerException` | `INTERNAL_SERVER_ERROR(2000)` | 空指针 |
+| `Exception` | `INTERNAL_SERVER_ERROR(2000)` | 通用兜底 |
 
-所有异常消息均经过 i18n 解析。
+### 国际化（i18n）— 现状与方向
 
-### 国际化（i18n）
+`I18nUtil` 提供按 key 取消息的工具方法；请求级语言由 `I18nInterceptor` 设置（URL 语言参数 > `Accept-Language` > 默认语言）。资源文件命名：各模块独立维护 `src/main/resources/i18n/<prefix>-messages_<locale>.properties`。
 
-请求级语言自动检测，响应消息自动翻译，支持 `I18nInterceptor` + `I18nMessageSource` + `ResultI18nAdvice` 三层架构。
-
-资源文件命名：各模块独立维护 `src/main/resources/i18n/<prefix>-messages_<locale>.properties`。
-
-```java
-// 代码中获取国际化消息
-String msg = I18nUtil.getMessage("common.success");
-String formatted = I18nUtil.getMessage("order.paid", orderNo);
-```
+**重要现状（与旧表述不同）：**
+- 全局异常响应**不走 i18n**——消息为 `ResultCode` 内置中文或业务中文直文，避免未启用/缺 key 时把 key 透给前端。
+- `snowdrift.i18n.enabled` 默认关闭；未启用（`messageSource==null`）或 bundle 缺 key 时，`I18nUtil.getMessage(...)` 仅 `log.warn` 后**原样返回 key**。请勿依赖它对前端文案做翻译。
+- 项目方向是**整体去掉 i18n**，各模块已陆续改为中文直文 / `ResultCode` 文案；届时 `I18nUtil` 相关链路会收敛或移除。
 
 ### 异步支持
 
-`AsyncConfiguration` 提供 `TaskDecorator`，自动向 `@Async` 线程传递 `HttpContext`、`SecurityContext` 和 traceId，并在 `finally` 中清理。
+`AsyncConfiguration` 提供 `TaskDecorator`，向 `@Async` 线程传递 `HttpContext`、`SecurityContext` 和 traceId，并在 `finally` 中清理。上下文为**可选**：非 HTTP 线程（定时任务/MQ 等）触发时 HttpContext 缺失也不报错；线程池拒绝策略为 `CallerRunsPolicy`（由提交线程兜底执行，不抛 500）。
 
 ```java
 @Async
@@ -89,7 +90,7 @@ public CompletableFuture<Result<User>> getUser(Long id) {
 
 ### 链路追踪
 
-`LogTraceFilter` 最早执行，生成 `X-Trace-Id` 写入 MDC 和响应头。
+`LogTraceFilter` 最早执行：有入站 `X-Trace-Id` 则复用（网关/上游透传的链路 ID），否则生成，写入 MDC 与响应头；请求结束在 finally 清理。
 
 ### XSS 防护
 
@@ -132,7 +133,7 @@ public class JsoupXssCleaner implements XssCleaner {
 
 ### 请求体重复读取
 
-`CachedBodyFilter` 在 Filter 链前端一次性读取 Body 并缓存为 `byte[]`，后续所有 Filter 和 Controller 均可重复调用 `getInputStream()` / `getReader()`。
+`CachedBodyFilter` 在 Filter 链前端把普通 JSON/表单 Body 缓存为 `byte[]`，后续所有 Filter 和 Controller 均可重复调用 `getInputStream()` / `getReader()`。**安全限流**：`multipart/*`、`application/octet-stream` 及 `Content-Length > 5MB` 的请求不缓存（避免大文件整包入内存），仍由下游单次消费。
 
 ### 过滤器链路
 
