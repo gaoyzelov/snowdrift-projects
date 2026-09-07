@@ -102,7 +102,7 @@ List<MqMessage<OrderEvent>> batch = List.of(
 List<MqSendResult> results = mqService.sendBatch("order-topic", batch);
 ```
 
-`IMqService` 的少参数版本均为接口 `default` 便捷委托，最终落到「全参数」抽象方法；`sendBatch` 默认逐条调用 `send`。
+`IMqService` 的少参数版本均为接口 `default` 便捷委托，最终落到「全参数」抽象方法；`sendBatch` 默认逐条调用 `send`。非法入参（`topic`/`payload`/`delay` 为空或非法）会抛出 `MqException`（继承自 `BizException`）。
 
 ### 各 broker 语义与元数据
 
@@ -192,7 +192,7 @@ public class JacksonMqMessageConverter implements MqMessageConverter {
         try {
             return MAPPER.writeValueAsBytes(payload);
         } catch (JsonProcessingException e) {
-            throw new IllegalArgumentException("MQ 序列化失败", e);
+            throw new MqException("MQ 序列化失败", e);
         }
     }
 
@@ -201,11 +201,13 @@ public class JacksonMqMessageConverter implements MqMessageConverter {
         try {
             return MAPPER.readValue(data, targetType);
         } catch (IOException e) {
-            throw new IllegalArgumentException("MQ 反序列化失败", e);
+            throw new MqException("MQ 反序列化失败", e);
         }
     }
 }
 ```
+
+> 自定义转换器失败时建议抛 `MqException`（继承自 `BizException`），与框架内其它 MQ 异常保持一致（`com.snowdrift.framework.mq.exception.MqException`）。
 
 ## 拦截器链
 

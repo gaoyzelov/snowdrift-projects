@@ -57,7 +57,7 @@ public class MqContextPropagator {
         this.properties = properties;
         // 签名开关与密钥联动校验：开启签名却未配置密钥，将导致生产者不签名 / 消费者全量拒收的灾难性不对称，启动即失败
         if (Boolean.TRUE.equals(properties.getSign()) && StringUtils.isBlank(properties.getSignKey())) {
-            throw new IllegalArgumentException(
+            throw new IllegalStateException(
                     "snowdrift.mq.sign=true 时必须配置 snowdrift.mq.sign-key，否则无法计算/校验消息签名");
         }
     }

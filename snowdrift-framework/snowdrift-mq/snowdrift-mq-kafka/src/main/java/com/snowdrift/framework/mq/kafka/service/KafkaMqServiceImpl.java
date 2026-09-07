@@ -55,7 +55,7 @@ public class KafkaMqServiceImpl extends AbstractMqService {
             return toResult(sendResult);
         } catch (CompletionException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
-            throw new MqException("Kafka 消息发送失败: topic=" + topic + "，msg=" + cause.getMessage());
+            throw new MqException("Kafka 消息发送失败: topic=" + topic + "，原因=" + describe(cause));
         }
     }
 
@@ -75,7 +75,7 @@ public class KafkaMqServiceImpl extends AbstractMqService {
                     fireOnSendError(topic, cause);
                     throw cause instanceof RuntimeException runtimeException
                             ? runtimeException
-                            : new MqException("Kafka 消息发送失败: topic=" + topic + "，msg=" + cause.getMessage());
+                            : new MqException("Kafka 消息发送失败: topic=" + topic + "，原因=" + describe(cause));
                 }
                 MqSendResult result = toResult(sendResult);
                 fireAfterSend(topic, result);
@@ -93,6 +93,13 @@ public class KafkaMqServiceImpl extends AbstractMqService {
         ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, key, body);
         KafkaHeaderCodec.apply(headers, record);
         return record;
+    }
+
+    /**
+     * 摘要发送异常原因（message 为空时回退到异常类型名）
+     */
+    private static String describe(Throwable t) {
+        return t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName();
     }
 
     /**

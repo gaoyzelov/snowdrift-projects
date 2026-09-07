@@ -1,5 +1,6 @@
 package com.snowdrift.framework.mq.rocketmq.support;
 
+import com.snowdrift.framework.mq.exception.MqException;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -29,11 +30,11 @@ public final class RocketDelayLevels {
      *
      * @param delay 延迟时长，须为正
      * @return 延迟级别
-     * @throws IllegalArgumentException delay 为 null / 非正
+     * @throws MqException delay 为 null / 非正
      */
     public static int map(Duration delay) {
         if (delay == null || delay.isNegative() || delay.isZero()) {
-            throw new IllegalArgumentException("延迟时长必须大于 0");
+            throw new MqException("延迟时长必须大于 0");
         }
         long seconds = delay.getSeconds();
         for (int i = 1; i < LEVEL_SECONDS.length; i++) {

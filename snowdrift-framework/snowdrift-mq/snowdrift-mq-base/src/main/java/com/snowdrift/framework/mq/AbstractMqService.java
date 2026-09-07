@@ -190,13 +190,13 @@ public abstract class AbstractMqService implements IMqService {
 
     protected void validateTopic(String topic) {
         if (StringUtils.isBlank(topic)) {
-            throw new IllegalArgumentException("MQ topic 不能为空");
+            throw new MqException("MQ topic 不能为空");
         }
     }
 
     protected void validatePayload(Object payload) {
         if (payload == null) {
-            throw new IllegalArgumentException("MQ 消息体 payload 不能为空");
+            throw new MqException("MQ 消息体 payload 不能为空");
         }
     }
 
@@ -210,10 +210,10 @@ public abstract class AbstractMqService implements IMqService {
 
     protected void validateDelay(Duration delay) {
         if (delay == null) {
-            throw new IllegalArgumentException("延迟消息时长不能为空");
+            throw new MqException("延迟消息时长不能为空");
         }
         if (delay.isNegative() || delay.isZero()) {
-            throw new IllegalArgumentException("延迟消息时长必须大于 0");
+            throw new MqException("延迟消息时长必须大于 0");
         }
     }
 
