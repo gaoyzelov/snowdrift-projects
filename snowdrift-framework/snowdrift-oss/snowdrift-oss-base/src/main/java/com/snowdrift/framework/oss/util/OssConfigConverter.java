@@ -23,7 +23,7 @@ public class OssConfigConverter {
      */
     public static OssConfigDTO fromProperties(OssInstanceProperties properties, String configKey) {
         if (properties == null) {
-            throw new OssException("OSS配置信息不能为空");
+            throw new OssException("OSS 配置信息不能为空");
         }
         
         OssConfigDTO config = new OssConfigDTO();
@@ -59,7 +59,7 @@ public class OssConfigConverter {
      */
     public static OssInstanceProperties toProperties(OssConfigDTO config) {
         if (config == null) {
-            throw new OssException("OSS配置信息不能为空");
+            throw new OssException("OSS 配置信息不能为空");
         }
         
         OssInstanceProperties properties = new OssInstanceProperties();

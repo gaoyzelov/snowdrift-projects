@@ -115,7 +115,7 @@ InputStream stream = ossService.download("avatar/user-123.jpg");
 // 公开 Bucket：直接返回 CDN/域名 URL
 String url = ossService.getUrl("avatar/user-123.jpg", null);
 
-// 私有 Bucket：生成带签名的临时 URL（默认 30 分钟有效）
+// 私有 Bucket：生成带签名的临时 URL（有效期取 signature-expiry，默认 60 分钟）
 String signedUrl = ossService.getUrl("avatar/user-123.jpg", Duration.ofHours(1));
 ```
 
@@ -136,7 +136,7 @@ boolean exists = ossService.exists("avatar/user-123.jpg");
 
 | 后端 | 模块 | 批量删除 | 私有 Bucket | 路径穿越防护 |
 |------|------|---------|------------|:--:|
-| Local | `snowdrift-oss-local` | 逐条 | — | ✅ 双重 |
+| Local | `snowdrift-oss-local` | 逐条 | — | ✅ 上传/下载/删除/URL 均校验根目录包含 |
 | MinIO | `snowdrift-oss-minio` | ✅ 原生 | ✅ | ✅ |
 | 阿里云 OSS | `snowdrift-oss-aliyun` | ✅ 原生 | ✅ | ✅ |
 | 七牛云 Kodo | `snowdrift-oss-qiniu` | ✅ 原生 | ✅ | ✅ |

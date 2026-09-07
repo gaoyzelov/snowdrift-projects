@@ -75,7 +75,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
         String domain = config.getDomain();
         String region = config.getRegion();
         if (StringUtils.isBlank(accessKey)) {
-            throw new OssException("OSS 七牛云访问秘钥不能为空");
+            throw new OssException("OSS 七牛云访问密钥不能为空");
         }
         if (StringUtils.isBlank(secretKey)) {
             throw new OssException("OSS 七牛云安全密钥不能为空");

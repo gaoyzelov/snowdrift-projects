@@ -93,6 +93,10 @@ public class LocalOssServiceImpl extends AbstractOssService {
         String objectKey = buildObjectKey(request.getObjectKey());
         try (InputStream inputStream = request.getInputStream()) {
             Path targetPath = storageRoot.resolve(objectKey).normalize();
+            // 根目录包含校验：防止 objectKey 逃逸存储根目录（如盘符/绝对路径）
+            if (!targetPath.startsWith(storageRoot.normalize())) {
+                throw new OssException("OSS 本地文件路径越界");
+            }
             // 确保父目录存在
             Path parentDir = targetPath.getParent();
             if (parentDir != null && !Files.exists(parentDir)) {

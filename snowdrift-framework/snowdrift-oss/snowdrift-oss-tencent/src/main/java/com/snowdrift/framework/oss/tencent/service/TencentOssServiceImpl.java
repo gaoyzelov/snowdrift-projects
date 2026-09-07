@@ -61,7 +61,7 @@ public class TencentOssServiceImpl extends AbstractOssService {
         String region = config.getRegion();
 
         if (StringUtils.isBlank(accessKey)) {
-            throw new OssException("OSS 腾讯云访问秘钥不能为空");
+            throw new OssException("OSS 腾讯云访问密钥不能为空");
         }
         if (StringUtils.isBlank(secretKey)) {
             throw new OssException("OSS 腾讯云安全密钥不能为空");

@@ -111,28 +111,31 @@ public abstract class AbstractOssService implements IOssService {
     protected String buildObjectKey(String objectKey) {
         // 规范化 objectKey
         String normalizedKey = normalizeObjectKey(objectKey);
-        StringBuilder newObjectKey = new StringBuilder();
-        // 分离文件扩展名
-        String extension = StringUtils.substringAfterLast(normalizedKey, StrConst.DOT);
-        // 生成 UUID
+        // 分离目录部分（最后一个 / 之前）与文件名部分（最后一段）
+        String path = StrConst.EMPTY;
+        String fileName = normalizedKey;
+        int lastSlash = normalizedKey.lastIndexOf(StrConst.SLASH);
+        if (lastSlash >= 0) {
+            path = normalizedKey.substring(0, lastSlash + 1);
+            fileName = normalizedKey.substring(lastSlash + 1);
+        }
+        // 从文件名中提取扩展名（避免目录名含点造成误判）
+        String extension = StrConst.EMPTY;
+        int dotIndex = fileName.lastIndexOf(StrConst.DOT);
+        if (dotIndex > 0) {
+            extension = fileName.substring(dotIndex + 1);
+        }
+        // 生成 UUID 文件名
         String uuid = UUID.randomUUID().toString().replace(StrConst.MIDLINE, StrConst.EMPTY);
-        // 拼接路径：原始路径 + UUID文件名
-        if (normalizedKey.indexOf(StrConst.SLASH) > 0) {
-            String path = StringUtils.substringBeforeLast(normalizedKey, StrConst.SLASH);
-            newObjectKey.append(path).append(StrConst.SLASH);
-        }
-        newObjectKey.append(uuid);
-        if (StringUtils.isNotBlank(extension)) {
-            newObjectKey.append(StrConst.DOT).append(extension);
-        }
+        String keyWithUuid = path + uuid + (extension.isEmpty() ? StrConst.EMPTY : StrConst.DOT + extension);
         String prefix = config.getPathPrefix();
 
         if (StringUtils.isNotBlank(prefix)) {
             String prefixPath = prefix.endsWith(StrConst.SLASH) ? prefix : prefix + StrConst.SLASH;
-            return prefixPath + newObjectKey;
+            return prefixPath + keyWithUuid;
         }
 
-        return newObjectKey.toString();
+        return keyWithUuid;
     }
 
     /**
@@ -155,9 +158,11 @@ public abstract class AbstractOssService implements IOssService {
         while (key.startsWith(StrConst.SLASH)){
             key = key.substring(1);
         }
-        // 路径穿越检测
-        if (key.contains("..")) {
-            throw new OssException("OSS 对象键包含路径穿越");
+        // 路径穿越检测：仅当某一路径段恰为 ".." 时拒绝（避免误伤文件名内连点）
+        for (String segment : key.split(StrConst.SLASH)) {
+            if ("..".equals(segment)) {
+                throw new OssException("OSS 对象键包含路径穿越");
+            }
         }
         return key;
     }
@@ -173,6 +178,6 @@ public abstract class AbstractOssService implements IOssService {
      */
     protected OssException ossError(String message, String bucket, String objectKey, Exception e) {
         log.error("OSS 操作失败: bucket={}, objectKey={}", bucket, objectKey, e);
-        return new OssException(message);
+        return new OssException(message, e);
     }
 }
