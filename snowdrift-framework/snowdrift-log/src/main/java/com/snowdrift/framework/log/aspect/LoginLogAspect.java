@@ -90,11 +90,11 @@ public class LoginLogAspect {
         // 判断是否存在登录异常
         if (Objects.nonNull(exception)) {
             holder.setStatus(ResultCode.ERR.code());
-            holder.setMsg(exception.getMessage());
+            holder.setMsg(exception.getMessage() != null ? exception.getMessage() : exception.getClass().getSimpleName());
         } else if (result instanceof Result<?> r && ResultCode.OK.code() != r.getCode()) {
-            // 方法正常返回但业务结果为失败时，记录为登录失败
-            holder.setStatus(r.getCode());
-            holder.setMsg(r.getMsg());
+            // 方法正常返回但业务结果为失败时，记录为登录失败（状态统一取 ERR，保留业务消息）
+            holder.setStatus(ResultCode.ERR.code());
+            holder.setMsg(r.getMsg() != null ? r.getMsg() : ResultCode.ERR.msg());
         } else {
             holder.setStatus(ResultCode.OK.code());
             holder.setMsg("登录成功");

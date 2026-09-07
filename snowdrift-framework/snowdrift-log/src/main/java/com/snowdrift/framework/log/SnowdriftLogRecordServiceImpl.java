@@ -32,16 +32,20 @@ public class SnowdriftLogRecordServiceImpl implements ILogRecordService {
     @Override
     public void record(LogRecord logRecord) {
         try {
-            SecurityContext context = SecurityContextHolder.getContext();
+            // 系统任务等无登录上下文的场景允许为空，操作日志仍记录、用户字段置 null
+            SecurityContext context = SecurityContextHolder.peekContext();
+            String operator = context != null && StringUtils.isNotBlank(context.getNickname())
+                    ? context.getNickname()
+                    : (context != null ? context.getUsername() : null);
             OperateLogHolder holder = OperateLogHolder.builder()
                     .traceId(LogTraceUtil.getTraceId())
                     .bizId(logRecord.getBizNo())
                     .bizModule(logRecord.getType())
                     .bizType(logRecord.getSubType())
                     .content(logRecord.getAction())
-                    .userId(context.getUserId())
-                    .tenantId(context.getTenantId())
-                    .operator(StringUtils.isNotBlank(context.getNickname()) ? context.getNickname() : context.getUsername())
+                    .userId(context != null ? context.getUserId() : null)
+                    .tenantId(context != null ? context.getTenantId() : null)
+                    .operator(operator)
                     .operateTime(DateTimeUtil.dateToLocalDateTime(logRecord.getCreateTime()))
                     .build();
             //记录日志
@@ -53,11 +57,11 @@ public class SnowdriftLogRecordServiceImpl implements ILogRecordService {
 
     @Override
     public List<LogRecord> queryLog(String bizNo, String type) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("操作日志查询能力未实现，请注册自定义 ILogRecordService 实现");
     }
 
     @Override
     public List<LogRecord> queryLogByBizNo(String bizNo, String type, String subType) {
-        throw new UnsupportedOperationException();
+        throw new UnsupportedOperationException("操作日志查询能力未实现，请注册自定义 ILogRecordService 实现");
     }
 }

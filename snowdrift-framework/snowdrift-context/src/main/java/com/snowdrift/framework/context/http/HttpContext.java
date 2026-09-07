@@ -46,6 +46,7 @@ public class HttpContext implements Serializable {
      * IP地址
      */
     private String ipLocation;
+
     /**
      * 请求参数
      */

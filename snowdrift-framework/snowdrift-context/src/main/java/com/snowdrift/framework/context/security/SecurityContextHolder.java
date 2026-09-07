@@ -30,16 +30,26 @@ public class SecurityContextHolder {
     }
 
     /**
-     * 获取安全上下文
+     * 获取安全上下文，不存在时抛出 {@link BizException}
+     * <p>供“必须已登录”的业务代码使用；上下文可选的场景（日志、MQ/Dubbo 传播等）请使用 {@link #peekContext()}。</p>
      *
      * @return SecurityContext
      */
     public static SecurityContext getContext() {
         SecurityContext ctx = SECURITY_CONTEXT_HOLDER.get();
         if (Objects.isNull(ctx)) {
-            throw new BizException("未获取到安全上下文信息");
+            throw new BizException("未获取到安全上下文，请确认请求已登录且安全上下文已注入");
         }
         return ctx;
+    }
+
+    /**
+     * 窥探安全上下文（可为空，不抛异常）
+     *
+     * @return SecurityContext，未初始化时为 null
+     */
+    public static SecurityContext peekContext() {
+        return SECURITY_CONTEXT_HOLDER.get();
     }
 
     /**

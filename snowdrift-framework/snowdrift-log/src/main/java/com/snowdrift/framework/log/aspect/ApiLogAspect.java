@@ -4,6 +4,7 @@ import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
 import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.result.Result;
 import com.snowdrift.framework.base.result.ResultCode;
 import com.snowdrift.framework.base.util.DateTimeUtil;
 import com.snowdrift.framework.context.http.HttpContext;
@@ -74,9 +75,10 @@ public class ApiLogAspect {
         Throwable exception = null;
         try {
             result = joinPoint.proceed();
-        } catch (Exception e) {
-            exception = e;
-            throw e;
+        } catch (Throwable t) {
+            // 同时捕获 Error，避免异常状态漏记（仍会原样抛出）
+            exception = t;
+            throw t;
         } finally {
             stopWatch.stop();
             try {
@@ -104,8 +106,11 @@ public class ApiLogAspect {
         // 请求信息（非 HTTP 场景为 null）
         HttpContext httpContext = HttpContextHolder.getContext();
         boolean hasHttpContext = httpContext != null;
-        // 用户信息
-        SecurityContext securityContext = SecurityContextHolder.getContext();
+        // 用户信息：匿名等无安全上下文场景允许为 null，不影响接口日志记录
+        SecurityContext securityContext = SecurityContextHolder.peekContext();
+        String operator = securityContext != null && StringUtils.isNotBlank(securityContext.getNickname())
+                ? securityContext.getNickname()
+                : (securityContext != null ? securityContext.getUsername() : null);
         // API 日志初始化
         ApiLogHolder holder = ApiLogHolder.builder()
                 .traceId(LogTraceUtil.getTraceId())
@@ -121,17 +126,19 @@ public class ApiLogAspect {
                 .ua(hasHttpContext ? httpContext.getUserAgent() : null)
                 .responseBody(getResponseBody(apiLogAnno, result))
                 .duration(stopWatch.getDuration().toMillis())
-                .userId(securityContext.getUserId())
-                .tenantId(securityContext.getTenantId())
-                .operator(StringUtils.isNotBlank(securityContext.getNickname())
-                        ? securityContext.getNickname() : securityContext.getUsername())
+                .userId(securityContext != null ? securityContext.getUserId() : null)
+                .tenantId(securityContext != null ? securityContext.getTenantId() : null)
+                .operator(operator)
                 .operateTime(DateTimeUtil.timestampToLocalDateTime(stopWatch.getStartInstant().toEpochMilli()))
                 .build();
 
-        // 判断是否存在异常
+        // 判断结果：抛异常或业务返回失败（Result.code != OK）均记为失败
         if (Objects.nonNull(exception)) {
             holder.setStatus(ResultCode.ERR.code());
             holder.setErrorMsg(ExceptionUtils.getRootCauseMessage(exception));
+        } else if (result instanceof Result<?> r && ResultCode.OK.code() != r.getCode()) {
+            holder.setStatus(ResultCode.ERR.code());
+            holder.setErrorMsg(r.getMsg());
         } else {
             holder.setStatus(ResultCode.OK.code());
         }
