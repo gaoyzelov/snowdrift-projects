@@ -54,9 +54,9 @@ public class SnowdriftRedisConfiguration {
     /**
      * String-String RedisTemplate，序列化由 {@link ICacheSerializer} 在服务层统一处理
      */
-    @Bean
+    @Bean(name = "snowdriftRedisTemplate")
     @Primary
-    public RedisTemplate<String, String> redisTemplate() {
+    public RedisTemplate<String, String> snowdriftRedisTemplate() {
         RedisTemplate<String, String> template = new RedisTemplate<>();
         template.setConnectionFactory(factory);
         template.setKeySerializer(RedisSerializer.string());
@@ -101,7 +101,7 @@ public class SnowdriftRedisConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(ICacheService.class)
-    public ICacheService redisCacheService(ICacheSerializer serializer, RedisTemplate<String, String> redisTemplate) {
-        return new SnowdriftRedisCacheServiceImpl(properties, serializer, redisTemplate);
+    public ICacheService redisCacheService(ICacheSerializer serializer, RedisTemplate<String, String> snowdriftRedisTemplate) {
+        return new SnowdriftRedisCacheServiceImpl(properties, serializer, snowdriftRedisTemplate);
     }
 }

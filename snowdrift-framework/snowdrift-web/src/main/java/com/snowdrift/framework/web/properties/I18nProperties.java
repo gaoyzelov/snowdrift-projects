@@ -59,7 +59,6 @@ public class I18nProperties implements Serializable {
     /**
      * 资源文件基础名称
      */
-    @NotEmpty
     private List<String> baseNames = List.of();
 
     /**

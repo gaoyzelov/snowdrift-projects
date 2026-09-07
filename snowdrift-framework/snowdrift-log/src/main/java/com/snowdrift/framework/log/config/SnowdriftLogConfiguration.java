@@ -1,16 +1,15 @@
 package com.snowdrift.framework.log.config;
 
 import com.mzt.logapi.service.ILogRecordService;
-import com.snowdrift.framework.log.aspect.ApiLogAspect;
-import com.snowdrift.framework.log.aspect.LoginLogAspect;
 import com.snowdrift.framework.log.ILogService;
 import com.snowdrift.framework.log.SnowdriftDefaultLogServiceImpl;
 import com.snowdrift.framework.log.SnowdriftLogRecordServiceImpl;
+import com.snowdrift.framework.log.aspect.ApiLogAspect;
+import com.snowdrift.framework.log.aspect.LoginLogAspect;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Primary;
 
 /**
  * SnowdriftLogConfiguration
@@ -40,7 +39,7 @@ public class SnowdriftLogConfiguration {
      * @return 日志记录服务
      */
     @Bean
-    @Primary
+    @ConditionalOnMissingBean(ILogRecordService.class)
     public ILogRecordService logRecordService(ILogService logService) {
         return new SnowdriftLogRecordServiceImpl(logService);
     }
