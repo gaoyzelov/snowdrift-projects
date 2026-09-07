@@ -118,9 +118,9 @@ Consumer 端调用时自动向 RPC 附件注入 `traceId` 和 `SecurityContext`�
 | 租户 ID | `x-snowdrift-security-context` | `SecurityContextHolder` | `SecurityContextHolder` |
 | 登录账号 | `x-snowdrift-security-context` | `SecurityContextHolder` | `SecurityContextHolder` |
 
-如果 Consumer 端未提供 `traceId`，Provider 端自动生成 UUID 作为兜底。
-
-上下文注入失败时 Consumer 端会设置 `x-snowdrift-context-error=true` 标记，Provider 端检测到后跳过上下文恢复，记录 WARN 日志。
+- 如果 Consumer 端未提供 `traceId`，Provider 端自动生成 UUID 作为兜底。
+- `SecurityContext` 为**可选**：系统任务等无登录上下文的 Consumer 调用不会注入（`TraceId` 仍透传），Provider 端在无上下文时按自身逻辑兜底（如租户拦截 fail-closed 抛错 / 审计自动填充系统值）。
+- 仅当上下文**注入失败**（如不可序列化等真实异常）时，Consumer 端才设置 `x-snowdrift-context-error=true` 标记；Provider 端检测到后跳过上下文恢复并记录 WARN。
 
 ### 异常智能化处理
 
@@ -138,18 +138,19 @@ Consumer 端调用时自动向 RPC 附件注入 `traceId` 和 `SecurityContext`�
 
 ### 调用日志
 
-- **Consumer 端：** DEBUG 级别记录成功调用及其耗时，ERROR 级别记录失败调用
-- **Provider 端：** DEBUG 级别记录成功调用及其耗时（含调用方 IP），ERROR 级别分别记录业务异常（`hasException`）和 RPC 异常（`RpcException`）
+- **Consumer 端：** 成功调用 DEBUG；`BizException`（跨服务业务异常）INFO；其它异常 ERROR
+- **Provider 端：** 成功调用 DEBUG（含调用方 IP）；`BizException` INFO；其它异常 / `RpcException` ERROR
 
 ```log
 // Consumer 端：
 DEBUG Dubbo调用成功 [Consumer] com.example.OrderService.createOrder(), elapsed=45ms
-ERROR Dubbo调用失败 [Consumer] com.example.OrderService.createOrder(), elapsed=1203ms, ...
+INFO  Dubbo业务异常  [Consumer] com.example.OrderService.createOrder(), elapsed=1203ms, msg=订单不存在
+ERROR Dubbo调用异常  [Consumer] com.example.PaymentService.pay(), elapsed=99ms, ...   (非 BizException)
 
 // Provider 端：
 DEBUG Dubbo服务成功 [Provider] com.example.OrderServiceImpl.createOrder(), caller=192.168.1.100, elapsed=42ms
-ERROR Dubbo服务异常 [Provider] com.example.PaymentServiceImpl.pay(), caller=192.168.1.100, elapsed=..., ...   (业务异常)
-ERROR Dubbo服务失败 [Provider] com.example.PaymentServiceImpl.pay(), caller=192.168.1.100, elapsed=..., ...   (RPC 异常)
+INFO  Dubbo业务异常  [Provider] com.example.OrderServiceImpl.createOrder(), caller=192.168.1.100, elapsed=1203ms, msg=订单不存在
+ERROR Dubbo服务失败 [Provider] com.example.PaymentServiceImpl.pay(), caller=192.168.1.100, elapsed=..., ...   (非 BizException / RpcException)
 ```
 
 > 接口名使用完全限定名（`invoker.getInterface().getName()`），方法名来自 `invocation.getMethodName()`。

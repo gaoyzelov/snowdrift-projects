@@ -50,9 +50,12 @@ public class DubboConsumerContextFilter implements Filter {
             rpcContext.setObjectAttachment(RpcContextConstants.TRACE_ID, traceId);
         }
 
-        // 注入安全上下文
-        SecurityContext ctx = SecurityContextHolder.getContext();
-        rpcContext.setObjectAttachment(RpcContextConstants.SECURITY_CONTEXT, ctx);
+        // 注入安全上下文（可选：系统任务等无登录上下文的消费场景不注入，
+        // 避免误报“上下文注入失败”；TraceId 仍正常透传，由 Provider 端自行兜底）
+        SecurityContext ctx = SecurityContextHolder.peekContext();
+        if (ctx != null) {
+            rpcContext.setObjectAttachment(RpcContextConstants.SECURITY_CONTEXT, ctx);
+        }
     }
 
 }

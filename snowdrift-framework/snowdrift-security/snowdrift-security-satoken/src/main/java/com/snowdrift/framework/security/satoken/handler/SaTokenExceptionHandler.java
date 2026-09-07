@@ -1,5 +1,6 @@
 package com.snowdrift.framework.security.satoken.handler;
 
+import cn.dev33.satoken.exception.DisableServiceException;
 import cn.dev33.satoken.exception.NotLoginException;
 import cn.dev33.satoken.exception.NotPermissionException;
 import cn.dev33.satoken.exception.NotRoleException;
@@ -56,6 +57,15 @@ public class SaTokenExceptionHandler {
     public Result<Void> handleNotRoleException(NotRoleException e, HttpServletRequest request) {
         log.warn("[Sa-Token] 角色不足: uri={}, role={}", request.getRequestURI(), e.getRole());
         return Result.err(ResultCode.FORBIDDEN);
+    }
+
+    /**
+     * 账号封禁异常 — 归为禁止访问（403），避免落入通用 500
+     */
+    @ExceptionHandler(DisableServiceException.class)
+    public Result<Void> handleDisableServiceException(DisableServiceException e, HttpServletRequest request) {
+        log.warn("[Sa-Token] 账号被封禁: uri={}, {}", request.getRequestURI(), e.getMessage());
+        return Result.err(ResultCode.FORBIDDEN.code(), "账号已被封禁，无法执行该操作");
     }
 
     /**

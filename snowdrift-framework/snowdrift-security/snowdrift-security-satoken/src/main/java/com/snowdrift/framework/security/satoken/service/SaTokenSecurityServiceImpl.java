@@ -2,6 +2,7 @@ package com.snowdrift.framework.security.satoken.service;
 
 import cn.dev33.satoken.exception.SaTokenException;
 import cn.dev33.satoken.stp.StpUtil;
+import com.snowdrift.framework.base.result.ResultCode;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.security.exception.SecurityException;
 import com.snowdrift.framework.security.model.TokenInfo;
@@ -37,7 +38,8 @@ public class SaTokenSecurityServiceImpl implements ISecurityService {
     @Override
     public TokenInfo login(SecurityContext context) {
         if (context == null || context.getUserId() == null) {
-            throw new SecurityException("security.context.null");
+            // 与 spring 实现一致：未登录语义用 1001 + 可读中文，避免裸 i18n key 透出给前端
+            throw new SecurityException(ResultCode.UNAUTHORIZED);
         }
         // 1. 从 SecurityContext 中取 userId 作为 Sa-Token 的 loginId
         StpUtil.login(context.getUserId(),context.getPlatform());

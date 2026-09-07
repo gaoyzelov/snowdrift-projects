@@ -2,6 +2,7 @@ package com.snowdrift.framework.security.spring.config;
 
 import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.base.result.Result;
+import com.snowdrift.framework.base.result.ResultCode;
 import com.snowdrift.framework.base.util.ServletUtil;
 import com.snowdrift.framework.security.service.ISecurityService;
 import com.snowdrift.framework.security.spring.util.AnonymousScanner;
@@ -93,14 +94,13 @@ public class SnowdriftSecuritySpringConfiguration {
                 })
                 .addFilterBefore(securityContextFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
+                        // body.code 用业务码（1001/1002），文案用 ResultCode 内置中文，避免依赖 i18n 开关导致 key 透出
                         .authenticationEntryPoint((request, response, e) ->
                                 ServletUtil.writeJsonResponse(response, HttpServletResponse.SC_UNAUTHORIZED,
-                                        Result.err(HttpServletResponse.SC_UNAUTHORIZED,
-                                                I18nUtil.getMessage("security.not.authenticated"))))
+                                        Result.err(ResultCode.UNAUTHORIZED.code(), ResultCode.UNAUTHORIZED.msg())))
                         .accessDeniedHandler((request, response, e) ->
                                 ServletUtil.writeJsonResponse(response, HttpServletResponse.SC_FORBIDDEN,
-                                        Result.err(HttpServletResponse.SC_FORBIDDEN,
-                                                I18nUtil.getMessage("security.permission.denied"))))
+                                        Result.err(ResultCode.FORBIDDEN.code(), ResultCode.FORBIDDEN.msg())))
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)

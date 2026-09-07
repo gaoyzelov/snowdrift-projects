@@ -1,5 +1,6 @@
 package com.snowdrift.framework.rpc.dubbo.filter;
 
+import com.snowdrift.framework.base.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.dubbo.common.constants.CommonConstants;
@@ -34,8 +35,15 @@ public class DubboConsumerLogFilter implements Filter {
             stopWatch.stop();
 
             if (result.hasException()) {
-                log.error("Dubbo RPC调用异常 [Consumer] {}.{}(), elapsed={}ms",
-                        interfaceName, methodName, stopWatch.getDuration().toMillis(), result.getException());
+                Throwable ex = result.getException();
+                // BizException 为预期的跨服务业务异常，按 info 记录，避免业务失败刷 error
+                if (ex instanceof BizException) {
+                    log.info("Dubbo RPC业务异常 [Consumer] {}.{}(), elapsed={}ms, msg={}",
+                            interfaceName, methodName, stopWatch.getDuration().toMillis(), ex.getMessage());
+                } else {
+                    log.error("Dubbo RPC调用异常 [Consumer] {}.{}(), elapsed={}ms",
+                            interfaceName, methodName, stopWatch.getDuration().toMillis(), ex);
+                }
             } else {
                 log.debug("Dubbo RPC调用成功 [Consumer] {}.{}(), elapsed={}ms",
                         interfaceName, methodName, stopWatch.getDuration().toMillis());

@@ -97,7 +97,7 @@ public Result<TokenInfo> login(@RequestBody LoginDTO dto) { ... }
 // 角色检查
 securityService.hasRole("ADMIN");
 
-// 权限检查（支持通配符）
+// 权限检查（通配符依赖底层实现：Sa-Token 支持 "order:*"，Spring Security 为精确匹配）
 securityService.hasPermission("order:create");
 securityService.hasPermission("order:*");
 ```
@@ -128,6 +128,15 @@ public class CustomTokenStore extends AbstractTokenStore {
 | Token 存储 | Sa-Token 内置 DAO | 可插拔 TokenStore（InMemory / Redis，自动选择） |
 | 学习曲线 | 低 | 高 |
 | 企业集成 | — | ✅ 标准安全体系 |
+
+## 注意事项
+
+- **统一业务码**：未登录 = `1001`、无权限/无角色/账号封禁 = `1002`，body 文案来自 `ResultCode`（中文直文、不依赖 i18n 开关）。Spring Security 模块在 filter 级会同时把 HTTP 状态置为 401/403，advice/Controller 级为 HTTP 200 + body 业务码——前端应**以 body.code 为准**。
+- **两套实现语义差异**：
+  - `isAuthenticated()`：Sa-Token 对无效 token 返回 false；Spring Security 若未禁用匿名，无 token/坏 token 在 permitAll/`@Anonymous` 路径下可能被当成“已认证”。如需严格语义请禁用匿名或自行处理。
+  - 权限/角色通配：Sa-Token 支持通配，Spring Security 实现为精确匹配。
+- **登录状态判断**：业务请通过 `SecurityContextHolder.peekContext()`（可空）或 `getContext()`（无上下文抛 `BizException`）读取；框架拦截器负责在请求结束清理上下文。
+- 双实现共存时只会启用其一（spring 模块有 `@ConditionalOnMissingBean(SaTokenConfig)` 防冲突），同一应用请勿同时启用 sa-token 与 spring。
 
 ## 配置属性参考
 

@@ -12,7 +12,10 @@ import com.snowdrift.framework.base.util.HttpUtil;
 import com.snowdrift.framework.schedule.core.IScheduleService;
 import com.snowdrift.framework.schedule.model.JobDetails;
 import com.snowdrift.framework.schedule.enums.JobStatusEnum;
+import com.snowdrift.framework.schedule.enums.MisfireStrategyEnum;
 import com.snowdrift.framework.schedule.xxljob.config.XxlJobProperties;
+import com.snowdrift.framework.schedule.xxljob.enums.BlockStrategyEnum;
+import com.snowdrift.framework.schedule.xxljob.enums.RouteStrategyEnum;
 import com.snowdrift.framework.schedule.xxljob.consts.XxlJobApiConst;
 import com.snowdrift.framework.schedule.xxljob.dto.XxlJobKey;
 import com.snowdrift.framework.schedule.xxljob.dto.XxlJobRequest;
@@ -186,14 +189,21 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         param.put("author", request.getAuthor());
         param.put("alarmEmail", request.getAlarmEmail());
         param.put("scheduleType", "CRON");
-        param.put("scheduleConf", request.getCron());
-        param.put("misfireStrategy", request.getMisfireStrategy().getCode());
-        param.put("executorRouteStrategy", request.getRouteStrategy().getCode());
+        // JSON 显式传 null 时会覆盖默认值，这里做空安全兜底避免 NPE / 空值入参
+        param.put("scheduleConf", StringUtils.isNotBlank(request.getCron()) ? request.getCron() : "");
+        param.put("misfireStrategy", request.getMisfireStrategy() != null
+                ? request.getMisfireStrategy().getCode()
+                : MisfireStrategyEnum.FIRE_ONCE_NOW.getCode());
+        param.put("executorRouteStrategy", request.getRouteStrategy() != null
+                ? request.getRouteStrategy().getCode()
+                : RouteStrategyEnum.RANDOM.getCode());
         param.put("executorHandler", request.getName());
         param.put("executorParam", JSON.toJSONString(request.getParams()));
-        param.put("executorBlockStrategy", request.getBlockStrategy().getCode());
-        param.put("executorTimeout", String.valueOf(request.getTimeout()));
-        param.put("executorFailRetryCount", String.valueOf(request.getRetryCount()));
+        param.put("executorBlockStrategy", request.getBlockStrategy() != null
+                ? request.getBlockStrategy().getCode()
+                : BlockStrategyEnum.SERIAL_EXECUTION.getCode());
+        param.put("executorTimeout", String.valueOf(request.getTimeout() != null ? request.getTimeout() : 0));
+        param.put("executorFailRetryCount", String.valueOf(request.getRetryCount() != null ? request.getRetryCount() : 0));
         param.put("glueType", "BEAN");
         param.put("triggerStatus", "1");
         return param;

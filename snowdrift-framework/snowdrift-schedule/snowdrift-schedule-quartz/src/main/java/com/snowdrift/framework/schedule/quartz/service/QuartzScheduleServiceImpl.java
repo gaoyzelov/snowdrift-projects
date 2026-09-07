@@ -1,18 +1,20 @@
 package com.snowdrift.framework.schedule.quartz.service;
 
-import com.snowdrift.framework.schedule.exception.ScheduleException;
 import com.snowdrift.framework.base.util.DateTimeUtil;
 import com.snowdrift.framework.schedule.core.IScheduleService;
-import com.snowdrift.framework.schedule.model.JobDetails;
 import com.snowdrift.framework.schedule.enums.JobStatusEnum;
 import com.snowdrift.framework.schedule.enums.MisfireStrategyEnum;
+import com.snowdrift.framework.schedule.exception.ScheduleException;
+import com.snowdrift.framework.schedule.model.JobDetails;
 import com.snowdrift.framework.schedule.quartz.config.QuartzProperties;
 import com.snowdrift.framework.schedule.quartz.dto.QuartzJobKey;
 import com.snowdrift.framework.schedule.quartz.dto.QuartzJobRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.quartz.*;
 import org.quartz.impl.matchers.GroupMatcher;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
@@ -45,6 +47,9 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
         if (Objects.isNull(request.getJobClass())) {
             throw new ScheduleException("Quartz 任务类型不能为空");
         }
+        if (StringUtils.isBlank(request.getName()) || StringUtils.isBlank(request.getCron())) {
+            throw new ScheduleException("Quartz 任务名称与 cron 表达式不能为空");
+        }
         JobKey jobKey = JobKey.jobKey(request.getName(), request.getGroup());
         try {
             if (scheduler.checkExists(jobKey)) {
@@ -57,13 +62,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
                     .usingJobData(new JobDataMap(request.getParams() != null ? request.getParams() : new HashMap<>()))
                     .build();
 
-            CronScheduleBuilder cronBuilder = CronScheduleBuilder.cronSchedule(request.getCron());
-            if (MisfireStrategyEnum.FIRE_ONCE_NOW == request.getMisfireStrategy()) {
-                cronBuilder = cronBuilder.withMisfireHandlingInstructionFireAndProceed();
-            } else {
-                cronBuilder = cronBuilder.withMisfireHandlingInstructionDoNothing();
-            }
-
+            CronScheduleBuilder cronBuilder = buildCronBuilder(request);
             CronTrigger trigger = TriggerBuilder.newTrigger()
                     .withIdentity(request.getName(), request.getGroup())
                     .withSchedule(cronBuilder)
@@ -72,8 +71,12 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             scheduler.scheduleJob(detail, trigger);
             log.info("Quartz 任务注册成功: name={}, group={}, cron={}",
                     request.getName(), request.getGroup(), request.getCron());
-            return QuartzJobKey.newInstance(request.getName(),request.getGroup());
+            return QuartzJobKey.newInstance(request.getName(), request.getGroup());
         } catch (SchedulerException e) {
+            // 并发重复注册时 Quartz 抛 ObjectAlreadyExistsException，报“已存在”而非笼统“注册失败”
+            if (e instanceof ObjectAlreadyExistsException) {
+                throw new ScheduleException("Quartz 任务已存在");
+            }
             log.error("Quartz 任务注册失败: name={}, group={}", request.getName(), request.getGroup(), e);
             throw new ScheduleException("Quartz 任务注册失败");
         }
@@ -95,6 +98,9 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
         if (request.getJobClass() == null) {
             throw new ScheduleException("Quartz 任务更新失败");
         }
+        if (StringUtils.isBlank(request.getName()) || StringUtils.isBlank(request.getCron())) {
+            throw new ScheduleException("Quartz 任务名称与 cron 表达式不能为空");
+        }
         JobKey qJobKey = JobKey.jobKey(jobKey.getName(), jobKey.getGroup());
         TriggerKey triggerKey = TriggerKey.triggerKey(jobKey.getName(), jobKey.getGroup());
         try {
@@ -102,16 +108,14 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
                 throw new ScheduleException("Quartz 任务更新失败");
             }
 
-            // 1. 保存原始 Trigger（用于回滚）
+            // 1. 保存原始 Trigger（用于回滚）；不存在则显式失败，避免 rescheduleJob 静默 no-op
             Trigger originalTrigger = scheduler.getTrigger(triggerKey);
+            if (originalTrigger == null) {
+                throw new ScheduleException("Quartz 任务触发器不存在，无法更新");
+            }
 
             // 2. 先更新 Trigger（可逆操作在前）
-            CronScheduleBuilder cronBuilder = CronScheduleBuilder.cronSchedule(request.getCron());
-            if (MisfireStrategyEnum.FIRE_ONCE_NOW == request.getMisfireStrategy()) {
-                cronBuilder = cronBuilder.withMisfireHandlingInstructionFireAndProceed();
-            } else {
-                cronBuilder = cronBuilder.withMisfireHandlingInstructionDoNothing();
-            }
+            CronScheduleBuilder cronBuilder = buildCronBuilder(request);
             CronTrigger newTrigger = TriggerBuilder.newTrigger()
                     .withIdentity(triggerKey)
                     .withSchedule(cronBuilder)
@@ -129,15 +133,13 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
                 scheduler.addJob(detail, true);
             } catch (SchedulerException e) {
                 // JobDetail 更新失败 → 回滚 Trigger 到原始状态
-                if (originalTrigger != null) {
-                    try {
-                        scheduler.rescheduleJob(triggerKey, originalTrigger);
-                        log.info("Quartz 任务回滚成功，Trigger 已恢复: group={}, name={}",
-                                jobKey.getGroup(), jobKey.getName());
-                    } catch (SchedulerException rollbackEx) {
-                        log.error("Quartz 任务回滚失败！Trigger 状态异常，需人工介入: group={}, name={}",
-                                jobKey.getGroup(), jobKey.getName(), rollbackEx);
-                    }
+                try {
+                    scheduler.rescheduleJob(triggerKey, originalTrigger);
+                    log.info("Quartz 任务回滚成功，Trigger 已恢复: group={}, name={}",
+                            jobKey.getGroup(), jobKey.getName());
+                } catch (SchedulerException rollbackEx) {
+                    log.error("Quartz 任务回滚失败！Trigger 状态异常，需人工介入: group={}, name={}",
+                            jobKey.getGroup(), jobKey.getName(), rollbackEx);
                 }
                 throw e;
             }
@@ -175,7 +177,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     @Override
     public void triggerJob(QuartzJobKey jobKey, Map<String, Object> params) {
         try {
-            JobDataMap dataMap = new JobDataMap(params);
+            JobDataMap dataMap = new JobDataMap(params != null ? params : new HashMap<>());
             scheduler.triggerJob(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()), dataMap);
             log.info("Quartz 任务手动触发: name={}, group={}", jobKey.getName(), jobKey.getGroup());
         } catch (SchedulerException e) {
@@ -217,10 +219,12 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             info.setGroup(jobKey.getGroup());
             info.setCron(cronTrigger.getCronExpression());
             info.setDescription(detail.getDescription());
-            info.setParams(detail.getJobDataMap());
+            // 返回副本，避免外部篡改 JobDetail 持有的 JobDataMap
+            info.setParams(detail.getJobDataMap() != null ? new HashMap<>(detail.getJobDataMap()) : null);
             info.setStatus(toJobStatus(scheduler.getTriggerState(triggerKey)));
-            info.setLastFireTime(DateTimeUtil.dateToLocalDateTime(trigger.getPreviousFireTime()));
-            info.setNextFireTime(DateTimeUtil.dateToLocalDateTime(trigger.getNextFireTime()));
+            // 从未触发/已结束的任务 Previous/NextFireTime 可能为 null，需空安全
+            info.setLastFireTime(toLocalDateTime(trigger.getPreviousFireTime()));
+            info.setNextFireTime(toLocalDateTime(trigger.getNextFireTime()));
             return info;
         } catch (SchedulerException e) {
             log.error("Quartz 任务详情查询失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);
@@ -260,6 +264,31 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     }
 
     // ========== 内部方法 ==========
+
+    /**
+     * 构建 CronScheduleBuilder 并应用 misfire 策略；cron 非法时统一抛 {@link ScheduleException}，避免裸 RuntimeException 外泄
+     */
+    private CronScheduleBuilder buildCronBuilder(QuartzJobRequest request) {
+        final CronScheduleBuilder builder;
+        try {
+            builder = CronScheduleBuilder.cronSchedule(request.getCron());
+        } catch (RuntimeException e) {
+            log.error("Quartz cron 表达式非法: name={}, group={}, cron={}",
+                    request.getName(), request.getGroup(), request.getCron(), e);
+            throw new ScheduleException("Quartz cron 表达式非法：" + request.getCron());
+        }
+        if (MisfireStrategyEnum.FIRE_ONCE_NOW == request.getMisfireStrategy()) {
+            return builder.withMisfireHandlingInstructionFireAndProceed();
+        }
+        return builder.withMisfireHandlingInstructionDoNothing();
+    }
+
+    /**
+     * java.util.Date → LocalDateTime（null 安全，用于从未触发/已结束的任务）
+     */
+    private LocalDateTime toLocalDateTime(Date date) {
+        return date != null ? DateTimeUtil.dateToLocalDateTime(date) : null;
+    }
 
     /**
      * 将 Quartz TriggerState 转换为通用 JobStatusEnum

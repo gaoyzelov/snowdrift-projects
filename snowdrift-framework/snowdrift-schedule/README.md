@@ -123,6 +123,14 @@ scheduleService.removeJob(key);
 | 动态注册 | 支持 | 支持（通过 Admin API） |
 | 多 Admin 故障转移 | — | 支持（配置多个地址逗号分隔） |
 
+## 注意事项
+
+- **异常**：所有调度失败统一抛 `ScheduleException`（`BizException` 子类），message 为可直接展示的中文，不依赖 i18n。
+- **Quartz**：`name` 与 `cron` 必填，非法 cron 抛 `ScheduleException`；新建后从未触发或已结束任务的 `lastFireTime` / `nextFireTime` 可能为 `null`（`getJob`/`JobDetails` 已空安全处理）；重复注册报“任务已存在”（含并发场景）。
+- **Quartz 更新**：任务存在但触发器缺失时更新会显式失败（避免 `rescheduleJob` 静默 no-op 造成“任务已存在却无调度”）。
+- **XXL-JOB**：运行时依赖 Admin 的登录会话与响应契约（建议对照实际部署的 Admin 版本联调，仓库内置 core 3.4.1 的 `ReturnT` 结构可能与实现假设不同）；登录过期判定、多实例并发登录与多 Admin 节点 Cookie 绑定属于运行时语义，生产前请在真实环境验证。
+- 动态任务管理的所有操作均通过管理端调用 `IScheduleService`，不依赖注解扫描。
+
 ## 扩展
 
 实现 `IScheduleService<T, K>` 接口即可接入其他调度平台。
