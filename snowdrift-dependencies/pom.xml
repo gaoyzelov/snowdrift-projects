@@ -390,11 +390,6 @@
             </dependency>
             <dependency>
                 <groupId>com.snowdrift</groupId>
-                <artifactId>snowdrift-cache-redisson</artifactId>
-                <version>${revision}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-cache-redis</artifactId>
                 <version>${revision}</version>
             </dependency>
