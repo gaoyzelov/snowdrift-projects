@@ -41,7 +41,6 @@
         <module>snowdrift-schedule</module>
         <module>snowdrift-web</module>
         <module>snowdrift-context</module>
-        <module>snowdrift-plugin</module>
         <module>snowdrift-orm</module>
         <module>snowdrift-rpc</module>
     </modules>

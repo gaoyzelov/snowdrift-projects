@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalTimeSerializer;
 import com.snowdrift.framework.base.util.DateTimeUtil;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.boot.autoconfigure.jackson.JacksonAutoConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -34,6 +35,7 @@ public class SnowdriftJacksonConfiguration {
      * @return Jackson2ObjectMapperBuilderCustomizer
      */
     @Bean
+    @ConditionalOnMissingBean
     public Jackson2ObjectMapperBuilderCustomizer customizer() {
         return builder -> {
             // 注册模块

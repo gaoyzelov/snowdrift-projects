@@ -1,25 +1,15 @@
 package com.snowdrift.framework.web.config;
 
-import com.snowdrift.framework.base.util.AssertUtil;
-import com.snowdrift.framework.context.http.HttpContext;
-import com.snowdrift.framework.context.http.HttpContextHolder;
-import com.snowdrift.framework.context.security.SecurityContext;
-import com.snowdrift.framework.context.security.SecurityContextHolder;
-import com.snowdrift.framework.log.util.LogTraceUtil;
-import com.snowdrift.framework.web.properties.AsyncProperties;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
-import org.springframework.core.task.TaskDecorator;
 import org.springframework.scheduling.annotation.AsyncConfigurer;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.Arrays;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * SnowdriftAsyncConfiguration
@@ -31,31 +21,18 @@ import java.util.concurrent.ThreadPoolExecutor;
  */
 @Slf4j
 @EnableAsync
-@AutoConfiguration
-@EnableConfigurationProperties(AsyncProperties.class)
+@AutoConfiguration(after = SnowdriftExecutorConfiguration.class)
 @ConditionalOnProperty(prefix = "snowdrift.async", name = "enabled", havingValue = "true")
-public class SnowdriftAsyncConfiguration implements AsyncConfigurer {
+public class SnowdriftAsyncConfiguration implements AsyncConfigurer{
 
-    private final AsyncProperties properties;
+    private final Executor executor;
 
-    public SnowdriftAsyncConfiguration(AsyncProperties properties) {
-        this.properties = properties;
+    public SnowdriftAsyncConfiguration(@Qualifier("snowdriftAsyncExecutor") Executor executor) {
+        this.executor = executor;
     }
 
     @Override
     public Executor getAsyncExecutor() {
-        AssertUtil.isTrue(properties.getCorePoolSize() <= properties.getMaxPoolSize(),
-                "corePoolSize 不能大于 maxPoolSize");
-        ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(properties.getCorePoolSize()); // 设置核心线程数
-        executor.setMaxPoolSize(properties.getMaxPoolSize()); // 设置最大线程数
-        executor.setQueueCapacity(properties.getQueueCapacity()); // 设置队列容量
-        executor.setThreadNamePrefix(properties.getThreadNamePrefix()); // 设置线程名前缀
-        executor.setTaskDecorator(taskDecorator()); // 设置线程上下文
-        executor.setWaitForTasksToCompleteOnShutdown(properties.getWaitForTasksToCompleteOnShutdown()); // 设置优雅关闭
-        executor.setAwaitTerminationSeconds(properties.getAwaitTerminationSeconds()); // 设置等待时间
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy()); // 拒绝时由提交线程执行，避免同步抛 500
-        executor.initialize();
         return executor;
     }
 
@@ -69,35 +46,5 @@ public class SnowdriftAsyncConfiguration implements AsyncConfigurer {
                 method.getName(),
                 Arrays.toString(params),
                 ex);
-    }
-
-    /**
-     * 任务装饰器
-     * @return TaskDecorator
-     */
-    private TaskDecorator taskDecorator() {
-        return runnable -> {
-            // HttpContext 可能为 null（定时任务/MQ 等非 HTTP 线程触发 @Async）：有则携带、无则不设置，
-            // 避免对 null 调用 setContext 抛“HTTP上下文不能为空”
-            final HttpContext httpContext = HttpContextHolder.getContext();
-            final SecurityContext securityContext = SecurityContextHolder.peekContext();
-            final String traceId = LogTraceUtil.getTraceId();
-            return () -> {
-                try {
-                    if (httpContext != null) {
-                        HttpContextHolder.setContext(httpContext);
-                    }
-                    if (securityContext != null) {
-                        SecurityContextHolder.setContext(securityContext);
-                    }
-                    LogTraceUtil.setTraceId(traceId);
-                    runnable.run();
-                } finally {
-                    HttpContextHolder.clear();
-                    SecurityContextHolder.clear();
-                    LogTraceUtil.clearTraceId();
-                }
-            };
-        };
     }
 }

@@ -216,35 +216,21 @@ public class OssStrategyFactory {
         if (config == null) {
             throw new OssException("OSS 配置不能为空");
         }
-        // 注册新实例（在同步块内）
-        if (Boolean.TRUE.equals(config.getEnabled())) {
-            try {
-                IOssService newService = serviceCreator.create(config);
-                // 移除旧实例
-                IOssService oldService = serviceMap.remove(configKey);
-                // 关闭旧实例
-                if (oldService != null) {
-                    try {
-                        oldService.close();
-                        log.info("关闭旧 OSS 实例: configKey={}", configKey);
-                    } catch (Exception e) {
-                        log.warn("关闭旧 OSS 实例失败: configKey={}", configKey, e);
-                    }
-                }
-                serviceMap.put(config.getConfigKey(), newService);
-                log.info("注册新 OSS 实例: configKey={}, type={}", config.getConfigKey(), newService.getType());
-            } catch (Exception e) {
-                log.error("注册新 OSS 实例失败: configKey={}", configKey, e);
-            }
-            // 如果是默认配置，更新默认标识
-            if (Boolean.TRUE.equals(config.getIsDefault())) {
-                setDefaultConfigKey(config.getConfigKey());
-                log.info("设置默认 OSS 配置: configKey={}", config.getConfigKey());
-            }
-        } else {
+        if (Boolean.FALSE.equals(config.getEnabled())) {
             log.warn("OSS 配置未启用，跳过注册: configKey={}", configKey);
+            return;
         }
-
+        // 创建新实例
+        IOssService newService = serviceCreator.create(config);
+        // 移除旧实例
+        remove(configKey);
+        // 注册新实例
+        register(config.getConfigKey(), newService);
+        // 如果是默认配置，更新默认标识
+        if (Boolean.TRUE.equals(config.getIsDefault())) {
+            setDefaultConfigKey(config.getConfigKey());
+            log.info("设置默认 OSS 配置: configKey={}", config.getConfigKey());
+        }
         log.info("热更新 OSS 配置完成: configKey={}", configKey);
     }
 
