@@ -78,7 +78,10 @@ public class OssInstanceProperties implements Serializable {
     private String region;
 
     /**
-     * URL 风格
+     * URL 风格（预留）
+     * <p>
+     * 暂未生效：当前各 provider 的 URL 拼接由实现自行决定，该字段尚未被任何实现读取，
+     * 仅作未来统一 URL 结构的配置口（见 {@code OssConfigDTO.urlStyle}）。
      */
     @NotNull(message = "URL 风格不能为空")
     private UrlStyleEnum urlStyle = UrlStyleEnum.PATH_STYLE;

@@ -14,7 +14,7 @@ import java.util.Map;
  * </p>
  *
  * @param <T> 任务请求 DTO 类型（Quartz: {@code QuartzJobRequest}，XXL-JOB: {@code XxlJobRequest}）
- * @param <K> 任务标识类型（Quartz: {@code QuartzIJobKey}，XXL-JOB: {@code XxlIJobKey}）
+ * @param <K> 任务标识类型（Quartz: {@code QuartzJobKey}，XXL-JOB: {@code XxlJobKey}）
  * @author gaoyzelov
  * @date 2026/6/15
  * @since 1.0.0

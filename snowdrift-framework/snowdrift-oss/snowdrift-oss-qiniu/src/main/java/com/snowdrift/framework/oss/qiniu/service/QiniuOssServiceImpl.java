@@ -10,6 +10,7 @@ import com.qiniu.storage.UploadManager;
 import com.qiniu.storage.model.DefaultPutRet;
 import com.qiniu.storage.model.FileInfo;
 import com.qiniu.util.Auth;
+import com.qiniu.util.StringMap;
 import com.snowdrift.framework.base.util.HttpUtil;
 import com.snowdrift.framework.oss.OssConst;
 import com.snowdrift.framework.oss.core.AbstractOssService;
@@ -21,6 +22,7 @@ import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 
@@ -102,7 +104,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             // 初始化 Bucket 管理器
             this.bucketManager = new BucketManager(auth, configuration);
         } catch (Exception e) {
-            throw new OssException("OSS 七牛云客户端初始化失败");
+            throw new OssException("OSS 七牛云客户端初始化失败", e);
         }
     }
 
@@ -129,14 +131,25 @@ public class QiniuOssServiceImpl extends AbstractOssService {
             long expireSeconds = config.getUploadTokenExpire() != null ? config.getUploadTokenExpire() * 60L : 3600L;
             String uploadToken = auth.uploadToken(bucket, objectKey, expireSeconds, null);
 
+            // 透传用户自定义元数据：七牛自定义元数据 key 需以 x-qn-meta- 为前缀
+            StringMap uploadParams = null;
+            if (MapUtils.isNotEmpty(request.getMetadata())) {
+                StringMap metaParams = new StringMap();
+                request.getMetadata().forEach((key, value) -> {
+                    if (key != null && value != null) {
+                        metaParams.put(key.startsWith("x-qn-meta-") ? key : "x-qn-meta-" + key, value);
+                    }
+                });
+                uploadParams = metaParams;
+            }
             // 上传文件
-            Response response = uploadManager.put(inputStream, objectKey, uploadToken, null, null);
+            Response response = uploadManager.put(inputStream, objectKey, uploadToken, uploadParams, null);
             if (!response.isOK()) {
                 log.error("文件上传失败: bucket={}, objectKey={}, status={}, body={}",
                         bucket, objectKey, response.statusCode, response.bodyString());
                 throw new OssException("OSS 七牛云文件上传失败：" + response.statusCode);
             }
-            // 解析返回结果（用于日志记录）
+            // 解析返回结果（hash 即服务端返回的文件 ETag）
             DefaultPutRet putRet = JSON.parseObject(
                     response.bodyString(), DefaultPutRet.class);
 
@@ -147,6 +160,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                     .objectKey(objectKey)
                     .url(getUrl(objectKey, null))
                     .bucket(bucket)
+                    .etag(putRet.hash)
                     .size(request.getSize())
                     .build();
         } catch (Exception e) {
@@ -217,7 +231,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                 return;
             }
             log.error("文件删除失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("OSS 七牛云文件删除失败");
+            throw new OssException("OSS 七牛云文件删除失败", e);
         }
     }
 
@@ -247,13 +261,10 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                 } else {
                     log.error("文件批量删除失败: bucket={}, count={}, response={}",
                             bucket, partitionKeys.size(), response.bodyString());
-                    throw new OssException("OSS 七牛云文件批量删除失败：" + response.bodyString());
                 }
-            } catch (QiniuException e) {
-                log.error("文件批量删除失败: bucket={}, count={}", bucket, partitionKeys.size(), e);
-                throw new OssException("OSS 七牛云文件批量删除失败：" + e.getMessage());
             } catch (Exception e) {
-                throw ossError("OSS 七牛云文件批量删除失败", bucket, "", e);
+                // 分区删除失败仅记录日志，继续处理后续分区，符合接口"单条失败不中断"约定
+                log.error("文件批量删除失败: bucket={}, count={}", bucket, partitionKeys.size(), e);
             }
         });
     }
@@ -279,7 +290,7 @@ public class QiniuOssServiceImpl extends AbstractOssService {
                 return false;
             }
             log.error("检查文件存在性失败: bucket={}, objectKey={}", bucket, objectKey, e);
-            throw new OssException("OSS 七牛云文件存在性检查失败：" + e.getMessage());
+            throw new OssException("OSS 七牛云文件存在性检查失败：" + e.getMessage(), e);
         }
     }
 

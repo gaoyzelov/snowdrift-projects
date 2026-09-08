@@ -63,7 +63,11 @@ public class OssConfigDTO {
     private String region;
     
     /**
-     * URL 风格
+     * URL 风格（预留）
+     * <p>
+     * 暂未生效：当前各 provider 的 URL 拼接由实现自行决定（MinIO/阿里云/腾讯云走
+     * {@code domain/bucket/key}，七牛/本地走 {@code domain/key}），该字段尚未被任何实现读取。
+     * 保留以作未来统一 URL 结构的配置口，使用前请先在各实现中落地。
      */
     private UrlStyleEnum urlStyle = UrlStyleEnum.PATH_STYLE;
     

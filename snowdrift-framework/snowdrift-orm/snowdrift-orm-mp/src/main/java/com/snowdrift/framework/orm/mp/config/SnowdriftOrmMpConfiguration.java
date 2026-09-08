@@ -83,11 +83,8 @@ public class SnowdriftOrmMpConfiguration {
         if (tenantInterceptor != null) {
             interceptor.addInnerInterceptor(tenantInterceptor);
         }
-        // 数据权限插件
-        DataPermissionInterceptor dataPermissionInterceptor = this.getDataPermissionInterceptor(optProvider);
-        if (dataPermissionInterceptor != null){
-            interceptor.addInnerInterceptor(dataPermissionInterceptor);
-        }
+        // 数据权限插件（始终注册；未配置 IDataScopeProvider 时，由 DataScopeHandler 对携带 @DataScope 的语句显式抛错）
+        interceptor.addInnerInterceptor(this.getDataPermissionInterceptor(optProvider));
 
         // 防止全表更新与删除插件
         interceptor.addInnerInterceptor(new BlockAttackInnerInterceptor());
@@ -104,16 +101,15 @@ public class SnowdriftOrmMpConfiguration {
     }
 
     /**
-     * 构建数据权限插件
+     * 构建数据权限插件（始终注册）
+     * <p>未装配 {@link IDataScopeProvider} 时仍注册拦截器，由 {@link DataScopeHandler}
+     * 在语句实际携带 {@code @DataScope} 时显式抛错，避免安全控制静默失效。</p>
      *
-     * @param optProvider 数据权限提供者
+     * @param optProvider 数据权限提供者（可为空）
      * @return 数据权限插件实例
      */
     private DataPermissionInterceptor getDataPermissionInterceptor(Optional<IDataScopeProvider> optProvider) {
-        if (optProvider.isEmpty()) {
-            return null;
-        }
-        DataScopeHandler dataScopeHandler = new DataScopeHandler(optProvider.get());
+        DataScopeHandler dataScopeHandler = new DataScopeHandler(optProvider.orElse(null));
         return new DataPermissionInterceptor(dataScopeHandler);
     }
 

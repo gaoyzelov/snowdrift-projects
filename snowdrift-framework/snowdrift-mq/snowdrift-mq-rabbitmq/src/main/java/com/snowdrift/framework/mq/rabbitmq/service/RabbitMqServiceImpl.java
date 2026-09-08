@@ -4,6 +4,7 @@ import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.mq.AbstractMqService;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
+import com.snowdrift.framework.mq.exception.MqException;
 import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.model.MqSendResult;
 import com.snowdrift.framework.mq.rabbitmq.properties.RabbitMqProperties;
@@ -58,19 +59,46 @@ public class RabbitMqServiceImpl extends AbstractMqService {
         MessageProperties properties = new MessageProperties();
         properties.setContentType(MessageProperties.CONTENT_TYPE_JSON);
         if (headers != null && !headers.isEmpty()) {
-            headers.forEach(properties::setHeader);
+            headers.forEach((name, value) -> {
+                // x-delay 须为整数毫秒（delayed-message-exchange 插件期望数值类型头），
+                // 不能以 String longstr 写入，否则延迟消息可能不延迟/被插件拒绝
+                if (X_DELAY_HEADER.equals(name)) {
+                    try {
+                        properties.setDelayLong(Long.parseLong(value));
+                    } catch (NumberFormatException ex) {
+                        log.warn("无效的 x-delay 延迟毫秒值，按普通头写入: {}", value);
+                        properties.setHeader(name, value);
+                    }
+                } else {
+                    properties.setHeader(name, value);
+                }
+            });
         }
         // RabbitMQ 同步 send 不返回 broker 消息 ID，自生成 messageId 便于链路追踪
         String messageId = UUID.randomUUID().toString();
         properties.setMessageId(messageId);
 
         String routingKey = StringUtils.defaultIfBlank(key, StrConst.EMPTY);
-        rabbitTemplate.send(topic, routingKey, new Message(body, properties));
+        try {
+            rabbitTemplate.send(topic, routingKey, new Message(body, properties));
+        } catch (RuntimeException e) {
+            if (e instanceof MqException mqException) {
+                throw mqException;
+            }
+            throw new MqException("RabbitMQ 消息发送失败: exchange=" + topic + "，原因=" + describe(e), e);
+        }
         return MqSendResult.builder()
                 .topic(topic)
                 .messageId(messageId)
                 .timestamp(System.currentTimeMillis())
                 .build();
+    }
+
+    /**
+     * 摘要发送异常原因（message 为空时回退到异常类型名）
+     */
+    private static String describe(Throwable t) {
+        return t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName();
     }
 
     @Override

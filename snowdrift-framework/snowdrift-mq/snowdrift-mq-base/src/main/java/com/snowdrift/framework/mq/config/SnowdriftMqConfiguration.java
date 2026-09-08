@@ -3,6 +3,7 @@ package com.snowdrift.framework.mq.config;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.FastJson2MqMessageConverter;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
+import com.snowdrift.framework.mq.exception.MqException;
 import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.interceptor.MqSendInterceptor;
 import com.snowdrift.framework.mq.properties.MqProperties;
@@ -16,7 +17,6 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.List;
 import java.util.concurrent.Executor;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Snowdrift MQ 通用自动配置
@@ -41,7 +41,12 @@ public class SnowdriftMqConfiguration {
         executor.setQueueCapacity(exec.getQueueCapacity());
         executor.setKeepAliveSeconds(exec.getKeepAliveSeconds());
         executor.setThreadNamePrefix(exec.getThreadNamePrefix());
-        executor.setRejectedExecutionHandler(new ThreadPoolExecutor.CallerRunsPolicy());
+        // 饱和时直接拒绝并抛异常（而非 CallerRunsPolicy 回退到调用线程内联执行，
+        // 否则 AbstractMqService 任务的 finally 会清空本属于调用方的 MDC/SecurityContext）
+        executor.setRejectedExecutionHandler((runnable, poolExecutor) -> {
+            log.error("MQ 异步发送线程池已满，任务提交被拒绝");
+            throw new MqException("MQ 异步发送线程池已满，任务提交被拒绝");
+        });
         executor.setWaitForTasksToCompleteOnShutdown(exec.isWaitForTasksToCompleteOnShutdown());
         executor.setAwaitTerminationSeconds(exec.getAwaitTerminationSeconds());
         executor.initialize();

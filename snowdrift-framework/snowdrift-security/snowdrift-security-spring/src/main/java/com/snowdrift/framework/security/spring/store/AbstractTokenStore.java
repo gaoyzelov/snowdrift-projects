@@ -44,10 +44,13 @@ public abstract class AbstractTokenStore implements TokenStore {
     public final void put(String token, SecurityContext context, Duration timeout) {
         Duration ttl = resolveTtl(timeout);
         long now = System.currentTimeMillis();
-        long expireAt = now + ttl.toMillis();
+        // timeout <= 0 表示「永不过期」：绝对过期时间戳置为 Long.MAX_VALUE，
+        // 避免 now + 非正 ttl 导致写入即过期（对齐 Sa-Token 的 -1 约定）。
+        long expireAt = (ttl == null || ttl.toMillis() <= 0) ? Long.MAX_VALUE : now + ttl.toMillis();
         TokenEntry entry = new TokenEntry(context, expireAt, now);
         doPut(token, entry, ttl);
-        log.trace("TokenStore 写入: token={}, ttl={}s", token, ttl.getSeconds());
+        log.trace("TokenStore 写入: token={}, ttl={}s", token,
+                ttl == null || ttl.toMillis() <= 0 ? -1 : ttl.getSeconds());
     }
 
     @Override
@@ -59,15 +62,15 @@ public abstract class AbstractTokenStore implements TokenStore {
 
         long now = System.currentTimeMillis();
 
-        // 1. 绝对过期检查
-        if (entry.expireAt < now) {
+        // 1. 绝对过期检查（expireAt 为 Long.MAX_VALUE 表示永不过期）
+        if (entry.expireAt != Long.MAX_VALUE && entry.expireAt < now) {
             remove(token);
             log.trace("TokenStore 绝对过期: token={}", token);
             return null;
         }
 
-        // 2. 闲置过期检查
-        if ((now - entry.lastActiveAt) > idle.toMillis()) {
+        // 2. 闲置过期检查（idle <= 0 表示不限制闲置时长，跳过闲置淘汰）
+        if (idle.toMillis() > 0 && (now - entry.lastActiveAt) > idle.toMillis()) {
             remove(token);
             log.trace("TokenStore 闲置过期: token={}", token);
             return null;
@@ -86,7 +89,7 @@ public abstract class AbstractTokenStore implements TokenStore {
      *
      * @param token Token 值
      * @param entry TokenEntry（含 context、expireAt、lastActiveAt）
-     * @param ttl   过期时间（秒），子类可按需用于设置 Redis TTL 等
+     * @param ttl   过期时间；{@code null} 或 {@code <= 0} 表示永不过期，子类此时不应设置介质 TTL
      */
     protected abstract void doPut(String token, TokenEntry entry, Duration ttl);
 
@@ -113,7 +116,9 @@ public abstract class AbstractTokenStore implements TokenStore {
     // =================== 工具方法 ===================
 
     protected Duration resolveTtl(Duration ttl) {
-        return ttl.isNegative() ? timeout : ttl;
+        // 显式传入非正 TTL 时回退到模块配置的 timeout；
+        // 若配置同样非正（<=0），下游按「永不过期」处理（ttl.toMillis() <= 0）。
+        return ttl == null || ttl.isZero() || ttl.isNegative() ? timeout : ttl;
     }
 
     // =================== 共享数据模型 ===================

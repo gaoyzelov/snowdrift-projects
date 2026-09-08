@@ -53,7 +53,8 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
                 log.debug("无安全上下文，tenantId 降级为 0（系统租户）");
                 tenantId = 0L;
             }
-            this.strictInsertFill(metaObject, tenantProperties.getTenantIdColumn(), Long.class, tenantId);
+            // strictInsertFill 按实体 Java 属性名匹配（与上方 createBy 等一致），此处传属性名而非列名
+            this.strictInsertFill(metaObject, "tenantId", Long.class, tenantId);
         }
     }
 

@@ -5,6 +5,8 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+import java.time.Duration;
+
 /**
  * RocketMQ 消息队列配置属性
  *
@@ -22,4 +24,9 @@ public class RocketMqProperties {
      */
     @NotNull
     private Boolean enabled = Boolean.FALSE;
+
+    /**
+     * 发送超时时间
+     */
+    private Duration sendTimeout = Duration.ofSeconds(3);
 }

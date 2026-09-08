@@ -14,7 +14,7 @@ import java.util.Locale;
 
 /**
  * I18nInterceptor
- * 优先级：URL 参数（默认 lang） > 默认语言
+ * 优先级：URL 参数（默认 lang） > Accept-Language 请求头 > 默认语言
  * @author gaoyzelov
  * @date 2026/5/9
  * @description 国际化语言拦截器
@@ -34,31 +34,73 @@ public class I18nInterceptor implements HandlerInterceptor {
         // 1. 从参数获取
         String lang = request.getParameter(properties.getParamName());
 
-        // 2. 如果没有，从请求头获取
+        // 2. 参数缺失时从 Accept-Language 请求头解析（支持语言子标签匹配，如 en -> en_US）
         if (StringUtils.isBlank(lang)) {
-            // 检查 Accept-Language 头部
-            Locale requestLocale = request.getLocale();
-            if (requestLocale != null && properties.getSupportedLocales().contains(requestLocale.toString())) {
-                lang = requestLocale.toString();
-            } else {
-                // 回退到配置的默认值
-                lang = properties.getDefaultLocale();
-            }
+            lang = resolveFromAcceptLanguage(request);
         }
 
-        // 3. 验证是否支持该语言
+        // 3. 仍未解析到则回退到配置的默认语言
+        if (StringUtils.isBlank(lang)) {
+            lang = properties.getDefaultLocale();
+        }
+
+        // 4. 验证并设置语言环境
         Locale locale = I18nUtil.parseLocale(lang);
         if (isSupported(locale, properties.getSupportedLocales())) {
             LocaleContextHolder.setLocale(locale);
             log.debug("设置语言环境: {}", locale);
-        } else if (isSupported(request.getLocale(), properties.getSupportedLocales())) {
-            LocaleContextHolder.setLocale(request.getLocale());
         } else {
             log.warn("不支持的语言环境: {}，使用默认语言", lang);
             LocaleContextHolder.setLocale(I18nUtil.parseLocale(properties.getDefaultLocale()));
         }
 
         return true;
+    }
+
+    /**
+     * 从 Accept-Language 请求头解析支持的语言标签。
+     * <p>
+     * 无请求头时返回 {@code null}（由调用方回退默认语言）；有请求头时优先精确匹配支持列表，
+     * 其次匹配语言子标签（如 {@code en} -> {@code en_US}），都未命中时返回 {@code null}。
+     * </p>
+     *
+     * @param request 当前请求
+     * @return 匹配到的支持语言标签；未命中返回 {@code null}
+     */
+    private String resolveFromAcceptLanguage(HttpServletRequest request) {
+        if (StringUtils.isBlank(request.getHeader("Accept-Language"))) {
+            return null;
+        }
+        Locale requestLocale = request.getLocale();
+        if (requestLocale == null) {
+            return null;
+        }
+        return matchSupportedLocale(requestLocale, properties.getSupportedLocales());
+    }
+
+    /**
+     * 在支持的语言列表中匹配最接近请求语言的语言标签：优先精确匹配，其次语言子标签匹配。
+     *
+     * @param requestLocale    请求语言
+     * @param supportedLocales 支持的语言列表
+     * @return 匹配到的支持语言标签；未命中返回 {@code null}
+     */
+    private String matchSupportedLocale(Locale requestLocale, List<String> supportedLocales) {
+        // 1. 精确匹配（如 zh_CN / en_US）
+        String requestTag = requestLocale.toString();
+        if (supportedLocales.contains(requestTag)) {
+            return requestTag;
+        }
+        // 2. 语言子标签匹配（如请求 en，支持列表含 en_US -> en_US）
+        String requestLanguage = requestLocale.getLanguage();
+        if (StringUtils.isNotBlank(requestLanguage)) {
+            for (String supported : supportedLocales) {
+                if (supported != null && requestLanguage.equals(I18nUtil.parseLocale(supported).getLanguage())) {
+                    return supported;
+                }
+            }
+        }
+        return null;
     }
 
     @Override

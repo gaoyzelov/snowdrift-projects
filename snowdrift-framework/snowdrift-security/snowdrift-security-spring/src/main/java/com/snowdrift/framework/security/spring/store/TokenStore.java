@@ -29,7 +29,7 @@ public interface TokenStore {
      *
      * @param token   Token 值
      * @param context 安全上下文
-     * @param timeout 过期时间，由 TokenStore 实现决定
+     * @param timeout 过期时间；{@code null} 或 {@code <= 0} 表示永不过期，由 TokenStore 实现决定
      */
     void put(String token, SecurityContext context, Duration timeout);
 

@@ -6,6 +6,7 @@ import com.aliyun.oss.model.DeleteObjectsRequest;
 import com.aliyun.oss.model.GeneratePresignedUrlRequest;
 import com.aliyun.oss.model.OSSObject;
 import com.aliyun.oss.model.ObjectMetadata;
+import com.aliyun.oss.model.PutObjectResult;
 import com.snowdrift.framework.oss.OssConst;
 import com.snowdrift.framework.oss.core.AbstractOssService;
 import com.snowdrift.framework.oss.dto.OssConfigDTO;
@@ -16,6 +17,7 @@ import com.snowdrift.framework.oss.util.OssUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 
@@ -75,7 +77,7 @@ public class AliyunOssServiceImpl extends AbstractOssService {
         try {
             this.ossClient = new OSSClientBuilder().build(endpoint, accessKey, secretKey);
         } catch (Exception e) {
-            throw new OssException("OSS 阿里云客户端初始化失败");
+            throw new OssException("OSS 阿里云客户端初始化失败", e);
         }
     }
 
@@ -104,14 +106,19 @@ public class AliyunOssServiceImpl extends AbstractOssService {
             if (StringUtils.isNotBlank(request.getContentType())) {
                 metadata.setContentType(request.getContentType());
             }
+            if (MapUtils.isNotEmpty(request.getMetadata())) {
+                metadata.setUserMetadata(request.getMetadata());
+            }
 
-            ossClient.putObject(bucket, objectKey, inputStream, metadata);
-            log.debug("文件上传成功: bucket={}, objectKey={}, size={}", bucket, objectKey, request.getSize());
+            PutObjectResult putObjectResult = ossClient.putObject(bucket, objectKey, inputStream, metadata);
+            log.debug("文件上传成功: bucket={}, objectKey={}, size={}, etag={}",
+                    bucket, objectKey, request.getSize(), putObjectResult.getETag());
 
             return OssResult.builder()
                     .objectKey(objectKey)
                     .url(getUrl(objectKey, null))
                     .bucket(bucket)
+                    .etag(putObjectResult.getETag())
                     .size(request.getSize())
                     .build();
         } catch (Exception e) {
@@ -176,10 +183,9 @@ public class AliyunOssServiceImpl extends AbstractOssService {
      * 从阿里云 OSS 批量删除文件
      * <p>
      * 根据 objectKey 列表从阿里云 OSS 批量删除文件
-     * 如果文件不存在，不会抛出异常
+     * 单个分区删除失败仅记录日志并继续处理后续分区；文件不存在不会抛出异常
      *
      * @param objectKeys 对象键列表，要删除的文件标识，不能为空
-     * @throws OssException 当删除失败时抛出
      */
     @Override
     public void deleteBatch(List<String> objectKeys) {
@@ -192,8 +198,9 @@ public class AliyunOssServiceImpl extends AbstractOssService {
                 DeleteObjectsRequest deleteObjectsRequest = new DeleteObjectsRequest(bucket).withKeys(partitionKeys);
                 ossClient.deleteObjects(deleteObjectsRequest);
                 log.debug("文件批量删除成功: bucket={}", bucket);
-            }catch (Exception e) {
-                throw ossError("OSS 阿里云批量删除失败", bucket, "", e);
+            } catch (Exception e) {
+                // 单个分区删除失败仅记录日志，继续处理后续分区，符合接口"单条失败不中断"约定
+                log.error("OSS 阿里云批量删除失败: bucket={}, objectKeys={}", bucket, partitionKeys, e);
             }
         });
     }

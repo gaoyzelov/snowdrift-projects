@@ -161,6 +161,20 @@ public final class HttpUtil {
      * @return 响应内容
      */
     public static String postForm(String url, Map<String, String> formData, Map<String, String> headers) {
+        return postForm(url, formData, headers, DEFAULT_TIMEOUT);
+    }
+
+    /**
+     * POST Form 表单请求（指定超时）
+     *
+     * @param url            请求 URL
+     * @param formData       表单数据
+     * @param headers        请求头
+     * @param timeout 超时时间（秒）
+     * @return 响应内容
+     */
+    public static String postForm(String url, Map<String, String> formData, Map<String, String> headers, Duration timeout) {
+        AssertUtil.isTrue(timeout.toSeconds() > 0, "超时时间必须大于 0");
         AssertUtil.notBlank(url, "请求Url不能为空");
         AssertUtil.notNull(formData, "表单数据不能为空");
 
@@ -168,7 +182,7 @@ public final class HttpUtil {
 
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(toUri(url))
-                .timeout(DEFAULT_TIMEOUT)
+                .timeout(timeout)
                 .header("Content-Type", CONTENT_TYPE_FORM)
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
 

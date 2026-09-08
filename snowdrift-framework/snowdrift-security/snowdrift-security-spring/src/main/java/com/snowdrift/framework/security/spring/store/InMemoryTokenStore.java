@@ -25,15 +25,18 @@ public class InMemoryTokenStore extends AbstractTokenStore {
 
     public InMemoryTokenStore(long timeout, long idle) {
         super(Duration.ofSeconds(timeout), Duration.ofSeconds(idle));
-        this.cache = CacheBuilder.newBuilder()
-                .maximumSize(2048)
-                .expireAfterAccess(Duration.ofSeconds(timeout))
-                .build();
+        // timeout <= 0 表示永不过期；Guava 不允许设置非正的 expireAfterAccess，此时不启用该过期策略
+        CacheBuilder<Object, Object> cacheBuilder = CacheBuilder.newBuilder().maximumSize(2048);
+        if (timeout > 0) {
+            cacheBuilder.expireAfterAccess(Duration.ofSeconds(timeout));
+        }
+        this.cache = cacheBuilder.build();
     }
 
     @Override
     protected void doPut(String token, TokenEntry entry, Duration ttl) {
-        log.debug("内存 TokenStore 写入: token={}, ttl={}s", token, ttl.getSeconds());
+        log.debug("内存 TokenStore 写入: token={}, ttl={}s", token,
+                ttl == null || ttl.toMillis() <= 0 ? -1 : ttl.getSeconds());
         cache.put(token, entry);
     }
 

@@ -107,7 +107,7 @@ public abstract class AbstractMqService implements IMqService {
         validateSendArgs(topic, payload);
         // 捕获调用方线程上下文，在任务线程中恢复，保证发送时注入正确的 traceId / SecurityContext
         Map<String, String> callerMdc = MDC.getCopyOfContextMap();
-        SecurityContext callerSecurity = captureSecurityContext();
+        SecurityContext callerSecurity = SecurityContextHolder.peekContext();
         Executor executor = mqAsyncExecutor != null ? mqAsyncExecutor : ForkJoinPool.commonPool();
         return CompletableFuture.supplyAsync(() -> {
             replayContext(callerMdc, callerSecurity);
@@ -217,23 +217,11 @@ public abstract class AbstractMqService implements IMqService {
         }
     }
 
-    // ========== 异步上下文捕获 / 恢复 ==========
-
-    /**
-     * 捕获当前线程安全上下文；无上下文时不抛异常（与 HTTP 线程之外调用异步发送的场景兼容）
-     */
-    private SecurityContext captureSecurityContext() {
-        try {
-            return SecurityContextHolder.getContext();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
+    // ========== 异步上下文恢复 ==========
     /**
      * 在异步任务线程中恢复调用方上下文
      */
-    private void replayContext(Map<String, String> callerMdc, SecurityContext callerSecurity) {
+    protected void replayContext(Map<String, String> callerMdc, SecurityContext callerSecurity) {
         if (callerMdc != null) {
             MDC.setContextMap(callerMdc);
         } else {

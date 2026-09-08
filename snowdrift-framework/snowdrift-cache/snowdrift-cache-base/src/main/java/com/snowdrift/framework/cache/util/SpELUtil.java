@@ -46,13 +46,14 @@ public final class SpELUtil {
     /**
      * 解析 SpEL 表达式，从 AOP 方法参数中提取值
      * <p>
-     * 如果表达式不包含 {@code #} 占位符则直接返回原文；
-     * 解析失败时降级返回原始表达式。
+     * 如果表达式不包含 {@code #} 占位符则直接返回原文（静态 key）；
+     * 包含 {@code #} 时按 SpEL 解析，解析失败或求值结果为 null 时返回 {@code null}，
+     * 由调用方将 null/空结果视为配置错误快速失败，避免 key 静默降级为全局锁 / 全局防重标记。
      * </p>
      *
      * @param expression SpEL 表达式
      * @param joinPoint  AOP 切入点
-     * @return 解析后的字符串值，解析失败返回原始表达式
+     * @return 解析后的字符串值；解析失败或求值结果为 null 时返回 null；无 {@code #} 的静态 key 原样返回
      */
     public static String parseExpression(String expression, ProceedingJoinPoint joinPoint) {
         if (!expression.contains(StrConst.HASH)) {
@@ -79,10 +80,10 @@ public final class SpELUtil {
                 expr = PARSER.parseExpression(expression);
             }
             Object value = expr.getValue(context);
-            return value != null ? value.toString() : expression;
+            return value != null ? value.toString() : null;
         } catch (Exception e) {
-            log.warn("解析 SpEL 表达式失败，使用原始值: {}", expression, e);
-            return expression;
+            log.warn("解析 SpEL 表达式失败: {}", expression, e);
+            return null;
         }
     }
 }

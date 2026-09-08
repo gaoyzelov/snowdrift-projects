@@ -15,10 +15,16 @@ import java.io.IOException;
 import java.util.List;
 
 /**
- * XSS 防护过滤器 — 对请求参数和请求头等做 XSS 清洗。
+ * XSS 防护过滤器 — 对请求参数、请求头和查询字符串做 XSS 清洗。
  * <p>
- * 依赖 {@link CachedBodyFilter} 先缓存 Body，本过滤器在缓存基础上做 XSS 清洗。
- * 通过 {@code snowdrift.web.xss.enabled=true} 启用，{@code exclude-path-patterns} 排除指定路径。
+ * 通过 {@code snowdrift.xss.enabled=true} 启用（默认关闭），
+ * {@code exclude-path-patterns} 排除指定路径。
+ * </p>
+ * <p>
+ * 说明：本过滤器不读取、也不清洗请求体原始输入流；
+ * {@code @RequestBody} 的清洗由 {@link com.snowdrift.framework.web.xss.XssJsonBodyAdvice}
+ * 在 Spring MVC 层完成，且仅覆盖 String / Map / Collection / 数组等顶层结构，
+ * 不递归到深层 POJO / DTO 字段。
  * </p>
  *
  * @author gaoyzelov

@@ -9,6 +9,7 @@ import com.snowdrift.framework.security.satoken.properties.SaTokenSecurityProper
 import com.snowdrift.framework.security.satoken.service.SaTokenSecurityServiceImpl;
 import com.snowdrift.framework.security.service.ISecurityService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -33,13 +34,16 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 @AutoConfiguration
 @EnableConfigurationProperties(SaTokenSecurityProperties.class)
 @ConditionalOnProperty(prefix = "snowdrift.security.sa-token", name = "enabled", havingValue = "true")
-@ConditionalOnMissingBean(type = "org.springframework.security.web.SecurityFilterChain")
 public class SnowdriftSecuritySaTokenConfiguration implements WebMvcConfigurer {
 
     private final SaTokenSecurityProperties properties;
 
-    public SnowdriftSecuritySaTokenConfiguration(SaTokenSecurityProperties properties) {
+    private final ObjectProvider<ISecurityService> securityServiceProvider;
+
+    public SnowdriftSecuritySaTokenConfiguration(SaTokenSecurityProperties properties,
+                                                 ObjectProvider<ISecurityService> securityServiceProvider) {
         this.properties = properties;
+        this.securityServiceProvider = securityServiceProvider;
     }
 
     /**
@@ -96,7 +100,9 @@ public class SnowdriftSecuritySaTokenConfiguration implements WebMvcConfigurer {
      */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new SecurityInterceptor(securityService()))
+        // 取容器托管的 ISecurityService 单例，避免 @AutoConfiguration(proxyBeanMethods=false)
+        // 下直调 securityService() 方法每次生成新实例；此时所有 Bean 已就绪，getObject() 安全
+        registry.addInterceptor(new SecurityInterceptor(securityServiceProvider.getObject()))
                 .addPathPatterns("/**")
                 .excludePathPatterns(properties.getExcludePathPatterns());
     }

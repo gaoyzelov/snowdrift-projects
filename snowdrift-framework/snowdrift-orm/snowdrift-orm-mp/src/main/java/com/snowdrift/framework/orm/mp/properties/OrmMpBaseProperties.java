@@ -28,6 +28,8 @@ public class OrmMpBaseProperties implements Serializable {
 
     /**
      * 是否启用字段加解密（默认关闭）
+     * <p>注意：加解密仅作用于 ORM 字段读写映射，WHERE / ORDER BY / 唯一性约束等 SQL 片段不会
+     * 经过 TypeHandler，请勿将加密列用于过滤、排序或唯一键（详见 {@code AesEncryptTypeHandler}）。</p>
      */
     @NotNull
     private Boolean crypto = Boolean.FALSE;

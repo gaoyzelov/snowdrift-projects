@@ -90,6 +90,18 @@ public interface IOssService extends AutoCloseable {
     String getUrl(String objectKey, Duration expiry);
     
     // ========== 分片上传（可选实现） ==========
+
+    /**
+     * 判断当前存储类型是否支持分片上传
+     * <p>
+     * 调用方可在分片上传流程前先探测能力，避免运行时才触发
+     * {@code UnsupportedOperationException}；默认不支持，实现类如支持需覆写为 {@code true}。
+     *
+     * @return {@code true} 表示支持分片上传
+     */
+    default boolean supportsMultipartUpload() {
+        return false;
+    }
     
     /**
      * 初始化分片上传

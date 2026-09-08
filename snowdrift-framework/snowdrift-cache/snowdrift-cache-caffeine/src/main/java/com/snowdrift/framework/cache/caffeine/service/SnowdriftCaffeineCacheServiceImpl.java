@@ -14,7 +14,8 @@ import java.util.List;
  * Caffeine 本地缓存实现
  * <p>
  * 完全依赖 Caffeine 原生 {@code expireAfterWrite} 过期机制，
- * 不支持 per-key TTL（{@link #expire} 和 {@link #getExpire} 返回语义降级值）。
+ * 不支持 per-key TTL（{@link #expire} 与 {@link #getExpire} 均抛出
+ * {@link UnsupportedOperationException}）。
  * </p>
  *
  * @author gaoyzelov
@@ -99,7 +100,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     /**
-     * Caffeine 原生不支持 per-key TTL 动态修改，返回 false 表示未生效
+     * Caffeine 原生不支持 per-key TTL 动态修改，调用将抛出 {@link UnsupportedOperationException}
      */
     @Override
     public boolean doExpire(String key, Duration ttl) {
@@ -114,6 +115,9 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
         throw new UnsupportedOperationException("Caffeine 不支持查询 per-key TTL");
     }
 
+    /**
+     * Caffeine 原生不支持原子自增，调用将抛出 {@link UnsupportedOperationException}
+     */
     @Override
     protected long doIncrement(String key, Duration ttl) {
         throw new UnsupportedOperationException("Caffeine 不支持 increment 操作");

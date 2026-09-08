@@ -40,6 +40,12 @@ public interface ICacheService {
 
     /**
      * 设置缓存
+     * <p>
+     * 注意：本重载不指定 TTL，各后端行为存在差异：
+     * Redis 后端等价于 {@code SET key value}，条目永不过期；
+     * Caffeine 后端写入的条目遵循构建缓存时配置的全局默认 TTL（{@code expireAfterWrite}）。
+     * 如需显式、确定性的过期时间，请使用 {@link #put(String, Object, Duration)} 三参重载。
+     * </p>
      *
      * @param key   缓存键
      * @param value 缓存值
@@ -140,7 +146,7 @@ public interface ICacheService {
      * <p>适用于限流计数、失败次数统计等场景；每次调用都会刷新 TTL，形成滚动窗口</p>
      *
      * @param key 缓存键
-     * @param ttl 过期时间（每次自增后刷新），null 表示使用全局默认 TTL
+     * @param ttl 过期时间（每次自增后刷新），必填，不允许为 null
      * @return 自增后的值，key 不存在时从 0 开始计为 1
      */
     long increment(String key, Duration ttl);

@@ -40,6 +40,9 @@ public class OssStrategyFactory {
 
     /**
      * 注册 OSS 实例
+     * <p>
+     * 若 configKey 已注册且为不同实例，会先关闭旧实例再覆盖注册，避免资源泄漏；
+     * reload() 已先 remove() 移除旧实例，此处不会重复关闭。
      *
      * @param configKey 配置标识，如 default、backup 等，不能为空
      * @param service   OSS Service 实例，不能为空
@@ -53,7 +56,16 @@ public class OssStrategyFactory {
             throw new OssException("OSS 服务实例不能为空");
         }
 
-        serviceMap.put(configKey, service);
+        IOssService previous = serviceMap.put(configKey, service);
+        // 覆盖注册时关闭旧实例，避免连接池等资源泄漏（reload 已先 remove，此处不会重复关闭）
+        if (previous != null && previous != service) {
+            try {
+                previous.close();
+                log.info("替换并关闭旧 OSS 实例: configKey={}, type={}", configKey, previous.getType());
+            } catch (Exception e) {
+                log.warn("关闭旧 OSS 实例失败: configKey={}", configKey, e);
+            }
+        }
         log.info("注册 OSS 实例: configKey={}, type={}, bucket={}",
                 configKey, service.getType(), service.getBucket());
     }

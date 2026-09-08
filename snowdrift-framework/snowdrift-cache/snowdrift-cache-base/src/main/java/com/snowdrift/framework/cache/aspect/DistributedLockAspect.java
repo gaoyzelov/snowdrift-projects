@@ -4,7 +4,9 @@ import com.snowdrift.framework.cache.IDistributedLockService;
 import com.snowdrift.framework.cache.annotation.DistributedLock;
 import com.snowdrift.framework.cache.util.SpELUtil;
 import com.snowdrift.framework.base.exception.BizException;
+import com.snowdrift.framework.base.result.ResultCode;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -41,6 +43,9 @@ public class DistributedLockAspect {
     @Around("@annotation(lockAnno)")
     public Object around(ProceedingJoinPoint joinPoint, DistributedLock lockAnno) throws Throwable {
         String key = SpELUtil.parseExpression(lockAnno.key(), joinPoint);
+        if (StringUtils.isBlank(key)) {
+            throw new BizException("SpEL 锁 key 解析失败，请检查 @DistributedLock key 配置: " + lockAnno.key());
+        }
         long waitTime = lockAnno.waitTime();
         long leaseTime = lockAnno.leaseTime();
         TimeUnit timeUnit = lockAnno.timeUnit();
@@ -50,7 +55,7 @@ public class DistributedLockAspect {
         boolean locked = lockService.tryLock(key, waitTime, leaseTime, timeUnit);
         if (!locked) {
             log.warn("获取分布式锁失败: key={}", key);
-            throw new BizException(lockAnno.message());
+            throw new BizException(ResultCode.LOCK_FAILED.code(), lockAnno.message());
         }
 
         try {

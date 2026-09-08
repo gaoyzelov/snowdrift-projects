@@ -24,9 +24,13 @@ public @interface ApiLog {
     boolean enable() default true;
 
     /**
-     * 是否保存参数
+     * 是否保存请求参数。
+     * <p>
+     * 默认关闭，避免敏感参数（密码、Token 等）被默认写入日志；
+     * 需要记录时可设为 {@code true}，并配合 {@code mask()} 对敏感字段脱敏。
+     * </p>
      */
-    boolean saveParams() default true;
+    boolean saveParams() default false;
 
     /**
      * 是否保存返回结果

@@ -136,7 +136,7 @@ public class ApiLogAspect {
         if (Objects.nonNull(exception)) {
             holder.setStatus(ResultCode.ERR.code());
             holder.setErrorMsg(ExceptionUtils.getRootCauseMessage(exception));
-        } else if (result instanceof Result<?> r && ResultCode.OK.code() != r.getCode()) {
+        } else if (result instanceof Result<?> r && !Objects.equals(ResultCode.OK.code(), r.getCode())) {
             holder.setStatus(ResultCode.ERR.code());
             holder.setErrorMsg(r.getMsg());
         } else {

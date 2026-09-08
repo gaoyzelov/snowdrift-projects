@@ -1,10 +1,14 @@
 package com.snowdrift.framework.mq.rocketmq.service;
 
+import com.snowdrift.framework.context.security.SecurityContext;
+import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.mq.AbstractMqService;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
+import com.snowdrift.framework.mq.exception.MqException;
 import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.model.MqSendResult;
+import com.snowdrift.framework.mq.rocketmq.properties.RocketMqProperties;
 import com.snowdrift.framework.mq.rocketmq.support.RocketDelayLevels;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -12,6 +16,7 @@ import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.apache.rocketmq.spring.support.RocketMQHeaders;
+import org.slf4j.MDC;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 
@@ -39,24 +44,28 @@ import java.util.concurrent.Executor;
 @Slf4j
 public class RocketMqServiceImpl extends AbstractMqService {
 
-    /** 默认发送超时（毫秒） */
-    private static final long DEFAULT_SEND_TIMEOUT = 3000L;
-
     private final RocketMQTemplate rocketMQTemplate;
+    private final long sendTimeoutMillis;
 
     public RocketMqServiceImpl(RocketMQTemplate rocketMQTemplate,
+                               RocketMqProperties rocketMqProperties,
                                Executor mqAsyncExecutor,
                                MqMessageConverter converter,
                                MqInterceptorRegistry interceptorRegistry,
                                MqContextPropagator contextPropagator) {
         super(mqAsyncExecutor, converter, interceptorRegistry, contextPropagator);
         this.rocketMQTemplate = rocketMQTemplate;
+        this.sendTimeoutMillis = rocketMqProperties.getSendTimeout().toMillis();
     }
 
     @Override
     protected MqSendResult doNativeSend(String topic, String key, byte[] body, Map<String, String> headers) {
-        SendResult sendResult = rocketMQTemplate.syncSend(topic, buildMessage(key, body, headers), DEFAULT_SEND_TIMEOUT);
-        return toResult(sendResult);
+        try {
+            SendResult sendResult = rocketMQTemplate.syncSend(topic, buildMessage(key, body, headers), sendTimeoutMillis);
+            return toResult(sendResult);
+        } catch (RuntimeException e) {
+            throw toSendException(topic, e);
+        }
     }
 
     @Override
@@ -69,8 +78,13 @@ public class RocketMqServiceImpl extends AbstractMqService {
             Map<String, String> effectiveHeaders = buildHeaders(key, headers);
             Message<byte[]> message = buildMessage(key, body, effectiveHeaders);
             int delayLevel = RocketDelayLevels.map(delay);
-            SendResult sendResult = rocketMQTemplate.syncSend(topic, message, DEFAULT_SEND_TIMEOUT, delayLevel);
-            MqSendResult result = toResult(sendResult);
+            MqSendResult result;
+            try {
+                SendResult sendResult = rocketMQTemplate.syncSend(topic, message, sendTimeoutMillis, delayLevel);
+                result = toResult(sendResult);
+            } catch (RuntimeException e) {
+                throw toSendException(topic, e);
+            }
             fireAfterSend(topic, result);
             return result;
         } catch (RuntimeException e) {
@@ -83,6 +97,9 @@ public class RocketMqServiceImpl extends AbstractMqService {
     public <T> CompletableFuture<MqSendResult> sendAsync(String topic, String key, T payload, Map<String, String> headers) {
         validateSendArgs(topic, payload);
         fireBeforeSend(topic, key, payload);
+        // 捕获调用方线程上下文，供 broker I/O 线程回调内恢复（与基类 executor 包装路径语义一致）
+        Map<String, String> callerMdc = MDC.getCopyOfContextMap();
+        SecurityContext callerSecurity = SecurityContextHolder.peekContext();
         try {
             byte[] body = converter.serialize(payload);
             Map<String, String> effectiveHeaders = buildHeaders(key, headers);
@@ -92,17 +109,30 @@ public class RocketMqServiceImpl extends AbstractMqService {
             rocketMQTemplate.asyncSend(topic, message, new SendCallback() {
                 @Override
                 public void onSuccess(SendResult sendResult) {
-                    MqSendResult result = toResult(sendResult);
-                    fireAfterSend(topic, result);
-                    future.complete(result);
+                    replayContext(callerMdc, callerSecurity);
+                    try {
+                        MqSendResult result = toResult(sendResult);
+                        fireAfterSend(topic, result);
+                        future.complete(result);
+                    } finally {
+                        SecurityContextHolder.clear();
+                        MDC.clear();
+                    }
                 }
 
                 @Override
                 public void onException(Throwable throwable) {
-                    fireOnSendError(topic, throwable);
-                    future.completeExceptionally(throwable);
+                    replayContext(callerMdc, callerSecurity);
+                    try {
+                        MqException mqException = toSendException(topic, throwable);
+                        fireOnSendError(topic, mqException);
+                        future.completeExceptionally(mqException);
+                    } finally {
+                        SecurityContextHolder.clear();
+                        MDC.clear();
+                    }
                 }
-            }, DEFAULT_SEND_TIMEOUT);
+            }, sendTimeoutMillis);
             return future;
         } catch (RuntimeException e) {
             fireOnSendError(topic, e);
@@ -111,6 +141,23 @@ public class RocketMqServiceImpl extends AbstractMqService {
     }
 
     // ========== 组装与映射 ==========
+
+    /**
+     * 统一转换为 MqException：已是 MqException 直接透传，否则包装并保留原始 cause
+     */
+    private static MqException toSendException(String topic, Throwable cause) {
+        if (cause instanceof MqException mqException) {
+            return mqException;
+        }
+        return new MqException("RocketMQ 消息发送失败: topic=" + topic + "，原因=" + describe(cause), cause);
+    }
+
+    /**
+     * 摘要发送异常原因（message 为空时回退到异常类型名）
+     */
+    private static String describe(Throwable t) {
+        return t.getMessage() != null ? t.getMessage() : t.getClass().getSimpleName();
+    }
 
     /**
      * 构建 spring-messaging Message：payload 为已序列化字节；key 映射 RocketMQ keys；字符串头逐个写入

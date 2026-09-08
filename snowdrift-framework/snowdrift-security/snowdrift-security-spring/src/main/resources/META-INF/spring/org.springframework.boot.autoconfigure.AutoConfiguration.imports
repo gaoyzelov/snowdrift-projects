@@ -1,1 +1,2 @@
+com.snowdrift.framework.security.spring.config.SnowdriftSecurityPermitAllConfiguration
 com.snowdrift.framework.security.spring.config.SnowdriftSecuritySpringConfiguration

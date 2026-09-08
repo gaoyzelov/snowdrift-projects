@@ -12,8 +12,9 @@ import java.io.IOException;
 /**
  * 请求体缓存过滤器 — 一次性读取 Body 并缓存，支持下游多次消费。
  * <p>
- * 在 Filter 链最前端执行，确保后续任何 Filter、拦截器、Controller
- * 都可以通过 {@code request.getInputStream()} / {@code getReader()} 重复读取请求体。
+ * 在 Filter 链最前端执行，对有界且未超阈值（见 {@link #MAX_CACHE_BODY_BYTES}）的请求体，
+ * 后续 Filter、拦截器、Controller 都可以通过 {@code request.getInputStream()} / {@code getReader()}
+ * 重复读取；文件上传、二进制流、未知长度（chunked）以及超大请求体不做缓存，交由下游按原始流消费一次。
  * </p>
  *
  * @author gaoyzelov
@@ -34,7 +35,9 @@ public class CachedBodyFilter extends OncePerRequestFilter {
                 && (contentType.startsWith("multipart/") || contentType.startsWith("application/octet-stream"))) {
             return true;
         }
-        return request.getContentLengthLong() > MAX_CACHE_BODY_BYTES;
+        long contentLength = request.getContentLengthLong();
+        // 未知长度（如 chunked）或超过阈值的大包不缓存，避免整包读入内存造成 DoS
+        return contentLength < 0 || contentLength > MAX_CACHE_BODY_BYTES;
     }
 
     @Override

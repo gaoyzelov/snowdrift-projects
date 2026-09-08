@@ -447,12 +447,6 @@
                 <artifactId>snowdrift-rpc-dubbo</artifactId>
                 <version>${revision}</version>
             </dependency>
-            <!-- 插件模块 -->
-            <dependency>
-                <groupId>com.snowdrift</groupId>
-                <artifactId>snowdrift-plugin</artifactId>
-                <version>${revision}</version>
-            </dependency>
         </dependencies>
     </dependencyManagement>
 

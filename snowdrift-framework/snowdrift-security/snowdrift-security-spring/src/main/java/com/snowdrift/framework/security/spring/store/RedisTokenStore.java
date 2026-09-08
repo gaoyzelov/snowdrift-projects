@@ -34,7 +34,12 @@ public class RedisTokenStore extends AbstractTokenStore {
 
     @Override
     protected void doPut(String token, TokenEntry entry, Duration ttl) {
-        redisTemplate.opsForValue().set(buildKey(token), entry, ttl);
+        if (ttl == null || ttl.toMillis() <= 0) {
+            // ttl <= 0 表示永不过期，不设置 Redis TTL
+            redisTemplate.opsForValue().set(buildKey(token), entry);
+        } else {
+            redisTemplate.opsForValue().set(buildKey(token), entry, ttl);
+        }
     }
 
     @Override
@@ -48,13 +53,24 @@ public class RedisTokenStore extends AbstractTokenStore {
 
     @Override
     protected void touch(String token, TokenEntry entry) {
-        // 刷新 lastActiveAt 并写回 Redis，使闲置超时基于真实最后活跃时间计算
+        // 刷新 lastActiveAt 并写回 Redis，使闲置超时基于真实最后活跃时间计算。
+        // Redis key TTL 取「距绝对过期剩余时间」与「闲置超时」中较小者；
+        // 绝对过期与闲置均未启用（expireAt 为 Long.MAX_VALUE 且 idle <= 0）时不设置 TTL（永不过期）。
         long now = System.currentTimeMillis();
         TokenEntry updated = new TokenEntry(entry.getContext(), entry.getExpireAt(), now);
-        Duration remain = Duration.ofMillis(entry.getExpireAt() - now);
-        Duration ttl = idle.isNegative() ? remain : remain.compareTo(idle) < 0 ? remain : idle;
-        if (!ttl.isNegative()) {
+        boolean absoluteExpiry = entry.getExpireAt() != Long.MAX_VALUE;
+        boolean idleExpiry = idle != null && idle.toMillis() > 0;
+        if (absoluteExpiry && idleExpiry) {
+            Duration remain = Duration.ofMillis(entry.getExpireAt() - now);
+            Duration ttl = remain.compareTo(idle) < 0 ? remain : idle;
             redisTemplate.opsForValue().set(buildKey(token), updated, ttl);
+        } else if (absoluteExpiry) {
+            redisTemplate.opsForValue().set(buildKey(token), updated,
+                    Duration.ofMillis(entry.getExpireAt() - now));
+        } else if (idleExpiry) {
+            redisTemplate.opsForValue().set(buildKey(token), updated, idle);
+        } else {
+            redisTemplate.opsForValue().set(buildKey(token), updated);
         }
     }
 

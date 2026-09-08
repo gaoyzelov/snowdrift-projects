@@ -220,7 +220,9 @@ public final class CronUtil {
                 if (parts.length != 2) {
                     return false;
                 }
-                return isRangePartValid(parts[0], min, max) && Integer.parseInt(parts[1]) > 0;
+                // 步长需大于 0 且不超过字段上限，拒绝 */120（分钟）这类越界步长，与 everyMinutes/everyHours 保持一致
+                int step = Integer.parseInt(parts[1]);
+                return isRangePartValid(parts[0], min, max) && step > 0 && step <= max;
             }
             return isRangePartValid(value, min, max);
         } catch (NumberFormatException e) {
@@ -312,6 +314,9 @@ public final class CronUtil {
         if (minutes <= 0) {
             throw new BizException("分钟数必须大于 0");
         }
+        if (minutes > 59) {
+            throw new BizException("分钟间隔不能超过 59");
+        }
         return String.format("0 */%d * * * ?", minutes);
     }
 
@@ -324,6 +329,9 @@ public final class CronUtil {
     public static String everyHours(int hours) {
         if (hours <= 0) {
             throw new BizException("小时数必须大于 0");
+        }
+        if (hours > 23) {
+            throw new BizException("小时间隔不能超过 23");
         }
         return String.format("0 0 */%d * * ?", hours);
     }

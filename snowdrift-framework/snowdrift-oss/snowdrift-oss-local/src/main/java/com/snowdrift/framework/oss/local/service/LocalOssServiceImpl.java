@@ -71,7 +71,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
                 log.info("创建本地存储目录: {}", storageRoot);
             }
         } catch (IOException e) {
-            throw new OssException("OSS 本地目录创建失败");
+            throw new OssException("OSS 本地目录创建失败", e);
         }
     }
 
@@ -83,12 +83,17 @@ public class LocalOssServiceImpl extends AbstractOssService {
      *
      * @param request 上传请求，包含文件流、objectKey、contentType 等信息
      * @return 上传结果，包含 objectKey、URL、文件大小等信息
-     * @throws OssException 当请求为空、文件流为空或保存失败时抛出
+     * @throws OssException 当请求为空、文件流为空、未配置 domain 或保存失败时抛出
      */
     @Override
     public OssResult upload(@NonNull OssUploadRequest request) {
         // 校验请求参数
         request.validate();
+        // 校验域名配置：上传结果需返回可访问 URL，未配置域名时 getUrl 会抛异常；
+        // 提前到写盘前校验，避免文件已落盘却因缺少域名导致上传失败（遗留孤儿文件）
+        if (StringUtils.isBlank(config.getDomain())) {
+            throw new OssException("OSS 本地文件上传失败，缺少域名配置");
+        }
         // 构建对象键
         String objectKey = buildObjectKey(request.getObjectKey());
         try (InputStream inputStream = request.getInputStream()) {
@@ -199,12 +204,13 @@ public class LocalOssServiceImpl extends AbstractOssService {
      * 获取文件访问 URL
      * <p>
      * 根据 objectKey 生成文件的访问 URL
-     * 如果配置了 domain，返回 HTTP 访问 URL（需要通过静态资源映射访问）
-     * 如果未配置 domain，返回本地文件路径的 URI
+     * 必须配置 domain，返回 HTTP 访问 URL（需要通过静态资源映射访问）
+     * 未配置 domain 时抛出 {@link OssException}
      *
      * @param objectKey 对象键，已经是完整路径（包含 path-prefix）
      * @param expiry    URL 有效期，本地存储不支持签名 URL，此参数忽略
      * @return 文件访问 URL
+     * @throws OssException 当 objectKey 越界或未配置 domain 时抛出
      */
     @Override
     public String getUrl(String objectKey, Duration expiry) {

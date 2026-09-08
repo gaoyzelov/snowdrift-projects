@@ -35,16 +35,19 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DataScopeHandler implements MultiDataPermissionHandler {
 
     /**
-     * 数据权限提供者
+     * 数据权限提供者；可为 {@code null}（未装配该 Bean 时，携带 {@code @DataScope} 的语句将显式抛错）
      */
     private final IDataScopeProvider provider;
 
     private final Map<String, DataScope> annotationCache = new ConcurrentHashMap<>();
 
     /**
-     * 带 provider 构造 — 支持 DEPT_AND_SUB 和 CUSTOM 实时查询
+     * 构造数据权限处理器
+     * <p>provider 可为 {@code null}：此时若语句实际携带 {@code @DataScope}，
+     * {@link #getSqlSegment} 将抛出 {@link BizException} 提示未配置 {@link IDataScopeProvider}，
+     * 避免安全控制静默失效；未携带 {@code @DataScope} 的语句不受影响。</p>
      *
-     * @param provider 数据权限提供者（业务应用实现，用于查询子部门列表和自定义部门列表）
+     * @param provider 数据权限提供者（业务应用实现，用于查询子部门列表和自定义部门列表；可为 null）
      */
     public DataScopeHandler(IDataScopeProvider provider) {
         this.provider = provider;
@@ -60,6 +63,10 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         if (!isTargetTable(table, scope)) {
             return null;
         }
+        if (provider == null) {
+            // 语句声明了 @DataScope 却未装配 IDataScopeProvider：静默不过滤会使安全控制失效，显式报错
+            throw new BizException("使用 @DataScope 但未配置 IDataScopeProvider");
+        }
         SecurityContext context;
         try {
             context = SecurityContextHolder.getContext();
@@ -68,6 +75,11 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
             return noAccess();
         }
         DataScopeEnum dataScope = provider.getDataScope(context.getUserId());
+        if (dataScope == null) {
+            // 提供方返回 null：按 NONE（无权限，fail-closed）处理为 1=0 空集，避免 switch 空指针
+            log.debug("数据权限提供方返回 null，userId={}，按无权限（1=0）处理", context.getUserId());
+            return noAccess();
+        }
         if (dataScope == DataScopeEnum.ALL) {
             log.debug("数据权限类型为 {}，跳过数据权限过滤", dataScope);
             return null;

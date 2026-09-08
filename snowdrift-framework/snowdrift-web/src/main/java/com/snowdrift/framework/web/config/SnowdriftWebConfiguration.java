@@ -54,7 +54,7 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
     /**
      * CORS 跨域配置
      * <p>
-     * 通过 {@code snowdrift.web.cors.enabled=true} 启用，默认关闭。
+     * 通过 {@code snowdrift.cors.enabled=true} 启用，默认关闭。
      * 生产环境请显式配置允许的源、方法和请求头，避免使用通配符 *。
      * </p>
      */
@@ -119,7 +119,7 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
         FilterRegistrationBean<CachedBodyFilter> registration = new FilterRegistrationBean<>(
                 new CachedBodyFilter());
         registration.addUrlPatterns("/*");
-        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 5);
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE);
         return registration;
     }
 
@@ -135,8 +135,8 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
     /**
      * XSS 防护过滤器
      * <p>
-     * 通过 {@code snowdrift.web.xss.enabled=true} 启用，
-     * 对请求参数和请求头做 XSS 清洗。
+     * 通过 {@code snowdrift.xss.enabled=true} 启用，
+     * 对请求参数、请求头和查询字符串做 XSS 清洗。
      * </p>
      */
     @Bean

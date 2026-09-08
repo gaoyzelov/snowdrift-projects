@@ -46,6 +46,11 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
             .maximumSize(256)
             .expireAfterAccess(Duration.ofMinutes(30))
             .build();
+    // 反查缓存：jobGroup 数字 ID → 执行器 AppName，用于详情/列表返回可回填的 group
+    private final Cache<Integer, String> executorGroupIdCache = CacheBuilder.newBuilder()
+            .maximumSize(256)
+            .expireAfterAccess(Duration.ofMinutes(30))
+            .build();
 
     /**
      * 登录 Cookie（name=value 格式）
@@ -105,7 +110,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     public void triggerJob(XxlJobKey jobKey, Map<String, Object> params) {
         Map<String, String> param = new HashMap<>();
         param.put("id", String.valueOf(jobKey.getId()));
-        param.put("executorParam", JSON.toJSONString(params));
+        param.put("executorParam", serializeExecutorParam(params));
         param.put("addressList", StrConst.EMPTY);
         callAdminPostApi(XxlJobApiConst.JOB_TRIGGER_PATH, param);
         log.info("XXL-JOB 任务手动触发: id={}", jobKey.getId());
@@ -198,7 +203,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
                 ? request.getRouteStrategy().getCode()
                 : RouteStrategyEnum.RANDOM.getCode());
         param.put("executorHandler", request.getName());
-        param.put("executorParam", JSON.toJSONString(request.getParams()));
+        param.put("executorParam", serializeExecutorParam(request.getParams()));
         param.put("executorBlockStrategy", request.getBlockStrategy() != null
                 ? request.getBlockStrategy().getCode()
                 : BlockStrategyEnum.SERIAL_EXECUTION.getCode());
@@ -207,6 +212,17 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         param.put("glueType", "BEAN");
         param.put("triggerStatus", "1");
         return param;
+    }
+
+    /**
+     * 序列化 executorParam：null/空 map 序列化为空串，
+     * 避免 fastjson2 将 null 序列化为字面量 "null" 传给执行器
+     */
+    private String serializeExecutorParam(Map<String, Object> params) {
+        if (params == null || params.isEmpty()) {
+            return StrConst.EMPTY;
+        }
+        return JSON.toJSONString(params);
     }
 
     /**
@@ -317,7 +333,9 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
      * @param isRetry 是否为登录过期后的重试调用，重试不再递归以防止无限循环
      */
     private JSONObject callAdminPostApi(String path, Map<String, String> params, boolean isRetry) {
-        return callAdminApi(HttpUtil::postForm, path, params, isRetry);
+        // Admin API 请求同样受 adminTimeout 约束（与登录请求一致）
+        return callAdminApi((url, formParams, headers) ->
+                HttpUtil.postForm(url, formParams, headers, Duration.ofSeconds(properties.getAdminTimeout())), path, params, isRetry);
     }
 
     /**
@@ -333,9 +351,10 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
      * @param isRetry 是否为登录过期后的重试调用，重试不再递归以防止无限循环
      */
     private JSONObject callAdminGetApi(String path, Map<String, String> queryParams, boolean isRetry) {
+        // Admin API 请求同样受 adminTimeout 约束（与登录请求一致）
         return callAdminApi((url, params, headers) -> {
             String fullUrl = HttpUtil.buildUrlWithParams(url, params);
-            return HttpUtil.get(fullUrl, headers);
+            return HttpUtil.get(fullUrl, null, headers, properties.getAdminTimeout());
         }, path, queryParams, isRetry);
     }
 
@@ -434,12 +453,52 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
                 for (int i = 0; i < data.size(); i++) {
                     JSONObject gi = data.getJSONObject(i);
                     if (appName.equals(gi.getString("appname"))) {
-                        return gi.getIntValue("id");
+                        int groupId = gi.getIntValue("id");
+                        executorGroupIdCache.put(groupId, appName);
+                        return groupId;
                     }
                 }
             }
         }
         throw new ScheduleException("XXL-JOB 分组未找到: " + appName);
+    }
+
+    /**
+     * 根据 jobGroup 数字 ID 反查执行器 AppName
+     * <p>
+     * 供 {@link #convertToJobDetails} 返回与入参语义一致的 group（AppName），
+     * 使查询结果可回填 listJobs(group) 等操作。反查失败时降级返回数字 ID，保持旧行为。
+     * </p>
+     */
+    private String getExecutorAppName(int groupId) {
+        try {
+            return executorGroupIdCache.get(groupId, () -> loadExecutorAppName(groupId));
+        } catch (ExecutionException e) {
+            log.warn("XXL-JOB 解析执行器 AppName 失败，使用 jobGroup 数字 ID 兜底: groupId={}", groupId);
+            return String.valueOf(groupId);
+        }
+    }
+
+    private String loadExecutorAppName(int groupId) {
+        Map<String, String> params = Map.of("offset", "0", "pagesize", "100");
+        JSONObject result = callAdminGetApi(XxlJobApiConst.GROUP_PAGE_PATH, params);
+        JSONObject content = result.getJSONObject("data");
+        if (content != null) {
+            JSONArray data = content.getJSONArray("data");
+            if (data != null) {
+                for (int i = 0; i < data.size(); i++) {
+                    JSONObject gi = data.getJSONObject(i);
+                    if (gi.getIntValue("id") == groupId) {
+                        String appName = gi.getString("appname");
+                        if (StringUtils.isNotBlank(appName)) {
+                            executorGroupCache.put(appName, groupId);
+                            return appName;
+                        }
+                    }
+                }
+            }
+        }
+        throw new ScheduleException("XXL-JOB 执行器分组未找到: " + groupId);
     }
 
 
@@ -448,7 +507,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         JobDetails details = new JobDetails();
         details.setJobKey(XxlJobKey.newInstance(job.getIntValue("id"), job.getIntValue("jobGroup")));
         details.setName(job.getString("executorHandler"));
-        details.setGroup(String.valueOf(job.getIntValue("jobGroup")));
+        details.setGroup(getExecutorAppName(job.getIntValue("jobGroup")));
         details.setCron(job.getString("scheduleConf"));
         details.setDescription(job.getString("jobDesc"));
         details.setStatus(job.getIntValue("triggerStatus") == 1 ? JobStatusEnum.NORMAL : JobStatusEnum.PAUSED);

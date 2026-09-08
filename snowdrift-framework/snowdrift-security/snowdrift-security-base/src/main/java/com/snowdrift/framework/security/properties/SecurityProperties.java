@@ -36,6 +36,9 @@ public class SecurityProperties {
 
     /**
      * Token 过期时间（秒），默认 24 小时
+     * <p>
+     * 小于等于 0 表示永不过期（对齐 Sa-Token 的 -1 约定）。
+     * </p>
      */
     @NotNull
     private Long timeout = 86400L;
@@ -46,6 +49,7 @@ public class SecurityProperties {
      * 用户最后一次访问后，Token 保持活跃的最大时长。
      * 超过此时间未访问则视为闲置，Token 将被清理。
      * 默认 1800 秒（30 分钟）。
+     * 小于等于 0 表示不限制闲置时长，即不做闲置淘汰。
      * </p>
      */
     @NotNull

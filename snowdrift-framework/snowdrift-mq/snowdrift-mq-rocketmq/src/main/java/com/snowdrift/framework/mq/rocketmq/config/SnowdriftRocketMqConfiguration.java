@@ -43,11 +43,12 @@ public class SnowdriftRocketMqConfiguration {
     @Bean
     @ConditionalOnMissingBean(IMqService.class)
     public RocketMqServiceImpl rocketMqService(RocketMQTemplate rocketMQTemplate,
+                                               RocketMqProperties rocketMqProperties,
                                                Executor mqAsyncExecutor,
                                                MqMessageConverter converter,
                                                MqInterceptorRegistry interceptorRegistry,
                                                MqContextPropagator contextPropagator) {
-        return new RocketMqServiceImpl(rocketMQTemplate, mqAsyncExecutor,
+        return new RocketMqServiceImpl(rocketMQTemplate, rocketMqProperties, mqAsyncExecutor,
                 converter, interceptorRegistry, contextPropagator);
     }
 

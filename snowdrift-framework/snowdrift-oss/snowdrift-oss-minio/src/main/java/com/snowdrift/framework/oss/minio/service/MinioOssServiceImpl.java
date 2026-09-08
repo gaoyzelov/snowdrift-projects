@@ -14,12 +14,14 @@ import io.minio.messages.DeleteResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.ListUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.lang.NonNull;
 
 import java.io.InputStream;
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -75,8 +77,11 @@ public class MinioOssServiceImpl extends AbstractOssService {
 
             // 确保 Bucket 存在
             ensureBucketExists(bucket);
+        } catch (OssException e) {
+            // 桶检查/创建失败已带上下文，直接上抛，避免被笼统包装为初始化失败
+            throw e;
         } catch (Exception e) {
-            throw new OssException("OSS MINIO 客户端初始化失败");
+            throw new OssException("OSS MINIO 客户端初始化失败", e);
         }
     }
 
@@ -99,7 +104,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
             }
         } catch (Exception e) {
             log.error("OSS MinIO 桶检查或创建失败: bucket={}", bucketName, e);
-            throw new OssException("OSS MINIO 桶创建失败");
+            throw new OssException("OSS MINIO 桶创建失败", e);
         }
     }
 
@@ -120,25 +125,30 @@ public class MinioOssServiceImpl extends AbstractOssService {
         String bucket = super.getBucket();
 
         try (InputStream inputStream = request.getInputStream()) {
+            // 透传用户自定义元数据（userMetadata 会自动补充 x-amz-meta- 前缀）
+            Map<String, String> metadata = request.getMetadata();
+            PutObjectArgs.Builder putBuilder = PutObjectArgs.builder()
+                    .bucket(bucket)
+                    .object(objectKey)
+                    .stream(inputStream, request.getSize() != null ? request.getSize() : -1, config.getChunkSize()) // 10MB part size
+                    .contentType(request.getContentType());
+            if (MapUtils.isNotEmpty(metadata)) {
+                putBuilder.userMetadata(metadata);
+            }
             // 上传文件到 MinIO
-            minioClient.putObject(
-                    PutObjectArgs.builder()
-                            .bucket(bucket)
-                            .object(objectKey)
-                            .stream(inputStream, request.getSize() != null ? request.getSize() : -1, config.getChunkSize()) // 10MB part size
-                            .contentType(request.getContentType())
-                            .build()
-            );
+            ObjectWriteResponse response = minioClient.putObject(putBuilder.build());
 
             // 构建返回结果
+            String etag = response.etag();
             OssResult result = OssResult.builder()
                     .objectKey(objectKey)
                     .url(getUrl(objectKey, null))
                     .bucket(bucket)
+                    .etag(etag)
                     .size(request.getSize())
                     .build();
 
-            log.debug("OSS MINIO 文件上传成功: bucket={}, objectKey={}, size={}", bucket, objectKey, request.getSize());
+            log.debug("OSS MINIO 文件上传成功: bucket={}, objectKey={}, size={}, etag={}", bucket, objectKey, request.getSize(), etag);
             return result;
         } catch (Exception e) {
             throw ossError("OSS MINIO 文件上传失败", bucket, objectKey, e);
@@ -192,9 +202,10 @@ public class MinioOssServiceImpl extends AbstractOssService {
 
     /**
      * 从 MinIO 批量删除文件
+     * <p>
+     * 单个对象/分区删除失败仅记录日志，不中断后续对象/分区的删除
      *
      * @param objectKeys 对象键列表，要删除的文件标识列表
-     * @throws OssException 当删除失败时抛出
      */
     @Override
     public void deleteBatch(List<String> objectKeys) {
@@ -214,15 +225,20 @@ public class MinioOssServiceImpl extends AbstractOssService {
                 int errorCount = 0;
                 for (Result<DeleteResult.Error> result : resultIterable) {
                     errorCount++;
-                    DeleteResult.Error error = result.get();
-                    log.error("文件批量删除失败: bucket={}, objectKey={}, error={}", bucket, error.objectName(), error.message());
+                    try {
+                        DeleteResult.Error error = result.get();
+                        log.error("文件批量删除失败: bucket={}, objectKey={}, error={}", bucket, error.objectName(), error.message());
+                    } catch (Exception e) {
+                        log.error("文件批量删除失败: bucket={}, objectKey={}", bucket, partitionKeys, e);
+                    }
                 }
                 if (errorCount > 0) {
-                    throw new OssException("OSS MINIO 文件批量删除失败："+errorCount);
+                    log.warn("文件批量删除部分失败: bucket={}, errorCount={}", bucket, errorCount);
+                } else {
+                    log.debug("文件批量删除成功: bucket={}", bucket);
                 }
-                log.debug("文件批量删除成功: bucket={}", bucket);
             } catch (Exception e) {
-                throw ossError("OSS MINIO 文件批量删除失败", bucket, "", e);
+                log.error("文件批量删除失败: bucket={}, objectKeys={}", bucket, partitionKeys, e);
             }
         });
     }
@@ -250,7 +266,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
                     "NotFound".equals(e.errorResponse().code())) {
                 return false;
             }
-            throw new OssException("OSS MINIO 文件存在检查失败");
+            throw new OssException("OSS MINIO 文件存在检查失败", e);
         } catch (Exception e) {
             throw ossError("OSS MINIO 文件存在检查失败", bucket, objectKey, e);
         }
@@ -276,7 +292,7 @@ public class MinioOssServiceImpl extends AbstractOssService {
                                 .method(Http.Method.GET)
                                 .bucket(bucket)
                                 .object(objectKey)
-                                .expiry((int) validDuration.toMinutes(), TimeUnit.MINUTES)
+                                .expiry((int) Math.max(1, validDuration.toSeconds()), TimeUnit.SECONDS)
                                 .build()
                 );
         } catch (Exception e) {

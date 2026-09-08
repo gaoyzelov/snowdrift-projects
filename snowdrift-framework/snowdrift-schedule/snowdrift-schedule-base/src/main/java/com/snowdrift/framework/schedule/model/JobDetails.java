@@ -27,7 +27,7 @@ public class JobDetails implements Serializable {
     /** 任务名称 — Quartz JobKey.name / XXL-JOB executorHandler */
     private String name;
 
-    /** 任务分组 — Quartz JobKey.group / XXL-JOB jobGroup */
+    /** 任务分组 — Quartz JobKey.group / XXL-JOB 执行器 AppName（非 jobGroup 数字 ID） */
     private String group;
 
     /** Cron 表达式 — Quartz CronTrigger / XXL-JOB scheduleConf */

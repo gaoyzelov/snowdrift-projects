@@ -9,6 +9,7 @@ import com.snowdrift.framework.security.spring.properties.SpringSecurityProperti
 import com.snowdrift.framework.security.spring.util.SpringSecurityHelper;
 import com.snowdrift.framework.security.spring.store.TokenStore;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -77,7 +78,11 @@ public class SpringSecurityServiceImpl implements ISecurityService {
     @Override
     public boolean isAuthenticated() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication != null && authentication.isAuthenticated();
+        // 匿名访问（AnonymousAuthenticationToken）虽 isAuthenticated() 为 true，但并非真实登录，
+        // 需显式排除，避免匿名被误判为已认证（getContext() 亦为 null）
+        return authentication != null
+                && !(authentication instanceof AnonymousAuthenticationToken)
+                && authentication.isAuthenticated();
     }
 
     @Override

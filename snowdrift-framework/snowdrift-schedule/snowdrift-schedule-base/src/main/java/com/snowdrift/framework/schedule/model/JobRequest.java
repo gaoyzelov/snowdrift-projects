@@ -28,7 +28,7 @@ public class JobRequest implements Serializable {
 
     /**
      * 任务分组
-     * — Quartz JobKey.group / XXL-JOB jobGroup
+     * — Quartz JobKey.group / XXL-JOB 执行器 AppName（内部映射为 jobGroup，查询返回与入参一致）
      */
     private String group;
 

@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * XSS 防护请求包装器 — 对请求参数、请求头、请求属性等做 XSS 清洗。
+ * XSS 防护请求包装器 — 对请求参数、请求头、查询字符串等用户可控输入做 XSS 清洗。
  * <p>
  * 清洗逻辑委托给可插拔的 {@link XssCleaner} 接口实现。
  * 默认使用 {@link com.snowdrift.framework.web.xss.SimpleXssCleaner}（HTML 实体转义），
@@ -62,18 +62,6 @@ public class XssRequestWrapper extends HttpServletRequestWrapper {
                             return cleaned;
                         }
                 ));
-    }
-
-    /**
-     * 对请求属性值做 XSS 转义
-     */
-    @Override
-    public Object getAttribute(String name) {
-        Object value = super.getAttribute(name);
-        if (value instanceof String str) {
-            return xssCleaner.clean(str);
-        }
-        return value;
     }
 
     /**

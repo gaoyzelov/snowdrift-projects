@@ -114,8 +114,8 @@ public class SnowdriftRedisCacheServiceImpl extends AbstractCacheService {
 
     @Override
     protected long doIncrement(String key, Duration ttl) {
-        // EXPIRE 粒度为秒，向上取整保证至少 1 秒
-        long expire = Math.max(1, ttl.toSeconds());
+        // EXPIRE 粒度为秒，按毫秒向上取整（至少 1 秒），避免小数秒截断导致滚动窗口被缩短
+        long expire = Math.max(1, (ttl.toMillis() + 999) / 1000);
         return redisTemplate.execute(INCR_WITH_TTL_SCRIPT, List.of(key), String.valueOf(expire));
     }
 }

@@ -1,5 +1,7 @@
 package com.snowdrift.framework.mq.kafka.service;
 
+import com.snowdrift.framework.context.security.SecurityContext;
+import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.mq.AbstractMqService;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
@@ -10,6 +12,7 @@ import com.snowdrift.framework.mq.model.MqSendResult;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.slf4j.MDC;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 
@@ -55,7 +58,9 @@ public class KafkaMqServiceImpl extends AbstractMqService {
             return toResult(sendResult);
         } catch (CompletionException e) {
             Throwable cause = e.getCause() != null ? e.getCause() : e;
-            throw new MqException("Kafka 消息发送失败: topic=" + topic + "，原因=" + describe(cause));
+            throw toMqException(topic, cause);
+        } catch (RuntimeException e) {
+            throw toMqException(topic, e);
         }
     }
 
@@ -65,21 +70,29 @@ public class KafkaMqServiceImpl extends AbstractMqService {
     public <T> CompletableFuture<MqSendResult> sendAsync(String topic, String key, T payload, Map<String, String> headers) {
         validateSendArgs(topic, payload);
         fireBeforeSend(topic, key, payload);
+        // 捕获调用方线程上下文，供 broker I/O 线程回调内恢复（与基类 executor 包装路径语义一致）
+        Map<String, String> callerMdc = MDC.getCopyOfContextMap();
+        SecurityContext callerSecurity = SecurityContextHolder.peekContext();
         try {
             byte[] body = converter.serialize(payload);
             Map<String, String> effectiveHeaders = buildHeaders(key, headers);
             ProducerRecord<String, byte[]> record = buildRecord(topic, key, body, effectiveHeaders);
             return kafkaTemplate.send(record).handle((sendResult, ex) -> {
-                if (ex != null) {
-                    Throwable cause = (ex instanceof CompletionException && ex.getCause() != null) ? ex.getCause() : ex;
-                    fireOnSendError(topic, cause);
-                    throw cause instanceof RuntimeException runtimeException
-                            ? runtimeException
-                            : new MqException("Kafka 消息发送失败: topic=" + topic + "，原因=" + describe(cause));
+                replayContext(callerMdc, callerSecurity);
+                try {
+                    if (ex != null) {
+                        Throwable cause = (ex instanceof CompletionException && ex.getCause() != null) ? ex.getCause() : ex;
+                        MqException mqException = toMqException(topic, cause);
+                        fireOnSendError(topic, mqException);
+                        throw mqException;
+                    }
+                    MqSendResult result = toResult(sendResult);
+                    fireAfterSend(topic, result);
+                    return result;
+                } finally {
+                    SecurityContextHolder.clear();
+                    MDC.clear();
                 }
-                MqSendResult result = toResult(sendResult);
-                fireAfterSend(topic, result);
-                return result;
             });
         } catch (RuntimeException e) {
             fireOnSendError(topic, e);
@@ -93,6 +106,16 @@ public class KafkaMqServiceImpl extends AbstractMqService {
         ProducerRecord<String, byte[]> record = new ProducerRecord<>(topic, key, body);
         KafkaHeaderCodec.apply(headers, record);
         return record;
+    }
+
+    /**
+     * 统一转换为 MqException：已是 MqException 直接透传，否则包装并保留原始 cause
+     */
+    private static MqException toMqException(String topic, Throwable cause) {
+        if (cause instanceof MqException mqException) {
+            return mqException;
+        }
+        return new MqException("Kafka 消息发送失败: topic=" + topic + "，原因=" + describe(cause), cause);
     }
 
     /**

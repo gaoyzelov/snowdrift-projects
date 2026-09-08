@@ -15,12 +15,18 @@ import java.sql.SQLException;
 /**
  * AES 加密字段处理器
  * <p>
- * 使用 AES/GCM 认证加密（推荐），兼容旧 ECB 格式数据的解密。
+ * 使用 AES/GCM 认证加密，存储格式为 {@code {ENC}<Base64(iv[12B] + ciphertext + tag[16B])>}，
+ * 由 {@link EncryptUtil#aesGcmEncrypt(String, String)} 生成，仅支持 GCM 这一种格式。
  * </p>
  * <ul>
- *   <li>新数据：{@code {ENC}<Base64(iv[12B] + ciphertext + tag[16B])>}</li>
- *   <li>旧数据：{@code {ENC}<Base64(ecb_ciphertext)>}（仅解密）</li>
+ *   <li>带 {@code {ENC}} 前缀的密文：解密时走 AES/GCM 解密；</li>
+ *   <li>不带前缀的值：按明文原样返回（不做解密）。</li>
  * </ul>
+ * <p><b>加密列使用限制</b>：TypeHandler 仅在 ORM 参数绑定与结果集映射时生效，SQL 中的
+ * WHERE / ORDER BY / 唯一性约束等片段不会经过本处理器，因此对加密列做等值、排序或去重比较时，
+ * 参与比较的仍是密文、结果不可用。加密列的等值查询需在 Wrapper 层先将明文加密后再比较
+ * （{@link com.snowdrift.framework.orm.mp.util.WrapperUtil} 目前为占位实现，尚未提供该能力），
+ * 设计表结构与查询时应避免将加密列用于过滤、排序或唯一键。</p>
  *
  * @author gaoyzelov
  * @date 2026/7/14-10:51

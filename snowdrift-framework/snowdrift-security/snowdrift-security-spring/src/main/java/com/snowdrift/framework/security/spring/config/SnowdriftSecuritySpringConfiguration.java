@@ -23,6 +23,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
@@ -34,6 +35,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.util.ClassUtils;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
 import java.util.List;
@@ -43,6 +45,8 @@ import java.util.List;
  * <p>
  * 以 {@code snowdrift.security.spring.*} 为配置入口，
  * 通过 {@code snowdrift.security.spring.enabled} 控制模块开关。
+ * 仅由自身 enabled 属性驱动，不受类路径上是否存在 Sa-Token（{@code SaTokenConfig}）影响；
+ * 与 Sa-Token 后端是否同时启用，通过 {@link #warnIfBothBackendsEnabled(Environment)} 给出诊断。
  * </p>
  *
  * @author gaoyzelov
@@ -54,13 +58,13 @@ import java.util.List;
 @EnableMethodSecurity
 @EnableConfigurationProperties(SpringSecurityProperties.class)
 @ConditionalOnProperty(prefix = "snowdrift.security.spring", name = "enabled", havingValue = "true")
-@ConditionalOnMissingBean(type = "cn.dev33.satoken.config.SaTokenConfig")
 public class SnowdriftSecuritySpringConfiguration {
 
     private final SpringSecurityProperties properties;
 
-    public SnowdriftSecuritySpringConfiguration(SpringSecurityProperties properties) {
+    public SnowdriftSecuritySpringConfiguration(SpringSecurityProperties properties, Environment environment) {
         this.properties = properties;
+        warnIfBothBackendsEnabled(environment);
     }
 
     /**
@@ -69,10 +73,11 @@ public class SnowdriftSecuritySpringConfiguration {
      * 禁用 CSRF（REST API 场景），会话管理设为无状态，
      * 排除路径放行，其余请求由 {@link SecurityContextFilter} 桥接认证。
      * 认证/鉴权异常返回 JSON 格式的 {@link Result} 响应（401 / 403）。
+     * 禁用匿名认证：未登录请求不再被包装为 AnonymousAuthenticationToken，避免匿名被误判为已认证。
      * </p>
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, SecurityContextFilter securityContextFilter,
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, TokenStore tokenStore,
                                                    RequestMappingHandlerMapping handlerMapping) throws Exception {
         List<String> anonymousPaths = AnonymousScanner.scan(handlerMapping);
         http
@@ -92,7 +97,8 @@ public class SnowdriftSecuritySpringConfiguration {
                     }
                     auth.anyRequest().authenticated();
                 })
-                .addFilterBefore(securityContextFilter, UsernamePasswordAuthenticationFilter.class)
+                // 直接在链内构造桥接过滤器，避免其同时作为 Spring Bean 被 Boot 注册为容器过滤器导致重复执行
+                .addFilterBefore(new SecurityContextFilter(properties, tokenStore), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
                         // body.code 用业务码（1001/1002），文案用 ResultCode 内置中文，避免依赖 i18n 开关导致 key 透出
                         .authenticationEntryPoint((request, response, e) ->
@@ -104,6 +110,7 @@ public class SnowdriftSecuritySpringConfiguration {
                 )
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
+                .anonymous(AbstractHttpConfigurer::disable)
                 .logout(AbstractHttpConfigurer::disable);
         if (properties.getCorsEnabled()) {
             http.cors(Customizer.withDefaults());
@@ -141,14 +148,6 @@ public class SnowdriftSecuritySpringConfiguration {
     }
 
     /**
-     * SecurityContext 桥接过滤器
-     */
-    @Bean
-    public SecurityContextFilter securityContextFilter(TokenStore tokenStore) {
-        return new SecurityContextFilter(properties, tokenStore);
-    }
-
-    /**
      * ISecurityService 的 Spring Security 实现
      */
     @Bean
@@ -164,5 +163,29 @@ public class SnowdriftSecuritySpringConfiguration {
     @ConditionalOnMissingBean(SpringSecurityExceptionHandler.class)
     public SpringSecurityExceptionHandler springSecurityExceptionHandler() {
         return new SpringSecurityExceptionHandler();
+    }
+
+    /**
+     * 双后端互斥诊断
+     * <p>
+     * spring 与 sa-token 两个后端均为仅由各自 {@code enabled} 属性驱动的自动配置。
+     * 当两者同时启用时，最终由自动配置顺序决定生效的 {@link ISecurityService} 实现，行为不可控，
+     * 此处给出明确告警提示用户仅启用其中一个。
+     * </p>
+     *
+     * @param environment Spring 环境，用于读取另一后端的启用属性
+     */
+    private void warnIfBothBackendsEnabled(Environment environment) {
+        boolean saTokenModulePresent = ClassUtils.isPresent(
+                "com.snowdrift.framework.security.satoken.config.SnowdriftSecuritySaTokenConfiguration",
+                getClass().getClassLoader());
+        if (saTokenModulePresent
+                && Boolean.TRUE.equals(environment.getProperty("snowdrift.security.sa-token.enabled",
+                Boolean.class, Boolean.FALSE))) {
+            log.warn("[Snowdrift-Security] 检测到 spring 与 sa-token 两个安全后端均已启用"
+                    + "（snowdrift.security.spring.enabled=true 且 snowdrift.security.sa-token.enabled=true）。"
+                    + "最终生效实现由自动配置顺序决定，行为不可控；请仅启用其中一个"
+                    + "（将另一后端 enabled 置为 false，或移除对应实现依赖）。");
+        }
     }
 }

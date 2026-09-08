@@ -74,10 +74,13 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(mobilePhone)) {
             return StrConst.EMPTY;
         }
-        if (!ValidateUtil.isMobilePhone(mobilePhone)){
-            return mobilePhone;
+        // 归一化空白，避免号码内部空格干扰识别与掩码
+        String compact = mobilePhone.replaceAll("\\s", StrConst.EMPTY);
+        if (!ValidateUtil.isMobilePhone(compact)) {
+            // 无法识别为手机号时保守全掩码，避免原样输出造成信息泄漏
+            return StrConst.MASK_REPLACEMENT;
         }
-        return RegExUtils.replaceAll(mobilePhone, "(\\d{3})\\d{4}(\\d{4})", "$1****$2");
+        return RegExUtils.replaceAll(compact, "(\\d{3})\\d{4}(\\d{4})", "$1****$2");
     }
 
     /**
@@ -122,10 +125,22 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(idCard)) {
             return StrConst.EMPTY;
         }
-        if (!ValidateUtil.isIdCard(idCard)){
-            return idCard;
+        // 归一化空白，避免号码内部空格干扰识别与掩码
+        String compact = idCard.replaceAll("\\s", StrConst.EMPTY);
+        if (!ValidateUtil.isIdCard(compact)) {
+            // 无法识别为身份证号时保守全掩码，避免原样输出造成信息泄漏
+            return StrConst.MASK_REPLACEMENT;
         }
-        return RegExUtils.replaceAll(idCard, "(\\d{4})\\d+(\\w{4})", "$1**********$2");
+        // 保留前 4 后 4，中间按实际长度掩码（15 位与 18 位输出长度均与输入一致）
+        int headLen = 4;
+        int tailLen = 4;
+        int len = compact.length();
+        if (len <= headLen + tailLen) {
+            return StrConst.MASK_REPLACEMENT;
+        }
+        return compact.substring(0, headLen)
+                + "*".repeat(len - headLen - tailLen)
+                + compact.substring(len - tailLen);
     }
 
     /**
@@ -138,10 +153,13 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(email)) {
             return StrConst.EMPTY;
         }
-        if (!ValidateUtil.isEmail(email)) {
-            return email;
+        // 归一化空白（邮箱本地部分不允许空格，移除不影响合法邮箱），再识别
+        String compact = email.replaceAll("\\s", StrConst.EMPTY);
+        if (!ValidateUtil.isEmail(compact)) {
+            // 无法识别为邮箱时保守全掩码，避免原样输出造成信息泄漏
+            return StrConst.MASK_REPLACEMENT;
         }
-        return RegExUtils.replaceAll(email, "(^.)[^@]*(@.*$)", "$1****$2");
+        return RegExUtils.replaceAll(compact, "(^.)[^@]*(@.*$)", "$1****$2");
     }
 
     /**
@@ -210,9 +228,12 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(carLicense)) {
             return StrConst.EMPTY;
         }
-        if (!ValidateUtil.isCarLicense(carLicense)){
-            return carLicense;
+        // 归一化空白，避免车牌内部空格干扰识别与掩码
+        String compact = carLicense.replaceAll("\\s", StrConst.EMPTY);
+        if (!ValidateUtil.isCarLicense(compact)) {
+            // 无法识别为车牌号时保守全掩码，避免原样输出造成信息泄漏
+            return StrConst.MASK_REPLACEMENT;
         }
-        return RegExUtils.replaceAll(carLicense, "([\\u4e00-\\u9fa5][A-Z])\\w+(\\w{1})", "$1****$2");
+        return RegExUtils.replaceAll(compact, "([\\u4e00-\\u9fa5][A-Z])\\w+(\\w{1})", "$1****$2");
     }
 }

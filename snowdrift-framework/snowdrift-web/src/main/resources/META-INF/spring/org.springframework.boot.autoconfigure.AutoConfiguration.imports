@@ -1,4 +1,5 @@
 com.snowdrift.framework.web.config.SnowdriftWebConfiguration
 com.snowdrift.framework.web.config.SnowdriftJacksonConfiguration
+com.snowdrift.framework.web.config.SnowdriftExecutorConfiguration
 com.snowdrift.framework.web.config.SnowdriftAsyncConfiguration
 com.snowdrift.framework.web.config.SnowdriftI18nConfiguration
