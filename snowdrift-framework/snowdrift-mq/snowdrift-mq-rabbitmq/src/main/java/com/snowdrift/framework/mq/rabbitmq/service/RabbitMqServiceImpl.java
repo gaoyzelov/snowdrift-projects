@@ -81,10 +81,7 @@ public class RabbitMqServiceImpl extends AbstractMqService {
         String routingKey = StringUtils.defaultIfBlank(key, StrConst.EMPTY);
         try {
             rabbitTemplate.send(topic, routingKey, new Message(body, properties));
-        } catch (RuntimeException e) {
-            if (e instanceof MqException mqException) {
-                throw mqException;
-            }
+        } catch (Exception e) {
             throw new MqException("RabbitMQ 消息发送失败: exchange=" + topic + "，原因=" + describe(e), e);
         }
         return MqSendResult.builder()

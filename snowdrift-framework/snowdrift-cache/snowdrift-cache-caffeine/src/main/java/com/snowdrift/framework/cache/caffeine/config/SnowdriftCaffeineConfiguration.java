@@ -23,8 +23,7 @@ import org.springframework.context.annotation.Bean;
  * @since 1.0.0
  */
 @AutoConfiguration(afterName = {
-        "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration",
-        "com.snowdrift.framework.cache.redisson.config.SnowdriftRedissonConfiguration"
+        "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration"
 })
 @ConditionalOnMissingBean(ICacheService.class)
 public class SnowdriftCaffeineConfiguration {

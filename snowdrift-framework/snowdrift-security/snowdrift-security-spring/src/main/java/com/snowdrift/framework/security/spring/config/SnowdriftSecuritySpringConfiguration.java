@@ -5,7 +5,6 @@ import com.snowdrift.framework.base.result.Result;
 import com.snowdrift.framework.base.result.ResultCode;
 import com.snowdrift.framework.base.util.ServletUtil;
 import com.snowdrift.framework.security.service.ISecurityService;
-import com.snowdrift.framework.security.spring.util.AnonymousScanner;
 import com.snowdrift.framework.security.spring.filter.SecurityContextFilter;
 import com.snowdrift.framework.security.spring.handler.SpringSecurityExceptionHandler;
 import com.snowdrift.framework.security.spring.properties.SpringSecurityProperties;
@@ -14,7 +13,7 @@ import com.snowdrift.framework.security.spring.store.AbstractTokenStore;
 import com.snowdrift.framework.security.spring.store.InMemoryTokenStore;
 import com.snowdrift.framework.security.spring.store.RedisTokenStore;
 import com.snowdrift.framework.security.spring.store.TokenStore;
-import com.snowdrift.framework.web.util.I18nUtil;
+import com.snowdrift.framework.security.spring.util.AnonymousScanner;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -180,8 +179,8 @@ public class SnowdriftSecuritySpringConfiguration {
                 "com.snowdrift.framework.security.satoken.config.SnowdriftSecuritySaTokenConfiguration",
                 getClass().getClassLoader());
         if (saTokenModulePresent
-                && Boolean.TRUE.equals(environment.getProperty("snowdrift.security.sa-token.enabled",
-                Boolean.class, Boolean.FALSE))) {
+                && environment.getProperty("snowdrift.security.sa-token.enabled",
+                Boolean.class, Boolean.FALSE)) {
             log.warn("[Snowdrift-Security] 检测到 spring 与 sa-token 两个安全后端均已启用"
                     + "（snowdrift.security.spring.enabled=true 且 snowdrift.security.sa-token.enabled=true）。"
                     + "最终生效实现由自动配置顺序决定，行为不可控；请仅启用其中一个"

@@ -23,7 +23,7 @@ public class FastJson2RedisSerializer implements RedisSerializer<Object> {
         if (value == null) {
             return new byte[0];
         }
-        return JSON.toJSONString(value, JSONWriter.Feature.WriteClassName, JSONWriter.Feature.FieldBased)
+        return JSON.toJSONString(value, JSONWriter.Feature.FieldBased)
                 .getBytes(StandardCharsets.UTF_8);
     }
 
@@ -32,8 +32,6 @@ public class FastJson2RedisSerializer implements RedisSerializer<Object> {
         if (bytes == null || bytes.length == 0) {
             return null;
         }
-        return JSON.parseObject(new String(bytes, StandardCharsets.UTF_8), Object.class,
-                JSONReader.Feature.SupportAutoType,
-                JSONReader.Feature.FieldBased);
+        return JSON.parseObject(new String(bytes, StandardCharsets.UTF_8), Object.class, JSONReader.Feature.FieldBased);
     }
 }

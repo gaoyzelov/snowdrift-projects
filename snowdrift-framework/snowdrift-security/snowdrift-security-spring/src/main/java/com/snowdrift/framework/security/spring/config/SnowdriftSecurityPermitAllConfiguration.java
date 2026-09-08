@@ -31,8 +31,7 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @Slf4j
 @AutoConfiguration(before = SecurityAutoConfiguration.class)
-@ConditionalOnProperty(prefix = "snowdrift.security.spring", name = "enabled",
-        havingValue = "false", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "snowdrift.security.spring", name = "enabled", havingValue = "false")
 @ConditionalOnMissingBean(SecurityFilterChain.class)
 public class SnowdriftSecurityPermitAllConfiguration {
 
