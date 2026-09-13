@@ -180,10 +180,31 @@ public class XssJsonBodyAdvice implements RequestBodyAdvice {
 
     /**
      * 清洗 Collection 中所有 String 类型的元素
+     * <p>
+     * List 类型通过 {@link ListIterator#set(Object)} 原地替换清洗后的值；
+     * 其他 Collection（如 Set）无法安全替换元素，仅递归处理内部的 Map/Collection 结构。
+     * </p>
      */
-    private void cleanCollection(Collection<?> collection, Set<Object> visited) {
-        for (Object item : collection) {
-            cleanObject(item, new HashSet<>(visited));
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void cleanCollection(Collection collection, Set<Object> visited) {
+        if (collection instanceof List list) {
+            ListIterator<Object> it = list.listIterator();
+            while (it.hasNext()) {
+                Object item = it.next();
+                Object cleaned = cleanObject(item, new HashSet<>(visited));
+                if (cleaned != item) {
+                    try {
+                        it.set(cleaned);
+                    } catch (UnsupportedOperationException e) {
+                        log.trace("XSS 清洗跳过不可变 List 元素: index={}", it.previousIndex());
+                    }
+                }
+            }
+        } else {
+            // Set 等无序集合无法安全替换元素，仅递归处理内部结构
+            for (Object item : collection) {
+                cleanObject(item, new HashSet<>(visited));
+            }
         }
     }
 

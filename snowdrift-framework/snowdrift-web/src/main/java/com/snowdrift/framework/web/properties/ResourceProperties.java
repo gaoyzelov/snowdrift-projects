@@ -7,6 +7,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -20,7 +21,7 @@ import java.util.List;
 @Data
 @Validated
 @ConfigurationProperties(prefix = "snowdrift.resource")
-public class ResourceProperties {
+public class ResourceProperties implements Serializable {
 
     /**
      * 是否启用静态资源映射

@@ -15,7 +15,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import java.util.concurrent.Executor;
 
 /**
- * SnowdriftAsyncConfiguration
+ * SnowdriftExecutorConfiguration
  *
  * @author gaoyzelov
  * @date 2024/8/19 11:24

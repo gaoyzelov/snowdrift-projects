@@ -4,6 +4,7 @@ import com.snowdrift.framework.web.xss.XssCleaner;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -50,7 +51,7 @@ public class XssRequestWrapper extends HttpServletRequestWrapper {
     @Override
     public Map<String, String[]> getParameterMap() {
         Map<String, String[]> map = super.getParameterMap();
-        return map.entrySet().stream()
+        return Collections.unmodifiableMap(map.entrySet().stream()
                 .collect(Collectors.toMap(
                         Map.Entry::getKey,
                         e -> {
@@ -61,7 +62,7 @@ public class XssRequestWrapper extends HttpServletRequestWrapper {
                             }
                             return cleaned;
                         }
-                ));
+                )));
     }
 
     /**

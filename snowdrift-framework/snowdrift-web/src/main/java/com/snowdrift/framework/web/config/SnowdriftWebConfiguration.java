@@ -167,10 +167,10 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
      */
     @Bean
     public FilterRegistrationBean<HttpContextFilter> httpContextFilter() {
-        FilterRegistrationBean<HttpContextFilter> httpContextFilterRegistrationBean = new FilterRegistrationBean<>(new HttpContextFilter());
-        httpContextFilterRegistrationBean.addUrlPatterns("/*");
-        httpContextFilterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
-        return httpContextFilterRegistrationBean;
+        FilterRegistrationBean<HttpContextFilter> registration = new FilterRegistrationBean<>(new HttpContextFilter());
+        registration.addUrlPatterns("/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 1);
+        return registration;
     }
 
     /**
@@ -179,9 +179,9 @@ public class SnowdriftWebConfiguration implements WebMvcConfigurer {
      */
     @Bean
     public FilterRegistrationBean<LogTraceFilter> logTraceFilter() {
-        FilterRegistrationBean<LogTraceFilter> logTraceFilterRegistrationBean = new FilterRegistrationBean<>(new LogTraceFilter());
-        logTraceFilterRegistrationBean.addUrlPatterns("/*");
-        logTraceFilterRegistrationBean.setOrder(Ordered.HIGHEST_PRECEDENCE);
-        return logTraceFilterRegistrationBean;
+        FilterRegistrationBean<LogTraceFilter> registration = new FilterRegistrationBean<>(new LogTraceFilter());
+        registration.addUrlPatterns("/*");
+        registration.setOrder(Ordered.HIGHEST_PRECEDENCE + 5);
+        return registration;
     }
 }

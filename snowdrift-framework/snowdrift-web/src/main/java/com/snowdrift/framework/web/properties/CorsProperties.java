@@ -7,6 +7,7 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
+import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -19,7 +20,7 @@ import java.util.List;
 @Data
 @Validated
 @ConfigurationProperties(prefix = "snowdrift.cors")
-public class CorsProperties {
+public class CorsProperties implements Serializable {
 
     /**
      * 是否启用 CORS 跨域支持，默认关闭

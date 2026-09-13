@@ -101,27 +101,12 @@ public final class I18nUtil {
      * @return Locale 对象
      */
     public static Locale parseLocale(String language) {
-        // 处理格式
-        Locale locale = Locale.getDefault();
         if (StringUtils.isBlank(language)) {
-            return locale;
+            return Locale.getDefault();
         }
-        try {
-            if (language.contains(StrConst.UNDERLINE)) {
-                // 下划线
-                String[] arr = language.split(StrConst.UNDERLINE);
-                locale = new Locale(arr[0], arr[1]);
-            } else if (language.contains(StrConst.MIDLINE)) {
-                // 中划线
-                String[] arr = language.split(StrConst.MIDLINE);
-                locale = new Locale(arr[0], arr[1]);
-            } else {
-                locale = new Locale(language);
-            }
-        } catch (RuntimeException e) {
-            log.error("语言字符串格式错误：{}", language, e);
-        }
-        return locale;
+        // Locale.forLanguageTag 使用 "-" 分隔（如 zh-CN），兼容 "_" 输入做转换
+        Locale locale = Locale.forLanguageTag(language.replace(StrConst.UNDERLINE, StrConst.MIDLINE));
+        return locale.getLanguage().isEmpty() ? Locale.getDefault() : locale;
     }
 
     /**
