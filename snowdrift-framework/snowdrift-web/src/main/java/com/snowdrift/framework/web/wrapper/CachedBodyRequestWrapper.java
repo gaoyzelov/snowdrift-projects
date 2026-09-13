@@ -4,6 +4,8 @@ import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.http.MediaType;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -12,12 +14,7 @@ import java.io.InputStreamReader;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 请求体缓存包装器 — 支持多次读取 {@link #getInputStream()} 和 {@link #getReader()}。
@@ -30,8 +27,6 @@ import java.util.Map;
  * @since 1.0.0
  */
 public class CachedBodyRequestWrapper extends HttpServletRequestWrapper {
-
-    private static final String FORM_CONTENT_TYPE = "application/x-www-form-urlencoded";
 
     private final byte[] body;
 
@@ -99,8 +94,7 @@ public class CachedBodyRequestWrapper extends HttpServletRequestWrapper {
 
     private boolean isFormContentType() {
         String contentType = super.getContentType();
-        return contentType != null
-                && contentType.toLowerCase(Locale.ENGLISH).startsWith(FORM_CONTENT_TYPE);
+        return StringUtils.startsWithIgnoreCase(contentType, MediaType.APPLICATION_FORM_URLENCODED_VALUE);
     }
 
     private Map<String, String[]> getCachedParameterMap() {
