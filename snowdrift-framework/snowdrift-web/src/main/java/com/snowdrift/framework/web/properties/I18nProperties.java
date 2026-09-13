@@ -1,11 +1,10 @@
 package com.snowdrift.framework.web.properties;
 
-import org.springframework.validation.annotation.Validated;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.validation.annotation.Validated;
 
 import java.io.Serializable;
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.List;
  *
  * @author gaoyzelov
  * @date 2026/5/9
- * @description 国际化配置属性
+ * @description I18N国际化配置属性
  * @since 1.0.0
  */
 @Data
@@ -53,8 +52,7 @@ public class I18nProperties implements Serializable {
     /**
      * 支持的语言列表
      */
-    @NotEmpty
-    private List<String> supportedLocales = List.of("zh_CN", "en_US");
+    private List<String> supportedLocales = List.of();
 
     /**
      * 资源文件基础名称

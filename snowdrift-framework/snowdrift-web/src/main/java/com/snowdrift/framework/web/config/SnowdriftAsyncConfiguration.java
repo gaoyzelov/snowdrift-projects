@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
 @EnableAsync
 @AutoConfiguration(after = SnowdriftExecutorConfiguration.class)
 @ConditionalOnProperty(prefix = "snowdrift.async", name = "enabled", havingValue = "true")
-public class SnowdriftAsyncConfiguration implements AsyncConfigurer{
+public class SnowdriftAsyncConfiguration implements AsyncConfigurer {
 
     private final Executor executor;
 
@@ -38,6 +38,7 @@ public class SnowdriftAsyncConfiguration implements AsyncConfigurer{
 
     /**
      * 异步执行异常处理
+     *
      * @return AsyncUncaughtExceptionHandler
      */
     @Override

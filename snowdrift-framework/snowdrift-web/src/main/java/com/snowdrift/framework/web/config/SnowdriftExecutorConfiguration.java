@@ -19,7 +19,7 @@ import java.util.concurrent.Executor;
  *
  * @author gaoyzelov
  * @date 2024/8/19 11:24
- * @description 异步配置类
+ * @description 异步线程池配置类
  * @since 1.0.0
  */
 @Slf4j

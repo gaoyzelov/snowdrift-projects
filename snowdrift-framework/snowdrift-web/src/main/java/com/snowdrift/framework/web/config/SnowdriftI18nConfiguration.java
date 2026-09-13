@@ -4,6 +4,7 @@ import com.snowdrift.framework.web.interceptor.I18nInterceptor;
 import com.snowdrift.framework.web.properties.I18nProperties;
 import com.snowdrift.framework.web.util.I18nUtil;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.web.servlet.WebMvcAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -18,7 +19,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  *
  * @author gaoyzelov
  * @date 2026/5/9
- * @description 国际化配置类
+ * @description i18n国际化配置类
  * @since 1.0.0
  */
 @AutoConfiguration(before = WebMvcAutoConfiguration.class)
@@ -27,6 +28,7 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class SnowdriftI18nConfiguration implements WebMvcConfigurer {
 
     private final I18nProperties properties;
+    private static final String CLASSPATH_PREFIX = "classpath:";
 
     public SnowdriftI18nConfiguration(I18nProperties properties) {
         this.properties = properties;
@@ -36,10 +38,11 @@ public class SnowdriftI18nConfiguration implements WebMvcConfigurer {
      * 配置 MessageSource
      */
     @Bean
+    @ConditionalOnMissingBean
     public MessageSource messageSource() {
         ReloadableResourceBundleMessageSource messageSource = new ReloadableResourceBundleMessageSource();
         messageSource.addBasenames(properties.getBaseNames().stream()
-                .map(name -> name.startsWith("classpath:") ? name : "classpath:" + name)
+                .map(name -> name.startsWith(CLASSPATH_PREFIX) ? name : CLASSPATH_PREFIX + name)
                 .toArray(String[]::new));
         messageSource.setDefaultEncoding(properties.getEncoding());
         messageSource.setUseCodeAsDefaultMessage(properties.getUseCodeAsDefaultMessage());

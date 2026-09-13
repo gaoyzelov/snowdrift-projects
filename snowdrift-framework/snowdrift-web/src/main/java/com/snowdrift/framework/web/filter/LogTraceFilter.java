@@ -25,9 +25,9 @@ public class LogTraceFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
         // 复用入站 X-Trace-Id（网关/上游传递的链路 ID），否则生成新的
-        String inbound = request.getHeader(TRACE_HEADER);
-        if (StringUtils.isNotBlank(inbound)) {
-            LogTraceUtil.setTraceId(inbound);
+        String traceId = request.getHeader(TRACE_HEADER);
+        if (StringUtils.isNotBlank(traceId)) {
+            LogTraceUtil.setTraceId(traceId);
         } else {
             LogTraceUtil.setTraceId();
         }

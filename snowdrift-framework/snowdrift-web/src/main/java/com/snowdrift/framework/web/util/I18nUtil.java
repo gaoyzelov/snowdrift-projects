@@ -3,6 +3,7 @@ package com.snowdrift.framework.web.util;
 import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.base.util.AssertUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -131,7 +132,7 @@ public final class I18nUtil {
      * @return 格式化后的消息
      */
     public static String formatMessage(String message, Object... args) {
-        if (message == null || args == null || args.length == 0) {
+        if (StringUtils.isBlank(message)|| ArrayUtils.isEmpty(args)) {
             return message;
         }
         try {

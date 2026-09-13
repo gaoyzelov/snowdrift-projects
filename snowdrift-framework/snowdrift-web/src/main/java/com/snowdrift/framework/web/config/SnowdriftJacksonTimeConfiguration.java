@@ -18,15 +18,15 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
- * JacksonConfiguration
+ * SnowdriftJacksonTimeConfiguration
  *
  * @author gaoyzelov
  * @date 2026/5/7-18:00
- * @description Jackson 配置类
+ * @description Jackson 时间序列化配置类
  * @since 1.0.0
  */
 @AutoConfiguration(after = JacksonAutoConfiguration.class)
-public class SnowdriftJacksonConfiguration {
+public class SnowdriftJacksonTimeConfiguration {
 
     /**
      * 自定义 Jackson ObjectMapper 配置

@@ -15,6 +15,7 @@ import java.util.Locale;
 /**
  * I18nInterceptor
  * 优先级：URL 参数（默认 lang） > Accept-Language 请求头 > 默认语言
+ *
  * @author gaoyzelov
  * @date 2026/5/9
  * @description 国际化语言拦截器
@@ -46,13 +47,7 @@ public class I18nInterceptor implements HandlerInterceptor {
 
         // 4. 验证并设置语言环境
         Locale locale = I18nUtil.parseLocale(lang);
-        if (isSupported(locale, properties.getSupportedLocales())) {
-            LocaleContextHolder.setLocale(locale);
-            log.debug("设置语言环境: {}", locale);
-        } else {
-            log.warn("不支持的语言环境: {}，使用默认语言", lang);
-            LocaleContextHolder.setLocale(I18nUtil.parseLocale(properties.getDefaultLocale()));
-        }
+        LocaleContextHolder.setLocale(locale);
 
         return true;
     }
@@ -107,18 +102,5 @@ public class I18nInterceptor implements HandlerInterceptor {
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) {
         // 清理 LocaleContext，防止内存泄漏
         LocaleContextHolder.resetLocaleContext();
-    }
-
-    /**
-     * 判断是否支持该语言
-     *
-     * @param locale           语言环境
-     * @param supportedLocales 支持的语言列表
-     * @return 是否支持
-     */
-    private boolean isSupported(Locale locale, List<String> supportedLocales) {
-        String localeStr = locale.toString();
-        return supportedLocales.contains(localeStr) ||
-                supportedLocales.contains(locale.getLanguage());
     }
 }
