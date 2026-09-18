@@ -94,7 +94,7 @@ public final class AssertUtil {
 
     /**
      * 断言条件成立
-     * supplier 返回 {@code null} 或 {@code false} 时均视为条件不成立。</p>
+     * <p>supplier 返回 {@code null} 或 {@code false} 时均视为条件不成立。</p>
      *
      * @param predicate 断言条件
      * @param message   错误信息

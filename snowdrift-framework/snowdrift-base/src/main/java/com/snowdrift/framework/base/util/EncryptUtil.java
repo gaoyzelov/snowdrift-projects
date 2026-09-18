@@ -396,6 +396,9 @@ public final class EncryptUtil {
 
             byte[] decrypted = cipher.doFinal(ciphertext);
             return StringUtils.toEncodedString(decrypted, StandardCharsets.UTF_8);
+        } catch (BizException e) {
+            // 保留内部抛出的具体原因（如密文过短），与 rsaEncrypt 的处理保持一致
+            throw e;
         } catch (Exception e) {
             log.error("AES-GCM解密失败: err={}", e.getMessage());
             return BizException.throwEx("AES-GCM解密失败");
@@ -477,7 +480,7 @@ public final class EncryptUtil {
     /**
      * rsa公钥加密
      * <p>采用 RSA/ECB/PKCS1Padding，单次明文长度上限为 {@code 密钥位数 / 8 - 11} 字节
-     * （如 2048 位密钥最大 245 字节）。仅用于旧协议兼容；新协议使用 RSA-OAEP。
+     * （如 2048 位密钥最大 245 字节）。当前唯一的 RSA 填充方式；PKCS#1 v1.5 存在填充预言风险，新协议建议对称加密。
      * 超限明文应使用 AES-GCM 加密后再用 RSA 保护密钥，不建议直接分段 RSA。</p>
      *
      * @param text   待加密文本
@@ -529,7 +532,7 @@ public final class EncryptUtil {
             return new String(bytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
             log.error("RSA解密失败: err={}", e.getMessage());
-            throw new BizException("RSA解密失败", e);
+            return BizException.throwEx("RSA解密失败");
         }
     }
 
