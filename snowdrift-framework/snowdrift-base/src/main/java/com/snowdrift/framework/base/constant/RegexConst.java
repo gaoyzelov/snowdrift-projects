@@ -2,6 +2,7 @@ package com.snowdrift.framework.base.constant;
 
 /**
  * RegexConst
+ *
  * @author gaoyzelov
  * @date 2026/3/31-17:33
  * @description 正则表达式常量
@@ -29,9 +30,6 @@ public final class RegexConst {
 
     // 邮箱
     public static final String EMAIL = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$";
-
-    //验证密码格式（8-15 位，必须包含字母和数字）
-    public static final String PWD = "^(?=.*[A-Za-z])(?=.*\\d)[A-Za-z\\d]{8,15}$";
 
     //银行卡号（16/19 位，支持按 4 位分组、组间以单个空格分隔）
     public static final String BANK_CARD = "^\\d{4}( ?\\d{4}){3}( ?\\d{3})?$";

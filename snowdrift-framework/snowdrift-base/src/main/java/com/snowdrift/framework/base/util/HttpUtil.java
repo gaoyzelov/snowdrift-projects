@@ -33,7 +33,7 @@ public final class HttpUtil {
 
     private static final int HTTP_SUCCESS_MIN = 200;
     private static final int HTTP_SUCCESS_RANGE = 100;
-    private static final int RESPONSE_BODY_TRUNCATE_SIZE = 500;
+    private static final int DEFAULT_MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
 
     public static final String GET = "GET";
     public static final String POST = "POST";
@@ -64,10 +64,12 @@ public final class HttpUtil {
      * @throws BizException 地址格式非法时抛出
      */
     private static URI toUri(String url) {
+        AssertUtil.notBlank(url, "请求Url不能为空");
         try {
             return URI.create(url);
         } catch (IllegalArgumentException e) {
-            throw new BizException("请求地址格式错误：" + url, e);
+            log.error("请求地址格式错误：url={}, err={}", url, e.getMessage());
+            return BizException.throwEx("请求地址格式错误");
         }
     }
 
@@ -112,7 +114,7 @@ public final class HttpUtil {
      * @return 响应内容
      */
     public static String get(String url, Map<String, String> params, Map<String, String> headers, long timeout) {
-        AssertUtil.isTrue(timeout > 0, "超时时间必须大于 0");
+        AssertUtil.predicate(() -> timeout > 0, "超时时间必须大于 0");
         String fullUrl = buildUrlWithParams(url, params);
         return request(fullUrl, GET, null, headers, Duration.ofSeconds(timeout));
     }
@@ -167,19 +169,17 @@ public final class HttpUtil {
     /**
      * POST Form 表单请求（指定超时）
      *
-     * @param url            请求 URL
-     * @param formData       表单数据
-     * @param headers        请求头
-     * @param timeout 超时时间（秒）
+     * @param url      请求 URL
+     * @param formData 表单数据
+     * @param headers  请求头
+     * @param timeout  请求超时
      * @return 响应内容
      */
     public static String postForm(String url, Map<String, String> formData, Map<String, String> headers, Duration timeout) {
-        AssertUtil.isTrue(timeout.toSeconds() > 0, "超时时间必须大于 0");
+        validateTimeout(timeout);
         AssertUtil.notBlank(url, "请求Url不能为空");
         AssertUtil.notNull(formData, "表单数据不能为空");
-
         String body = buildFormDataBody(formData);
-
         HttpRequest.Builder builder = HttpRequest.newBuilder()
                 .uri(toUri(url))
                 .timeout(timeout)
@@ -187,7 +187,7 @@ public final class HttpUtil {
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
 
         if (MapUtils.isNotEmpty(headers)) {
-            headers.forEach(builder::header);
+            headers.forEach(builder::setHeader);
         }
 
         return sendRequest(builder.build());
@@ -330,7 +330,7 @@ public final class HttpUtil {
     }
 
     /**
-     * 下载文件到字节数组
+     * 下载文件到字节数组，默认最大 10 MiB
      *
      * @param url 文件 URL
      * @return 文件字节数组
@@ -346,7 +346,7 @@ public final class HttpUtil {
                     .build();
 
             HttpResponse<byte[]> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            log.debug("HTTP下载 {} - Status: {}, Size: {} bytes", url, response.statusCode(), response.body().length);
+            log.debug("HTTP下载 - Status: {}, Size: {} bytes", response.statusCode(), response.body().length);
 
             if (response.statusCode() >= HTTP_SUCCESS_MIN && response.statusCode() < HTTP_SUCCESS_MIN + HTTP_SUCCESS_RANGE) {
                 return response.body();
@@ -402,7 +402,7 @@ public final class HttpUtil {
             builder.method(method, HttpRequest.BodyPublishers.noBody());
         }
         if (MapUtils.isNotEmpty(headers)) {
-            headers.forEach(builder::header);
+            headers.forEach(builder::setHeader);
         }
         return sendRequest(builder.build(), client);
     }
@@ -432,25 +432,21 @@ public final class HttpUtil {
             HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             long costTime = System.currentTimeMillis() - startTime;
 
-            log.debug("HTTP {} {} - Status: {}, Response: {}, Cost: {}ms",
-                    request.method(), request.uri(), response.statusCode(), response.body(), costTime);
+            log.debug("HTTP {} - Status: {}, Cost: {}ms", request.method(), response.statusCode(), costTime);
 
             if (response.statusCode() >= HTTP_SUCCESS_MIN && response.statusCode() < HTTP_SUCCESS_MIN + HTTP_SUCCESS_RANGE) {
                 return response.body();
             } else {
-                String body = response.body();
-                String truncatedBody = body != null && body.length() > RESPONSE_BODY_TRUNCATE_SIZE
-                        ? body.substring(0, RESPONSE_BODY_TRUNCATE_SIZE) + "..." : body;
-                log.warn("HTTP {} 请求失败，status {}: {}, body: {}", request.method(), response.statusCode(), request.uri(), truncatedBody);
+                log.warn("HTTP {} 请求失败，status {}", request.method(), response.statusCode());
                 throw new BizException("HTTP请求失败，status: " + response.statusCode());
             }
         } catch (IOException e) {
-            log.error("HTTP {} 请求失败: {}", request.method(), request.uri(), e);
-            throw new BizException("HTTP请求失败");
+            log.error("HTTP {} 请求失败: url={}, err={}", request.method(), request.uri(), e.getMessage());
+            return BizException.throwEx("HTTP请求失败");
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("HTTP {} 请求中断: {}", request.method(), request.uri(), e);
-            throw new BizException("HTTP请求中断");
+            log.error("HTTP {} 请求中断: url={}, err={}", request.method(), request.uri(), e.getMessage());
+            return BizException.throwEx("HTTP请求中断");
         }
     }
 
@@ -462,31 +458,17 @@ public final class HttpUtil {
      * @return 完整的 URL
      */
     public static String buildUrlWithParams(String url, Map<String, String> params) {
+        toUri(url);
         if (MapUtils.isEmpty(params)) {
             return url;
         }
 
-        StringBuilder sb = new StringBuilder(url);
-        boolean hasQuery = url.contains(StrConst.QUESTION);
-
-        if (!hasQuery) {
-            sb.append(StrConst.QUESTION);
-        } else {
-            if (!url.endsWith(StrConst.QUESTION)) {
-                sb.append(StrConst.AMPERSAND);
-            }
-        }
-
-        params.forEach((key, value) -> {
-            if (sb.charAt(sb.length() - 1) != '?' && sb.charAt(sb.length() - 1) != '&') {
-                sb.append(StrConst.AMPERSAND);
-            }
-            sb.append(URLEncoder.encode(key, StandardCharsets.UTF_8))
-                    .append(StrConst.EQUALS)
-                    .append(URLEncoder.encode(value, StandardCharsets.UTF_8));
-        });
-
-        return sb.toString();
+        int fragmentIndex = url.indexOf('#');
+        String base = fragmentIndex < 0 ? url : url.substring(0, fragmentIndex);
+        String fragment = fragmentIndex < 0 ? "" : url.substring(fragmentIndex);
+        String separator = !base.contains("?") ? "?"
+                : (base.endsWith("?") || base.endsWith("&") ? "" : "&");
+        return base + separator + buildFormDataBody(params) + fragment;
     }
 
     /**
@@ -497,11 +479,13 @@ public final class HttpUtil {
      */
     public static String buildFormDataBody(Map<String, String> formData) {
         if (MapUtils.isEmpty(formData)) {
-            return "";
+            return StrConst.EMPTY;
         }
 
         StringBuilder sb = new StringBuilder();
         formData.forEach((key, value) -> {
+            AssertUtil.notNull(key, "参数名不能为空");
+            AssertUtil.notNull(value, "参数值不能为空");
             if (!sb.isEmpty()) {
                 sb.append("&");
             }
@@ -513,7 +497,7 @@ public final class HttpUtil {
     }
 
     /**
-     * 检查 URL 是否可访问
+     * 检查 URL 是否可访问（2xx/3xx 返回 true，使用 GET 并丢弃响应体）。
      *
      * @param url     请求 URL
      * @param timeout 超时时间
@@ -521,6 +505,7 @@ public final class HttpUtil {
      */
     public static boolean isAccessible(String url, Duration timeout) {
         AssertUtil.notBlank(url, "请求Url不能为空");
+        validateTimeout(timeout);
         try {
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(toUri(url))
@@ -529,8 +514,11 @@ public final class HttpUtil {
 
             HttpResponse<Void> response = HTTP_CLIENT.send(request, HttpResponse.BodyHandlers.discarding());
             return response.statusCode() >= 200 && response.statusCode() < 400;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return false;
         } catch (Exception e) {
-            log.warn("URL检查失败: {}", url, e);
+            log.debug("URL检查失败: err={}", e.getMessage());
             return false;
         }
     }
@@ -546,15 +534,23 @@ public final class HttpUtil {
     }
 
     /**
-     * 创建带代理的 HttpClient（用于特殊网络环境）
+     * 校验超时时间
+     */
+    private static void validateTimeout(Duration timeout) {
+        AssertUtil.notNull(timeout, "超时时间不能为空");
+        AssertUtil.predicate(() -> !timeout.isZero() && !timeout.isNegative(), "超时时间必须大于 0");
+    }
+
+    /**
+     * 创建带代理的 HttpClient（用于特殊网络环境）。
      *
      * @param proxyHost 代理主机
      * @param proxyPort 代理端口
-     * @return HttpClient 实例
+     * @return HttpClient 实例，调用方直接使用其 send/sendAsync 方法
      */
     public static HttpClient createProxyClient(String proxyHost, int proxyPort) {
         AssertUtil.notBlank(proxyHost, "代理主机不能为空");
-        AssertUtil.isFalse(proxyPort <= 0 || proxyPort > 65535, "代理端口必须在1-65535之间");
+        AssertUtil.predicate(() -> proxyPort > 0 && proxyPort <= 65535, "代理端口必须在1-65535之间");
 
         InetSocketAddress proxyAddress = new InetSocketAddress(proxyHost, proxyPort);
         return HttpClient.newBuilder()
@@ -575,6 +571,7 @@ public final class HttpUtil {
     public static String getBasicAuthHeader(String username, String password) {
         AssertUtil.notBlank(username, "用户名不能为空");
         AssertUtil.notBlank(password, "密码不能为空");
+        AssertUtil.predicate(() -> !username.contains(StrConst.COLON), "Basic Auth 用户名不能包含冒号");
 
         String auth = username + StrConst.COLON + password;
         String encodedAuth = Base64.getEncoder().encodeToString(auth.getBytes(StandardCharsets.UTF_8));

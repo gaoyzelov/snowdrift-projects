@@ -1,5 +1,6 @@
 package com.snowdrift.framework.base.util;
 
+import com.google.common.net.InetAddresses;
 import com.snowdrift.framework.base.constant.StrConst;
 import org.apache.commons.lang3.RegExUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -42,10 +43,7 @@ public final class DesensitizeUtil {
      * @return 脱敏后的密码
      */
     public static String password(String password) {
-        if (StringUtils.isBlank(password)) {
-            return StrConst.EMPTY;
-        }
-        return RegExUtils.replaceAll(password, "(\\S+)", "**********");
+        return process(password, "(\\S+)", "**********");
     }
 
     /**
@@ -80,7 +78,7 @@ public final class DesensitizeUtil {
             // 无法识别为手机号时保守全掩码，避免原样输出造成信息泄漏
             return StrConst.MASK_REPLACEMENT;
         }
-        return RegExUtils.replaceAll(compact, "(\\d{3})\\d{4}(\\d{4})", "$1****$2");
+        return process(compact, "(\\d{3})\\d{4}(\\d{4})", "$1****$2");
     }
 
     /**
@@ -159,7 +157,7 @@ public final class DesensitizeUtil {
             // 无法识别为邮箱时保守全掩码，避免原样输出造成信息泄漏
             return StrConst.MASK_REPLACEMENT;
         }
-        return RegExUtils.replaceAll(compact, "(^.)[^@]*(@.*$)", "$1****$2");
+        return process(compact, "(^.)[^@]*(@.*$)", "$1****$2");
     }
 
     /**
@@ -175,9 +173,9 @@ public final class DesensitizeUtil {
         int keepLen = Math.min(address.length(), 6);
         if (keepLen <= 3) {
             // 地址过短，全部掩码
-            return "********";
+            return StrConst.MASK_REPLACEMENT;
         }
-        return address.substring(0, keepLen) + "********";
+        return address.substring(0, address.offsetByCodePoints(0, keepLen)) + StrConst.MASK_REPLACEMENT;
     }
 
     /**
@@ -234,6 +232,6 @@ public final class DesensitizeUtil {
             // 无法识别为车牌号时保守全掩码，避免原样输出造成信息泄漏
             return StrConst.MASK_REPLACEMENT;
         }
-        return RegExUtils.replaceAll(compact, "([\\u4e00-\\u9fa5][A-Z])\\w+(\\w{1})", "$1****$2");
+        return compact.substring(0, 2) + "****" + compact.substring(compact.length() - 1);
     }
 }

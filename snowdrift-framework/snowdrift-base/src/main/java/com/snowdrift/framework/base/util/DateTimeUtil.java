@@ -1,7 +1,8 @@
 package com.snowdrift.framework.base.util;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.snowdrift.framework.base.exception.BizException;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.DateTimeException;
 import java.time.DayOfWeek;
@@ -11,13 +12,15 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.ResolverStyle;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalQuery;
 import java.util.Date;
-import java.util.Map;
+import java.util.Locale;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * DateTimeUtil
@@ -27,19 +30,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * @description 时间工具类：基于 java.time 的格式化/解析/转换/区间判断工具
  * @since 1.0.0
  */
-@Slf4j
 public final class DateTimeUtil {
 
-    private static final Map<String, DateTimeFormatter> FORMATTER_CACHE = new ConcurrentHashMap<>();
+    private static final Cache<FormatterKey, DateTimeFormatter> FORMATTER_CACHE =
+            CacheBuilder.newBuilder().maximumSize(256).build();
 
     public static final String DATETIME_PATTERN = "yyyy-MM-dd HH:mm:ss";
-    public static final DateTimeFormatter DATETIME_FORMATTER = DateTimeFormatter.ofPattern(DATETIME_PATTERN);
+    public static final DateTimeFormatter DATETIME_FORMATTER = newFormatter(DATETIME_PATTERN, Locale.ROOT);
 
     public static final String DATE_PATTERN = "yyyy-MM-dd";
-    public static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern(DATE_PATTERN);
+    public static final DateTimeFormatter DATE_FORMATTER = newFormatter(DATE_PATTERN, Locale.ROOT);
 
     public static final String TIME_PATTERN = "HH:mm:ss";
-    public static final DateTimeFormatter TIME_FORMATTER = DateTimeFormatter.ofPattern(TIME_PATTERN);
+    public static final DateTimeFormatter TIME_FORMATTER = newFormatter(TIME_PATTERN, Locale.ROOT);
 
     public static final String TIMESTAMP_PATTERN = "yyyyMMddHHmmss";
 
@@ -47,10 +50,23 @@ public final class DateTimeUtil {
 
     public static final String CHINESE_DATE_PATTERN = "yyyy 年 MM 月 dd 日";
 
-    /** 系统默认时区，参与 Date/时间戳 与 LocalXxx 的互相转换 */
-    private static final ZoneId DEFAULT_ZONE_ID = ZoneId.systemDefault();
+    /**
+     * 系统默认时区，参与 Date/时间戳 与 LocalXxx 的互相转换
+     */
+    private static ZoneId defaultZoneId() {
+        return ZoneId.systemDefault();
+    }
 
     private DateTimeUtil() {
+    }
+
+    private static DateTimeFormatter newFormatter(String pattern, Locale locale) {
+        // yyyy 表示纪元年；缺省为公元，保持既有格式并启用严格日期解析。
+        return new DateTimeFormatterBuilder()
+                .appendPattern(pattern)
+                .parseDefaulting(ChronoField.ERA, 1)
+                .toFormatter(locale)
+                .withResolverStyle(ResolverStyle.STRICT);
     }
 
     /**
@@ -62,9 +78,10 @@ public final class DateTimeUtil {
     private static DateTimeFormatter getFormatter(String pattern) {
         AssertUtil.notBlank(pattern, "格式不能为空");
         try {
-            return FORMATTER_CACHE.computeIfAbsent(pattern, DateTimeFormatter::ofPattern);
+            FormatterKey key = new FormatterKey(pattern, Locale.getDefault(Locale.Category.FORMAT));
+            return FORMATTER_CACHE.asMap().computeIfAbsent(key, k -> newFormatter(k.pattern(), k.locale()));
         } catch (IllegalArgumentException e) {
-            throw new BizException("时间格式非法：" + pattern, e);
+            throw new BizException("时间格式非法", e);
         }
     }
 
@@ -109,7 +126,7 @@ public final class DateTimeUtil {
     /**
      * 将 LocalDate 按指定格式模式格式化为字符串
      *
-     * @param date   待格式化的日期
+     * @param date    待格式化的日期
      * @param pattern 日期格式模式
      * @return 格式化后的字符串
      */
@@ -133,7 +150,7 @@ public final class DateTimeUtil {
     /**
      * 将 LocalTime 按指定格式模式格式化为字符串
      *
-     * @param time   待格式化的时间
+     * @param time    待格式化的时间
      * @param pattern 时间格式模式
      * @return 格式化后的字符串
      */
@@ -157,13 +174,13 @@ public final class DateTimeUtil {
     // ============================== 时间解析 ==============================
 
     /**
-     * 解析内核：统一空值校验、异常日志与异常包装，保证所有解析失败都抛出携带原因链的 BizException
+     * 解析内核：统一空值校验与异常包装；解析器异常保留原因链，日志由调用方处理。
      *
-     * @param text       待解析文本
-     * @param formatter  格式化器
-     * @param query      解析结果类型（LocalDateTime/LocalDate/LocalTime 的 from 查询）
+     * @param text        待解析文本
+     * @param formatter   格式化器
+     * @param query       解析结果类型（LocalDateTime/LocalDate/LocalTime 的 from 查询）
      * @param subjectName 解析对象名称，用于错误信息（如 时间/日期）
-     * @param <T>        解析结果类型
+     * @param <T>         解析结果类型
      * @return 解析后的时间对象
      */
     private static <T extends TemporalAccessor> T doParse(String text, DateTimeFormatter formatter,
@@ -174,8 +191,7 @@ public final class DateTimeUtil {
         try {
             return formatter.parse(text, query);
         } catch (DateTimeException e) {
-            log.error("{}解析失败：{}", subjectName, text, e);
-            throw new BizException(subjectName + "解析失败，请检查输入内容", e);
+            throw new BizException(subjectName + "解析失败", e);
         }
     }
 
@@ -287,7 +303,15 @@ public final class DateTimeUtil {
      * @return 转换后的 LocalDateTime
      */
     public static LocalDateTime timestampToLocalDateTime(long timestamp) {
-        return Instant.ofEpochMilli(timestamp).atZone(DEFAULT_ZONE_ID).toLocalDateTime();
+        return timestampToLocalDateTime(timestamp, defaultZoneId());
+    }
+
+    /**
+     * 将毫秒时间戳转换为指定时区的本地时间。
+     */
+    public static LocalDateTime timestampToLocalDateTime(long timestamp, ZoneId zoneId) {
+        AssertUtil.notNull(zoneId, "时区不能为空");
+        return Instant.ofEpochMilli(timestamp).atZone(zoneId).toLocalDateTime();
     }
 
     /**
@@ -297,8 +321,16 @@ public final class DateTimeUtil {
      * @return 毫秒时间戳
      */
     public static long localDateTimeToTimestamp(LocalDateTime dateTime) {
+        return localDateTimeToTimestamp(dateTime, defaultZoneId());
+    }
+
+    /**
+     * 将指定时区的本地时间转换为毫秒时间戳；夏令时歧义遵循 JDK atZone 规则。
+     */
+    public static long localDateTimeToTimestamp(LocalDateTime dateTime, ZoneId zoneId) {
         AssertUtil.notNull(dateTime, "时间不能为空");
-        return dateTime.atZone(DEFAULT_ZONE_ID).toInstant().toEpochMilli();
+        AssertUtil.notNull(zoneId, "时区不能为空");
+        return dateTime.atZone(zoneId).toInstant().toEpochMilli();
     }
 
     /**
@@ -309,7 +341,7 @@ public final class DateTimeUtil {
      */
     public static Date localDateTimeToDate(LocalDateTime dateTime) {
         AssertUtil.notNull(dateTime, "时间不能为空");
-        return Date.from(dateTime.atZone(DEFAULT_ZONE_ID).toInstant());
+        return Date.from(dateTime.atZone(defaultZoneId()).toInstant());
     }
 
     /**
@@ -320,7 +352,7 @@ public final class DateTimeUtil {
      */
     public static LocalDateTime dateToLocalDateTime(Date date) {
         AssertUtil.notNull(date, "时间不能为空");
-        return LocalDateTime.ofInstant(date.toInstant(), DEFAULT_ZONE_ID);
+        return LocalDateTime.ofInstant(date.toInstant(), defaultZoneId());
     }
 
     /**
@@ -331,7 +363,7 @@ public final class DateTimeUtil {
      */
     public static LocalDate dateToLocalDate(Date date) {
         AssertUtil.notNull(date, "日期不能为空");
-        return date.toInstant().atZone(DEFAULT_ZONE_ID).toLocalDate();
+        return date.toInstant().atZone(defaultZoneId()).toLocalDate();
     }
 
     // ============================== 时间区间与边界 ==============================
@@ -498,4 +530,9 @@ public final class DateTimeUtil {
         return dateTime.getDayOfWeek();
     }
 
+    /**
+     * 时间格式化器缓存键
+     */
+    private record FormatterKey(String pattern, Locale locale) {
+    }
 }

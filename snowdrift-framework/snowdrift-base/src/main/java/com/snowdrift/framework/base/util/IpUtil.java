@@ -8,18 +8,22 @@ import org.apache.commons.lang3.StringUtils;
 import org.lionsoul.ip2region.xdb.Searcher;
 
 import java.io.InputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * IpUtil
  *
  * @author gaoyzelov
  * @date 2026/4/29-16:10
- * @description ip工具类
+ * @description IP工具类
  * @since 1.0.0
  */
 @Slf4j
@@ -33,6 +37,13 @@ public final class IpUtil {
      */
     private static volatile Searcher searcher;
 
+    private static InputStream openDatabase() throws IOException {
+        String path = System.getProperty("snowdrift.ip2region.path");
+        return StringUtils.isBlank(path)
+                ? IpUtil.class.getClassLoader().getResourceAsStream("ip2region.xdb")
+                : Files.newInputStream(Path.of(path));
+    }
+
     /**
      * 获取 IP 查询器（懒加载，首次调用时初始化，失败后下次调用自动重试）
      */
@@ -41,7 +52,7 @@ public final class IpUtil {
             synchronized (IpUtil.class) {
                 if (searcher == null) {
                     long now = System.currentTimeMillis();
-                    try (InputStream stream = IpUtil.class.getClassLoader().getResourceAsStream("ip2region.xdb")) {
+                    try (InputStream stream = openDatabase()) {
                         if (stream == null) {
                             log.warn("未找到 IP2Region 数据库文件 (ip2region.xdb)，IP 归属地查询将不可用。"
                                     + "请将文件放置在 classpath 根目录下。");
@@ -51,7 +62,7 @@ public final class IpUtil {
                             log.info("IP2Region 数据库加载成功，耗时 ({} ms)", System.currentTimeMillis() - now);
                         }
                     } catch (Exception e) {
-                        log.error("IP2Region 初始化失败，IP 归属地查询将不可用", e);
+                        log.error("IP2Region 初始化失败，IP 归属地查询将不可用, err={}", e.getMessage());
                     }
                 }
             }
@@ -66,40 +77,45 @@ public final class IpUtil {
      * @return IP地址
      */
     public static String getIp(HttpServletRequest request) {
-        if (request == null) {
-            return StrConst.UNKNOWN;
-        }
-        // 请求头
-        String[] headers = {"X-Forwarded-For", "X-Real-IP", "Proxy-Client-IP", "WL-Proxy-Client-IP", "HTTP_CLIENT_IP", "HTTP_X_FORWARDED_FOR"};
-        String ip;
-        for (String header : headers) {
-            ip = request.getHeader(header);
-            if (StringUtils.isNotBlank(ip) && !StringUtils.endsWithIgnoreCase(ip, StrConst.UNKNOWN)) {
-                return getMultistageReverseProxyIp(ip);
-            }
-        }
-        ip = request.getRemoteAddr();
-        return getMultistageReverseProxyIp(ip);
+        return getIp(request, ip -> true);
     }
 
     /**
-     * 多级反向代理IP处理
+     * 仅信任显式指定的代理，从 X-Forwarded-For 右侧向左剥离可信节点。
+     * trustedProxy 不应无条件返回 true；代理必须正确覆写或追加转发头。
+     * 默认入口只返回容器提供的 remoteAddr。
+     */
+    public static String getIp(HttpServletRequest request, Predicate<String> trustedProxy) {
+        if (request == null) return StrConst.UNKNOWN;
+        AssertUtil.notNull(trustedProxy, "可信代理判断不能为空");
+        String remote = normalizedIp(request.getRemoteAddr());
+        if (StrConst.UNKNOWN.equals(remote) || !trustedProxy.test(remote)) return remote;
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (StringUtils.isBlank(forwarded)) {
+            String real = normalizedIp(request.getHeader("X-Real-IP"));
+            return StrConst.UNKNOWN.equals(real) ? remote : real;
+        }
+        if (forwarded.length() > 8192) return remote;
+        String current = remote;
+        String[] hops = forwarded.split(",");
+        for (int i = hops.length - 1; i >= 0; i--) {
+            if (!trustedProxy.test(current)) return current;
+            String candidate = normalizedIp(hops[i]);
+            if (StrConst.UNKNOWN.equals(candidate)) return remote;
+            current = candidate;
+        }
+        return current;
+    }
+
+    /**
+     * 规范化IP地址
      *
      * @param ip ip地址
-     * @return 处理后的IP
+     * @return 规范化IP地址
      */
-    private static String getMultistageReverseProxyIp(String ip) {
-        // 多级反向代理检测
-        if (StringUtils.isNotBlank(ip) && StringUtils.indexOf(ip, StrConst.COMMA) > 0) {
-            String[] ips = StringUtils.split(ip, StrConst.COMMA);
-            for (String subIp : ips) {
-                if (StringUtils.isNotBlank(subIp) && !StringUtils.endsWithIgnoreCase(subIp, StrConst.UNKNOWN)) {
-                    ip = subIp;
-                    break;
-                }
-            }
-        }
-        return ip;
+    private static String normalizedIp(String ip) {
+        String trimmed = StringUtils.trim(ip);
+        return isValidIp(trimmed) ? InetAddresses.forString(trimmed).getHostAddress() : StrConst.UNKNOWN;
     }
 
 
@@ -118,10 +134,10 @@ public final class IpUtil {
             return new String[]{"", "", "", "", ""};
         }
         try {
-            String region = s.search(ip);
-            return region.split("\\|");
+            String region = s.search(InetAddresses.forString(ip).getHostAddress());
+            return StringUtils.isBlank(region) ? new String[]{"", "", "", "", ""} : region.split("\\|");
         } catch (Exception e) {
-            log.error("IP解析失败，ip={}", ip, e);
+            log.error("IP解析失败，ip={}, err={}", ip, e.getMessage());
             return new String[]{"", "", "", "", ""};
         }
     }
@@ -138,7 +154,7 @@ public final class IpUtil {
         delimiter = StringUtils.isBlank(delimiter) ? StrConst.SPACE : delimiter;
         // 过滤无意义的"0"和内网IP标识
         List<String> list = Arrays.stream(info)
-                .filter(s -> !"0".equals(s) && !"内网IP".equals(s))
+                .filter(s -> !StringUtils.equals(s, "0") && !StringUtils.equals(s, "内网IP"))
                 .toList();
         return String.join(delimiter, list);
     }

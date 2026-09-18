@@ -51,6 +51,8 @@ public final class ReflectUtil {
      * @throws BizException 方法不存在时抛出
      */
     public static Method getMethod(Class<?> clazz, String name) {
+        AssertUtil.notNull(clazz, "目标类型不能为空");
+        AssertUtil.notBlank(name, "方法名不能为空");
         Method result = null;
         for (Method m : clazz.getDeclaredMethods()) {
             if (m.getName().equals(name)) {
@@ -64,10 +66,34 @@ public final class ReflectUtil {
             }
         }
         if (result != null) {
-            result.setAccessible(true);
+            AssertUtil.predicate(result::trySetAccessible, "方法不可访问：" + clazz.getName() + "#" + name);
             return result;
         }
-        throw new BizException("方法不存在：" + clazz.getName() + "#" + name);
+        return BizException.throwEx("方法不存在：" + clazz.getName() + "#" + name);
+    }
+
+    /**
+     * 按参数类型精确查找当前类声明的方法；不搜索父类。
+     *
+     * @param clazz          目标类
+     * @param name           方法名
+     * @param parameterTypes 参数类型
+     * @return Method 对象
+     * @throws BizException 方法不存在时抛出
+     */
+    public static Method getMethod(Class<?> clazz, String name, Class<?>... parameterTypes) {
+        AssertUtil.notNull(clazz, "目标类型不能为空");
+        AssertUtil.notBlank(name, "方法名不能为空");
+        AssertUtil.notNull(parameterTypes, "参数类型不能为空");
+        try {
+            Method method = clazz.getDeclaredMethod(name, parameterTypes);
+            AssertUtil.predicate(method::trySetAccessible, "方法不可访问：" + clazz.getName() + "#" + name);
+            return method;
+        } catch (NoSuchMethodException | SecurityException e) {
+            log.error("无法获取方法：class={}, method={}, err={}",
+                    clazz.getName(), name, e.getMessage());
+            return BizException.throwEx("无法获取方法：" + clazz.getName() + "#" + name);
+        }
     }
 
     /**
@@ -86,7 +112,7 @@ public final class ReflectUtil {
         List<Field> fields = new ArrayList<>();
         Set<String> seenNames = new HashSet<>();
         try {
-            Class<?> cls = t.getClass();
+            Class<?> cls = t instanceof Class<?> type ? type : t.getClass();
             // 从当前类逐级向上遍历（includeSuperclass=false 时仅取当前类）
             while (Objects.nonNull(cls)) {
                 for (Field field : cls.getDeclaredFields()) {
@@ -104,8 +130,8 @@ public final class ReflectUtil {
                 cls = cls.getSuperclass();
             }
         } catch (Exception e) {
-            log.error("获取属性列表失败：{}", t.getClass().getCanonicalName(), e);
-            throw new BizException("获取属性列表失败");
+            log.error("获取属性列表失败：class={}, err={}", t.getClass().getCanonicalName(), e.getMessage());
+            return BizException.throwEx("获取属性列表失败");
         }
         return fields;
     }

@@ -1,5 +1,6 @@
 package com.snowdrift.framework.base.enums;
 
+import com.snowdrift.framework.base.exception.BizException;
 import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
@@ -37,6 +38,9 @@ public interface IEnum<E> {
      * @return 枚举对象
      */
     static <T extends IEnum<E>,E> Optional<T> getByCode(Class<T> enumClass, E code) {
+        if (enumClass == null || !enumClass.isEnum()) {
+            return BizException.throwEx("必须传入枚举类型");
+        }
         T[] enumConstants = enumClass.getEnumConstants();
         for (T enumConstant : enumConstants) {
             if (Objects.equals(enumConstant.getCode(), code)) {
@@ -54,6 +58,9 @@ public interface IEnum<E> {
      * @return 枚举对象
      */
     static <T extends IEnum<E>,E> Optional<T> getByNote(Class<T> enumClass, String note) {
+        if (enumClass == null || !enumClass.isEnum()) {
+            return BizException.throwEx("必须传入枚举类型");
+        }
         T[] enumConstants = enumClass.getEnumConstants();
         for (T enumConstant : enumConstants) {
             if (StringUtils.equals(enumConstant.getNote(), note)) {

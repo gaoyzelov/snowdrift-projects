@@ -29,7 +29,7 @@ public final class AssertUtil {
      */
     public static void notNull(Object o, String message) {
         if (Objects.isNull(o)) {
-            throw new BizException(message);
+            BizException.throwEx(message);
         }
     }
 
@@ -41,7 +41,7 @@ public final class AssertUtil {
      */
     public static void notBlank(String text, String message) {
         if (StringUtils.isBlank(text)) {
-            throw new BizException(message);
+            BizException.throwEx(message);
         }
     }
 
@@ -54,7 +54,7 @@ public final class AssertUtil {
      */
     public static <T> void notEmpty(Collection<T> collection, String message) {
         if (CollectionUtils.isEmpty(collection)) {
-            throw new BizException(message);
+            BizException.throwEx(message);
         }
     }
 
@@ -66,7 +66,7 @@ public final class AssertUtil {
      */
     public static <T> void notEmpty(T[] array, String message) {
         if (ArrayUtils.isEmpty(array)) {
-            throw new BizException(message);
+            BizException.throwEx(message);
         }
     }
 
@@ -81,45 +81,28 @@ public final class AssertUtil {
         AssertUtil.notNull(item, "元素不能为空");
         AssertUtil.notEmpty(collection, "集合不能为空");
         if (!collection.contains(item)) {
-            throw new BizException(message);
+            BizException.throwEx(message);
+        }
+    }
+
+    /** 立即求值的布尔断言，兼容 Web 模块等既有调用。 */
+    public static void isTrue(boolean condition, String message) {
+        if (!condition) {
+            BizException.throwEx(message);
         }
     }
 
     /**
-     * 断言条件为真
-     *
-     * @param predicate 断言条件
-     * @param message   错误信息
-     */
-    public static void isTrue(boolean predicate, String message) {
-        if (!predicate) {
-            throw new BizException(message);
-        }
-    }
-
-    /**
-     * 断言条件为假
-     *
-     * @param predicate 断言条件
-     * @param message   错误信息
-     */
-    public static void isFalse(boolean predicate, String message) {
-        if (predicate) {
-            throw new BizException(message);
-        }
-    }
-
-    /**
-     * 断言条件成立（延迟求值）
-     * <p>与 {@link #isTrue} 的区别在于断言条件由调用方惰性提供；
+     * 断言条件成立
      * supplier 返回 {@code null} 或 {@code false} 时均视为条件不成立。</p>
      *
      * @param predicate 断言条件
      * @param message   错误信息
      */
-    public static void custom(Supplier<Boolean> predicate, String message) {
+    public static void predicate(Supplier<Boolean> predicate, String message) {
+        AssertUtil.notNull(predicate, "断言条件不能为空");
         if (!Boolean.TRUE.equals(predicate.get())) {
-            throw new BizException(message);
+            BizException.throwEx(message);
         }
     }
 }

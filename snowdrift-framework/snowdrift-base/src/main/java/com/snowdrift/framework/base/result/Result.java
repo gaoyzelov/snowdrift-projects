@@ -1,8 +1,8 @@
 package com.snowdrift.framework.base.result;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.Builder;
-import lombok.Getter;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -15,8 +15,8 @@ import java.io.Serializable;
  * @description 统一返回结果
  * @since 1.0.0
  */
-@Getter
-@Builder
+@Data
+@Accessors(chain = true)
 @Schema(description = "统一返回结果")
 public final class Result<T> implements Serializable {
 
@@ -84,12 +84,11 @@ public final class Result<T> implements Serializable {
     }
 
     public static <T> Result<T> create(Integer code, String msg, T data) {
-        return Result.<T>builder()
-                .code(code)
-                .msg(msg)
-                .data(data)
-                .timestamp(System.currentTimeMillis())
-                .build();
+        return new Result<T>()
+                .setCode(code)
+                .setMsg(msg)
+                .setData(data)
+                .setTimestamp(System.currentTimeMillis());
     }
 
 }

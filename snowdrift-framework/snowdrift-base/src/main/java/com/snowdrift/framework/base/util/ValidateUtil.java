@@ -1,9 +1,9 @@
 package com.snowdrift.framework.base.util;
 
 import com.snowdrift.framework.base.constant.RegexConst;
-import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.time.DateTimeException;
 import java.time.LocalDate;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -13,7 +13,7 @@ import java.util.regex.Pattern;
  *
  * @author gaoyzelov
  * @date 2026/3/31-17:31
- * @description 验证工具类
+ * @description 校验工具类
  * @since 1.0.0
  */
 public final class ValidateUtil {
@@ -29,7 +29,7 @@ public final class ValidateUtil {
     private static final Pattern EMAIL_PATTERN = Pattern.compile(RegexConst.EMAIL);
 
     // 地区编码
-    private static final Set<String> AREA_SET = SetUtils.hashSet(
+    private static final Set<String> AREA_SET = Set.of(
             "11", "12", "13", "14", "15", "21", "22", "23", "31", "32", "33", "34", "35", "36", "37", "41",
             "42", "43", "44", "45", "46", "50", "51", "52", "53", "54", "61", "62", "63", "64", "65", "71",
             "81", "82", "91");
@@ -39,8 +39,6 @@ public final class ValidateUtil {
     private static final String[] CHECK_CODE = {"1", "0", "X", "9", "8", "7", "6", "5", "4", "3", "2"};
     // 身份证最小出生年份
     private static final int ID_CARD_MIN_YEAR = 1900;
-    // 身份证中日期字段格式
-    private static final String ID_CARD_DATE_FORMAT = "yyyyMMdd";
 
     private ValidateUtil() {
     }
@@ -169,10 +167,11 @@ public final class ValidateUtil {
             return false;
         }
         // 合法日期校验
-        String date = yearStr + monthStr + dayStr;
         try {
-            DateTimeUtil.parseLocalDate(date, ID_CARD_DATE_FORMAT);
-        } catch (Exception e) {
+            if (LocalDate.of(year, month, day).isAfter(LocalDate.now())) {
+                return false;
+            }
+        } catch (DateTimeException e) {
             return false;
         }
         // 15 位身份证校验通过
