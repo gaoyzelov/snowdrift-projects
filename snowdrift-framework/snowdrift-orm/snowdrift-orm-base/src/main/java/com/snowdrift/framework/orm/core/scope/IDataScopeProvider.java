@@ -1,7 +1,5 @@
 package com.snowdrift.framework.orm.core.scope;
 
-import com.snowdrift.framework.base.enums.DataScopeEnum;
-
 import java.util.List;
 
 /**

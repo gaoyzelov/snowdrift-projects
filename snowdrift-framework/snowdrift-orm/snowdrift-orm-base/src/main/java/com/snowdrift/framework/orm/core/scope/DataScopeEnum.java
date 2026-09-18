@@ -1,7 +1,8 @@
-package com.snowdrift.framework.base.enums;
+package com.snowdrift.framework.orm.core.scope;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.snowdrift.framework.base.enums.IEnum;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 

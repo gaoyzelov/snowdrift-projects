@@ -1,7 +1,8 @@
-package com.snowdrift.framework.base.enums;
+package com.snowdrift.framework.log.enums;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import com.snowdrift.framework.base.enums.IEnum;
 import com.snowdrift.framework.base.exception.BizException;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

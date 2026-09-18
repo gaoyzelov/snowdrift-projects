@@ -2,7 +2,7 @@ package com.snowdrift.framework.orm.mp.handler;
 
 import com.baomidou.mybatisplus.extension.plugins.handler.MultiDataPermissionHandler;
 import com.snowdrift.framework.base.constant.StrConst;
-import com.snowdrift.framework.base.enums.DataScopeEnum;
+import com.snowdrift.framework.orm.core.scope.DataScopeEnum;
 import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
