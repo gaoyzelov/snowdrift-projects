@@ -27,7 +27,16 @@ public class OrmMpBaseProperties implements Serializable {
     private Boolean optimisticLock = Boolean.FALSE;
 
     /**
-     * 是否启用字段加解密（默认关闭）
+     * 是否启用字段加解密能力（默认关闭）
+     * <p><b>本开关只负责校验并初始化密钥，不会自动加密任何字段。</b>指定哪些字段需要加解密由使用者在实体上标注，
+     * 完整用法：</p>
+     * <pre>{@code
+     * @TableName(autoResultMap = true)          // 不开启时查询结果不会应用字段的 TypeHandler，读到的仍是密文
+     * public class User {
+     *     @TableField(typeHandler = AesEncryptTypeHandler.class)
+     *     private String idCard;
+     * }
+     * }</pre>
      * <p>注意：加解密仅作用于 ORM 字段读写映射，WHERE / ORDER BY / 唯一性约束等 SQL 片段不会
      * 经过 TypeHandler，请勿将加密列用于过滤、排序或唯一键（详见 {@code AesEncryptTypeHandler}）。</p>
      */
@@ -36,6 +45,7 @@ public class OrmMpBaseProperties implements Serializable {
 
     /**
      * AES 加密密钥（十六进制字符串，16/24/32 字节对应 AES-128/192/256）
+     * <p>本项在配置文件中是明文，建议先用 Jasypt 等方案加密后再写入（同时须保护好加密口令本身）。</p>
      */
     private String cryptoKey;
 }

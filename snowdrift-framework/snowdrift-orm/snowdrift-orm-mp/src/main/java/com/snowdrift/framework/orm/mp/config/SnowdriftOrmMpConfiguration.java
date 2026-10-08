@@ -63,7 +63,9 @@ public class SnowdriftOrmMpConfiguration {
             throw new BizException("数据加密密钥长度无效");
         }
         CryptoKeyHolder.setKey(key);
-        log.info("AES 加密密钥已初始化，密钥长度: {} 位", keyBytes * 8);
+        log.info("AES 加密密钥已初始化，密钥长度: {} 位。提示：本开关只初始化密钥、不自动加密任何字段，"
+                + "需要加解密的字段请在实体上标注 @TableField(typeHandler = AesEncryptTypeHandler.class)，"
+                + "并确保实体类标注 @TableName(autoResultMap = true)", keyBytes * 8);
     }
 
     /**
