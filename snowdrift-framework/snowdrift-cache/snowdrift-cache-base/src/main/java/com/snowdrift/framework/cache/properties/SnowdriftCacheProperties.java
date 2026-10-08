@@ -42,6 +42,7 @@ public class SnowdriftCacheProperties {
     /**
      * 序列化器类型，默认 Jackson
      */
+    @NotNull
     private SerializerType serializer = SerializerType.JACKSON;
 
 }

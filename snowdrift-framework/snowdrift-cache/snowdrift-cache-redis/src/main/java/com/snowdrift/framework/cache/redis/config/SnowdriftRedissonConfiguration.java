@@ -2,7 +2,6 @@ package com.snowdrift.framework.cache.redis.config;
 
 import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.cache.IDistributedLockService;
-import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.redis.service.SnowdriftRedissonDistributedLockServiceImpl;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import jakarta.annotation.PreDestroy;
@@ -33,7 +32,7 @@ import java.util.List;
 @AutoConfiguration(before = SnowdriftRedisConfiguration.class)
 @ConditionalOnClass(RedissonClient.class)
 public class SnowdriftRedissonConfiguration {
-
+    private RedissonClient redissonClient;
     /**
      * 看门狗锁续期时间（毫秒）。
      * <p>Redisson 默认 30s，缩短至 15s 可更快释放失联客户端持有的锁。</p>
@@ -41,13 +40,6 @@ public class SnowdriftRedissonConfiguration {
     private static final long LOCK_WATCHDOG_TIMEOUT_MS = 15_000L;
     private static final int DEFAULT_TIMEOUT_MS = 3000;
 
-    private RedissonClient redissonClient;
-
-    private final SnowdriftCacheProperties properties;
-
-    public SnowdriftRedissonConfiguration(SnowdriftCacheProperties properties) {
-        this.properties = properties;
-    }
 
 
     @PreDestroy
