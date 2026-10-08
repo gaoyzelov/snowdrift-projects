@@ -1,5 +1,6 @@
 package com.snowdrift.framework.mq.config;
 
+import com.snowdrift.framework.base.util.AssertUtil;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.FastJson2MqMessageConverter;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
@@ -28,13 +29,15 @@ import java.util.concurrent.Executor;
 @Slf4j
 @AutoConfiguration
 @EnableConfigurationProperties(MqProperties.class)
-@ConditionalOnProperty(prefix = "snowdrift.mq", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "snowdrift.mq", name = "enabled", havingValue = "true")
 public class SnowdriftMqConfiguration {
 
     @Bean
     @ConditionalOnMissingBean(name = "mqAsyncExecutor")
     public Executor mqAsyncExecutor(MqProperties properties) {
         MqProperties.ExecutorProperties exec = properties.getExecutor();
+        AssertUtil.predicate(() -> exec.getCoreSize() <= exec.getMaxSize(),
+                "MQ 异步发送线程池核心线程数不能大于最大线程数");
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(exec.getCoreSize());
         executor.setMaxPoolSize(exec.getMaxSize());
@@ -80,13 +83,5 @@ public class SnowdriftMqConfiguration {
     @Bean
     public MqContextPropagator mqContextPropagator(MqProperties properties) {
         return new MqContextPropagator(properties);
-    }
-
-    /**
-     * 多 binder 同时启用守卫：同一时间只允许一种 {@code snowdrift.mq.<x>.enabled=true}
-     */
-    @Bean
-    public MqBinderActivationGuard mqBinderActivationGuard() {
-        return new MqBinderActivationGuard();
     }
 }

@@ -1,11 +1,9 @@
 package com.snowdrift.framework.orm.core.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableLogic;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -17,8 +15,13 @@ import java.time.LocalDateTime;
  * @since 1.0.0
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class BaseEntity extends IdEntity {
+public class BaseEntity implements Serializable {
+
+    /**
+     * 自增ID
+     */
+    @TableId(type = IdType.AUTO)
+    private Long id;
 
     /**
      * 创建人（INSERT 时自动填充当前操作者名称）
@@ -47,13 +50,8 @@ public class BaseEntity extends IdEntity {
     /**
      * 逻辑删除标志<br>
      * 0 — 未删除（正常）<br>
-     * 1 — 已删除
+     * 非 0 — 已删除
      */
-    @TableLogic(value = "0", delval = "1")
-    private Integer deleted;
-
-    /**
-     * 逻辑删除时间戳
-     */
-    private Long deletedTime;
+    @TableLogic(value = "0", delval = "UNIX_TIMESTAMP()")
+    private Long deleted;
 }

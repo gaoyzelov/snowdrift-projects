@@ -15,7 +15,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-public class TenantBaseEntity extends BaseEntity {
+public class TenantEntity extends BaseEntity {
 
     /**
      * 租户ID（INSERT 时自动从填充）

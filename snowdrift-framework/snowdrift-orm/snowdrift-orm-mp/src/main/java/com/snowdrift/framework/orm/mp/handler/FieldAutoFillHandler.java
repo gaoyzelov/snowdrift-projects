@@ -9,6 +9,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.reflection.MetaObject;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * FieldAutoFillHandler
@@ -21,7 +23,9 @@ import java.time.LocalDateTime;
 @Slf4j
 public class FieldAutoFillHandler implements MetaObjectHandler {
 
-    /** 无登录上下文时的默认操作人（系统任务/匿名写库，避免审计列写入被阻断） */
+    /**
+     * 无登录上下文时的默认操作人（系统任务/匿名写库，避免审计列写入被阻断）
+     */
     private static final String SYSTEM_OPERATOR = "system";
 
     private final OrmMpTenantProperties tenantProperties;
@@ -29,6 +33,7 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
     public FieldAutoFillHandler(OrmMpTenantProperties tenantProperties) {
         this.tenantProperties = tenantProperties;
     }
+
 
     /**
      * INSERT 时自动填充
@@ -42,7 +47,7 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
         this.strictInsertFill(metaObject, "createTime", LocalDateTime.class, LocalDateTime.now());
         this.strictInsertFill(metaObject, "updateBy", String.class, operatorName);
         this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
-        if (Boolean.TRUE.equals(tenantProperties.getEnabled())){
+        if (Boolean.TRUE.equals(tenantProperties.getEnabled())) {
             Long tenantId;
             try {
                 tenantId = SecurityContextHolder.getTenantId();
@@ -84,5 +89,21 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
                 ? context.getNickname()
                 : context.getUsername();
         return StringUtils.isBlank(name) ? SYSTEM_OPERATOR : name;
+    }
+
+    /**
+     * 严格填充策略, 如果提供的值为null也不填充
+     * @param metaObject 元对象
+     * @param fieldName  字段名
+     * @param fieldVal   字段值
+     * @return MetaObjectHandler
+     */
+    @Override
+    public MetaObjectHandler strictFillStrategy(MetaObject metaObject, String fieldName, Supplier<?> fieldVal) {
+        Object obj = fieldVal.get();
+        if (Objects.nonNull(obj)) {
+            metaObject.setValue(fieldName, obj);
+        }
+        return this;
     }
 }
