@@ -317,21 +317,25 @@
                 <artifactId>snowdrift-base</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- Context模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-context</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- Log模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-log</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- Web模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-web</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- OSS模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-oss-base</artifactId>
@@ -362,6 +366,7 @@
                 <artifactId>snowdrift-oss-tencent</artifactId>
                 <version>${revision}</version>
             </dependency>
+            <!-- Security模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-security-base</artifactId>
@@ -377,7 +382,7 @@
                 <artifactId>snowdrift-security-spring</artifactId>
                 <version>${revision}</version>
             </dependency>
-            <!-- 缓存模块 -->
+            <!-- Cache模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-cache-base</artifactId>
@@ -393,7 +398,7 @@
                 <artifactId>snowdrift-cache-redis</artifactId>
                 <version>${revision}</version>
             </dependency>
-            <!-- 调度模块 -->
+            <!-- Schedule模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-schedule-base</artifactId>
@@ -409,7 +414,7 @@
                 <artifactId>snowdrift-schedule-xxljob</artifactId>
                 <version>${revision}</version>
             </dependency>
-            <!-- 消息队列模块 -->
+            <!-- MQ模块 -->
             <dependency>
                 <groupId>com.snowdrift</groupId>
                 <artifactId>snowdrift-mq-base</artifactId>
