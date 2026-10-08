@@ -21,6 +21,15 @@ import java.util.concurrent.Executor;
 
 /**
  * Snowdrift MQ 通用自动配置
+ * <p>
+ * 开关为 {@code snowdrift.mq.enabled}：<b>缺省视为开启</b>（{@code matchIfMissing = true}），
+ * 可显式设为 {@code false} 作为总闸关闭整个 MQ 模块。
+ * </p>
+ * <p>
+ * 各厂商实现由各自的 {@code snowdrift.mq.<vendor>.enabled=true} 激活，并依赖本类提供的
+ * {@code mqAsyncExecutor}、{@code mqMessageConverter}、{@code mqInterceptorRegistry}、
+ * {@code mqContextPropagator} 四个 Bean；因此只设厂商开关即可启动，无需重复配置本开关。
+ * </p>
  *
  * @author gaoyzelov
  * @date 2026/6/20
@@ -29,7 +38,8 @@ import java.util.concurrent.Executor;
 @Slf4j
 @AutoConfiguration
 @EnableConfigurationProperties(MqProperties.class)
-@ConditionalOnProperty(prefix = "snowdrift.mq", name = "enabled", havingValue = "true")
+@ConditionalOnProperty(prefix = "snowdrift.mq", name = "enabled",
+        havingValue = "true", matchIfMissing = true)
 public class SnowdriftMqConfiguration {
 
     @Bean

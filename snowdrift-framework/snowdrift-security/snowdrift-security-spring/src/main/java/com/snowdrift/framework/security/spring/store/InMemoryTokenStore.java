@@ -2,6 +2,7 @@ package com.snowdrift.framework.security.spring.store;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.snowdrift.framework.security.util.SecurityUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
@@ -35,7 +36,7 @@ public class InMemoryTokenStore extends AbstractTokenStore {
 
     @Override
     protected void doPut(String token, TokenEntry entry, Duration ttl) {
-        log.debug("内存 TokenStore 写入: token={}, ttl={}s", token,
+        log.debug("内存 TokenStore 写入: token={}, ttl={}s", SecurityUtil.desensitizeToken(token),
                 ttl == null || ttl.toMillis() <= 0 ? -1 : ttl.getSeconds());
         cache.put(token, entry);
     }
@@ -54,6 +55,6 @@ public class InMemoryTokenStore extends AbstractTokenStore {
     @Override
     public void remove(String token) {
         cache.invalidate(token);
-        log.debug("内存 TokenStore 移除: token={}", token);
+        log.debug("内存 TokenStore 移除: token={}", SecurityUtil.desensitizeToken(token));
     }
 }

@@ -2,6 +2,8 @@ package com.snowdrift.framework.cache.caffeine.service;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.Expiry;
+import com.github.benmanes.caffeine.cache.Policy.VarExpiration;
 import com.snowdrift.framework.cache.AbstractCacheService;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
@@ -13,9 +15,13 @@ import java.util.List;
 /**
  * Caffeine 本地缓存实现
  * <p>
- * 完全依赖 Caffeine 原生 {@code expireAfterWrite} 过期机制，
- * 不支持 per-key TTL（{@link #expire} 与 {@link #getExpire} 均抛出
- * {@link UnsupportedOperationException}）。
+ * 基于 Caffeine 的<b>可变过期策略</b>（{@code expireAfter(Expiry)} 配合 {@code Policy.VarExpiration}）
+ * 实现 per-key TTL，因此带 TTL 的 {@code put} / {@code putIfAbsent} 以及 {@code expire} / {@code getExpire}
+ * 均可用；未显式指定 TTL 时取 {@link SnowdriftCacheProperties#getKeyTtl()} 作为默认值。
+ * </p>
+ * <p>
+ * 仍不支持（Caffeine 无对应结构与语义）：哈希操作 {@code hget} / {@code hput} / {@code hdelete}
+ * 与原子自增 {@code increment}，调用将抛出 {@link UnsupportedOperationException}。
  * </p>
  *
  * @author gaoyzelov
@@ -27,12 +33,47 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     private final Cache<String, String> cache;
 
+    /**
+     * 可变过期策略视图，用于 per-key TTL
+     */
+    private final VarExpiration<String, String> varExpiration;
+
     public SnowdriftCaffeineCacheServiceImpl(SnowdriftCacheProperties properties, ICacheSerializer serializer) {
         super(properties, serializer);
         this.cache = Caffeine.newBuilder()
                 .maximumSize(properties.getMaxSize())
-                .expireAfterWrite(properties.getKeyTtl())
+                // 必须用 expireAfter(Expiry)：一旦设置 expireAfterWrite/Access，可变过期策略即被关闭，
+                // VarExpiration 不可用，per-key TTL 也无从实现（这正是此前 put(.., ttl) 抛异常的根因）。
+                .expireAfter(new Expiry<String, String>() {
+                    @Override
+                    public long expireAfterCreate(String key, String value, long currentTime) {
+                        return defaultTtlNanos();
+                    }
+
+                    @Override
+                    public long expireAfterUpdate(String key, String value, long currentTime, long currentDuration) {
+                        return defaultTtlNanos();
+                    }
+
+                    @Override
+                    public long expireAfterRead(String key, String value, long currentTime, long currentDuration) {
+                        // 读取不延长过期时间，与原 expireAfterWrite 的语义保持一致
+                        return currentDuration;
+                    }
+                })
                 .build();
+        this.varExpiration = cache.policy().expireVariably()
+                .orElseThrow(() -> new IllegalStateException(
+                        "Caffeine 可变过期策略不可用：缓存必须以 expireAfter(Expiry) 构建"));
+    }
+
+    /**
+     * 默认 TTL（纳秒）；配置为非正数时视为永不过期
+     */
+    private long defaultTtlNanos() {
+        Duration ttl = properties.getKeyTtl();
+        long nanos = ttl == null ? 0L : ttl.toNanos();
+        return nanos > 0 ? nanos : Long.MAX_VALUE;
     }
 
     // =================== AbstractCacheService 抽象方法实现 ===================
@@ -59,7 +100,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     @Override
     public void doPut(String key, String value, Duration ttl) {
-        throw new UnsupportedOperationException("Caffeine 不支持 per-key TTL");
+        varExpiration.put(key, value, ttl);
     }
 
     @Override
@@ -70,7 +111,8 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     @Override
     public boolean doPutIfAbsent(String key, String value, Duration ttl) {
-        throw new UnsupportedOperationException("Caffeine 不支持 per-key TTL");
+        // putIfAbsent 返回旧值：非 null 表示键已存在（未写入），null 表示本次写入成功
+        return varExpiration.putIfAbsent(key, value, ttl) == null;
     }
 
     @Override
@@ -100,19 +142,27 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     /**
-     * Caffeine 原生不支持 per-key TTL 动态修改，调用将抛出 {@link UnsupportedOperationException}
+     * 动态修改过期时间
+     * <p>与 Redis 实现对齐：键不存在时返回 {@code false}。存在性判断与设置无法原子完成，
+     * 存在极小竞态窗口（键恰在此期间过期则仍返回 true），Redis 侧同样存在该竞态。</p>
      */
     @Override
     public boolean doExpire(String key, Duration ttl) {
-        throw new UnsupportedOperationException("Caffeine 不支持 per-key TTL");
+        if (varExpiration.getExpiresAfter(key).isEmpty()) {
+            return false;
+        }
+        varExpiration.setExpiresAfter(key, ttl);
+        return true;
     }
 
     /**
-     * Caffeine 原生不支持查询剩余 TTL，调用将抛出 {@link UnsupportedOperationException}
+     * 查询剩余过期时间
+     * <p>与 Redis 实现对齐：单位为秒，键不存在返回 {@code -2}。当前构建方式下每个条目都带有 TTL，
+     * 因此接口契约中"存在但无过期时间"的分支（Redis 返回 {@code -1}）不会出现。</p>
      */
     @Override
     public long doGetExpire(String key) {
-        throw new UnsupportedOperationException("Caffeine 不支持查询 per-key TTL");
+        return varExpiration.getExpiresAfter(key).map(Duration::toSeconds).orElse(-2L);
     }
 
     /**

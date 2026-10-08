@@ -27,18 +27,22 @@ public @interface ApiLog {
      * 是否保存请求参数。
      * <p>
      * 默认关闭，避免敏感参数（密码、Token 等）被默认写入日志；
-     * 需要记录时可设为 {@code true}，并配合 {@code mask()} 对敏感字段脱敏。
+     * 需要记录时可设为 {@code true}，并配合 {@link #mask()} 对敏感字段脱敏。
      * </p>
      */
     boolean saveParams() default false;
 
     /**
-     * 是否保存返回结果
+     * 是否保存返回结果。
+     * <p>默认关闭。设为 {@code true} 时，响应体序列化后同样受 {@link #mask()} 约束。</p>
      */
     boolean saveResult() default false;
 
     /**
-     * 脱敏字段
+     * 脱敏字段。
+     * <p>按字段名（忽略大小写）递归匹配，对<b>请求参数与响应体同时生效</b>；
+     * 命中字段的值替换为 {@code ******}。脱敏过程中若出现异常或嵌套超出深度上限，
+     * 相应内容会被整体替换为掩码而不会以原文落库。</p>
      */
     String[] mask() default {};
 

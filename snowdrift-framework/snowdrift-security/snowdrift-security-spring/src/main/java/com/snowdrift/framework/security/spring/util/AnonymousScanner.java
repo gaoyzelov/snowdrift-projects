@@ -9,10 +9,14 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @AnonymousAccess 注解路径扫描器
+ * {@link Anonymous} 注解路径扫描器
  * <p>
- * 启动时扫描所有 Controller 方法，收集标注了 {@link Anonymous} 的方法 URL 模式，
- * 转换为 Ant 风格路径后注入到 Spring Security 的放行列表中。
+ * 启动时扫描所有 Controller 方法，收集标注了 {@link Anonymous} 的 URL 模板，注入到 Spring Security 的放行列表。
+ * </p>
+ * <p>
+ * 模板不做任何改写。{@code requestMatchers(String)} 在本模块中由 {@code MvcRequestMatcher} 承接，
+ * 模式会交给 Spring MVC 自身的匹配引擎求值，因此原始模板是唯一能完整表达路径变量、正则约束
+ * （{@code {id:[0-9]+}}）与 catch-all（{@code {*path}}）的形式；任何字符串改写都会改变放行范围。
  * </p>
  *
  * @author gaoyzelov
@@ -25,25 +29,17 @@ public final class AnonymousScanner {
     }
 
     /**
-     * 扫描所有标注 @AnonymousAccess 的方法 URL 路径
+     * 扫描所有标注 {@link Anonymous} 的方法 URL 模板
      *
      * @param handlerMapping RequestMappingHandlerMapping
-     * @return Ant 风格的路径列表
+     * @return Spring MVC 路径模板列表（未做改写）
      */
     public static List<String> scan(RequestMappingHandlerMapping handlerMapping) {
         Map<RequestMappingInfo, HandlerMethod> handlerMethods = handlerMapping.getHandlerMethods();
         return handlerMethods.entrySet().stream()
                 .filter(e -> e.getValue().hasMethodAnnotation(Anonymous.class))
                 .flatMap(e -> e.getKey().getPatternValues().stream())
-                .map(AnonymousScanner::toAntPattern)
                 .distinct()
                 .toList();
-    }
-
-    /**
-     * 将 Spring MVC URI 模板转为 Ant 风格（{id} → **）
-     */
-    private static String toAntPattern(String mvcPattern) {
-        return mvcPattern.replaceAll("\\{[^}]+\\}", "*");
     }
 }

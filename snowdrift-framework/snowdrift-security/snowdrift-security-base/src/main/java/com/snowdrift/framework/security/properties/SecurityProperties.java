@@ -64,10 +64,11 @@ public class SecurityProperties {
     private String prefix = "Bearer";
 
     /**
-     * 拦截器排除的路径列表（Ant 风格通配符）
+     * 拦截器排除的路径列表
      * <p>
      * 这些路径不会进行登录校验，通常包括静态资源、API 文档、错误页面等。
-     * 各实现模块可直接读取此配置，无需重复定义。
+     * 采用 Spring MVC 的路径模板语义（{@code PathPattern}，如 {@code /doc/**}、{@code /api/{id}}），
+     * 安全链、上下文过滤器与 Sa-Token 拦截器共用同一份配置，语义保持一致。
      * </p>
      */
     @NotEmpty

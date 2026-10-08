@@ -1,6 +1,7 @@
 package com.snowdrift.framework.security.spring.store;
 
 import com.snowdrift.framework.context.security.SecurityContext;
+import com.snowdrift.framework.security.util.SecurityUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -49,7 +50,7 @@ public abstract class AbstractTokenStore implements TokenStore {
         long expireAt = (ttl == null || ttl.toMillis() <= 0) ? Long.MAX_VALUE : now + ttl.toMillis();
         TokenEntry entry = new TokenEntry(context, expireAt, now);
         doPut(token, entry, ttl);
-        log.trace("TokenStore 写入: token={}, ttl={}s", token,
+        log.trace("TokenStore 写入: token={}, ttl={}s", SecurityUtil.desensitizeToken(token),
                 ttl == null || ttl.toMillis() <= 0 ? -1 : ttl.getSeconds());
     }
 
@@ -65,14 +66,14 @@ public abstract class AbstractTokenStore implements TokenStore {
         // 1. 绝对过期检查（expireAt 为 Long.MAX_VALUE 表示永不过期）
         if (entry.expireAt != Long.MAX_VALUE && entry.expireAt < now) {
             remove(token);
-            log.trace("TokenStore 绝对过期: token={}", token);
+            log.trace("TokenStore 绝对过期: token={}", SecurityUtil.desensitizeToken(token));
             return null;
         }
 
         // 2. 闲置过期检查（idle <= 0 表示不限制闲置时长，跳过闲置淘汰）
         if (idle.toMillis() > 0 && (now - entry.lastActiveAt) > idle.toMillis()) {
             remove(token);
-            log.trace("TokenStore 闲置过期: token={}", token);
+            log.trace("TokenStore 闲置过期: token={}", SecurityUtil.desensitizeToken(token));
             return null;
         }
 

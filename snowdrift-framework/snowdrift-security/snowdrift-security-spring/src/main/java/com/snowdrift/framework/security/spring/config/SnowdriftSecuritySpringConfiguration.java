@@ -71,7 +71,8 @@ public class SnowdriftSecuritySpringConfiguration {
      * <p>
      * 禁用 CSRF（REST API 场景），会话管理设为无状态，
      * 排除路径放行，其余请求由 {@link SecurityContextFilter} 桥接认证。
-     * 认证/鉴权异常返回 JSON 格式的 {@link Result} 响应（401 / 403）。
+     * 认证/鉴权异常返回 JSON 格式的 {@link Result}：HTTP 状态码固定 200，
+     * 错误类型见 {@code body.code}（1001 未登录 / 1002 无权限）。
      * 禁用匿名认证：未登录请求不再被包装为 AnonymousAuthenticationToken，避免匿名被误判为已认证。
      * </p>
      */
@@ -99,12 +100,14 @@ public class SnowdriftSecuritySpringConfiguration {
                 // 直接在链内构造桥接过滤器，避免其同时作为 Spring Bean 被 Boot 注册为容器过滤器导致重复执行
                 .addFilterBefore(new SecurityContextFilter(properties, tokenStore), UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
-                        // body.code 用业务码（1001/1002），文案用 ResultCode 内置中文，避免依赖 i18n 开关导致 key 透出
+                        // 统一响应契约：HTTP 状态码固定 200，成败与错误类型由 body.code 表达
+                        //（与 WebExceptionHandler 的异常处理一致），故此处不再设 401/403。
+                        // body.code 用业务码（1001/1002），文案用 ResultCode 内置中文，避免依赖 i18n 开关导致 key 透出。
                         .authenticationEntryPoint((request, response, e) ->
-                                ServletUtil.writeJsonResponse(response, HttpServletResponse.SC_UNAUTHORIZED,
+                                ServletUtil.writeJsonResponse(response, HttpServletResponse.SC_OK,
                                         Result.err(ResultCode.UNAUTHORIZED.code(), ResultCode.UNAUTHORIZED.msg())))
                         .accessDeniedHandler((request, response, e) ->
-                                ServletUtil.writeJsonResponse(response, HttpServletResponse.SC_FORBIDDEN,
+                                ServletUtil.writeJsonResponse(response, HttpServletResponse.SC_OK,
                                         Result.err(ResultCode.FORBIDDEN.code(), ResultCode.FORBIDDEN.msg())))
                 )
                 .formLogin(AbstractHttpConfigurer::disable)

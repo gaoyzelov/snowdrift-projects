@@ -1,6 +1,7 @@
 package com.snowdrift.framework.security.spring.store;
 
 import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.security.util.SecurityUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.RedisTemplate;
 
@@ -77,9 +78,18 @@ public class RedisTokenStore extends AbstractTokenStore {
     @Override
     public void remove(String token) {
         redisTemplate.delete(buildKey(token));
-        log.trace("Redis TokenStore 移除: token={}", token);
+        log.trace("Redis TokenStore 移除: token={}", SecurityUtil.desensitizeToken(token));
     }
 
+    /**
+     * 构建 Redis key
+     * <p>
+     * 使用原始令牌作为 key 的一部分。这是有意的取舍：Spring Session 的
+     * {@code RedisIndexedSessionRepository} 同样以原始 session id 作为 key，属通行做法；
+     * 换取的是删除/查询无需额外索引。代价是拥有 Redis 读权限者（MONITOR、KEYS、备份）可直接取得可用令牌。
+     * 若部署在共享 Redis 上且该风险不可接受，可改为存储令牌摘要，但会导致升级后旧会话全部失效。
+     * </p>
+     */
     private String buildKey(String token) {
         return keyPrefix + StrConst.COLON + token;
     }

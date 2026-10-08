@@ -2,6 +2,7 @@ package com.snowdrift.framework.context.security;
 
 import lombok.Builder;
 import lombok.Data;
+import lombok.ToString;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -69,7 +70,10 @@ public class SecurityContext implements Serializable {
     // =================== 扩展信息 ========================
     /**
      * 属性
+     * <p>排除出 {@code toString()}：这里是业务自定义数据的集中存放点，可能包含令牌等机密
+     * （如 spring 后端登录时写入的 {@code token}），上下文对象一旦被打印就会随日志外泄。</p>
      */
+    @ToString.Exclude
     private Map<String, Object> attributes;
 
 }

@@ -18,9 +18,11 @@ import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.schema.Table;
 import org.apache.commons.lang3.StringUtils;
 
-import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -39,13 +41,23 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
      */
     private final IDataScopeProvider provider;
 
-    private final Map<String, DataScope> annotationCache = new ConcurrentHashMap<>();
+    /**
+     * 注解解析结果缓存
+     * <p>值用 {@link Optional} 包装：{@code Optional.empty()} 表示"已确认该语句没有 {@code @DataScope}"，
+     * 与"尚未解析"区分开。{@link ConcurrentHashMap#computeIfAbsent} 不会保存 {@code null}，
+     * 若直接缓存 {@code null}，则每条无注解的语句在每次执行、每张表上都会重做一次
+     * {@code Class.forName} + {@code getMethods()} 反射。</p>
+     */
+    private final Map<String, Optional<DataScope>> annotationCache = new ConcurrentHashMap<>();
 
     /**
      * 构造数据权限处理器
      * <p>provider 可为 {@code null}：此时若语句实际携带 {@code @DataScope}，
      * {@link #getSqlSegment} 将抛出 {@link BizException} 提示未配置 {@link IDataScopeProvider}，
      * 避免安全控制静默失效；未携带 {@code @DataScope} 的语句不受影响。</p>
+     * <p>注解解析需从语句 ID 反推 Mapper 类。若该类加载失败（纯 XML mapper 的命名空间、
+     * 类加载器隔离、shade/relocate 等），注解不会被解析，此时只能输出 WARN 日志，
+     * 详见 {@link #resolveAnnotation(String)}。</p>
      *
      * @param provider 数据权限提供者（业务应用实现，用于查询子部门列表和自定义部门列表；可为 null）
      */
@@ -55,7 +67,9 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
 
     @Override
     public Expression getSqlSegment(Table table, Expression where, String mappedStatementId) {
-        DataScope scope = annotationCache.computeIfAbsent(mappedStatementId, this::resolveAnnotation);
+        DataScope scope = annotationCache
+                .computeIfAbsent(mappedStatementId, id -> Optional.ofNullable(resolveAnnotation(id)))
+                .orElse(null);
         if (scope == null) {
             return null;
         }
@@ -119,25 +133,39 @@ public class DataScopeHandler implements MultiDataPermissionHandler {
         if (lastDot <= 0) return null;
 
         String className = mappedStatementId.substring(0, lastDot);
-        String methodName = mappedStatementId.substring(lastDot + 1);
-        // 移除 MyBatis-Plus 分页插件自动生成的 _mpCount 后缀
-        if (methodName.endsWith("_mpCount")) {
-            methodName = methodName.substring(0, methodName.length() - 8);
-        }
+        String rawMethodName = mappedStatementId.substring(lastDot + 1);
+        // 移除 MyBatis-Plus 分页插件自动生成的 _mpCount 后缀。
+        // 用新变量承接而非重新赋值，使方法名保持 effectively final，可被下方 lambda 捕获。
+        String methodName = rawMethodName.endsWith("_mpCount")
+                ? rawMethodName.substring(0, rawMethodName.length() - 8)
+                : rawMethodName;
 
         try {
             Class<?> clazz = Class.forName(className);
-            // 遍历所有方法匹配名称，优先级高于类注解
-            for (Method m : clazz.getMethods()) {
-                if (m.getName().equals(methodName)) {
-                    DataScope anno = m.getAnnotation(DataScope.class);
-                    if (anno != null) return anno;
-                }
+            // 同名重载可能挂载不同的 @DataScope：收集全部结果使其确定化，
+            // 避免依赖 getMethods() 的返回顺序（JVM 不保证顺序）而随机命中某一个重载。
+            List<DataScope> found = Arrays.stream(clazz.getMethods())
+                    .filter(m -> m.getName().equals(methodName))
+                    .map(m -> m.getAnnotation(DataScope.class))
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+            if (found.size() == 1) {
+                return found.get(0);
             }
-            // 如果方法上没有注解，则检查类上是否有注解
+            if (found.size() > 1) {
+                throw new BizException("Mapper 方法存在多个不同的 @DataScope 重载，无法确定数据权限: "
+                        + className + "#" + methodName);
+            }
+            // 方法上没有注解时，回退到类注解
             return clazz.getAnnotation(DataScope.class);
         } catch (ClassNotFoundException e) {
-            log.debug("无法加载 Mapper 类: {}", className);
+            // namespace 不是可加载的类时（典型：纯 XML mapper 的命名空间），本就无法声明 @DataScope，
+            // 因此不注入谓词是正确结果，不报错以免误伤这类 mapper。
+            // 但若命名空间本该是类却加载失败（类加载器隔离、shade/relocate、重命名等），
+            // 注解意图会被静默丢弃 —— 故提升为 WARN，让"配置了却没生效"能够被发现。
+            log.warn("无法加载 Mapper 类，数据权限注解不会被解析；若该语句本应受数据权限约束，"
+                    + "请检查 MyBatis 命名空间与类加载器: {}", className);
             return null;
         }
     }

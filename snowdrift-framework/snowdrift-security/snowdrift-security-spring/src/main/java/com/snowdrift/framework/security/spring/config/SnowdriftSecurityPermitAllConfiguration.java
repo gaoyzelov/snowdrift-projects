@@ -31,7 +31,8 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @Slf4j
 @AutoConfiguration(before = SecurityAutoConfiguration.class)
-@ConditionalOnProperty(prefix = "snowdrift.security.spring", name = "enabled", havingValue = "false")
+@ConditionalOnProperty(prefix = "snowdrift.security.spring", name = "enabled",
+        havingValue = "false", matchIfMissing = true)
 @ConditionalOnMissingBean(SecurityFilterChain.class)
 public class SnowdriftSecurityPermitAllConfiguration {
 
@@ -44,7 +45,7 @@ public class SnowdriftSecurityPermitAllConfiguration {
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        log.info("[Snowdrift-Security] snowdrift.security.spring 未启用，注册 permit-all 安全链（fail-open），"
+        log.warn("[Snowdrift-Security] snowdrift.security.spring 未启用，注册 permit-all 安全链（fail-open），"
                 + "Spring Boot 默认安全链已被抑制，应用不受 Spring Security 保护。");
         http
                 .csrf(AbstractHttpConfigurer::disable)

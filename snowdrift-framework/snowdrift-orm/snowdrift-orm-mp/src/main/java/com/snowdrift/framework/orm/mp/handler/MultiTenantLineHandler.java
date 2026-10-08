@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import net.sf.jsqlparser.expression.Expression;
 import net.sf.jsqlparser.expression.LongValue;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.Objects;
 import java.util.Set;
@@ -47,7 +48,7 @@ public class MultiTenantLineHandler implements TenantLineHandler {
     /**
      * 租户字段的数据库列名
      *
-     * @return 固定返回 {@code "tenant_id"}
+     * @return 配置项 {@code snowdrift.orm.mp.tenant.tenant-id-column} 的值，默认 {@code tenant_id}
      */
     @Override
     public String getTenantIdColumn() {
@@ -56,6 +57,8 @@ public class MultiTenantLineHandler implements TenantLineHandler {
 
     /**
      * 判断当前表是否需要跳过租户过滤
+     * <p>表名匹配忽略大小写：{@code @TableName} 的写法与不同数据库返回的表名大小写可能不一致，
+     * 精确匹配会导致“配置了却未生效”，使全局共享表被加上租户谓词而查不到数据。</p>
      *
      * @param tableName 当前 SQL 操作的表名
      * @return {@code true} 跳过租户过滤，{@code false} 应用租户过滤
@@ -63,6 +66,9 @@ public class MultiTenantLineHandler implements TenantLineHandler {
     @Override
     public boolean ignoreTable(String tableName) {
         Set<String> ignoreTables = tenantProperties.getIgnoreTables();
-        return CollectionUtils.isNotEmpty(ignoreTables) && ignoreTables.contains(tableName);
+        if (CollectionUtils.isEmpty(ignoreTables) || StringUtils.isBlank(tableName)) {
+            return false;
+        }
+        return ignoreTables.stream().anyMatch(ignored -> ignored != null && ignored.equalsIgnoreCase(tableName));
     }
 }

@@ -1,6 +1,7 @@
 package com.snowdrift.framework.orm.mp.handler;
 
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
@@ -9,8 +10,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.reflection.MetaObject;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * FieldAutoFillHandler
@@ -48,15 +47,18 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
         this.strictInsertFill(metaObject, "updateBy", String.class, operatorName);
         this.strictInsertFill(metaObject, "updateTime", LocalDateTime.class, LocalDateTime.now());
         if (Boolean.TRUE.equals(tenantProperties.getEnabled())) {
-            Long tenantId;
-            try {
-                tenantId = SecurityContextHolder.getTenantId();
-            } catch (Exception e) {
-                tenantId = null;
-            }
+            Long tenantId = resolveTenantId();
             if (tenantId == null) {
-                log.debug("无安全上下文，tenantId 降级为 0（系统租户）");
-                tenantId = 0L;
+                // fail-closed：取不到租户上下文时不静默写 0，避免数据落进任何租户都查不到的孤岛。
+                // 系统写入（定时任务、MQ 消费、数据迁移）需显式配置默认租户，或由调用方显式设置实体 tenantId。
+                Long defaultTenantId = tenantProperties.getDefaultTenantId();
+                if (defaultTenantId == null) {
+                    throw new BizException("写入多租户实体时未获取到租户上下文：请在已登录上下文中写入，"
+                            + "或显式设置实体的 tenantId，"
+                            + "或配置 snowdrift.orm.mp.tenant.default-tenant-id 声明默认租户");
+                }
+                log.warn("无租户上下文，tenantId 写入显式配置的默认租户 {}", defaultTenantId);
+                tenantId = defaultTenantId;
             }
             // strictInsertFill 按实体 Java 属性名匹配（与上方 createBy 等一致），此处传属性名而非列名
             this.strictInsertFill(metaObject, "tenantId", Long.class, tenantId);
@@ -92,18 +94,14 @@ public class FieldAutoFillHandler implements MetaObjectHandler {
     }
 
     /**
-     * 严格填充策略, 如果提供的值为null也不填充
-     * @param metaObject 元对象
-     * @param fieldName  字段名
-     * @param fieldVal   字段值
-     * @return MetaObjectHandler
+     * 解析当前租户ID
+     * <p>使用 {@link SecurityContextHolder#peekContext()} 而非 {@code getTenantId()}：后者在无上下文时抛异常，
+     * 若用宽泛的 {@code catch} 接住，会把“程序错误”与“确实没有租户上下文”混为一谈。</p>
+     *
+     * @return 租户ID；无安全上下文或上下文未携带租户时返回 {@code null}
      */
-    @Override
-    public MetaObjectHandler strictFillStrategy(MetaObject metaObject, String fieldName, Supplier<?> fieldVal) {
-        Object obj = fieldVal.get();
-        if (Objects.nonNull(obj)) {
-            metaObject.setValue(fieldName, obj);
-        }
-        return this;
+    private Long resolveTenantId() {
+        SecurityContext context = SecurityContextHolder.peekContext();
+        return context == null ? null : context.getTenantId();
     }
 }

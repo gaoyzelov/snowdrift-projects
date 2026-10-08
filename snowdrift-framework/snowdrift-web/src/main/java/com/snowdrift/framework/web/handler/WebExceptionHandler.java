@@ -10,6 +10,7 @@ import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.MessageSourceResolvable;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.BindException;
 import org.springframework.validation.FieldError;
@@ -40,7 +41,8 @@ import java.util.stream.Collectors;
 @Slf4j
 @Hidden
 @RestControllerAdvice
-public class WebExceptionHandler {
+public class
+WebExceptionHandler {
 
     /**
      * 业务异常处理
@@ -94,9 +96,9 @@ public class WebExceptionHandler {
      */
     @ExceptionHandler(HandlerMethodValidationException.class)
     public Result<Void> handleHandlerMethodValidationException(HandlerMethodValidationException e, HttpServletRequest request) {
-        String message = e.getAllValidationResults().stream()
-                .flatMap(r -> r.getResolvableErrors().stream())
-                .map(err -> err.getDefaultMessage())
+        // getAllErrors() 即 getAllValidationResults() 的扁平化形式，语义等价且未废弃
+        String message = e.getAllErrors().stream()
+                .map(MessageSourceResolvable::getDefaultMessage)
                 .filter(StringUtils::isNotBlank)
                 .distinct()
                 .collect(Collectors.joining(StrConst.COMMA));

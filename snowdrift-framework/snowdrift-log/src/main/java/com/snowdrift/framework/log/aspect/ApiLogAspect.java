@@ -51,6 +51,11 @@ import java.util.stream.Collectors;
 @Order(100)
 public class ApiLogAspect {
 
+    /**
+     * JSON 脱敏的最大递归深度，防止恶意深度嵌套 JSON 导致 StackOverflow
+     */
+    private static final int MAX_MASK_DEPTH = 10;
+
     private final ILogService logService;
 
     @Value("${spring.application.name:unknown}")
@@ -179,13 +184,26 @@ public class ApiLogAspect {
             }
             json = safeSerialize(filtered);
         }
-        if (ArrayUtils.isNotEmpty(apiLogAnno.mask())) {
-            Set<String> maskFields = Arrays.stream(apiLogAnno.mask())
-                    .map(String::toLowerCase)
-                    .collect(Collectors.toSet());
-            return applyMask(json, maskFields);
+        return maskIfConfigured(apiLogAnno, json);
+    }
+
+    /**
+     * 已配置 {@link ApiLog#mask()} 时对 JSON 脱敏，否则原样返回。
+     * <p>请求参数与响应体共用本方法：同一个敏感字段不应只因出现在返回值中就漏脱敏。</p>
+     *
+     * @param apiLogAnno 接口日志注解
+     * @param json       已序列化的 JSON 文本
+     * @return 脱敏后的 JSON；未配置 mask 或文本为空时原样返回
+     */
+    private String maskIfConfigured(ApiLog apiLogAnno, String json) {
+        if (StringUtils.isBlank(json) || ArrayUtils.isEmpty(apiLogAnno.mask())) {
+            return json;
         }
-        return json;
+        // 字段名统一按 ROOT Locale 小写：默认 Locale 下（如土耳其语）"ID" 会变成 "ıd"，导致掩码静默失效
+        Set<String> maskFields = Arrays.stream(apiLogAnno.mask())
+                .map(field -> field.toLowerCase(Locale.ROOT))
+                .collect(Collectors.toSet());
+        return applyMask(json, maskFields);
     }
 
     /**
@@ -220,8 +238,9 @@ public class ApiLogAspect {
             maskValue(parsed, maskFields);
             return JSON.toJSONString(parsed);
         } catch (Exception e) {
-            log.error("JSON 脱敏失败，返回原始数据", e);
-            return json;
+            // 不能回退原文：那等于把未脱敏的敏感数据落库，与配置 mask 的意图相反。宁可丢弃这段内容。
+            log.error("JSON 脱敏失败，已放弃记录该段内容（避免未脱敏数据落库）", e);
+            return StrConst.MASK_REPLACEMENT;
         }
     }
 
@@ -240,16 +259,20 @@ public class ApiLogAspect {
      * @param depth      当前递归深度
      */
     private void maskValue(Object value, Set<String> maskFields, int depth) {
-        // 深度保护：最大 10 层，防止恶意深度嵌套 JSON 导致 StackOverflow
-        if (depth > 10) {
-            log.warn("JSON 脱敏达到最大深度限制(10)，已截断递归");
+        // 深度保护：防止恶意深度嵌套 JSON 导致 StackOverflow。
+        // 超过上限的层级在父节点处被整体置为掩码（见下），而不是原样保留——
+        // 保留会把未脱敏数据写进日志，与配置 mask 的意图相反。
+        if (depth > MAX_MASK_DEPTH) {
+            log.warn("JSON 脱敏达到最大深度限制({})，超出部分已整体替换为掩码", MAX_MASK_DEPTH);
             return;
         }
         if (value instanceof JSONObject obj) {
             List<String> toMask = new ArrayList<>();
             for (String key : obj.keySet()) {
-                if (maskFields.contains(key.toLowerCase())) {
+                if (maskFields.contains(key.toLowerCase(Locale.ROOT))) {
                     toMask.add(key);
+                } else if (depth + 1 > MAX_MASK_DEPTH) {
+                    obj.put(key, StrConst.MASK_REPLACEMENT);
                 } else {
                     maskValue(obj.get(key), maskFields, depth + 1);
                 }
@@ -258,14 +281,19 @@ public class ApiLogAspect {
                 obj.put(key, StrConst.MASK_REPLACEMENT);
             }
         } else if (value instanceof JSONArray arr) {
-            for (Object item : arr) {
-                maskValue(item, maskFields, depth + 1);
+            for (int i = 0; i < arr.size(); i++) {
+                if (depth + 1 > MAX_MASK_DEPTH) {
+                    arr.set(i, StrConst.MASK_REPLACEMENT);
+                } else {
+                    maskValue(arr.get(i), maskFields, depth + 1);
+                }
             }
         }
     }
 
     /**
      * 获取返回结果
+     * <p>序列化后与请求参数共用同一套 {@link ApiLog#mask()} 规则。</p>
      *
      * @param apiLogAnno 接口日志注解
      * @param result     返回结果
@@ -275,7 +303,7 @@ public class ApiLogAspect {
         if (!apiLogAnno.saveResult() || Objects.isNull(result)) {
             return StrConst.EMPTY;
         }
-        return safeSerialize(result);
+        return maskIfConfigured(apiLogAnno, safeSerialize(result));
     }
 
     /**

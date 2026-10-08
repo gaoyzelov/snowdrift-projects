@@ -76,6 +76,37 @@ public class LocalOssServiceImpl extends AbstractOssService {
     }
 
     /**
+     * 解析并校验目标路径
+     * <p>
+     * 词法归一化（{@link Path#normalize()} 加前缀包含判断）只能挡住 {@code ..} 与绝对路径。
+     * 由于 {@code Files.copy} / {@code Files.newInputStream} / {@code Files.delete} 默认跟随符号链接，
+     * 存储根内预置的软链仍可让读写删逃逸出根目录，因此这里再沿路径逐级检查，任一级为符号链接即拒绝。
+     * </p>
+     * <p>
+     * 不检查 {@code storageRoot} 自身，以便保留"存储根是指向大盘的软链"这类正常部署方式。
+     * </p>
+     *
+     * @param objectKey 对象键
+     * @return 校验通过的路径
+     * @throws OssException 路径越界或路径中存在符号链接时抛出
+     */
+    private Path resolveSecure(String objectKey) {
+        Path root = storageRoot.normalize();
+        Path target = root.resolve(normalizeObjectKey(objectKey)).normalize();
+        if (!target.startsWith(root)) {
+            throw new OssException("OSS 本地文件路径越界");
+        }
+        Path cursor = root;
+        for (Path segment : root.relativize(target)) {
+            cursor = cursor.resolve(segment);
+            if (Files.isSymbolicLink(cursor)) {
+                throw new OssException("OSS 本地文件路径越界（路径中存在符号链接）: " + segment);
+            }
+        }
+        return target;
+    }
+
+    /**
      * 上传文件到本地存储
      * <p>
      * 将文件流保存到本地文件系统，支持自动创建父目录
@@ -97,11 +128,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
         // 构建对象键
         String objectKey = buildObjectKey(request.getObjectKey());
         try (InputStream inputStream = request.getInputStream()) {
-            Path targetPath = storageRoot.resolve(objectKey).normalize();
-            // 根目录包含校验：防止 objectKey 逃逸存储根目录（如盘符/绝对路径）
-            if (!targetPath.startsWith(storageRoot.normalize())) {
-                throw new OssException("OSS 本地文件路径越界");
-            }
+            Path targetPath = resolveSecure(objectKey);
             // 确保父目录存在
             Path parentDir = targetPath.getParent();
             if (parentDir != null && !Files.exists(parentDir)) {
@@ -135,11 +162,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public InputStream download(@NonNull String objectKey) {
-        String normalized = normalizeObjectKey(objectKey);
-        Path resolved = storageRoot.resolve(normalized).normalize();
-        if (!resolved.startsWith(storageRoot.normalize())) {
-            throw new OssException("OSS 本地文件路径越界");
-        }
+        Path resolved = resolveSecure(objectKey);
         if (!Files.exists(resolved)) {
             throw new OssException("OSS 本地文件未找到");
         }
@@ -162,11 +185,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public void delete(@NonNull String objectKey) {
-        String normalized = normalizeObjectKey(objectKey);
-        Path resolved = storageRoot.resolve(normalized).normalize();
-        if (!resolved.startsWith(storageRoot.normalize())) {
-            throw new OssException("OSS 本地文件路径越界");
-        }
+        Path resolved = resolveSecure(objectKey);
 
         try {
             if (Files.exists(resolved)) {
@@ -188,11 +207,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public boolean exists(@NonNull String objectKey) {
-        String normalized = normalizeObjectKey(objectKey);
-        Path resolved = storageRoot.resolve(normalized).normalize();
-        if (!resolved.startsWith(storageRoot.normalize())) {
-            throw new OssException("OSS 本地文件路径越界");
-        }
+        Path resolved = resolveSecure(objectKey);
         try {
             return Files.exists(resolved);
         } catch (Exception e) {
@@ -214,6 +229,7 @@ public class LocalOssServiceImpl extends AbstractOssService {
      */
     @Override
     public String getUrl(String objectKey, Duration expiry) {
+        // 本方法不访问文件系统，仅做词法校验；符号链接校验在 download / delete / exists 中进行
         String normalized = normalizeObjectKey(objectKey);
         Path resolved = storageRoot.resolve(normalized).normalize();
         if (!resolved.startsWith(storageRoot.normalize())) {
@@ -223,7 +239,8 @@ public class LocalOssServiceImpl extends AbstractOssService {
         if (StringUtils.isBlank(config.getDomain())) {
             throw new OssException("OSS 本地文件访问 URL 生成失败，缺少域名配置");
         }
-        return OssUrlBuilder.buildUrl(config.getDomain(), objectKey);
+        // 传 normalized 而非原始 objectKey：后者可能以 / 开头，会拼出 "domain//key" 这样的双斜杠 URL
+        return OssUrlBuilder.buildUrl(config.getDomain(), normalized);
     }
 
     /**

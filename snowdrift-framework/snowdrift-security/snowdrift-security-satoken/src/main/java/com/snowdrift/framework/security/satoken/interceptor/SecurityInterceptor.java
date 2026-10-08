@@ -49,7 +49,7 @@ public class SecurityInterceptor extends SaInterceptor {
         if (handler instanceof HandlerMethod handlerMethod) {
             Method method = handlerMethod.getMethod();
 
-            // 1. 标记了 @AnonymousAccess 的方法直接放行
+            // 1. 标记了 @Anonymous 的方法直接放行
             if (method.isAnnotationPresent(Anonymous.class)) {
                 return true;
             }
@@ -64,10 +64,18 @@ public class SecurityInterceptor extends SaInterceptor {
             }
             SecurityContextHolder.setContext(sc);
 
-
-            // 4. 兼容 Sa-Token 自身的注解鉴权（@SaCheckLogin、@SaCheckRole 等）
-            if (isAnnotation) {
-                SaAnnotationStrategy.instance.checkMethodAnnotation.accept(method);
+            try {
+                // 4. 兼容 Sa-Token 自身的注解鉴权（@SaCheckLogin、@SaCheckRole 等）
+                if (isAnnotation) {
+                    SaAnnotationStrategy.instance.checkMethodAnnotation.accept(method);
+                }
+            } catch (RuntimeException | Error t) {
+                // preHandle 抛异常时 Spring MVC 不会回调本拦截器的 afterCompletion
+                // （HandlerExecutionChain 仅在 preHandle 返回 true 后才推进 interceptorIndex），
+                // 已写入的上下文会残留在容器线程上被后续请求复用，因此在此主动清理后再抛出。
+                // try 的范围紧贴 setContext 之后：此前的 checkLogin/getContext 抛异常时无上下文需要清理。
+                SecurityContextHolder.clear();
+                throw t;
             }
         }
         return true;
