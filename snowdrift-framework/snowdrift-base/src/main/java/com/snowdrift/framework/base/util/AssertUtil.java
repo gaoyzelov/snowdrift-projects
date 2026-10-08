@@ -85,13 +85,6 @@ public final class AssertUtil {
         }
     }
 
-    /** 立即求值的布尔断言，兼容 Web 模块等既有调用。 */
-    public static void isTrue(boolean condition, String message) {
-        if (!condition) {
-            BizException.throwEx(message);
-        }
-    }
-
     /**
      * 断言条件成立
      * <p>supplier 返回 {@code null} 或 {@code false} 时均视为条件不成立。</p>

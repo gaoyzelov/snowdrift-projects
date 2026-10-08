@@ -36,7 +36,7 @@ public class SnowdriftExecutorConfiguration {
 
     @Bean(name = "snowdriftAsyncExecutor")
     public Executor getAsyncExecutor() {
-        AssertUtil.isTrue(properties.getCorePoolSize() <= properties.getMaxPoolSize(),
+        AssertUtil.predicate(() -> properties.getCorePoolSize() <= properties.getMaxPoolSize(),
                 "corePoolSize 不能大于 maxPoolSize");
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         executor.setCorePoolSize(properties.getCorePoolSize()); // 设置核心线程数
