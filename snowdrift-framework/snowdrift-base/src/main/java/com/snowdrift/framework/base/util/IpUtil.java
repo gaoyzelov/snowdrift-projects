@@ -95,6 +95,10 @@ public final class IpUtil {
      * 代理必须正确覆写或追加转发头。
      * </p>
      * <p>
+     * 转发链不可解析（节点非法、超过 8192 字符）时无法确定客户端，返回 {@link StrConst#UNKNOWN}，
+     * 不回退为直连地址，因此调用方需自行处理 unknown。
+     * </p>
+     * <p>
      * 注意与另一重载的区别：{@link #getIp(HttpServletRequest)} 正是无条件信任转发头，两者行为不同。
      * </p>
      */
@@ -108,13 +112,22 @@ public final class IpUtil {
             String real = normalizedIp(request.getHeader("X-Real-IP"));
             return StrConst.UNKNOWN.equals(real) ? remote : real;
         }
-        if (forwarded.length() > 8192) return remote;
+        // 转发链异常（过长、无有效节点、含无法解析的节点）时无法确定真实客户端：返回 unknown，
+        // 不回退为直连地址，避免把可信代理自身的（内网）地址当成客户端地址上报
+        if (forwarded.length() > 8192) return StrConst.UNKNOWN;
+        // 忽略空段（代理常追加多余逗号），只保留有效节点
+        String[] hops = Arrays.stream(forwarded.split(","))
+                .map(StringUtils::trim)
+                .filter(StringUtils::isNotEmpty)
+                .toArray(String[]::new);
+        if (hops.length == 0) {
+            return StrConst.UNKNOWN;
+        }
         String current = remote;
-        String[] hops = forwarded.split(",");
         for (int i = hops.length - 1; i >= 0; i--) {
             if (!trustedProxy.test(current)) return current;
             String candidate = normalizedIp(hops[i]);
-            if (StrConst.UNKNOWN.equals(candidate)) return remote;
+            if (StrConst.UNKNOWN.equals(candidate)) return StrConst.UNKNOWN;
             current = candidate;
         }
         return current;
@@ -128,7 +141,16 @@ public final class IpUtil {
      */
     private static String normalizedIp(String ip) {
         String trimmed = StringUtils.trim(ip);
-        return isValidIp(trimmed) ? InetAddresses.forString(trimmed).getHostAddress() : StrConst.UNKNOWN;
+        if (!isValidIp(trimmed)) {
+            return StrConst.UNKNOWN;
+        }
+        try {
+            // 带作用域的 IPv6（如 fe80::1%eth0）能通过 isValidIp，但 forString 还要解析网卡名，
+            // 网卡不存在时抛 IllegalArgumentException；该入参可来自请求头，不能让它外泄
+            return InetAddresses.forString(trimmed).getHostAddress();
+        } catch (RuntimeException e) {
+            return StrConst.UNKNOWN;
+        }
     }
 
 
@@ -165,9 +187,12 @@ public final class IpUtil {
     public static String getIpLocation(String ip, String delimiter) {
         String[] info = parseIp(ip);
         delimiter = StringUtils.isBlank(delimiter) ? StrConst.SPACE : delimiter;
-        // 过滤无意义的"0"和内网IP标识
+        // 过滤空串与无意义的"0"、内网IP标识：内网/非法 IP、数据库缺失时 parseIp 返回的空串
+        // 若无条件参与 join，会得到只有分隔符的字符串（如 "----"）
         List<String> list = Arrays.stream(info)
-                .filter(s -> !StringUtils.equals(s, "0") && !StringUtils.equals(s, "内网IP"))
+                .filter(s -> StringUtils.isNotBlank(s)
+                        && !StringUtils.equals(s, "0")
+                        && !StringUtils.equals(s, "内网IP"))
                 .toList();
         return String.join(delimiter, list);
     }

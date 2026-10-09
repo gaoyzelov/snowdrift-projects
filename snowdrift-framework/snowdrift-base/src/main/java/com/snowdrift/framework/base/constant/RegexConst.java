@@ -14,6 +14,9 @@ public final class RegexConst {
     }
 
     // 地址
+    // 注意：仅校验协议前缀与字符集，不校验主机名结构。因 `[^\s/$.?#]` 后的 `.` 未转义，
+    // 单标签主机（http://abc）与 IPv4 字面量（http://1.2.3.4）都会通过，而单字符主机
+    // （http://a）不通过。不要据此判断地址可用性，HTTP 请求请使用 HttpUtil（仅收 http/https）。
     public static final String URL = "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$";
 
     // 身份证号
@@ -41,6 +44,10 @@ public final class RegexConst {
     public static final String CAR_LICENSE = "^(([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z](([0-9]{5}[DF])|([DF]([A-HJ-NP-Z0-9])[0-9]{4})))|([京津沪渝冀豫云辽黑湘皖鲁新苏浙赣鄂桂甘晋蒙陕吉闽贵粤青藏川宁琼使领][A-Z][A-HJ-NP-Z0-9]{4}[A-HJ-NP-Z0-9挂学警港澳使领]))$";
 
     // CRON表达式
+    // 注意：这是宽松的「形状」校验，与 CronUtil.isValid 口径不同：既不接受 `?`、星期缩写
+    // （MON-FRI），也不校验取值范围，因此对本库自己生成的表达式（EVERY_DAY、workDay()、
+    // CronUtil.getCron()）返回 false，却可能放过无意义串。校验 cron 请用 CronUtil.isValid
+    // 或调度后端原生校验器，不要使用本常量。
     public static final String CRON = "^((((\\d+,)+\\d+)|(\\d+(\\/|-)\\d+)|\\d+|\\*) ?){5,7}$";
 
     // i18n 国际化

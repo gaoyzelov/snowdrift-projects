@@ -139,8 +139,8 @@ public final class ValidateUtil {
                 return false;
             }
         } else {
-            // 15 位身份证：全数字校验
-            if (!idCard.chars().allMatch(Character::isDigit)) {
+            // 15 位身份证：全 ASCII 数字校验（与 18 位分支的正则口径一致）
+            if (!isAsciiDigits(idCard)) {
                 return false;
             }
         }
@@ -203,6 +203,26 @@ public final class ValidateUtil {
             return false;
         }
         return EMAIL_PATTERN.matcher(email).matches();
+    }
+
+    /**
+     * 判断字符串是否仅由 ASCII 数字 {@code 0-9} 组成
+     * <p>
+     * 不使用 {@link Character#isDigit}：它对其它 Unicode 数字（如阿拉伯-印度数字）同样返回 true，
+     * 会让非 ASCII 输入通过 15 位身份证的结构校验，而 18 位分支的正则 {@code \d} 只认 ASCII 数字。
+     * </p>
+     *
+     * @param text 待校验字符串
+     * @return true-全部为 ASCII 数字（空字符串返回 false）
+     */
+    private static boolean isAsciiDigits(String text) {
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return !text.isEmpty();
     }
 
 }

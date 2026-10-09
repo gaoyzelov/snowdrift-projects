@@ -82,7 +82,7 @@ throw new BizException("订单 {0} 不存在", new Object[]{orderId});
 
 base 仅提供 `IEnum<E>` 接口：`getCode()` / `getNote()`，以及返回 `Optional` 的 `getByCode(Class, code)` / `getByNote(Class, note)`。
 
-- 未找到匹配项返回 `Optional.empty()`，传入 null 或非枚举类型抛 `IllegalArgumentException`。
+- 未找到匹配项返回 `Optional.empty()`；传入 null 或非枚举类型抛 `BizException`（消息为“必须传入枚举类型”），与本模块异常口径一致。
 - `IEnum` 本身不规定 JSON 序列化方式，具体枚举自行声明注解。
 - `StatusEnum` / `YesNoEnum` 已移除；`BizTypeEnum` 位于 `snowdrift-log`；`DataScopeEnum` 位于 `snowdrift-orm-base`，不再属于 base。
 
@@ -93,10 +93,9 @@ base 仅提供 `IEnum<E>` 接口：`getCode()` / `getNote()`，以及返回 `Opt
 ```java
 AssertUtil.notNull(obj, "对象不能为空");
 AssertUtil.notBlank(str, "字符串不能为空");
-AssertUtil.notEmpty(list, "集合不能为空");
+AssertUtil.notEmpty(list, "集合不能为空");   // 集合与对象数组两个重载
 AssertUtil.inside(item, list, "元素不在集合内");
-AssertUtil.isTrue(condition, "条件不成立"); // 立即求值的兼容入口
-AssertUtil.predicate(() -> check(), "校验失败"); // 求值一次，仅 Boolean.TRUE 通过；null Supplier 也会失败
+AssertUtil.predicate(() -> check(), "校验失败"); // 求值一次，仅 Boolean.TRUE 通过；predicate 为 null 时抛“断言条件不能为空”
 ```
 
 ### 校验工具 — ValidateUtil
@@ -121,7 +120,9 @@ ValidateUtil.isCarLicense("京A...");   // 车牌号
 
 ### 脱敏工具 — DesensitizeUtil
 
-手机号、固话、身份证、邮箱、银行卡、车牌和 IP 的非空非法输入返回 `******`，空白输入返回空串。地址保留至多前半段且最多 6 个 Unicode 码点，3 个码点以内全掩码；姓名按 Unicode 码点处理，避免截断扩展汉字。
+手机号、固话、身份证、邮箱、银行卡、车牌和 IP 的非空非法输入返回 `******`，空白输入返回空串。IP 会先去掉首尾空白再识别，`host:port`、主机名等无法识别为 IP 的写法同样落到全掩码，不会原样输出。
+
+地址保留前 6 个 Unicode 码点，6 个码点以内整体掩码（避免保留前缀覆盖整串、掩码形同虚设）；姓名保留首个码点、其余按码点个数掩码。两者都按码点计数与推进，不会把扩展区汉字的代理对切成无法编码的孤立代理。
 
 `process` 是底层正则替换：空正则或未匹配时可能原样返回，不能当作自动识别的安全脱敏入口。
 
@@ -188,7 +189,7 @@ long id = sf.nextId();
 
 基于 `java.time` 的格式化 / 解析 / 转换 / 区间判断；内置 `yyyy-MM-dd HH:mm:ss`、`yyyy-MM-dd`、`HH:mm:ss` 等常量。
 
-默认与 pattern 入口使用 STRICT 解析（`yyyy` 视为纪元年并缺省公元），拒绝 2 月 30 日、非闰年 2 月 29 日、24:00:00 等输入；传入自定义 `DateTimeFormatter` 的重载尊重其 ResolverStyle。解析失败统一抛 `BizException` 并保留原因链。
+默认与 pattern 入口使用 STRICT 解析（`yyyy` 视为纪元年并缺省公元），拒绝 2 月 30 日、非闰年 2 月 29 日、24:00:00 等输入；传入自定义 `DateTimeFormatter` 的重载尊重其 ResolverStyle。解析与格式化失败都统一抛 `BizException` 并保留原因链（例如用日期格式去格式化 `LocalTime`，得到的是 `BizException: 时间格式化失败`，不是 JDK 的 `UnsupportedTemporalTypeException`）。
 
 格式缓存基于 Guava，最多 256 项，键包含 pattern 与格式 Locale，动态 pattern 不会无限增长。默认时区每次调用读取，运行期修改时区即时生效；时间戳/Date 转换另有显式 `ZoneId` 重载，夏令时空缺/重叠遵循 JDK `atZone` 规则。
 
@@ -207,13 +208,13 @@ LocalDateTime startOfDay = DateTimeUtil.getStartOfDay(LocalDate.now());
 
 基于 JDK 17 `HttpClient` 的同步封装，支持 GET / POST / PUT / DELETE、Fastjson2 JSON、Form 和对象反序列化。默认连接超时及请求超时均为 30 秒；`HttpRequest.timeout` 遵循 JDK 行为，不应视为独立的响应体逐次读取超时。
 
-- 请求地址先做基本 URI 校验（非空、合法 URI）后交由 JDK HttpClient 处理；空白 POST/PUT 请求体保留原样。
-- Form 的 `Duration` 重载接受亚秒超时；null、零、负超时拒绝。自定义同名请求头覆盖默认值。
+- 请求地址先做校验（非空、合法 URI、协议为 http/https、主机非空）后交由 JDK HttpClient 处理；相对地址与 `ftp://` 等不受支持的协议统一抛 `BizException`，不再泄漏 JDK 的 `IllegalArgumentException`。空白 POST/PUT 请求体保留原样。
+- Form 的 `Duration` 重载接受亚秒超时；null、零、负超时拒绝。自定义同名请求头覆盖默认值；`Host`、`Content-Length` 等 JDK 受限头会被转成 `BizException`，因此不要把 Servlet 请求头映射整体转发过来。
 - 查询参数在 `#fragment` 之前追加；已有查询串保持原样不重新编码，新参数用 UTF-8 URL 编码，参数名/值不能为 null。
-- 文本响应接收内容不做上限限制；`downloadFile` 的 Javadoc 说明默认上限 10 MiB，但目前实现未强制。需要限制大小或下载大文件时应使用专用流式客户端。
+- 文本响应与 `downloadFile` 的响应体都会完整读入内存，**均无大小上限**（Javadoc 已按此声明）。请求 URL 不可信或响应体规模不可控时存在内存耗尽风险，需要限制大小或下载大文件时应使用专用流式客户端。
 - 请求/下载成功范围为 2xx；`isAccessible` 使用 GET 丢弃响应体，2xx/3xx 返回 true，默认请求超时 5 秒；任意失败（含 URL 非法）均返回 false 而不抛异常。
 - IO 失败/中断时日志仅记录 URL 和错误摘要，异常对外使用通用消息、不携带底层异常。中断恢复线程标记，`isAccessible` 返回 false，其余请求抛 `BizException`。
-- 工具自身日志不输出 URL 查询参数和响应体；上层记录异常链时仍需按业务要求脱敏。
+- 工具自身日志不输出请求头/表单参数与响应体，但地址非法、协议不受支持及 HTTP 失败时会记录目标 URL（**含查询串**）；不要把凭据放进查询串，上层记录异常链时仍需按业务要求脱敏。
 - 默认允许普通重定向，不内置 SSRF 白名单、重试或 multipart 编码。外部 URL 必须由调用方限制目标地址及重定向；非幂等请求不可盲目重试。
 
 ```java
@@ -228,7 +229,9 @@ Order order = HttpUtil.getForObject("https://api.example.com/order/1", Order.cla
 
 客户端 IP 获取与 IPv4 归属地查询，地址解析基于 Guava `InetAddresses`，不触发 DNS。
 
-`getIp(request)` 默认信任所有直连节点（`ip -> true`），因此可读取 `X-Forwarded-For` 等转发头；仅建议部署在可信反向代理之后时使用。需要严格边界时，使用带可信代理 Predicate 的重载：只有直连节点可信才检查 `X-Forwarded-For`，从右向左剥离可信节点；首个非可信地址作为客户端地址。无 XFF 时才考虑 X-Real-IP；非法或超长（>8192 字符）链回退直连地址。
+`getIp(request)` 默认信任所有直连节点（`ip -> true`），因此可读取 `X-Forwarded-For` 等转发头；仅建议部署在可信反向代理之后时使用。需要严格边界时，使用带可信代理 Predicate 的重载：只有直连节点可信才检查 `X-Forwarded-For`，从右向左剥离可信节点；首个非可信地址作为客户端地址。无 XFF 时才考虑 X-Real-IP。
+
+转发链不可解析（某个节点不是合法 IP）或超长（>8192 字符）时无法确定真实客户端，返回 `unknown`（`StrConst.UNKNOWN`），**不回退为直连地址**——直连地址属于可信代理自身，把它当成客户端地址会误导后续判定；调用方需显式处理 `unknown`。同理，带作用域但网卡不存在的 IPv6（如 `fe80::1%zzz`）视为无法解析，不会向外抛 `IllegalArgumentException`。
 
 ```java
 String ip = IpUtil.getIp(request);                 // 默认信任直连节点，读取转发头
@@ -300,11 +303,24 @@ List<Field> all = ReflectUtil.getDeclaredFields(order, true);     // 含父类�
 | `StrConst` | 字符串常量（EMPTY、COMMA、COLON、SLASH、UNDERLINE、TRACE_ID、MASK_REPLACEMENT 等） |
 | `RegexConst` | 常用正则表达式（URL、CARD_NO、MOBILE_PHONE、FIXED_PHONE、EMAIL、BANK_CARD、VIN、CAR_LICENSE、CHINESE、I18N 等） |
 
-`RegexConst.PWD`（8-15 位字母数字密码规则）已删除，密码策略请由业务侧定义。`URL` / `CRON` 为近似正则，语义校验请使用调度后端原生校验器或更严格的解析。`CHINESE` 仅覆盖基础汉字区 `\u4e00-\u9fa5`，不能用于完整 Unicode 汉字判定。
+`RegexConst.PWD`（8-15 位字母数字密码规则）已删除，密码策略请由业务侧定义。`URL` 与 `CRON` 都只是**宽松的形状校验**，不能当语义校验用：`URL` 不校验主机名结构，`http://abc`、`http://1.2.3.4` 判为 true，而 `http://a` 反而为 false（`[^\s/$.?#]` 之后是一个未转义的 `.`）；`CRON` 与 `CronUtil.isValid` 口径不同，既不接受 `?` 与星期缩写（`MON-FRI`）也不校验取值范围，对本库自己生成的表达式（`EVERY_DAY`、`workDay()`、`CronUtil.getCron()`）返回 false，却能放过 `1 2 3 4 5` 这类无意义串——校验 cron 请用 `CronUtil.isValid` 或调度后端原生校验器，发请求请用只接受 http/https 的 `HttpUtil`。`CHINESE` 仅覆盖基础汉字区 `\u4e00-\u9fa5`，不能用于完整 Unicode 汉字判定。
 
 ## 测试
 
-当前 base 模块 `src/test` 为空，全仓无测试类；`spring-boot-starter-test` 仅由 parent 的 dependencyManagement 托管版本，需在模块自行引入（scope test）。计划中的回归覆盖：JSON 泛型往返、断言空值、严格日期/身份证、格式缓存/时区、Quartz 子集对照、加密向量/GCM 篡改与日志、HTTP 本地服务/超时/中断、代理链/IP 数据库、脱敏、反射、Servlet 和雪花 ID 并发。
+base 模块已引入 `spring-boot-starter-test`（scope test，版本由 parent 的 dependencyManagement 托管，不传递给下游），并补齐单元测试：**15 个测试类、325 个用例**（`mvn -pl snowdrift-framework/snowdrift-base test` 实测全绿），覆盖正常流程、边界与异常场景。HTTP 相关用例使用 JDK 内置 `HttpServer` 起本地服务，不依赖外部网络。
+
+| 测试类 | 覆盖点 |
+|--------|--------|
+| `ResultTest` / `ResultCodeTest` / `BizExceptionTest` / `IEnumTest` | 工厂方法与码值、timestamp、链式 setter、构造器与 `throwEx`、枚举按 code/note 查找与非法入参 |
+| `AssertUtilTest` | 五类断言的通过与抛出文案、数组/集合重载、null 条件 |
+| `ValidateUtilTest` | 手机/固话/身份证（15、18 与校验码、闰年、地区码）/银行卡/VIN/车牌/邮箱/URL 的正反例与边界 |
+| `DesensitizeUtilTest` | 各脱敏器的正常、空白、非法与空白归一化路径；代理对（扩展区汉字）不被截断；掩码不改变长度 |
+| `DateTimeUtilTest` | 格式化/解析往返、STRICT 拒绝 2 月 30 日与 24:00:00、解析与格式化的 `BizException` 口径、格式化器缓存、区间与差值、时区转换 |
+| `CronUtilTest` | 生成表达式的自校验、Quartz 子集的正反例（`?` 互斥、星期缩写、步长越界）、参数越界抛异常 |
+| `EncryptUtilTest` | 摘要已知向量、HMAC、AES-GCM 往返与随机 IV/篡改/密钥长度、RSA 往返与明文长度上限、ECB 兼容路径 |
+| `SnowflakeUtilTest` | 实例复用、ID 唯一与单调、跨线程并发、非法 workerId/datacenterId |
+| `HttpUtilTest` | URL/表单拼接与编码、Basic Auth、地址与请求头非法时的 `BizException`，以及基于 JDK `HttpServer` 的 GET/POST/JSON/表单/下载/超时/中断 |
+| `IpUtilTest` / `ServletUtilTest` / `ReflectUtilTest` | 代理链解析与畸形链、内网/非法 IP、归属地过滤；头/参数视图与 JSON 写出；方法与字段反射、父类去重 |
 
 ```bash
 mvn -pl snowdrift-framework/snowdrift-base -am test
@@ -317,10 +333,12 @@ mvn -pl snowdrift-framework/snowdrift-base -am test
 - 加密失败日志不再携带完整异常链，避免密钥/明文泄漏；排查需在调用方补日志。
 - 非法日期（如 2 月 30 日、非闰年 2 月 29 日）不再被 SMART 规则修正；需要宽松解析时传入自定义 formatter。
 - ip2region 数据库可通过 `-Dsnowdrift.ip2region.path=` 外置，IP 库更新无需重新发布框架。
+- **行为变更（本次）**：`DesensitizeUtil.ip` 对空白入参返回空串、对无法识别的入参返回 `******`（原为先 `trim` 后原样返回）；`DesensitizeUtil.address` 对 6 个码点以内的入参整体掩码（原为长度 4~6 时原样输出）；`DesensitizeUtil.address`/`chineseName` 改为按码点推进（原实现会切断代理对/抛出越界）；`ValidateUtil.isIdCard` 的 15 位分支改为只接受 ASCII 数字。
+- **异常口径变更（本次）**：`IpUtil.getIp(request, trustedProxy)` 在转发链非法或超长时返回 `unknown`（原为回退直连地址），带不存在网卡作用域的 IPv6 不再抛 `IllegalArgumentException`；`IpUtil.getIpLocation` 会过滤空串（原会返回 `"----"` 这类只有分隔符的结果）；`HttpUtil` 对相对地址、非 http(s) 协议、受限请求头统一抛 `BizException`（原为 JDK 的 `IllegalArgumentException`）；`DateTimeUtil` 的格式化失败也抛 `BizException`（原为 `UnsupportedTemporalTypeException`）。
 - 本轮未拆分 base、删除 xdb、改变依赖 scope 或统一全框架 JSON 栈；`args` 也仍为预留，不代表国际化已经接通。
 
 ## 模块定位
 
 - 纯工具 / 模型层，不依赖 Spring，不产生自动配置（无 `AutoConfiguration.imports`）。
-- 依赖为 Servlet/Validation API、Fastjson2、Jackson-annotations、commons-lang3/collections4、Guava、ip2region、SLF4J、Lombok。
+- 依赖为 Servlet/Validation API、Fastjson2、Jackson-annotations、commons-lang3/collections4、Guava、ip2region、SLF4J、Lombok；测试依赖 `spring-boot-starter-test`（scope test）。
 - 雪花 ID、加密、脱敏、校验等类均可直接脱离 Spring 环境使用。

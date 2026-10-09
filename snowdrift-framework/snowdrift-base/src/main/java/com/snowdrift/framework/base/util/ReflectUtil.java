@@ -111,8 +111,9 @@ public final class ReflectUtil {
         }
         List<Field> fields = new ArrayList<>();
         Set<String> seenNames = new HashSet<>();
+        // 目标类在 try 外解析：失败日志需打印被反射的类，而非 t 自身的类型（t 为 Class 时是 java.lang.Class）
+        Class<?> cls = t instanceof Class<?> type ? type : t.getClass();
         try {
-            Class<?> cls = t instanceof Class<?> type ? type : t.getClass();
             // 从当前类逐级向上遍历（includeSuperclass=false 时仅取当前类）
             while (Objects.nonNull(cls)) {
                 for (Field field : cls.getDeclaredFields()) {
@@ -130,7 +131,7 @@ public final class ReflectUtil {
                 cls = cls.getSuperclass();
             }
         } catch (Exception e) {
-            log.error("获取属性列表失败：class={}, err={}", t.getClass().getCanonicalName(), e.getMessage());
+            log.error("获取属性列表失败：class={}, err={}", cls.getCanonicalName(), e.getMessage());
             return BizException.throwEx("获取属性列表失败");
         }
         return fields;

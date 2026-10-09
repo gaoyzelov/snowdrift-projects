@@ -53,13 +53,19 @@ public final class DesensitizeUtil {
      * @return 脱敏后的ip地址
      */
     public static String ip(String ip) {
-        if (!IpUtil.isValidIp(ip)){
-            return ip;
+        if (StringUtils.isBlank(ip)) {
+            return StrConst.EMPTY;
         }
-        if (IpUtil.isIpv4(ip)) {
-            return StringUtils.substringBefore(ip, StrConst.DOT) + ".*.*.*";
+        // 归一化空白后再识别：IP 常被拼入日志文本，尾部空格/换行不应导致漏脱敏
+        String compact = StringUtils.trim(ip);
+        if (!IpUtil.isValidIp(compact)) {
+            // 无法识别为 IP 时保守全掩码，避免 hostname、host:port 等原样输出造成信息泄漏
+            return StrConst.MASK_REPLACEMENT;
         }
-        return StringUtils.substringBefore(ip, StrConst.COLON) + ":*:*:*:*:*:*:*";
+        if (IpUtil.isIpv4(compact)) {
+            return StringUtils.substringBefore(compact, StrConst.DOT) + ".*.*.*";
+        }
+        return StringUtils.substringBefore(compact, StrConst.COLON) + ":*:*:*:*:*:*:*";
     }
 
     /**
@@ -170,9 +176,12 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(address)) {
             return StrConst.EMPTY;
         }
-        int keepLen = Math.min(address.length(), 6);
-        if (keepLen <= 3) {
-            // 地址过短，全部掩码
+        // 先按码点计数再按码点推进：length() 是 UTF-16 单元数，直接用它截取会把补充平面字符
+        // （如扩展区汉字的代理对）切成孤立代理，输出既失真又无法正确编码。
+        int keepLen = 6;
+        int codePoints = address.codePointCount(0, address.length());
+        if (codePoints <= keepLen) {
+            // 保留前缀已覆盖整串（原实现只在 <=3 时整体掩码），此时掩码形同虚设，全掩码处理
             return StrConst.MASK_REPLACEMENT;
         }
         return address.substring(0, address.offsetByCodePoints(0, keepLen)) + StrConst.MASK_REPLACEMENT;
@@ -188,7 +197,11 @@ public final class DesensitizeUtil {
         if (StringUtils.isBlank(chineseName)) {
             return StrConst.EMPTY;
         }
-        return chineseName.charAt(0) + "*".repeat(Math.max(1, chineseName.length() - 1));
+        // 按码点保留首字、按码点计数掩码：charAt(0)/length() 面向 UTF-16 单元，
+        // 扩展区汉字（代理对）会被从中间切开，产生无法正确编码的孤立代理
+        int codePoints = chineseName.codePointCount(0, chineseName.length());
+        return chineseName.substring(0, chineseName.offsetByCodePoints(0, 1))
+                + "*".repeat(Math.max(1, codePoints - 1));
     }
 
     /**

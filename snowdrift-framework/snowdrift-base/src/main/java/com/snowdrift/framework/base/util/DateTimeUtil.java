@@ -88,6 +88,25 @@ public final class DateTimeUtil {
     // ============================== 时间格式化 ==============================
 
     /**
+     * 格式化内核：统一把 JDK 的 {@link DateTimeException} 包装为 {@code BizException}，
+     * 与解析侧的 {@link #doParse} 保持同一异常口径（例如用日期格式格式化 LocalTime 时，
+     * JDK 抛出的 {@code UnsupportedTemporalTypeException} 不再直接外泄）。
+     * <p>空值校验仍由各入口方法自行完成，以保持原有校验顺序与文案。</p>
+     *
+     * @param temporal    待格式化的时间对象
+     * @param formatter   格式化器
+     * @param subjectName 格式化对象名称，用于错误信息（如 时间/日期）
+     * @return 格式化后的字符串
+     */
+    private static String doFormat(TemporalAccessor temporal, DateTimeFormatter formatter, String subjectName) {
+        try {
+            return formatter.format(temporal);
+        } catch (DateTimeException e) {
+            throw new BizException(subjectName + "格式化失败", e);
+        }
+    }
+
+    /**
      * 将 LocalDateTime 按指定格式模式格式化为字符串
      *
      * @param dateTime 时间
@@ -96,8 +115,7 @@ public final class DateTimeUtil {
      */
     public static String getDateTimeString(LocalDateTime dateTime, String pattern) {
         AssertUtil.notNull(dateTime, "时间不能为空");
-        DateTimeFormatter formatter = getFormatter(pattern);
-        return dateTime.format(formatter);
+        return doFormat(dateTime, getFormatter(pattern), "时间");
     }
 
     /**
@@ -110,7 +128,7 @@ public final class DateTimeUtil {
     public static String getDateTimeString(LocalDateTime dateTime, DateTimeFormatter formatter) {
         AssertUtil.notNull(dateTime, "时间不能为空");
         AssertUtil.notNull(formatter, "格式化器不能为空");
-        return dateTime.format(formatter);
+        return doFormat(dateTime, formatter, "时间");
     }
 
     /**
@@ -132,8 +150,7 @@ public final class DateTimeUtil {
      */
     public static String getDateString(LocalDate date, String pattern) {
         AssertUtil.notNull(date, "日期不能为空");
-        DateTimeFormatter formatter = getFormatter(pattern);
-        return date.format(formatter);
+        return doFormat(date, getFormatter(pattern), "日期");
     }
 
     /**
@@ -156,8 +173,7 @@ public final class DateTimeUtil {
      */
     public static String getTimeString(LocalTime time, String pattern) {
         AssertUtil.notNull(time, "时间不能为空");
-        DateTimeFormatter formatter = getFormatter(pattern);
-        return time.format(formatter);
+        return doFormat(time, getFormatter(pattern), "时间");
     }
 
     /**

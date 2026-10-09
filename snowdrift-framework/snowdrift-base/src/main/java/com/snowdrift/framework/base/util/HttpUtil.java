@@ -52,6 +52,9 @@ public final class HttpUtil {
     public static final String CONTENT_TYPE_MULTIPART = "multipart/form-data";
     public static final String CONTENT_TYPE_OCTET_STREAM = "application/octet-stream";
 
+    private static final String SCHEME_HTTP = "http";
+    private static final String SCHEME_HTTPS = "https";
+
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
 
@@ -66,15 +69,29 @@ public final class HttpUtil {
 
     /**
      * 校验并解析请求地址
+     * <p>
+     * 除语法校验外，还要求协议为 http/https 且主机非空：{@code URI.create} 接受相对地址与非
+     * http(s) 协议，这类地址要到 {@code HttpRequest.Builder.uri} 才会暴露，且抛出的是
+     * {@code IllegalArgumentException}，会绕过本类的 {@code BizException} 约定。
+     * </p>
      *
      * @param url 请求地址
      * @return URI
-     * @throws BizException 地址格式非法时抛出
+     * @throws BizException 地址格式非法或协议不受支持时抛出
      */
     private static URI toUri(String url) {
         AssertUtil.notBlank(url, "请求Url不能为空");
         try {
-            return URI.create(url);
+            URI uri = URI.create(url);
+            String scheme = uri.getScheme();
+            if (!SCHEME_HTTP.equalsIgnoreCase(scheme) && !SCHEME_HTTPS.equalsIgnoreCase(scheme)) {
+                log.error("请求地址协议不受支持：scheme={}", scheme);
+                return BizException.throwEx("仅支持 http/https 请求地址");
+            }
+            if (uri.getHost() == null) {
+                return BizException.throwEx("请求地址格式错误");
+            }
+            return uri;
         } catch (IllegalArgumentException e) {
             log.error("请求地址格式错误：url={}, err={}", url, e.getMessage());
             return BizException.throwEx("请求地址格式错误");
@@ -194,9 +211,7 @@ public final class HttpUtil {
                 .header("Content-Type", CONTENT_TYPE_FORM)
                 .POST(HttpRequest.BodyPublishers.ofString(body, StandardCharsets.UTF_8));
 
-        if (MapUtils.isNotEmpty(headers)) {
-            headers.forEach(builder::setHeader);
-        }
+        setHeaders(builder, headers);
 
         return sendRequest(builder.build());
     }
@@ -414,9 +429,7 @@ public final class HttpUtil {
         } else {
             builder.method(method, HttpRequest.BodyPublishers.noBody());
         }
-        if (MapUtils.isNotEmpty(headers)) {
-            headers.forEach(builder::setHeader);
-        }
+        setHeaders(builder, headers);
         return sendRequest(builder.build(), client);
     }
 
@@ -545,6 +558,29 @@ public final class HttpUtil {
      */
     public static boolean isAccessible(String url) {
         return isAccessible(url, Duration.ofSeconds(5));
+    }
+
+    /**
+     * 设置请求头
+     * <p>
+     * JDK 的 {@code setHeader} 对 {@code Host}、{@code Content-Length} 等受限头会抛
+     * {@code IllegalArgumentException}（直接转发 Servlet 头映射时很容易命中），
+     * 这里统一转换为 {@code BizException}，避免绕过本类的异常约定。
+     * </p>
+     *
+     * @param builder 请求构造器
+     * @param headers 请求头（可为空）
+     */
+    private static void setHeaders(HttpRequest.Builder builder, Map<String, String> headers) {
+        if (MapUtils.isEmpty(headers)) {
+            return;
+        }
+        try {
+            headers.forEach(builder::setHeader);
+        } catch (IllegalArgumentException e) {
+            log.error("请求头不合法：err={}", e.getMessage());
+            BizException.throwEx("请求头不合法：" + e.getMessage());
+        }
     }
 
     /**
