@@ -51,9 +51,8 @@ public final class HttpUtil {
     public static final String CONTENT_TYPE_FORM = "application/x-www-form-urlencoded";
     public static final String CONTENT_TYPE_MULTIPART = "multipart/form-data";
     public static final String CONTENT_TYPE_OCTET_STREAM = "application/octet-stream";
-
-    private static final String SCHEME_HTTP = "http";
-    private static final String SCHEME_HTTPS = "https";
+    public static final String SCHEME_HTTP = "http";
+    public static final String SCHEME_HTTPS = "https";
 
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(30);
     private static final Duration DEFAULT_TIMEOUT = Duration.ofSeconds(30);
@@ -69,11 +68,6 @@ public final class HttpUtil {
 
     /**
      * 校验并解析请求地址
-     * <p>
-     * 除语法校验外，还要求协议为 http/https 且主机非空：{@code URI.create} 接受相对地址与非
-     * http(s) 协议，这类地址要到 {@code HttpRequest.Builder.uri} 才会暴露，且抛出的是
-     * {@code IllegalArgumentException}，会绕过本类的 {@code BizException} 约定。
-     * </p>
      *
      * @param url 请求地址
      * @return URI

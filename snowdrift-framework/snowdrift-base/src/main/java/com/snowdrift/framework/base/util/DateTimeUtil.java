@@ -71,9 +71,6 @@ public final class DateTimeUtil {
 
     /**
      * 获取已缓存的 DateTimeFormatter（带缓存机制）
-     * <p>缓存键为「pattern + 默认 Locale（{@link Locale.Category#FORMAT}）」。注意与类中的预定义常量
-     * （{@code DATETIME_FORMATTER} 等，固定使用 {@link Locale#ROOT}）有别：含月份/星期文本的 pattern
-     * 会跟随 JVM 默认语言，而常量固定为 ROOT。</p>
      *
      * @param pattern 格式模式
      * @return DateTimeFormatter 对象
@@ -92,9 +89,6 @@ public final class DateTimeUtil {
 
     /**
      * 格式化内核：统一把 JDK 的 {@link DateTimeException} 包装为 {@code BizException}，
-     * 与解析侧的 {@link #doParse} 保持同一异常口径（例如用日期格式格式化 LocalTime 时，
-     * JDK 抛出的 {@code UnsupportedTemporalTypeException} 不再直接外泄）。
-     * <p>空值校验仍由各入口方法自行完成，以保持原有校验顺序与文案。</p>
      *
      * @param temporal    待格式化的时间对象
      * @param formatter   格式化器

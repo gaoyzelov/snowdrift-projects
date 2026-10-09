@@ -187,8 +187,6 @@ public final class IpUtil {
     public static String getIpLocation(String ip, String delimiter) {
         String[] info = parseIp(ip);
         delimiter = StringUtils.isBlank(delimiter) ? StrConst.SPACE : delimiter;
-        // 过滤空串与无意义的"0"、内网IP标识：内网/非法 IP、数据库缺失时 parseIp 返回的空串
-        // 若无条件参与 join，会得到只有分隔符的字符串（如 "----"）
         List<String> list = Arrays.stream(info)
                 .filter(s -> StringUtils.isNotBlank(s)
                         && !StringUtils.equals(s, "0")
