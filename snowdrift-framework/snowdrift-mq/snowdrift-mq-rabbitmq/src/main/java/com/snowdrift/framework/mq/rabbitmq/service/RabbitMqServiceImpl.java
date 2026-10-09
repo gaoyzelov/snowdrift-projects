@@ -25,7 +25,8 @@ import java.util.concurrent.Executor;
  * 统一发送语义映射（交换机模式）：
  * — {@code topic} = AMQP exchange 名；
  * — {@code key} = routing key（缺省为空串，适配 fanout / 已绑定空路由的队列）。
- * 同步发送走原生 {@link RabbitTemplate#send(String, String, Message)}；异步复用基类 executor 包装（Rabbit 无原生异步发送）。
+ * 同步发送走原生 {@link RabbitTemplate#send(String, String, Message)}：<b>发出即返回，不含投递确认</b>，
+ * 返回的 {@link MqSendResult} 表示"已交给客户端"而非"broker 已接收"；异步复用基类 executor 包装（Rabbit 无原生异步发送）。
  * 延迟消息依赖 rabbitmq-delayed-message-exchange 插件（{@code x-delay} 头，目标 exchange 须为 delayed-exchange）；
  * 未启用插件时 {@link #sendDelay} 直接抛 {@link UnsupportedOperationException}，不做静默 TTL 降级。
  * 消费请使用原生 {@code @RabbitListener}，框架以 adviceChain 拦截器（{@code MqRabbitContextAdvice}）自动恢复/清理上下文。
@@ -74,12 +75,16 @@ public class RabbitMqServiceImpl extends AbstractMqService {
                 }
             });
         }
-        // RabbitMQ 同步 send 不返回 broker 消息 ID，自生成 messageId 便于链路追踪
+        // 生成 AMQP message_id 属性：该属性按规范由发布方设置、broker 原样透传，
+        // 并非 broker 回传值（RabbitMQ 的同步 send 不返回任何回执）。仅用于链路追踪。
         String messageId = UUID.randomUUID().toString();
         properties.setMessageId(messageId);
 
         String routingKey = StringUtils.defaultIfBlank(key, StrConst.EMPTY);
         try {
+            // 发出即返回：无 publisher-confirm / mandatory 校验，不可路由的消息同样会在此视为发送成功。
+            // 需要投递确认请由使用方开启 spring.rabbitmq.publisher-confirm-type=correlated 与
+            // spring.rabbitmq.publisher-returns=true；框架不代为设置，以免改变应用内所有发送方的行为。
             rabbitTemplate.send(topic, routingKey, new Message(body, properties));
         } catch (Exception e) {
             throw new MqException("RabbitMQ 消息发送失败: exchange=" + topic + "，原因=" + describe(e), e);
@@ -87,6 +92,8 @@ public class RabbitMqServiceImpl extends AbstractMqService {
         return MqSendResult.builder()
                 .topic(topic)
                 .messageId(messageId)
+                // 真实投递队列由 exchange 绑定决定、客户端不可知，这里回填客户端实际使用的 routing key
+                .partitionOrQueue(routingKey)
                 .timestamp(System.currentTimeMillis())
                 .build();
     }
