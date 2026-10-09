@@ -38,17 +38,6 @@ public class SnowdriftLogConfiguration {
 
     /**
      * 操作日志记录服务（bizlog 事件 → {@link ILogService} 的桥接）
-     * <p>
-     * 这里**不能**只用 {@code @ConditionalOnMissingBean}：{@code @EnableLogRecord} 通过 {@code @Import}
-     * 引入的配置属于用户级配置，会先于自动配置解析并注册它自己的
-     * {@code com.mzt.logapi.service.impl.DefaultLogRecordServiceImpl}，条件判断会让本桥接直接退让——结果是 bizlog 事件只打一行 info，
-     * {@code ILogService.saveOperateLog} 永远不被调用。
-     * </p>
-     * <p>
-     * 默认场景下本桥接生效（bizlog 按类型注入时拿到本实现）。业务若要自定义操作日志服务：
-     * 设置 {@code snowdrift.log.record-service=false} 关掉本 Bean，再注册自己的
-     * {@code ILogRecordService}（建议标注 {@code @Primary}）——否则会有两个 {@code @Primary} 导致注入歧义。
-     * </p>
      *
      * @param logService 日志服务
      * @return 日志记录服务

@@ -9,12 +9,6 @@ import java.util.Objects;
 
 /**
  * SecurityContextHolder
- * <p>
- * 两个获取入口的语义不同：{@link #getContext()} 只在<b>没有上下文对象</b>时抛 {@link BizException}，
- * {@link #peekContext()} 则返回 {@code null}。注意上下文对象存在但字段为空是合法状态
- * （如 MQ/Dubbo 消费端从消息头恢复出的空上下文），此时下方各便捷方法返回 {@code null} 而<b>不</b>抛异常；
- * 需要“必须携带身份”的判断请自行校验具体字段（如 {@code getUserId() != null}）。
- * </p>
  *
  * @author gaoyzelov
  * @date 2026/4/30-15:58
@@ -40,7 +34,6 @@ public final class SecurityContextHolder {
 
     /**
      * 获取安全上下文，不存在时抛出 {@link BizException}
-     * <p>供“必须已登录”的业务代码使用；上下文可选的场景（日志、MQ/Dubbo 传播等）请使用 {@link #peekContext()}。</p>
      *
      * @return SecurityContext
      */

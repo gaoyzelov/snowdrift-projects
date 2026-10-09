@@ -49,7 +49,6 @@ public class LoginLogAspect {
         try {
             handleLoginLog(joinPoint, loginLogAnno, null, result);
         } catch (Throwable e) {
-            // 兜底到 Throwable：登录入参若是自引用/深嵌套对象，fastjson2 会抛 StackOverflowError，
             // 只 catch Exception 会让它穿透通知，把成功的登录响应变成异常
             log.error("记录登录日志异常", e);
         }
@@ -96,9 +95,6 @@ public class LoginLogAspect {
             holder.setStatus(ResultCode.ERR.code());
             holder.setMsg(exception.getMessage() != null ? exception.getMessage() : exception.getClass().getSimpleName());
         } else if (result instanceof Result<?> r && !Objects.equals(ResultCode.OK.code(), r.getCode())) {
-            // 用 Objects.equals 而不是 !=：Result.code 是 Integer，未设置时为 null，
-            // int 与 Integer 比较会拆箱并抛 NPE（被本方法的调用方吞掉，导致这次登录日志整体丢失）
-            // 方法正常返回但业务结果为失败时，记录为登录失败（状态统一取 ERR，保留业务消息）
             holder.setStatus(ResultCode.ERR.code());
             holder.setMsg(r.getMsg() != null ? r.getMsg() : ResultCode.ERR.msg());
         } else {
@@ -111,11 +107,6 @@ public class LoginLogAspect {
 
     /**
      * 获取登录用户名
-     * <p>
-     * 先按“对象入参的字段名”提取（兼容 DTO/Map 形式的登录接口）；取不到时再按<b>方法形参名</b>
-     * 匹配 {@code accountField}，以支持 {@code login(@RequestParam String username, ...)} 这类裸参数写法
-     * （依赖编译期 {@code -parameters}，父 pom 已开启；取不到参数名时退回 {@link StrConst#UNKNOWN}）。
-     * </p>
      *
      * @param joinPoint    切点
      * @param accountField 登录用户名字段
