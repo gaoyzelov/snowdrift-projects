@@ -40,6 +40,7 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     private static final String TOKEN_HEADER = "XXL-JOB-ACCESS-TOKEN";
     private static final int SUCCESS_CODE = 200;
     private static final int PAGE_SIZE = 200;
+    private static final int TRIGGER_STATUS_RUNNING = 1;
     private final XxlJobProperties properties;
     private final List<String> adminUrls;
     private final Cache<String, Integer> executorGroupCache = CacheBuilder.newBuilder()
@@ -210,7 +211,10 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         param.put("executorTimeout", String.valueOf(request.getTimeout() != null ? request.getTimeout() : 0));
         param.put("executorFailRetryCount", String.valueOf(request.getRetryCount() != null ? request.getRetryCount() : 0));
         param.put("glueType", "BEAN");
-        param.put("triggerStatus", "1");
+        // 为空一律按 1（运行）处理：add 即创建后启动；update 会把已停止的任务重新启动，
+        // 需要保持停止态必须由调用方显式传 0（见 XxlJobRequest#triggerStatus 的说明）。
+        param.put("triggerStatus", String.valueOf(
+                request.getTriggerStatus() != null ? request.getTriggerStatus() : TRIGGER_STATUS_RUNNING));
         return param;
     }
 

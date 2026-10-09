@@ -48,4 +48,9 @@ public class XxlJobRequest extends JobRequest {
      * 重试次数，默认0，大于0时生效
      */
     private Integer retryCount = 0;
+
+    /**
+     * 任务运行状态：0=停止，1=运行
+     */
+    private Integer triggerStatus;
 }
