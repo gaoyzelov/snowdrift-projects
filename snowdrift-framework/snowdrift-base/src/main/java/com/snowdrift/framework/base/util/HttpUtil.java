@@ -22,6 +22,15 @@ import java.util.Map;
 
 /**
  * HttpUtil
+ * <p>
+ * 基于 JDK {@link HttpClient} 的轻量 HTTP 工具类。
+ * </p>
+ * <p>
+ * <b>注意：响应体无大小上限。</b>所有请求方法的响应体都会完整读入内存
+ * （{@code BodyHandlers.ofString()} / {@code ofByteArray()}），因此请求 URL 不可信、
+ * 或响应体规模不可控时存在内存耗尽风险；此类场景请勿直接使用本类拉取，
+ * 或由调用方在外部施加限制（超时、限流、可信 URL 白名单等）。
+ * </p>
  *
  * @author gaoyzelov
  * @date 2026/3/30-13:29
@@ -33,7 +42,6 @@ public final class HttpUtil {
 
     private static final int HTTP_SUCCESS_MIN = 200;
     private static final int HTTP_SUCCESS_RANGE = 100;
-    private static final int DEFAULT_MAX_RESPONSE_BYTES = 10 * 1024 * 1024;
 
     public static final String GET = "GET";
     public static final String POST = "POST";
@@ -330,7 +338,12 @@ public final class HttpUtil {
     }
 
     /**
-     * 下载文件到字节数组，默认最大 10 MiB
+     * 下载文件到字节数组
+     * <p>
+     * <b>无响应体大小上限</b>：响应内容会完整读入内存（{@code BodyHandlers.ofByteArray()}），
+     * URL 不可信或文件过大时存在内存耗尽风险。调用方须自行保证 URL 可信；
+     * 大文件请改用流式下载或施加外部限制。
+     * </p>
      *
      * @param url 文件 URL
      * @return 文件字节数组
@@ -419,6 +432,7 @@ public final class HttpUtil {
 
     /**
      * 执行 HTTP 请求（支持自定义 HttpClient）
+     * <p>响应体通过 {@code BodyHandlers.ofString()} 完整读入内存，无大小上限。</p>
      *
      * @param request HTTP 请求
      * @param client  HttpClient 实例

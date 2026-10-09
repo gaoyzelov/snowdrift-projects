@@ -72,9 +72,17 @@ public final class IpUtil {
 
     /**
      * 获取请求IP
+     * <p>
+     * <b>本方法无条件信任 {@code X-Forwarded-For}</b>（等价于 {@code trustedProxy = ip -> true}），
+     * 因此返回值可被客户端伪造，<b>不得用于安全判定</b>（限流、IP 白名单、审计归属等）。
+     * </p>
+     * <p>
+     * 安全场景请改用 {@link #getIp(HttpServletRequest, java.util.function.Predicate)} 并传入真实的
+     * 可信代理判定；前面若没有可信代理，直接使用 {@code request.getRemoteAddr()}。
+     * </p>
      *
      * @param request HttpServletRequest
-     * @return IP地址
+     * @return IP地址（可能取自客户端提供的转发头）
      */
     public static String getIp(HttpServletRequest request) {
         return getIp(request, ip -> true);
@@ -82,8 +90,13 @@ public final class IpUtil {
 
     /**
      * 仅信任显式指定的代理，从 X-Forwarded-For 右侧向左剥离可信节点。
-     * trustedProxy 不应无条件返回 true；代理必须正确覆写或追加转发头。
-     * 默认入口只返回容器提供的 remoteAddr。
+     * <p>
+     * {@code trustedProxy} 不应无条件返回 {@code true}——那等同于信任任何客户端自带的转发头；
+     * 代理必须正确覆写或追加转发头。
+     * </p>
+     * <p>
+     * 注意与另一重载的区别：{@link #getIp(HttpServletRequest)} 正是无条件信任转发头，两者行为不同。
+     * </p>
      */
     public static String getIp(HttpServletRequest request, Predicate<String> trustedProxy) {
         if (request == null) return StrConst.UNKNOWN;
