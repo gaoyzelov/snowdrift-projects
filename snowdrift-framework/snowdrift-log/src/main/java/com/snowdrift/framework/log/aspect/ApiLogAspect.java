@@ -88,7 +88,9 @@ public class ApiLogAspect {
             stopWatch.stop();
             try {
                 handleApiLog(joinPoint, apiLogAnno, result, exception, stopWatch);
-            } catch (Exception e) {
+            } catch (Throwable e) {
+                // 捕获 Throwable：fastjson2 对深嵌套/循环引用对象抛的是 StackOverflowError（Error），
+                // 只 catch Exception 会让它穿过 finally，丢掉已成功的返回值或掩盖业务原本的异常
                 log.error("记录接口日志异常", e);
             }
         }
@@ -175,6 +177,11 @@ public class ApiLogAspect {
             }
             combined.put("params", paramMap);
             json = safeSerialize(combined);
+            if (StringUtils.isEmpty(json)) {
+                // 个别入参仍然不可序列化（如 MultipartFile[]）时，至少保住 URL 参数，
+                // 避免一个坏参数把本可记录的信息一起拖没
+                json = safeSerialize(paramMap);
+            }
         } else if (hasParams) {
             json = safeSerialize(paramMap);
         } else {
@@ -237,8 +244,9 @@ public class ApiLogAspect {
             Object parsed = JSON.parse(json);
             maskValue(parsed, maskFields);
             return JSON.toJSONString(parsed);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             // 不能回退原文：那等于把未脱敏的敏感数据落库，与配置 mask 的意图相反。宁可丢弃这段内容。
+            // 捕获 Throwable：深嵌套 JSON 会让 JSON.parse 抛 StackOverflowError，同样必须兜住
             log.error("JSON 脱敏失败，已放弃记录该段内容（避免未脱敏数据落库）", e);
             return StrConst.MASK_REPLACEMENT;
         }
@@ -312,7 +320,8 @@ public class ApiLogAspect {
     private String safeSerialize(Object obj) {
         try {
             return JSON.toJSONString(obj);
-        } catch (Exception e) {
+        } catch (Throwable e) {
+            // 捕获 Throwable：循环引用/深嵌套对象会让 fastjson2 抛 StackOverflowError
             log.error("请求参数序列化失败", e);
             return StrConst.EMPTY;
         }

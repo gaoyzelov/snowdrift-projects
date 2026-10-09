@@ -4,6 +4,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.ToString;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 
@@ -19,6 +20,9 @@ import java.time.LocalDateTime;
 @ToString
 public class LoginLogHolder implements Serializable {
 
+    @Serial
+    private static final long serialVersionUID = 1L;
+
     /**
      * 用户名
      */
@@ -30,7 +34,7 @@ public class LoginLogHolder implements Serializable {
     private String ip;
 
     /**
-     * 用户 IP 地址
+     * 用户 IP 归属地
      */
     private String ipLocation;
 
