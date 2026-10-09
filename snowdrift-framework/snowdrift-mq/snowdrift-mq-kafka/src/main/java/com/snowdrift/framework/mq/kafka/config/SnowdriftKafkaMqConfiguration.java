@@ -5,6 +5,7 @@ import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
 import com.snowdrift.framework.mq.interceptor.MqInterceptorRegistry;
 import com.snowdrift.framework.mq.kafka.context.MqKafkaContainerContextBinder;
+import com.snowdrift.framework.mq.kafka.context.MqKafkaContextBatchInterceptor;
 import com.snowdrift.framework.mq.kafka.context.MqKafkaContextRecordInterceptor;
 import com.snowdrift.framework.mq.kafka.properties.KafkaMqProperties;
 import com.snowdrift.framework.mq.kafka.service.KafkaMqServiceImpl;
@@ -78,9 +79,18 @@ public class SnowdriftKafkaMqConfiguration {
         return new MqKafkaContextRecordInterceptor(contextPropagator);
     }
 
+    /**
+     * 批消费（{@code batchListener = true}）的上下文清理拦截器
+     */
+    @Bean
+    public MqKafkaContextBatchInterceptor mqKafkaContextBatchInterceptor(MqContextPropagator contextPropagator) {
+        return new MqKafkaContextBatchInterceptor(contextPropagator);
+    }
+
     @Bean
     public MqKafkaContainerContextBinder mqKafkaContainerContextBinder(
-            MqKafkaContextRecordInterceptor mqKafkaContextRecordInterceptor) {
-        return new MqKafkaContainerContextBinder(mqKafkaContextRecordInterceptor);
+            MqKafkaContextRecordInterceptor mqKafkaContextRecordInterceptor,
+            MqKafkaContextBatchInterceptor mqKafkaContextBatchInterceptor) {
+        return new MqKafkaContainerContextBinder(mqKafkaContextRecordInterceptor, mqKafkaContextBatchInterceptor);
     }
 }
