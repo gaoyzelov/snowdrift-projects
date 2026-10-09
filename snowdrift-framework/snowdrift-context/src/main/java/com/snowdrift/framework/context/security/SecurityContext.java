@@ -1,7 +1,10 @@
 package com.snowdrift.framework.context.security;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.io.Serial;
@@ -19,6 +22,8 @@ import java.util.Map;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class SecurityContext implements Serializable {
 
     @Serial

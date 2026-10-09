@@ -1,7 +1,11 @@
 package com.snowdrift.framework.context.http;
 
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.io.Serial;
 import java.io.Serializable;
@@ -17,6 +21,8 @@ import java.util.Map;
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class HttpContext implements Serializable {
 
     @Serial
@@ -43,12 +49,15 @@ public class HttpContext implements Serializable {
     private String ip;
 
     /**
-     * IP地址
+     * IP 归属地
      */
     private String ipLocation;
 
     /**
      * 请求参数
+     * <p>排除出 {@code toString()}：这里是 Servlet 参数的原样副本（{@code HttpContextFilter} 直接填入），
+     * 登录等接口会带明文口令，上下文对象一旦被打印就会随日志外泄。</p>
      */
+    @ToString.Exclude
     private Map<String, String> paramMap;
 }

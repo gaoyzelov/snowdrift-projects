@@ -9,15 +9,24 @@ import java.util.Objects;
 
 /**
  * SecurityContextHolder
+ * <p>
+ * 两个获取入口的语义不同：{@link #getContext()} 只在<b>没有上下文对象</b>时抛 {@link BizException}，
+ * {@link #peekContext()} 则返回 {@code null}。注意上下文对象存在但字段为空是合法状态
+ * （如 MQ/Dubbo 消费端从消息头恢复出的空上下文），此时下方各便捷方法返回 {@code null} 而<b>不</b>抛异常；
+ * 需要“必须携带身份”的判断请自行校验具体字段（如 {@code getUserId() != null}）。
+ * </p>
  *
  * @author gaoyzelov
  * @date 2026/4/30-15:58
  * @description 安全上下文Holder
  * @since 1.0.0
  */
-public class SecurityContextHolder {
+public final class SecurityContextHolder {
 
     private static final ThreadLocal<SecurityContext> SECURITY_CONTEXT_HOLDER = new TransmittableThreadLocal<>();
+
+    private SecurityContextHolder() {
+    }
 
     /**
      * 设置安全上下文
@@ -62,7 +71,7 @@ public class SecurityContextHolder {
     /**
      * 获取当前用户ID
      *
-     * @return 用户ID，未登录时抛出 BizException
+     * @return 用户ID，无上下文时抛出 BizException，上下文未携带该字段时为 null
      */
     public static Long getUserId() {
         return getContext().getUserId();
@@ -71,7 +80,7 @@ public class SecurityContextHolder {
     /**
      * 获取登录账号
      *
-     * @return 登录账号，未登录时抛出 BizException
+     * @return 登录账号，无上下文时抛出 BizException，上下文未携带该字段时为 null
      */
     public static String getUsername() {
         return getContext().getUsername();
@@ -80,7 +89,7 @@ public class SecurityContextHolder {
     /**
      * 获取显示名称
      *
-     * @return 显示名称，未登录时抛出 BizException
+     * @return 显示名称，无上下文时抛出 BizException，上下文未携带该字段时为 null
      */
     public static String getNickname() {
         return getContext().getNickname();
@@ -89,7 +98,7 @@ public class SecurityContextHolder {
     /**
      * 获取操作者显示名称（优先昵称，用于日志展示）
      *
-     * @return 操作者名称，未登录时抛出 BizException
+     * @return 操作者名称，无上下文时抛出 BizException，上下文未携带该字段时为 null
      */
     public static String getOperator() {
         SecurityContext ctx = getContext();
@@ -103,7 +112,7 @@ public class SecurityContextHolder {
     /**
      * 获取当前租户ID
      *
-     * @return 租户ID，未登录时抛出 BizException
+     * @return 租户ID，无上下文时抛出 BizException，上下文未携带该字段时为 null
      */
     public static Long getTenantId() {
         return getContext().getTenantId();
@@ -112,7 +121,7 @@ public class SecurityContextHolder {
     /**
      * 获取当前部门ID
      *
-     * @return 部门ID，未登录时抛出 BizException
+     * @return 部门ID，无上下文时抛出 BizException，上下文未携带该字段时为 null
      */
     public static Long getDeptId() {
         return getContext().getDeptId();
