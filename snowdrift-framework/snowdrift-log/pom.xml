@@ -21,6 +21,12 @@
         <dependency>
             <groupId>io.github.mouzt</groupId>
             <artifactId>bizlog-sdk</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.hibernate.validator</groupId>
+                    <artifactId>hibernate-validator</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- Spring Web（optional：@ConditionalOnWebApplication(SERVLET) 保证 Web 环境下可用） -->
         <dependency>

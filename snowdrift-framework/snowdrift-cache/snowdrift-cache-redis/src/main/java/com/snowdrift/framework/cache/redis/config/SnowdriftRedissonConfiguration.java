@@ -12,6 +12,7 @@ import org.redisson.config.Config;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Bean;
 
@@ -24,6 +25,12 @@ import java.util.List;
  * 支持单节点、哨兵和集群模式。使用 {@link StringCodec} 存储 JSON 字符串，
  * 序列化由 {@link ICacheSerializer} 统一处理。
  * </p>
+ * <p>
+ * 只要类路径存在 Redisson 就会生效（默认开启），可设 {@code snowdrift.cache.redisson.enabled=false}
+ * 关闭。注意本类会先于 <b>redisson-spring-boot-starter</b> 自身的自动配置注册 {@code RedissonClient}
+ * （两者都带 {@code @ConditionalOnMissingBean}），因此 {@code redisson.yaml}、ACL 用户名、SSL 证书等
+ * starter 专属配置不会生效——需要那些能力时请关闭本类并改为自行提供 {@code RedissonClient}。
+ * </p>
  *
  * @author gaoyzelov
  * @date 2026/6/2
@@ -31,6 +38,8 @@ import java.util.List;
  */
 @AutoConfiguration(before = SnowdriftRedisConfiguration.class)
 @ConditionalOnClass(RedissonClient.class)
+@ConditionalOnProperty(prefix = "snowdrift.cache.redisson", name = "enabled", havingValue = "true",
+        matchIfMissing = true)
 public class SnowdriftRedissonConfiguration {
     private RedissonClient redissonClient;
     /**

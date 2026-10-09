@@ -4,6 +4,7 @@ import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.annotation.RepeatSubmit;
 import com.snowdrift.framework.cache.util.SpELUtil;
 import com.snowdrift.framework.base.exception.BizException;
+import com.snowdrift.framework.base.util.AssertUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -47,6 +48,8 @@ public class RepeatSubmitAspect {
         if (StringUtils.isBlank(key)) {
             throw new BizException("SpEL 防重 key 解析失败，请检查 @RepeatSubmit key 配置: " + repeatSubmit.key());
         }
+        // interval 必须为正：为 0（或负）时标记会立即过期，防重窗口为空，重复请求会被全部放行
+        AssertUtil.predicate(() -> repeatSubmit.interval() > 0, "防重间隔（interval）必须大于 0");
         Duration ttl = Duration.of(repeatSubmit.interval(), repeatSubmit.timeUnit().toChronoUnit());
 
         log.debug("重复提交检查: key={}, interval={}", key, ttl);

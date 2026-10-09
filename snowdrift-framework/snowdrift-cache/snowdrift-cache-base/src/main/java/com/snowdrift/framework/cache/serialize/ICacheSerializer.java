@@ -1,5 +1,7 @@
 package com.snowdrift.framework.cache.serialize;
 
+import java.lang.reflect.Type;
+
 /**
  * 缓存序列化器接口
  * <p>
@@ -15,6 +17,8 @@ package com.snowdrift.framework.cache.serialize;
  * </ul>
  * 均继承自 {@link AbstractCacheSerializer}，后者统一处理 null-guard 和异常包装。
  * 通过 {@code snowdrift.cache.serializer=jackson|fastjson2} 切换。
+ * 两个实现已按「字段口径 + 键序 + 日期时间格式」对齐：同一对象产出同一 JSON、且数据可互相读取，
+ * 因此切换该配置不会改变缓存值格式（详见各自的类注释）。
  * 消费者也可自行实现此接口并注册为 Spring Bean 以完全自定义序列化行为。
  * </p>
  *
@@ -41,4 +45,16 @@ public interface ICacheSerializer {
      * @return 反序列化后的对象，json 为 null 时返回 null
      */
     <T> T deserialize(String json, Class<T> type);
+
+    /**
+     * 反序列化为目标类型（支持泛型）
+     * <p>例如 {@code deserialize(json, new TypeReference<List<User>>(){}.getType())} 可把集合元素还原为
+     * {@code User}；用 {@link #deserialize(String, Class)} 读 {@code List.class} 只能得到 Map 元素。</p>
+     *
+     * @param json JSON 字符串
+     * @param type 目标类型（{@link java.lang.reflect.ParameterizedType} 等均可）
+     * @param <T>  泛型
+     * @return 反序列化后的对象，json 为 null 时返回 null
+     */
+    <T> T deserialize(String json, Type type);
 }

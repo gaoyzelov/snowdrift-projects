@@ -26,8 +26,9 @@ import org.springframework.context.annotation.Bean;
  * 缓存核心自动配置
  * <p>
  * 启用 {@link SnowdriftCacheProperties} 配置绑定，注册 AOP 切面和 {@link ICacheSerializer} Bean。
- * 具体的 {@link ICacheService} 实现由各后端子模块提供，
- * 按类路径自动检测：Redisson → Redis（Lettuce/Jedis）→ Caffeine。
+ * 具体的 {@link ICacheService} 实现由各后端子模块提供：Redis（Lettuce/Jedis）存在时优先，
+ * Caffeine 仅在容器中没有其它 {@code ICacheService} 时兜底注册；
+ * Redisson 只提供 {@link IDistributedLockService}，不提供 {@code ICacheService}。
  * </p>
  *
  * @author gaoyzelov

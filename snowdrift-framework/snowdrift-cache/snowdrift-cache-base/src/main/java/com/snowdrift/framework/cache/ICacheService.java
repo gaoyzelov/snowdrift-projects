@@ -1,5 +1,6 @@
 package com.snowdrift.framework.cache;
 
+import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.Collection;
 
@@ -28,6 +29,18 @@ public interface ICacheService {
     <T> T get(String key, Class<T> type);
 
     /**
+     * 获取缓存（支持泛型）
+     * <p>集合/嵌套泛型必须用本重载，否则元素类型无法还原：{@code get(key, List.class)} 只能得到
+     * Map 元素（Jackson 为 {@code LinkedHashMap}、fastjson2 为 {@code JSONObject}）。</p>
+     *
+     * @param key  缓存键
+     * @param type 目标类型，如 {@code new TypeReference<List<User>>(){}.getType()}
+     * @param <T>  泛型
+     * @return 缓存值，不存在返回 null
+     */
+    <T> T get(String key, Type type);
+
+    /**
      * 获取 Hash 中的单个字段
      *
      * @param key     Hash 键
@@ -37,6 +50,17 @@ public interface ICacheService {
      * @return 缓存值，不存在返回 null
      */
     <T> T hget(String key, String hashKey, Class<T> type);
+
+    /**
+     * 获取 Hash 中的单个字段（支持泛型）
+     *
+     * @param key     Hash 键
+     * @param hashKey Hash 字段名
+     * @param type    目标类型，如 {@code new TypeReference<List<User>>(){}.getType()}
+     * @param <T>     泛型
+     * @return 缓存值，不存在返回 null
+     */
+    <T> T hget(String key, String hashKey, Type type);
 
     /**
      * 设置缓存

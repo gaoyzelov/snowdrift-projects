@@ -38,6 +38,14 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
      */
     private final VarExpiration<String, String> varExpiration;
 
+    /**
+     * "实际永不过期"判定阈值（100 年）
+     * <p>全局 key-ttl 非正时，条目按 {@link Long#MAX_VALUE} 纳秒（约 292 年）设置过期时间；
+     * Caffeine 把"截止时间 - 当前时间"换算成剩余时长时会溢出，实测剩余约为 146 年。
+     * 因此不能与哨兵值精确比较，凡剩余时长超过 100 年一律按"永不过期"处理。</p>
+     */
+    private static final Duration NEVER_EXPIRES_THRESHOLD = Duration.ofDays(36500);
+
     public SnowdriftCaffeineCacheServiceImpl(SnowdriftCacheProperties properties, ICacheSerializer serializer) {
         super(properties, serializer);
         this.cache = Caffeine.newBuilder()
@@ -157,12 +165,15 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     /**
      * 查询剩余过期时间
-     * <p>与 Redis 实现对齐：单位为秒，键不存在返回 {@code -2}。当前构建方式下每个条目都带有 TTL，
-     * 因此接口契约中"存在但无过期时间"的分支（Redis 返回 {@code -1}）不会出现。</p>
+     * <p>与 Redis 实现对齐：单位为秒，键不存在返回 {@code -2}，<b>永不过期返回 {@code -1}</b>。
+     * 全局 key-ttl 配置为非正数时条目按"永不过期"处理，此时直接返回秒数会得到 4.6e9 这类无意义数值，
+     * 与接口契约（-1 表示永不过期）不符。</p>
      */
     @Override
     public long doGetExpire(String key) {
-        return varExpiration.getExpiresAfter(key).map(Duration::toSeconds).orElse(-2L);
+        return varExpiration.getExpiresAfter(key)
+                .map(ttl -> ttl.compareTo(NEVER_EXPIRES_THRESHOLD) >= 0 ? -1L : ttl.toSeconds())
+                .orElse(-2L);
     }
 
     /**

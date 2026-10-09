@@ -12,8 +12,11 @@ import java.util.concurrent.TimeUnit;
  * 在方法执行前将请求标识写入缓存，若在指定时间窗口内再次提交相同请求则拒绝，
  * 用于实现接口幂等性。
  * </p>
- * <p><b>后端要求：</b>防重依赖 per-key 过期能力，仅在 Redis/Redisson 缓存后端下生效；
- * Caffeine 本地后备实现不支持，使用时会抛出 {@code UnsupportedOperationException}。</p>
+ * <p><b>后端要求：</b>防重依赖 per-key 过期能力，Redis 与 Caffeine 后端都支持
+ * （Caffeine 通过 {@code VarExpiration} 实现）。注意 Caffeine 是进程内缓存，
+ * 多实例部署时防重只在单个 JVM 内生效，跨实例防重请使用 Redis。</p>
+ * <p><b>{@link #interval()} 必须大于 0</b>：为 0 时标记会立即过期、防重窗口为空，
+ * 所有重复请求都会被放行，因此该配置会在切面中直接抛 {@code BizException}。</p>
  *
  * <pre>
  * // 基于方法参数防重

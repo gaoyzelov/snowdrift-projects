@@ -3,6 +3,8 @@ package com.snowdrift.framework.cache.serialize;
 import com.snowdrift.framework.base.exception.BizException;
 import lombok.extern.slf4j.Slf4j;
 
+import java.lang.reflect.Type;
+
 /**
  * AbstractCacheSerializer
  *
@@ -40,7 +42,22 @@ public abstract class AbstractCacheSerializer implements ICacheSerializer {
         }
     }
 
+    @Override
+    public <T> T deserialize(String json, Type type) {
+        if (json == null) {
+            return null;
+        }
+        try {
+            return doDeserialize(json, type);
+        } catch (Exception e) {
+            log.debug("缓存反序列化失败", e);
+            throw new BizException("缓存反序列化失败", e);
+        }
+    }
+
     protected abstract String doSerialize(Object value) throws Exception;
 
     protected abstract <T> T doDeserialize(String json, Class<T> type) throws Exception;
+
+    protected abstract <T> T doDeserialize(String json, Type type) throws Exception;
 }

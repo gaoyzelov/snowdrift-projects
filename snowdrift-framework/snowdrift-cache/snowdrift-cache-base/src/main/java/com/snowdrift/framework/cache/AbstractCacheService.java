@@ -6,6 +6,7 @@ import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.base.util.AssertUtil;
 import org.apache.commons.lang3.StringUtils;
 
+import java.lang.reflect.Type;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -50,9 +51,32 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     @Override
+    public <T> T get(String key, Type type) {
+        AssertUtil.notBlank(key, "缓存键不能为空");
+        AssertUtil.notNull(type, "目标类型不能为空");
+        String value = doGet(buildKey(key));
+        if (value == null) {
+            return null;
+        }
+        return serializer.deserialize(value, type);
+    }
+
+    @Override
     public <T> T hget(String key, String hashKey, Class<T> type) {
         AssertUtil.notBlank(key, "缓存键不能为空");
         AssertUtil.notBlank(hashKey, "缓存哈希键不能为空");
+        String value = doHget(buildKey(key), hashKey);
+        if (value == null) {
+            return null;
+        }
+        return serializer.deserialize(value, type);
+    }
+
+    @Override
+    public <T> T hget(String key, String hashKey, Type type) {
+        AssertUtil.notBlank(key, "缓存键不能为空");
+        AssertUtil.notBlank(hashKey, "缓存哈希键不能为空");
+        AssertUtil.notNull(type, "目标类型不能为空");
         String value = doHget(buildKey(key), hashKey);
         if (value == null) {
             return null;
@@ -104,6 +128,7 @@ public abstract class AbstractCacheService implements ICacheService {
 
     @Override
     public boolean delete(String key) {
+        AssertUtil.notBlank(key, "缓存键不能为空");
         return doDelete(buildKey(key));
     }
 
@@ -117,6 +142,7 @@ public abstract class AbstractCacheService implements ICacheService {
     @Override
     public long batchDelete(Collection<String> keys) {
         AssertUtil.notEmpty(keys, "缓存键集合不能为空");
+        AssertUtil.predicate(() -> keys.stream().allMatch(StringUtils::isNotBlank), "缓存键不能为空");
         List<String> keyList = keys.stream().map(this::buildKey).toList();
         return doBatchDelete(keyList);
     }
@@ -131,6 +157,7 @@ public abstract class AbstractCacheService implements ICacheService {
     public boolean expire(String key, Duration ttl) {
         AssertUtil.notBlank(key, "缓存键不能为空");
         AssertUtil.notNull(ttl, "缓存TTL不能为空");
+        AssertUtil.predicate(() -> !ttl.isZero() && !ttl.isNegative(), "缓存TTL必须大于 0");
         return doExpire(buildKey(key), ttl);
     }
 
@@ -144,6 +171,7 @@ public abstract class AbstractCacheService implements ICacheService {
     public long increment(String key, Duration ttl) {
         AssertUtil.notBlank(key, "缓存键不能为空");
         AssertUtil.notNull(ttl, "缓存TTL不能为空");
+        AssertUtil.predicate(() -> !ttl.isZero() && !ttl.isNegative(), "缓存TTL必须大于 0");
         return doIncrement(buildKey(key), ttl);
     }
 
@@ -157,10 +185,16 @@ public abstract class AbstractCacheService implements ICacheService {
     }
 
     /**
-     * TTL 为 null 时取默认值
+     * TTL 为 null 时取默认值；显式传入的 TTL 必须为正数
+     * <p>否则各后端会抛出各自的原始异常（Caffeine 抛 IllegalArgumentException、Redis 返回服务端错误），
+     * 这里统一快速失败为 BizException。</p>
      */
     protected Duration effectiveTtl(Duration ttl) {
-        return ttl != null ? ttl : properties.getKeyTtl();
+        if (ttl == null) {
+            return properties.getKeyTtl();
+        }
+        AssertUtil.predicate(() -> !ttl.isZero() && !ttl.isNegative(), "缓存TTL必须大于 0");
+        return ttl;
     }
 
     protected abstract String doGet(String key);

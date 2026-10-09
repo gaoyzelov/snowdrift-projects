@@ -25,7 +25,6 @@ import org.springframework.context.annotation.Bean;
 @AutoConfiguration(afterName = {
         "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration"
 })
-@ConditionalOnMissingBean(ICacheService.class)
 public class SnowdriftCaffeineConfiguration {
 
     private final SnowdriftCacheProperties properties;
@@ -35,7 +34,17 @@ public class SnowdriftCaffeineConfiguration {
     }
 
     /**
-     * 自定义 CacheManager，使用 CacheProperties 中的 TTL 配置
+     * CacheManager（Caffeine，使用 {@link SnowdriftCacheProperties} 中的 TTL 配置）
+     * <p>
+     * <b>这里的 {@code @ConditionalOnMissingBean} 是"兜底定位"，不是与 Redis 侧的不一致</b>：
+     * 本类整体是最低优先级的后备实现（见类注解中的 {@code afterName} 与
+     * {@code @ConditionalOnMissingBean(ICacheService)}），其 {@code CacheManager} 也应让位于
+     * Redis 侧与使用者自定义的实现。
+     * </p>
+     * <p>
+     * 对应地，{@code SnowdriftRedisConfiguration#cacheManager} <b>故意不加</b>该条件，
+     * 原因见那里的说明——请勿把它当成遗漏去"补齐"，那会导致序列化器与 TTL 配置静默失效。
+     * </p>
      */
     @Bean
     @ConditionalOnMissingBean
@@ -48,7 +57,13 @@ public class SnowdriftCaffeineConfiguration {
         return manager;
     }
 
+    /**
+     * Caffeine 实现：仅当容器中没有其它 {@code ICacheService}（Redis/Redisson）时注册。
+     * <p>条件放在方法上而不是类上：类级条件会连带关掉 {@code CacheManager}，
+     * 使业务自定义 {@code ICacheService} 时 {@code @Cacheable} 静默退化为 Boot 默认缓存。</p>
+     */
     @Bean
+    @ConditionalOnMissingBean(ICacheService.class)
     public ICacheService caffeineCacheService(ICacheSerializer serializer) {
         return new SnowdriftCaffeineCacheServiceImpl(properties, serializer);
     }
