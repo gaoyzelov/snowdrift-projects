@@ -2,6 +2,7 @@ package com.snowdrift.framework.cache.redis.config;
 
 import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.cache.IDistributedLockService;
+import com.snowdrift.framework.cache.config.SnowdriftCacheConfiguration;
 import com.snowdrift.framework.cache.redis.service.SnowdriftRedissonDistributedLockServiceImpl;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import jakarta.annotation.PreDestroy;
@@ -36,7 +37,7 @@ import java.util.List;
  * @date 2026/6/2
  * @since 1.0.0
  */
-@AutoConfiguration(before = SnowdriftRedisConfiguration.class)
+@AutoConfiguration(before = {SnowdriftRedisConfiguration.class, SnowdriftCacheConfiguration.class})
 @ConditionalOnClass(RedissonClient.class)
 @ConditionalOnProperty(prefix = "snowdrift.cache.redisson", name = "enabled", havingValue = "true",
         matchIfMissing = true)

@@ -55,6 +55,52 @@ class SnowdriftRedisConfigurationTest {
     }
 
     @Test
+    @DisplayName("回归：Redis 后端下 @RepeatSubmit 切面必须装配（自动配置排序，曾是静默失效）")
+    void repeatSubmitAspectRegisteredWithRedisBackend() {
+        runner.run(context -> {
+            assertThat(context).hasNotFailed();
+            // SnowdriftCacheConfiguration 的切面用 @ConditionalOnBean(ICacheService.class) 判断后端就绪，
+            // 该条件只认“先处理过”的配置类；不把 Redis 配置排到核心配置之前，切面会静默不注册
+            assertThat(context).hasSingleBean(com.snowdrift.framework.cache.aspect.RepeatSubmitAspect.class);
+        });
+    }
+
+    @Test
+    @DisplayName("回归：Redisson 可用时 @DistributedLock 切面必须装配（同样受自动配置排序影响）")
+    void distributedLockAspectRegisteredWithRedisson() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(SnowdriftCacheConfiguration.class,
+                        SnowdriftRedisConfiguration.class, SnowdriftRedissonConfiguration.class))
+                .withBean("redisConnectionFactory", RedisConnectionFactory.class, () -> connectionFactory)
+                // 用 mock 顶掉真实 RedissonClient：本用例只验证 Bean 装配，不连真实 Redis
+                .withBean(org.redisson.api.RedissonClient.class, () -> mock(org.redisson.api.RedissonClient.class))
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(com.snowdrift.framework.cache.IDistributedLockService.class);
+                    assertThat(context).hasSingleBean(com.snowdrift.framework.cache.aspect.DistributedLockAspect.class);
+                });
+    }
+
+    @Test
+    @DisplayName("回归：Redis 与 Caffeine 同时存在时 Redis 优先，Caffeine 兜底退让（装配优先级首次被验证）")
+    void redisWinsOverCaffeine() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(SnowdriftCacheConfiguration.class,
+                        com.snowdrift.framework.cache.caffeine.config.SnowdriftCaffeineConfiguration.class,
+                        SnowdriftRedisConfiguration.class))
+                .withBean("redisConnectionFactory", RedisConnectionFactory.class, () -> connectionFactory)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).getBean(ICacheService.class)
+                            .isInstanceOf(SnowdriftRedisCacheServiceImpl.class);
+                    assertThat(context).hasSingleBean(CacheManager.class);
+                    assertThat(context).getBean(CacheManager.class).isInstanceOf(RedisCacheManager.class);
+                    // Caffeine 侧整体退让后，切面仍必须装配（核心配置排在最后）
+                    assertThat(context).hasSingleBean(com.snowdrift.framework.cache.aspect.RepeatSubmitAspect.class);
+                });
+    }
+
+    @Test
     @DisplayName("框架专用 String-String RedisTemplate 按名字注册，不再 @Primary 劫持按类型注入")
     void registersStringRedisTemplateByName() {
         // 引入 Boot 的 RedisAutoConfiguration，构造与真实应用一致的多 RedisTemplate 环境

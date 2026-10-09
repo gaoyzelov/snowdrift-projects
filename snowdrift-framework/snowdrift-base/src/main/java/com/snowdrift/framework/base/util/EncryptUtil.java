@@ -13,6 +13,7 @@ import javax.crypto.Mac;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.security.*;
@@ -104,6 +105,9 @@ public final class EncryptUtil {
             byte[] bytes = md5.digest(text.getBytes(StandardCharsets.UTF_8));
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
+        } catch (BizException e) {
+            // 保留具体原因（如不支持的算法），与 aesGcmDecrypt/rsaEncrypt 的处理保持一致
+            throw e;
         } catch (Exception e) {
             log.error("MD5摘要计算失败: err={}", e.getMessage());
             return BizException.throwEx("MD5摘要计算失败");
@@ -127,6 +131,8 @@ public final class EncryptUtil {
             byte[] bytes = sha1.digest(text.getBytes(StandardCharsets.UTF_8));
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
+        } catch (BizException e) {
+            throw e;
         } catch (Exception e) {
             log.error("SHA-1摘要计算失败: err={}", e.getMessage());
             return BizException.throwEx("SHA-1摘要计算失败");
@@ -150,6 +156,8 @@ public final class EncryptUtil {
             byte[] bytes = sha256.digest(text.getBytes(StandardCharsets.UTF_8));
             // 转为16进制字符串
             return HEX_FORMAT.formatHex(bytes);
+        } catch (BizException e) {
+            throw e;
         } catch (Exception e) {
             log.error("SHA-256摘要计算失败: err={}", e.getMessage());
             return BizException.throwEx("SHA-256摘要计算失败");
@@ -539,6 +547,10 @@ public final class EncryptUtil {
     @Data
     @Builder
     public static class RsaKeyPair implements Serializable {
+
+        @Serial
+        private static final long serialVersionUID = 1L;
+
         /**
          * 公钥
          */

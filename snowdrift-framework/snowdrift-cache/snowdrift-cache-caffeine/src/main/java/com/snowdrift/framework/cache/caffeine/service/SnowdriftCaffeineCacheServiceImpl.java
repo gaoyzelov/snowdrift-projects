@@ -7,7 +7,6 @@ import com.github.benmanes.caffeine.cache.Policy.VarExpiration;
 import com.snowdrift.framework.cache.AbstractCacheService;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
-import lombok.extern.slf4j.Slf4j;
 
 import java.time.Duration;
 import java.util.List;
@@ -28,7 +27,6 @@ import java.util.List;
  * @date 2026/6/2
  * @since 1.0.0
  */
-@Slf4j
 public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     private final Cache<String, String> cache;
@@ -76,12 +74,21 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     /**
-     * 默认 TTL（纳秒）；配置为非正数时视为永不过期
+     * 默认 TTL（纳秒）；配置为 null 或非正数时视为永不过期
+     * <p>纳秒上限约为 292 年，超过该量级的 TTL（如 {@code key-ttl=365000d}）会让
+     * {@link Duration#toNanos()} 抛 {@code ArithmeticException}——这条路径在写入时才触发，
+     * 会以「缓存不可用」的形式暴露给业务。此处按「永不过期」处理，语义与超出上限一致。</p>
      */
     private long defaultTtlNanos() {
         Duration ttl = properties.getKeyTtl();
-        long nanos = ttl == null ? 0L : ttl.toNanos();
-        return nanos > 0 ? nanos : Long.MAX_VALUE;
+        if (ttl == null || ttl.isZero() || ttl.isNegative()) {
+            return Long.MAX_VALUE;
+        }
+        try {
+            return ttl.toNanos();
+        } catch (ArithmeticException e) {
+            return Long.MAX_VALUE;
+        }
     }
 
     // =================== AbstractCacheService 抽象方法实现 ===================

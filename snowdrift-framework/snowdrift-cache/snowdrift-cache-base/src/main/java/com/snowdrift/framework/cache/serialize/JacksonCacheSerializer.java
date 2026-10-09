@@ -47,7 +47,8 @@ import java.util.Locale;
  * </p>
  * <ul>
  *   <li>忽略未知字段（{@code FAIL_ON_UNKNOWN_PROPERTIES=false}），兼容结构演进</li>
- *   <li>日期输出 ISO 字符串（关闭 {@code WRITE_DATES_AS_TIMESTAMPS}）</li>
+ *   <li>日期不写时间戳（关闭 {@code WRITE_DATES_AS_TIMESTAMPS}）：{@code LocalDateTime} 与 {@code java.util.Date} 系
+ *       按 {@value #DATE_TIME_PATTERN} 输出，其余 java.time 类型保持各自的 ISO 风格</li>
  *   <li>空值不序列化（{@code NON_NULL}）</li>
  * </ul>
  *

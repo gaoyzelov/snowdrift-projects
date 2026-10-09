@@ -216,6 +216,20 @@ class SnowdriftCaffeineCacheServiceImplTest {
         }
 
         @Test
+        @DisplayName("超长 TTL（纳秒溢出，如 1000 年）按永不过期处理，而不是让写入抛 ArithmeticException")
+        void oversizedGlobalTtlDoesNotOverflow() {
+            SnowdriftCacheProperties properties = properties();
+            // Duration.toNanos() 上限约 292 年，这里显式越过该上限
+            properties.setKeyTtl(Duration.ofDays(365_000));
+            SnowdriftCaffeineCacheServiceImpl service = service(properties);
+
+            service.put("k", "v");
+
+            assertThat(service.get("k", String.class)).isEqualTo("v");
+            assertThat(service.getExpire("k")).isEqualTo(-1L);
+        }
+
+        @Test
         @DisplayName("getExpire 返回剩余秒数；键不存在返回 -2")
         void getExpire() {
             SnowdriftCaffeineCacheServiceImpl service = service();

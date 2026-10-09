@@ -67,7 +67,8 @@ public final class SpELUtil {
             String[] paramNames = PARAMETER_NAME_DISCOVERER.getParameterNames(method);
             Object[] args = joinPoint.getArgs();
             if (paramNames != null) {
-                for (int i = 0; i < paramNames.length; i++) {
+                // 以实参个数为上限：代理/桥接方法上形参名与实参数偶尔不等长，越界会退化成“解析失败”
+                for (int i = 0; i < paramNames.length && i < args.length; i++) {
                     context.setVariable(paramNames[i], args[i]);
                 }
             }

@@ -126,4 +126,28 @@ class BizExceptionTest {
     void isUnchecked() {
         assertThat(RuntimeException.class).isAssignableFrom(BizException.class);
     }
+
+    @Test
+    @DisplayName("可序列化：固定 serialVersionUID，Java 序列化往返后保留 code / message / args")
+    void serializableRoundTrip() throws Exception {
+        java.lang.reflect.Field uid = BizException.class.getDeclaredField("serialVersionUID");
+        uid.setAccessible(true);
+        assertThat(uid.getLong(null)).isEqualTo(1L);
+
+        BizException source = new BizException(ResultCode.BAD_REQUEST, new Object[]{"id"});
+
+        java.io.ByteArrayOutputStream buffer = new java.io.ByteArrayOutputStream();
+        try (java.io.ObjectOutputStream out = new java.io.ObjectOutputStream(buffer)) {
+            out.writeObject(source);
+        }
+        BizException restored;
+        try (java.io.ObjectInputStream in =
+                     new java.io.ObjectInputStream(new java.io.ByteArrayInputStream(buffer.toByteArray()))) {
+            restored = (BizException) in.readObject();
+        }
+
+        assertThat(restored.getCode()).isEqualTo(ResultCode.BAD_REQUEST.code());
+        assertThat(restored.getMessage()).isEqualTo(ResultCode.BAD_REQUEST.msg());
+        assertThat(restored.getArgs()).containsExactly("id");
+    }
 }

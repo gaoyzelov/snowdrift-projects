@@ -238,7 +238,7 @@ class CacheSerializerTest {
         }
 
         @Test
-        @DisplayName("时间以空格分隔的日期时间字符串落盘（与 Jackson 的 ISO 'T' 格式不同）")
+        @DisplayName("时间以空格分隔的日期时间字符串落盘（与 Jackson 对齐后的同一格式）")
         void datesUseSpaceSeparator() {
             assertThat(serializer.serialize(user())).contains("\"createdAt\":\"2026-10-09 12:00:00\"");
         }

@@ -37,6 +37,14 @@ class SnowdriftRedissonDistributedLockServiceImplTest {
     }
 
     @Test
+    @DisplayName("构造期校验：RedissonClient 为 null 时快速失败")
+    void nullRedissonClientRejected() {
+        assertThatThrownBy(() -> new SnowdriftRedissonDistributedLockServiceImpl(null))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("RedissonClient");
+    }
+
+    @Test
     @DisplayName("tryLock：透传等待时间/持有时间并返回 Redisson 结果")
     void tryLock() throws Exception {
         RLock lock = lock("order:1");

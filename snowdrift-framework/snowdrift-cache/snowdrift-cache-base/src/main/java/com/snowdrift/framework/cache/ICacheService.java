@@ -82,7 +82,8 @@ public interface ICacheService {
      *
      * @param key   缓存键
      * @param value 缓存值
-     * @param ttl   过期时间，null 表示使用全局默认 TTL
+     * @param ttl   过期时间，null 表示使用全局默认 TTL；显式传入时必须为正数
+     *              （非正数各后端会抛出各自的原始异常，框架统一快速失败为 BizException）
      */
     void put(String key, Object value, Duration ttl);
 
@@ -110,7 +111,7 @@ public interface ICacheService {
      *
      * @param key   缓存键
      * @param value 缓存值
-     * @param ttl   过期时间，null 表示使用全局默认 TTL
+     * @param ttl   过期时间，null 表示使用全局默认 TTL；显式传入时必须为正数
      * @return true=设置成功（key 之前不存在），false=key 已存在
      */
     boolean putIfAbsent(String key, Object value, Duration ttl);
@@ -151,8 +152,8 @@ public interface ICacheService {
      * 设置过期时间
      *
      * @param key 缓存键
-     * @param ttl 过期时间
-     * @return true=设置成功
+     * @param ttl 过期时间，必填且必须为正数（非正数抛 BizException）
+     * @return true=设置成功，key 不存在时返回 false
      */
     boolean expire(String key, Duration ttl);
 
@@ -170,7 +171,7 @@ public interface ICacheService {
      * <p>适用于限流计数、失败次数统计等场景；每次调用都会刷新 TTL，形成滚动窗口</p>
      *
      * @param key 缓存键
-     * @param ttl 过期时间（每次自增后刷新），必填，不允许为 null
+     * @param ttl 过期时间（每次自增后刷新），必填且必须为正数（非正数抛 BizException）
      * @return 自增后的值，key 不存在时从 0 开始计为 1
      */
     long increment(String key, Duration ttl);

@@ -2,6 +2,7 @@ package com.snowdrift.framework.cache.redis.config;
 
 import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.cache.ICacheService;
+import com.snowdrift.framework.cache.config.SnowdriftCacheConfiguration;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.redis.service.SnowdriftRedisCacheServiceImpl;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
@@ -36,12 +37,20 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * 就顺带关掉 {@code CacheManager}、{@code snowdriftRedisTemplate} 与 key 前缀/TTL 配置，
  * {@code @Cacheable} 会静默退化成 Boot 默认缓存，属最难排查的一类失效。
  * </p>
+ * <p>
+ * <b>为何必须 {@code before = SnowdriftCacheConfiguration.class}：</b>{@link SnowdriftCacheConfiguration}
+ * 里的切面用 {@code @ConditionalOnBean(ICacheService.class)} 判断后端是否就绪，该条件在<b>解析顺序</b>上
+ * 只能看到"先处理过的"配置类所注册的 Bean。不显式排在本类之前时，按类名排序
+ * （{@code cache.config.*} &lt; {@code cache.redis.*}）本类会排在核心配置<b>之后</b>，
+ * 于是 {@code RepeatSubmitAspect} / {@code DistributedLockAspect} 静默不注册——
+ * {@code @RepeatSubmit}、{@code @DistributedLock} 全部失效且不报错（已实测：仅核心配置 + 本类时两个切面均为 0 个）。
+ * </p>
  *
  * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */
-@AutoConfiguration(after = RedisAutoConfiguration.class)
+@AutoConfiguration(after = RedisAutoConfiguration.class, before = SnowdriftCacheConfiguration.class)
 @ConditionalOnBean(RedisConnectionFactory.class)
 public class SnowdriftRedisConfiguration {
 

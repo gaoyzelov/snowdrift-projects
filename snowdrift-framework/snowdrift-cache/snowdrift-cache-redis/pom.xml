@@ -31,5 +31,11 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- 仅测试用：验证「Redis 优先、Caffeine 兜底」的装配优先级（两个实现模块互不可见，只能在此交叉验证） -->
+        <dependency>
+            <groupId>com.snowdrift</groupId>
+            <artifactId>snowdrift-cache-caffeine</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

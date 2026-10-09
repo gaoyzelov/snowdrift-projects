@@ -1,0 +1,163 @@
+package com.snowdrift.framework.cache.config;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+/**
+ * SnowdriftCachingIntegrationTest
+ *
+ * @author gaoyzelov
+ * @date 2026/10/9
+ * @description @Cacheable 端到端装配验证：框架 KeyGenerator 与 CacheErrorHandler 必须真正被缓存拦截器采用
+ * @since 1.0.0
+ */
+class SnowdriftCachingIntegrationTest {
+
+    /** 带 @Cacheable 的业务 Bean：不指定 key/keyGenerator，期望走框架的 CachingConfigurer 默认值 */
+    static class UserService {
+
+        final AtomicInteger invocations = new AtomicInteger();
+
+        @Cacheable(cacheNames = "users")
+        public String find(Long id) {
+            invocations.incrementAndGet();
+            return "user-" + id;
+        }
+
+        /** 通过方法读取而非直接读字段：容器里拿到的是 CGLIB 代理，代理实例的字段与目标对象各自独立 */
+        public int invocationCount() {
+            return invocations.get();
+        }
+    }
+
+    /** 探测用 CacheManager：get 直接抛异常，用于验证降级处理器真的接在拦截器上 */
+    static class ExplodingCacheManager extends ConcurrentMapCacheManager {
+
+        @Override
+        public Cache getCache(String name) {
+            Cache delegate = super.getCache(name);
+            return new Cache() {
+                @Override
+                public String getName() {
+                    return name;
+                }
+
+                @Override
+                public Object getNativeCache() {
+                    return delegate.getNativeCache();
+                }
+
+                @Override
+                public ValueWrapper get(Object key) {
+                    throw new IllegalStateException("cache down");
+                }
+
+                @Override
+                public <T> T get(Object key, Class<T> type) {
+                    throw new IllegalStateException("cache down");
+                }
+
+                @Override
+                public <T> T get(Object key, java.util.concurrent.Callable<T> valueLoader) {
+                    throw new IllegalStateException("cache down");
+                }
+
+                @Override
+                public void put(Object key, Object value) {
+                    throw new IllegalStateException("cache down");
+                }
+
+                @Override
+                public void evict(Object key) {
+                    throw new IllegalStateException("cache down");
+                }
+
+                @Override
+                public void clear() {
+                    throw new IllegalStateException("cache down");
+                }
+            };
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class CacheableConfig {
+
+        @Bean
+        UserService userService() {
+            return new UserService();
+        }
+
+        @Bean
+        CacheManager cacheManager() {
+            return new ConcurrentMapCacheManager();
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class ExplodingConfig {
+
+        @Bean
+        UserService userService() {
+            return new UserService();
+        }
+
+        @Bean
+        CacheManager cacheManager() {
+            return new ExplodingCacheManager();
+        }
+    }
+
+    @Test
+    @DisplayName("@Cacheable 默认使用框架 KeyGenerator（ClassName#method:type:value），而不是 Spring 的 SimpleKey")
+    void cacheableUsesFrameworkKeyGenerator() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(SnowdriftCacheConfiguration.class))
+                .withUserConfiguration(CacheableConfig.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    UserService service = context.getBean(UserService.class);
+
+                    assertThat(service.find(1L)).isEqualTo("user-1");
+                    assertThat(service.find(1L)).isEqualTo("user-1");
+                    // 第二次命中缓存，方法只执行一次
+                    assertThat(service.invocationCount()).isEqualTo(1);
+
+                    Cache cache = context.getBean(CacheManager.class).getCache("users");
+                    assertThat(cache).isNotNull();
+                    @SuppressWarnings("unchecked")
+                    Map<Object, Object> nativeCache = (Map<Object, Object>) cache.getNativeCache();
+                    assertThat(nativeCache).containsKey(
+                            UserService.class.getName() + "#find:java.lang.Long:1");
+                });
+    }
+
+    @Test
+    @DisplayName("@Cacheable 的缓存故障经框架 CacheErrorHandler 降级，业务方法照常执行")
+    void cacheFailureDegradesToMethodInvocation() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(SnowdriftCacheConfiguration.class))
+                .withUserConfiguration(ExplodingConfig.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    UserService service = context.getBean(UserService.class);
+
+                    // 缓存不可用时不能抛异常，直接穿透到方法
+                    assertThat(service.find(2L)).isEqualTo("user-2");
+                    assertThat(service.invocationCount()).isEqualTo(1);
+                });
+    }
+}

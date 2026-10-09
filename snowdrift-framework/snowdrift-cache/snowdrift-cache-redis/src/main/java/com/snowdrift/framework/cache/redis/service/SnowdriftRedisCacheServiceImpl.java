@@ -1,5 +1,6 @@
 package com.snowdrift.framework.cache.redis.service;
 
+import com.snowdrift.framework.base.util.AssertUtil;
 import com.snowdrift.framework.cache.AbstractCacheService;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
@@ -40,6 +41,8 @@ public class SnowdriftRedisCacheServiceImpl extends AbstractCacheService {
                                           ICacheSerializer serializer,
                                           RedisTemplate<String, String> redisTemplate) {
         super(properties, serializer);
+        // 与基类对 properties/serializer 的校验保持一致：协作者缺失时构造期快速失败，而不是首个命令才 NPE
+        AssertUtil.notNull(redisTemplate, "RedisTemplate 不能为空");
         this.redisTemplate = redisTemplate;
     }
 

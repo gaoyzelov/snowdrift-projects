@@ -54,6 +54,15 @@ class SnowdriftRedisCacheServiceImplTest {
     }
 
     @Test
+    @DisplayName("构造期校验：RedisTemplate 为 null 时快速失败（而不是首个命令才 NPE）")
+    void nullRedisTemplateRejected() {
+        assertThatThrownBy(() -> new SnowdriftRedisCacheServiceImpl(
+                new SnowdriftCacheProperties(), new FastJson2CacheSerializer(), null))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("RedisTemplate");
+    }
+
+    @Test
     @DisplayName("get：读取字符串并反序列化为目标类型")
     void get() {
         when(valueOperations.get("user:1")).thenReturn("{\"id\":1,\"name\":\"张三\"}");

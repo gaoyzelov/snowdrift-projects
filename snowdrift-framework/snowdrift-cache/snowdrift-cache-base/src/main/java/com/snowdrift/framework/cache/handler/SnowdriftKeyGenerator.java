@@ -14,23 +14,28 @@ import java.util.StringJoiner;
 /**
  * 统一缓存 Key 生成器
  * <p>
- * 生成格式：{@code [prefix:]ClassName#methodName[:param1:param2...]}
+ * 生成格式：{@code 全限定类名#方法名[:参数类型:参数值...]}（每个参数占「类型、值」两段）
  * </p>
  * <ul>
- *   <li>无参数时：{@code UserService#findById}</li>
+ *   <li>无参数时：{@code com.example.UserService#findById}</li>
  *   <li>简单参数（{@link CharSequence} / {@link Number} / {@link Boolean} / {@link Enum} / {@link Character}）：
- *       直接使用 {@code toString()}</li>
+ *       直接使用 {@code toString()}；{@code null} 参数写出空片段</li>
  *   <li>复杂对象参数：使用<b>字段序列化</b>（fastjson2 {@code FieldBased}）而非 {@code toString()}，
- *       以保证跨实例、跨 JVM 稳定；片段超过 64 字符时取<b>完整 SHA-256 十六进制摘要（64 字符）</b></li>
- *   <li>每个参数片段中的 {@code \} 与 {@code :} 会被转义</li>
- *   <li>全局前缀（keyPrefix）非空时自动拼接到最前面</li>
+ *       以保证跨实例、跨 JVM 稳定；片段超过 64 字符时取<b>完整 SHA-256 十六进制摘要（64 字符）</b>，
+ *       并加 {@code sha256:} 前缀以区别于「本身就是该摘要串」的参数</li>
+ *   <li>参数类型必须参与 key：同名重载方法（{@code m(Integer)} / {@code m(Long)} / {@code m(String)}）
+ *       若只写参数值，值相同时会撞成同一个 key</li>
+ *   <li>每个参数片段中的 {@code \} 与 {@code :} 会被转义，保证 {@code m("a:b")} 与 {@code m("a", "b")} 不撞 key</li>
+ *   <li><b>本类不拼接 {@code snowdrift.cache.key-prefix}</b>：前缀由各后端加，Redis 侧由
+ *       {@code RedisCacheConfiguration#computePrefixWith} 拼成 {@code prefix:cacheName:key}，
+ *       Caffeine 侧不加前缀。{@code ICacheService} 的 key 前缀则在 {@code AbstractCacheService#buildKey} 中拼接</li>
  * </ul>
  *
  * <pre>
- * // 示例（prefix = "app"）
- * UserService#findById:123         → app:UserService#findById:123
- * OrderService#create:1:VIP        → app:OrderService#create:1:VIP
- * OrderService#batch:9f2a...(64位) → app:OrderService#batch:9f2a...（超长参数取 SHA-256 摘要）
+ * // 示例（方法签名 OrderService#create(Long id, String level)）
+ * com.example.UserService#findById:java.lang.Long:123
+ * com.example.OrderService#create:java.lang.Long:1:java.lang.String:VIP
+ * com.example.OrderService#batch:java.lang.String:sha256:9f2a...（超长参数取 SHA-256 摘要）
  * </pre>
  * <p>
  * <b>已知歧义：</b>{@code null} 参数与空字符串参数都会生成空片段，因此 {@code m(null)} 与 {@code m("")}

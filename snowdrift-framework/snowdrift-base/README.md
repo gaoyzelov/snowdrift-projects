@@ -307,7 +307,7 @@ List<Field> all = ReflectUtil.getDeclaredFields(order, true);     // 含父类�
 
 ## 测试
 
-base 模块已引入 `spring-boot-starter-test`（scope test，版本由 parent 的 dependencyManagement 托管，不传递给下游），并补齐单元测试：**15 个测试类、325 个用例**（`mvn -pl snowdrift-framework/snowdrift-base test` 实测全绿），覆盖正常流程、边界与异常场景。HTTP 相关用例使用 JDK 内置 `HttpServer` 起本地服务，不依赖外部网络。
+base 模块已引入 `spring-boot-starter-test`（scope test，版本由 parent 的 dependencyManagement 托管，不传递给下游），并补齐单元测试：**15 个测试类、329 个用例**（`mvn -pl snowdrift-framework/snowdrift-base test` 实测全绿），覆盖正常流程、边界与异常场景。HTTP 相关用例使用 JDK 内置 `HttpServer` 起本地服务，不依赖外部网络。
 
 | 测试类 | 覆盖点 |
 |--------|--------|
@@ -318,7 +318,7 @@ base 模块已引入 `spring-boot-starter-test`（scope test，版本由 parent 
 | `DateTimeUtilTest` | 格式化/解析往返、STRICT 拒绝 2 月 30 日与 24:00:00、解析与格式化的 `BizException` 口径、格式化器缓存、区间与差值、时区转换 |
 | `CronUtilTest` | 生成表达式的自校验、Quartz 子集的正反例（`?` 互斥、星期缩写、步长越界）、参数越界抛异常 |
 | `EncryptUtilTest` | 摘要已知向量、HMAC、AES-GCM 往返与随机 IV/篡改/密钥长度、RSA 往返与明文长度上限、ECB 兼容路径 |
-| `SnowflakeUtilTest` | 实例复用、ID 唯一与单调、跨线程并发、非法 workerId/datacenterId |
+| `SnowflakeUtilTest` | 实例复用、ID 唯一与单调、跨线程并发、非法 workerId/datacenterId、时钟回拨（容忍阈值内/外）与毫秒内序列用尽 |
 | `HttpUtilTest` | URL/表单拼接与编码、Basic Auth、地址与请求头非法时的 `BizException`，以及基于 JDK `HttpServer` 的 GET/POST/JSON/表单/下载/超时/中断 |
 | `IpUtilTest` / `ServletUtilTest` / `ReflectUtilTest` | 代理链解析与畸形链、内网/非法 IP、归属地过滤；头/参数视图与 JSON 写出；方法与字段反射、父类去重 |
 
@@ -335,6 +335,7 @@ mvn -pl snowdrift-framework/snowdrift-base -am test
 - ip2region 数据库可通过 `-Dsnowdrift.ip2region.path=` 外置，IP 库更新无需重新发布框架。
 - **行为变更（本次）**：`DesensitizeUtil.ip` 对空白入参返回空串、对无法识别的入参返回 `******`（原为先 `trim` 后原样返回）；`DesensitizeUtil.address` 对 6 个码点以内的入参整体掩码（原为长度 4~6 时原样输出）；`DesensitizeUtil.address`/`chineseName` 改为按码点推进（原实现会切断代理对/抛出越界）；`ValidateUtil.isIdCard` 的 15 位分支改为只接受 ASCII 数字。
 - **异常口径变更（本次）**：`IpUtil.getIp(request, trustedProxy)` 在转发链非法或超长时返回 `unknown`（原为回退直连地址），带不存在网卡作用域的 IPv6 不再抛 `IllegalArgumentException`；`IpUtil.getIpLocation` 会过滤空串（原会返回 `"----"` 这类只有分隔符的结果）；`HttpUtil` 对相对地址、非 http(s) 协议、受限请求头统一抛 `BizException`（原为 JDK 的 `IllegalArgumentException`）；`DateTimeUtil` 的格式化失败也抛 `BizException`（原为 `UnsupportedTemporalTypeException`）。
+- **细节修复（本次）**：`BizException` 与 `EncryptUtil.RsaKeyPair` 补 `@Serial serialVersionUID = 1L`（异常/密钥对经 RPC、MQ、缓存跨进程传递时，不会因类结构演进抛 `InvalidClassException`）；`EncryptUtil.md5/sha1/sha256` 在算法不可用时保留具体原因（`不支持的摘要算法：xxx`），不再被统一成「xx摘要计算失败」；`DateTimeUtil.getDateString(LocalDate)` / `getTimeString(LocalTime)` 也走统一异常包装，格式化失败一律 `BizException`。
 - 本轮未拆分 base、删除 xdb、改变依赖 scope 或统一全框架 JSON 栈；`args` 也仍为预留，不代表国际化已经接通。
 
 ## 模块定位

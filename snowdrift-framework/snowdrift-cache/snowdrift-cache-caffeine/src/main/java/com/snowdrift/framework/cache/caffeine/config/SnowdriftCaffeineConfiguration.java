@@ -3,6 +3,7 @@ package com.snowdrift.framework.cache.caffeine.config;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.caffeine.service.SnowdriftCaffeineCacheServiceImpl;
+import com.snowdrift.framework.cache.config.SnowdriftCacheConfiguration;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -17,6 +18,12 @@ import org.springframework.context.annotation.Bean;
  * Caffeine 本地缓存作为最低优先级的后备实现。
  * 仅在容器中不存在其他 {@link ICacheService} Bean（Redis / Redisson）时激活。
  * </p>
+ * <p>
+ * {@code before = SnowdriftCacheConfiguration.class} 不可省略：{@link SnowdriftCacheConfiguration}
+ * 中的切面以 {@code @ConditionalOnBean(ICacheService.class)} 判断后端是否就绪，而该条件在解析顺序上
+ * 只能看到先处理过的配置类注册的 Bean。{@code cache.caffeine.*} 恰好排在 {@code cache.config.*} 之前，
+ * 当前顺序本就正确，但显式声明可避免今后改包名/改名时切面静默消失（Redis 侧正是踩了这个坑）。
+ * </p>
  *
  * @author gaoyzelov
  * @date 2026/6/2
@@ -24,7 +31,7 @@ import org.springframework.context.annotation.Bean;
  */
 @AutoConfiguration(afterName = {
         "com.snowdrift.framework.cache.redis.config.SnowdriftRedisConfiguration"
-})
+}, before = SnowdriftCacheConfiguration.class)
 public class SnowdriftCaffeineConfiguration {
 
     private final SnowdriftCacheProperties properties;

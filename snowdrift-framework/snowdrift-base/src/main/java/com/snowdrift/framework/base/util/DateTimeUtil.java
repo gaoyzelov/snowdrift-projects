@@ -71,6 +71,9 @@ public final class DateTimeUtil {
 
     /**
      * 获取已缓存的 DateTimeFormatter（带缓存机制）
+     * <p>缓存键为「pattern + 默认 Locale（{@link Locale.Category#FORMAT}）」。注意与类中的预定义常量
+     * （{@code DATETIME_FORMATTER} 等，固定使用 {@link Locale#ROOT}）有别：含月份/星期文本的 pattern
+     * 会跟随 JVM 默认语言，而常量固定为 ROOT。</p>
      *
      * @param pattern 格式模式
      * @return DateTimeFormatter 对象
@@ -161,7 +164,7 @@ public final class DateTimeUtil {
      */
     public static String getDateString(LocalDate date) {
         AssertUtil.notNull(date, "日期不能为空");
-        return date.format(DATE_FORMATTER);
+        return doFormat(date, DATE_FORMATTER, "日期");
     }
 
     /**
@@ -184,7 +187,7 @@ public final class DateTimeUtil {
      */
     public static String getTimeString(LocalTime time) {
         AssertUtil.notNull(time, "时间不能为空");
-        return time.format(TIME_FORMATTER);
+        return doFormat(time, TIME_FORMATTER, "时间");
     }
 
     // ============================== 时间解析 ==============================

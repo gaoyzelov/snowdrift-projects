@@ -195,6 +195,7 @@ public class ProtoBufSerializer implements ICacheSerializer {
 - 需要自定义 `CacheManager`：给自己的 Bean 加 `@Primary`，或用 `spring.autoconfigure.exclude` 排除本模块的自动配置。**不要**依赖框架侧的 `CacheManager` 自动退避——Redis 侧的 `CacheManager` 故意不带 `@ConditionalOnMissingBean`（否则 Boot 的默认 `CacheManager` 会先生效，使本模块的序列化器与 TTL 配置静默失效）；两个同类型 Bean 且都没有 `@Primary` 时，启动期即报 `NoUniqueBeanDefinitionException`。
 - 框架专用的 `snowdriftRedisTemplate`（`RedisTemplate<String, String>`）**不再标注 `@Primary`**：应用按类型注入 `RedisTemplate` 时若容器中还有 Boot 的模板，会因多个候选而显式报错（而不是静默拿到 String-String 模板）；框架内部按 Bean 名注入。
 - Bean Validation 实现（`hibernate-validator`）由 `snowdrift-base` 显式声明并向下传递，`@Validated @ConfigurationProperties` 可正常绑定；`bizlog-sdk` 偶然带进来的旧版实现已在 `snowdrift-log` 中排除。
+- **自动配置顺序（改动前请先读）**：核心配置 `SnowdriftCacheConfiguration` 用 `@ConditionalOnBean(ICacheService.class)` / `@ConditionalOnBean(IDistributedLockService.class)` 决定是否注册 `@RepeatSubmit`、`@DistributedLock` 切面，而 Bean 条件**只能看到解析顺序上先处理过的配置类**。因此后端配置必须显式排在核心配置之前（`SnowdriftRedissonConfiguration` / `SnowdriftRedisConfiguration` / `SnowdriftCaffeineConfiguration` 均声明了 `before = SnowdriftCacheConfiguration.class`）。按类名排序时 `cache.config.*` 会排在 `cache.redis.*` **之前**，此前 Redis 侧缺少该声明，导致 **`@RepeatSubmit`、`@DistributedLock` 全部静默失效且不报错**；`SnowdriftRedisConfigurationTest` 中两个切面装配用例即为该回归的守卫。
 
 ## 后端对比
 
@@ -214,9 +215,12 @@ public class ProtoBufSerializer implements ICacheSerializer {
 容器内注册了统一的 `SnowdriftKeyGenerator`（`CachingConfigurer#keyGenerator`），生成格式：
 
 ```
-[prefix:]完整类名#方法名[:参数类型:参数值...]
+完整类名#方法名[:参数类型:参数值...]
 com.example.UserService#findById:java.lang.Long:1
 ```
+
+> 前缀不在本生成器中拼接：`@Cacheable` 的 Redis key 前缀由 `RedisCacheManager` 负责（`prefix:cacheName:key`），
+> Caffeine 侧不带前缀；`ICacheService` 的 `key-prefix` 由 `AbstractCacheService#buildKey` 拼接。
 
 - 每个参数都带**类型名**，避免同名重载方法（`m(Integer)` / `m(Long)` / `m(String)`）在参数值相同时撞 key；
 - 用**完整类名**，避免不同包下的同名类（`p1.Inner` / `p2.Inner`）撞 key；
@@ -227,7 +231,7 @@ com.example.UserService#findById:java.lang.Long:1
 
 ## 测试
 
-三个子模块均已引入 `spring-boot-starter-test`（scope test，版本由 parent 托管），**共 122 个用例**（`mvn -pl snowdrift-framework/snowdrift-cache/snowdrift-cache-<backend> -am test` 实测全绿）：
+三个子模块均已引入 `spring-boot-starter-test`（scope test，版本由 parent 托管），**共 130 个用例**（`mvn -pl snowdrift-framework/snowdrift-cache/snowdrift-cache-<backend> -am test` 实测全绿）：
 
 | 模块 | 测试类 | 覆盖点 |
 |------|--------|--------|
@@ -240,11 +244,13 @@ com.example.UserService#findById:java.lang.Long:1
 | cache-base | `DistributedLockAspectTest`(7) | 加锁/释放/异常与 Error 释放、加锁失败码与消息、自定义 message |
 | cache-base | `SnowdriftCachingErrorHandlerTest`(2) | 四类异常静默降级 |
 | cache-base | `SnowdriftCacheConfigurationTest`(7) | 默认/切换序列化器、自定义覆盖、属性绑定、切面条件装配 |
-| cache-caffeine | `SnowdriftCaffeineCacheServiceImplTest`(13) | 真实 Caffeine：默认/显式 TTL、per-key 过期、putIfAbsent、淘汰、不支持操作、getExpire 契约 |
+| cache-base | `SnowdriftCachingIntegrationTest`(2) | **端到端**：`@Cacheable` 实际采用框架 `KeyGenerator`（key 形如 `类名#方法:类型:值`）与框架 `CacheErrorHandler`（缓存故障穿透） |
+| cache-redis | `SnowdriftRedisConfigurationTest` 中的 `redisWinsOverCaffeine` | **装配优先级**：Redis 与 Caffeine 同时在类路径时 Redis 生效、Caffeine 退让（首次被验证） |
+| cache-caffeine | `SnowdriftCaffeineCacheServiceImplTest`(14) | 真实 Caffeine：默认/显式 TTL、per-key 过期、putIfAbsent、淘汰、不支持操作、getExpire 契约 |
 | cache-caffeine | `SnowdriftCaffeineConfigurationTest`(4) | 兜底装配与退让回归、自定义 CacheManager |
-| cache-redis | `SnowdriftRedisCacheServiceImplTest`(12) | mock RedisTemplate：命令映射、TTL 换算、Lua increment 秒数取整、前缀 |
-| cache-redis | `SnowdriftRedisConfigurationTest`(7) | 模板/管理器装配、前缀与 TTL 进入配置、`@Cacheable` 值序列化器固定为带 `@class` 的实现（回归）、自定义 ICacheService 回归 |
-| cache-redis | `SnowdriftRedissonDistributedLockServiceImplTest`(6) | mock RLock：加解锁、中断语义、executeWithLock |
+| cache-redis | `SnowdriftRedisCacheServiceImplTest`(13) | mock RedisTemplate：命令映射、TTL 换算、Lua increment 秒数取整、前缀 |
+| cache-redis | `SnowdriftRedisConfigurationTest`(10) | 模板/管理器装配、前缀与 TTL 进入配置、`@Cacheable` 值序列化器固定为带 `@class` 的实现（回归）、自定义 ICacheService 回归、**Redis 后端下两个切面的装配回归** |
+| cache-redis | `SnowdriftRedissonDistributedLockServiceImplTest`(7) | mock RLock：加解锁、中断语义、executeWithLock |
 
 ## 升级注意（本轮变更）
 
@@ -256,6 +262,8 @@ com.example.UserService#findById:java.lang.Long:1
 - **两个序列化器对齐（本轮）**：统一字段口径、键序（字母序）、日期时间格式（`LocalDateTime`/`Date`/`Timestamp` 为 `yyyy-MM-dd HH:mm:ss` + JVM 默认时区，其余保持 ISO 风格），并让两侧读取同时接受空格与 ISO 写法 → 切换 `snowdrift.cache.serializer` 不再改变值格式，数据也可互相读取。
 - **新增泛型 API**：`ICacheService#get(String, Type)`、`#hget(String, String, Type)` 与 `ICacheSerializer#deserialize(String, Type)`；`ICacheService#get(key, List.class)` 只能得到 Map 元素的老问题，改用这些重载即可正确还原元素类型。
 - **`@Cacheable` 固定单一实现**：值序列化器恒为 `cacheValueMapper()`（`@class`），不再随 `snowdrift.cache.serializer` 切换；同时**移除** `FastJson2RedisSerializer`（其 `@type` 与 `@class` 互不可读）。
+- **细节修复**：Caffeine 后端对超过纳秒上限（约 292 年）的 `key-ttl` 不再抛 `ArithmeticException`，按"永不过期"处理；`SnowdriftRedisCacheServiceImpl` / `SnowdriftRedissonDistributedLockServiceImpl` 补构造期协作者校验（缺失时快速失败，不再等到首个命令才 NPE）。
+- **修复（切面静默失效）**：Redis / Redisson 后端下 `@RepeatSubmit`、`@DistributedLock` 此前因自动配置顺序（后端排在核心配置之后）而**完全没有生效**；现由后端配置的 `before = SnowdriftCacheConfiguration.class` 修正。升级后这两个注解会真正开始拦截——若历史上依赖过“防重/加锁没生效”的现状（例如靠数据库唯一键兜底），请回归验证。
 
 ## 配置属性参考
 

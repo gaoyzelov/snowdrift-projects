@@ -2,6 +2,7 @@ package com.snowdrift.framework.cache.redis.service;
 
 import com.snowdrift.framework.cache.IDistributedLockService;
 import com.snowdrift.framework.base.exception.BizException;
+import com.snowdrift.framework.base.util.AssertUtil;
 import com.snowdrift.framework.base.result.ResultCode;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RLock;
@@ -23,6 +24,7 @@ public class SnowdriftRedissonDistributedLockServiceImpl implements IDistributed
     private final RedissonClient redissonClient;
 
     public SnowdriftRedissonDistributedLockServiceImpl(RedissonClient redissonClient) {
+        AssertUtil.notNull(redissonClient, "RedissonClient 不能为空");
         this.redissonClient = redissonClient;
     }
 

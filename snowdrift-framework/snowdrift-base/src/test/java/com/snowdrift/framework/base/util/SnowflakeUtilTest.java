@@ -110,6 +110,56 @@ class SnowflakeUtilTest {
         }
     }
 
+    /** 起始纪元（2015-01-01），与实现中的 twepoch 一致 */
+    private static final long TWEPOCH = 1420041600000L;
+
+    /** 直接改写私有状态以覆盖“时钟回拨”“序列用尽”分支（这两个分支无法通过公开 API 触发） */
+    private static void setState(SnowflakeUtil snowflake, String field, long value) throws Exception {
+        java.lang.reflect.Field target = SnowflakeUtil.class.getDeclaredField(field);
+        target.setAccessible(true);
+        target.setLong(snowflake, value);
+    }
+
+    @Test
+    @DisplayName("时钟回拨超过容忍阈值（2s）时拒绝生成，而不是发出可能重复的 ID")
+    void rejectsLargeClockRollback() throws Exception {
+        // 专用 workerId/datacenterId，避免污染其它用例复用的实例
+        SnowflakeUtil snowflake = SnowflakeUtil.getInstance(28, 28);
+        setState(snowflake, "lastTimestamp", System.currentTimeMillis() + 5_000L);
+
+        assertThatThrownBy(snowflake::nextId)
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("系统时钟回拨");
+    }
+
+    @Test
+    @DisplayName("回拨在容忍阈值内时复用上次时间戳继续生成：时间戳不回退，序列继续累加")
+    void toleratesSmallClockRollback() throws Exception {
+        SnowflakeUtil snowflake = SnowflakeUtil.getInstance(27, 27);
+        long future = System.currentTimeMillis() + 1_000L;
+        setState(snowflake, "lastTimestamp", future);
+        setState(snowflake, "sequence", 5L);
+
+        long id = snowflake.nextId();
+
+        assertThat((id >>> 22) + TWEPOCH).isEqualTo(future);
+        assertThat(id & 0xFFFL).isEqualTo(6L);
+    }
+
+    @Test
+    @DisplayName("毫秒内序列用尽后不复用同一毫秒：序列归零，时间戳只前进不后退")
+    void sequenceNeverWrapsWithinSameMillis() throws Exception {
+        SnowflakeUtil snowflake = SnowflakeUtil.getInstance(26, 26);
+        long now = System.currentTimeMillis();
+        setState(snowflake, "lastTimestamp", now);
+        setState(snowflake, "sequence", 4095L);
+
+        long id = snowflake.nextId();
+
+        assertThat(id & 0xFFFL).isZero();
+        assertThat((id >>> 22) + TWEPOCH).isGreaterThanOrEqualTo(now);
+    }
+
     @Test
     @DisplayName("编号越界抛 BizException，且不会污染实例缓存")
     void invalidIds() {
