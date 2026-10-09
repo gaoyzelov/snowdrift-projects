@@ -7,6 +7,7 @@ import com.alibaba.fastjson2.TypeReference;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.base.util.AssertUtil;
 import com.snowdrift.framework.schedule.exception.ScheduleException;
 import com.snowdrift.framework.base.util.HttpUtil;
 import com.snowdrift.framework.schedule.core.IScheduleService;
@@ -189,14 +190,16 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     // ========== 内部方法：参数构建 ==========
 
     private Map<String, String> buildJobParam(XxlJobRequest request, int groupId) {
+        AssertUtil.notBlank(request.getName(), "任务名称不能为空");
+        AssertUtil.notBlank(request.getCron(), "Cron 表达式不能为空");
         Map<String, String> param = new HashMap<>();
         param.put("jobGroup", String.valueOf(groupId));
-        param.put("jobDesc", request.getDescription());
-        param.put("author", request.getAuthor());
-        param.put("alarmEmail", request.getAlarmEmail());
+        param.put("jobDesc", StringUtils.defaultString(request.getDescription()));
+        param.put("author", StringUtils.defaultString(request.getAuthor()));
+        param.put("alarmEmail", StringUtils.defaultString(request.getAlarmEmail()));
         param.put("scheduleType", "CRON");
-        // JSON 显式传 null 时会覆盖默认值，这里做空安全兜底避免 NPE / 空值入参
-        param.put("scheduleConf", StringUtils.isNotBlank(request.getCron()) ? request.getCron() : "");
+        // cron 已由上方非空校验保证，不会再出现 null 入参
+        param.put("scheduleConf", request.getCron());
         param.put("misfireStrategy", request.getMisfireStrategy() != null
                 ? request.getMisfireStrategy().getCode()
                 : MisfireStrategyEnum.FIRE_ONCE_NOW.getCode());
