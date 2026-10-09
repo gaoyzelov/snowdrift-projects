@@ -20,7 +20,11 @@ import java.util.List;
 public class XssProperties implements Serializable {
 
     /**
-     * 是否启用 XSS 防护
+     * 是否启用 XSS 防护（默认关闭）
+     * <p><b>开启后的实际覆盖面：</b>过滤器 {@code XssFilter} 清洗请求参数与 Header；
+     * {@code XssJsonBodyAdvice} 仅清洗 {@code @RequestBody} 反序列化后为 Map/集合/数组的 String 值，
+     * <b>不覆盖 DTO 等复杂 POJO 的字段</b>。默认注入的清洗器做 HTML 实体转义，其自身文档即说明不适合
+     * JSON 输出（会改变载荷内容、可能双重编码）。XSS 属输出上下文问题，建议在渲染/响应阶段按上下文编码。</p>
      */
     @NotNull
     private Boolean enabled = Boolean.FALSE;

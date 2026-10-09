@@ -22,22 +22,35 @@ import java.util.*;
 /**
  * XSS JSON Body 清洗 Advice
  * <p>
- * 在 Spring MVC 层对 {@code @RequestBody} 反序列化后的对象递归清洗 String 值，
- * 弥补 {@link com.snowdrift.framework.web.filter.XssFilter} 仅覆盖参数/Header
- * 而不覆盖 JSON Body 的防护盲区。
+ * 在 Spring MVC 层对 {@code @RequestBody} <b>反序列化后</b>的对象做递归清洗。需要明确它<b>覆盖面很窄</b>。
  * </p>
  *
- * <h3>清洗范围</h3>
+ * <h3>清洗范围（以及明确不做的事）</h3>
  * <ul>
- *   <li>{@link String} — 直接调用 {@link XssCleaner#clean(String)} 清洗</li>
- *   <li>{@link Map} — 遍历 value，对 String 值递归清洗（不可变 Map 跳过）</li>
- *   <li>{@link Collection} — 遍历元素递归清洗</li>
- *   <li>数组 — 遍历元素递归清洗</li>
- *   <li>复杂 POJO — 不做深度反射（安全边界）</li>
+ *   <li>{@link String} — 调用 {@link XssCleaner#clean(String)} 清洗</li>
+ *   <li>{@link Map} — <b>只清洗 value，key 不清洗</b>；不可变 Map 跳过</li>
+ *   <li>{@link List} — 逐元素原地替换；其他 {@link Collection}（如 {@link java.util.Set}）
+ *       只递归其内部结构，<b>String 元素本身不会被清洗</b></li>
+ *   <li>数组 — 逐元素原地替换</li>
+ *   <li><b>复杂 POJO — 整体跳过（不做反射）</b></li>
  * </ul>
+ * <p>
+ * 因此对最常见的 {@code @RequestBody MyDto}，本 Advice <b>不产生任何清洗效果</b>：
+ * {@link com.snowdrift.framework.web.filter.XssFilter} 只覆盖请求参数与 Header，
+ * JSON Body 中 DTO 的字段不在两者的防护范围内。
+ * </p>
  *
- * <h3>安全防护</h3>
+ * <h3>关于所用清洗器</h3>
+ * <p>
+ * 默认注入的 {@link SimpleXssCleaner} 做的是 HTML 实体转义，其自身文档即指出"<b>不适用于 JSON 输出</b>"：
+ * 转义会改变载荷内容，对已转义内容再次清洗还会产生双重编码。故本 Advice 的定位是
+ * "<b>仅在 body 为 Map/集合/数组形态时的兜底</b>"，不应被当作 JSON 接口的 XSS 防线——
+ * XSS 属输出上下文问题，应在渲染/响应阶段按上下文编码，而不是在入口改写业务数据。
+ * </p>
+ *
+ * <h3>其他</h3>
  * <ul>
+ *   <li>整体开关见 {@link XssProperties#getEnabled()}，<b>默认关闭</b></li>
  *   <li>通过 {@link IdentityHashMap} 检测循环引用，防止无限递归</li>
  *   <li>不可变集合 / 不可变 Map 静默跳过（捕获 UnsupportedOperationException）</li>
  *   <li>通过 {@link XssProperties#getExcludePathPatterns()} 排除富文本等路径</li>
@@ -160,7 +173,7 @@ public class XssJsonBodyAdvice implements RequestBodyAdvice {
     }
 
     /**
-     * 清洗 Map 中所有 String 类型的 value
+     * 清洗 Map 中所有 String 类型的 value（key 不处理）
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
     private void cleanMap(Map map, Set<Object> visited) {
@@ -179,10 +192,11 @@ public class XssJsonBodyAdvice implements RequestBodyAdvice {
     }
 
     /**
-     * 清洗 Collection 中所有 String 类型的元素
+     * 清洗 Collection 中的 String 元素（<b>仅 List 支持原地替换</b>）
      * <p>
      * List 类型通过 {@link ListIterator#set(Object)} 原地替换清洗后的值；
-     * 其他 Collection（如 Set）无法安全替换元素，仅递归处理内部的 Map/Collection 结构。
+     * 其他 Collection（如 Set）无法安全替换元素，仅递归处理其内部的 Map/Collection 结构，
+     * 因此 {@code Set<String>} 中的字符串不会被清洗。
      * </p>
      */
     @SuppressWarnings({"unchecked", "rawtypes"})
