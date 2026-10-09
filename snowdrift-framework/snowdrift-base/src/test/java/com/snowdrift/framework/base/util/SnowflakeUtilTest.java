@@ -147,17 +147,20 @@ class SnowflakeUtilTest {
     }
 
     @Test
-    @DisplayName("毫秒内序列用尽后不复用同一毫秒：序列归零，时间戳只前进不后退")
+    @DisplayName("毫秒内序列用尽时推进到新的毫秒：时间戳严格前进，不会在同一毫秒内回绕出重复 ID")
     void sequenceNeverWrapsWithinSameMillis() throws Exception {
         SnowflakeUtil snowflake = SnowflakeUtil.getInstance(26, 26);
-        long now = System.currentTimeMillis();
-        setState(snowflake, "lastTimestamp", now);
+        // lastTimestamp 置为「略超当前时间」的容忍区间内未来值，使时间戳一定等于 lastTimestamp，
+        // 从而必定走进「同一毫秒内序列溢出」分支。若实现不做 tilNextMillis 而直接回绕，
+        // 时间戳会停在 lastTimestamp 上（等于而非大于），断言即失败。
+        long future = System.currentTimeMillis() + 50L;
+        setState(snowflake, "lastTimestamp", future);
         setState(snowflake, "sequence", 4095L);
 
         long id = snowflake.nextId();
 
+        assertThat((id >>> 22) + TWEPOCH).isGreaterThan(future);
         assertThat(id & 0xFFFL).isZero();
-        assertThat((id >>> 22) + TWEPOCH).isGreaterThanOrEqualTo(now);
     }
 
     @Test

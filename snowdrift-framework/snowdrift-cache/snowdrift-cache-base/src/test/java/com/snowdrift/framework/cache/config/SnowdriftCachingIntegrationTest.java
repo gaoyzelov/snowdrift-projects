@@ -1,5 +1,6 @@
 package com.snowdrift.framework.cache.config;
 
+import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -148,16 +149,34 @@ class SnowdriftCachingIntegrationTest {
     @Test
     @DisplayName("@Cacheable 的缓存故障经框架 CacheErrorHandler 降级，业务方法照常执行")
     void cacheFailureDegradesToMethodInvocation() {
-        new ApplicationContextRunner()
-                .withConfiguration(AutoConfigurations.of(SnowdriftCacheConfiguration.class))
-                .withUserConfiguration(ExplodingConfig.class)
-                .run(context -> {
-                    assertThat(context).hasNotFailed();
-                    UserService service = context.getBean(UserService.class);
+        // 只断言“没抛异常”不足以证明是框架的降级处理器起了作用（Spring 默认的 SimpleCacheErrorHandler 会直接抛），
+        // 因此同时抓取 SnowdriftCachingErrorHandler 的日志，确认确实是它接在拦截器上
+        ch.qos.logback.classic.Logger handlerLogger = (ch.qos.logback.classic.Logger)
+                org.slf4j.LoggerFactory.getLogger(SnowdriftCachingErrorHandler.class);
+        ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> appender =
+                new ch.qos.logback.core.read.ListAppender<>();
+        appender.start();
+        handlerLogger.addAppender(appender);
+        try {
+            new ApplicationContextRunner()
+                    .withConfiguration(AutoConfigurations.of(SnowdriftCacheConfiguration.class))
+                    .withUserConfiguration(ExplodingConfig.class)
+                    .run(context -> {
+                        assertThat(context).hasNotFailed();
+                        UserService service = context.getBean(UserService.class);
 
-                    // 缓存不可用时不能抛异常，直接穿透到方法
-                    assertThat(service.find(2L)).isEqualTo("user-2");
-                    assertThat(service.invocationCount()).isEqualTo(1);
-                });
+                        // 缓存不可用时不能抛异常，直接穿透到方法
+                        assertThat(service.find(2L)).isEqualTo("user-2");
+                        assertThat(service.invocationCount()).isEqualTo(1);
+                    });
+        } finally {
+            handlerLogger.detachAppender(appender);
+            appender.stop();
+        }
+
+        assertThat(appender.list)
+                .as("框架降级处理器必须被 @Cacheable 真正调用（默认 SimpleCacheErrorHandler 会直接抛异常）")
+                .isNotEmpty();
+        assertThat(appender.list.get(0).getFormattedMessage()).contains("[Cache] GET 失败");
     }
 }
