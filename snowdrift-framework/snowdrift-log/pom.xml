@@ -28,7 +28,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!-- Spring Web（optional：@ConditionalOnWebApplication(SERVLET) 保证 Web 环境下可用） -->
+        <!-- Spring Web -->
         <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>spring-web</artifactId>
