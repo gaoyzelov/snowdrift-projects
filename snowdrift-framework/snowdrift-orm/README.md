@@ -6,7 +6,7 @@ ORM 增强模块，基于 MyBatis-Plus 插件体系提供多租户隔离、数�
 
 ```
 snowdrift-orm
-├── snowdrift-orm-base        ← 通用层：BaseEntity、TenantBaseEntity、@DataScope
+├── snowdrift-orm-base        ← 通用层：BaseEntity、TenantEntity、@DataScope、分页模型
 └── snowdrift-orm-mp          ← MyBatis-Plus 插件实现
 ```
 
@@ -44,17 +44,16 @@ public class User extends BaseEntity {
 | `createTime` | `FieldFill.INSERT` | 创建时间 |
 | `updateBy` | `FieldFill.INSERT_UPDATE` | 更新人 |
 | `updateTime` | `FieldFill.INSERT_UPDATE` | 更新时间 |
-| `deleted` | `@TableLogic` | 逻辑删除（0=未删，1=已删） |
-| `deletedTime` | — | 逻辑删除时间戳（Long 毫秒） |
+| `deleted` | `@TableLogic` | 逻辑删除标志（`0`=未删；删除时写入 `UNIX_TIMESTAMP()`，非 0 即已删） |
 
-### TenantBaseEntity — 多租户实体
+### TenantEntity — 多租户实体
 
 继承 `BaseEntity`，额外添加租户隔离字段。
 
 ```java
 @Data
 @TableName("sys_config")
-public class Config extends TenantBaseEntity {
+public class Config extends TenantEntity {
     private String configKey;
     private String configValue;
 }
@@ -86,7 +85,7 @@ TenantUtil.ignore(() -> {
 });
 ```
 
-> **安全语义（fail-closed）：** 查询/写库若取不到当前租户上下文会抛 `BizException`，避免跨租户读写；系统任务需放行时用 `TenantUtil.ignore(...)` 显式跳过。INSERT 在无上下文时由自动填充写入 `tenant_id = 0`（系统租户）。
+> **安全语义（fail-closed）：** 查询若取不到当前租户上下文会抛 `BizException`（`MultiTenantLineHandler`），避免跨租户读写；系统任务需放行时用 `TenantUtil.ignore(...)` 显式跳过。写入侧（`FieldAutoFillHandler`）在启用多租户且取不到租户上下文时**同样 fail-closed 抛 `BizException`**，除非显式配置 `snowdrift.orm.mp.tenant.default-tenant-id`（此时写入该默认租户并记 WARN）；**不会静默写 `tenant_id = 0`**。
 
 ### 数据权限 — @DataScope
 
@@ -111,9 +110,13 @@ public interface OrderMapper extends BaseMapper<Order> {
 | 自定义 | `CUSTOM` | `dept_id IN (?, ?, ...)` — 需实现 `IDataScopeProvider` |
 
 ```java
-// DEPT_AND_SUB 和 CUSTOM 需要提供 SPI 实现
+// DEPT_AND_SUB 和 CUSTOM 需要提供 SPI 实现（getDataScope 返回该用户的数据权限范围）
 @Component
 public class DeptDataScopeProvider implements IDataScopeProvider {
+    @Override
+    public DataScopeEnum getDataScope(Long userId) {
+        return roleService.getDataScope(userId);
+    }
     @Override
     public List<Long> getCustomDeptIds(Long userId) {
         return deptService.getDeptIdsByUser(userId);
@@ -129,7 +132,7 @@ public class DeptDataScopeProvider implements IDataScopeProvider {
 
 ### 字段加密 — @TableField(typeHandler = ...)
 
-对敏感字段进行透明 AES-GCM 加密，入库自动加密，出库自动解密。兼容旧 ECB 格式数据的解密。
+对敏感字段进行透明 AES-GCM 认证加密，入库自动加密，出库自动解密。**仅支持 GCM 一种格式**（存储为 `{ENC}<Base64(iv + ciphertext + tag)>`）。
 
 ```yaml
 snowdrift:
@@ -146,18 +149,19 @@ snowdrift:
 private String phone;
 ```
 
-- 新加密使用 **AES-256-GCM**，每次加密生成随机 IV，密文带 `{ENC}` 前缀
-- 向后兼容：旧 ECB 格式数据（同 `{ENC}` 前缀）的自动解密，写入时自动升级为 GCM
-- 安全防护：已带 `{ENC}` 前缀的数据拒绝再次加密（大小写不敏感）
+- 加密使用 **AES-GCM**（密钥长度由 `crypto-key` 决定，支持 AES-128/192/256），每次加密生成随机 IV，密文带 `{ENC}` 前缀
+- 读取时：带 `{ENC}` 前缀走 GCM 解密，无前缀按明文原样返回
+- 安全防护：已带 `{ENC}` 前缀的数据拒绝再次加密（大小写不敏感）；密钥不可用时加/解密均 fail-closed 抛 `BizException`
+- **不支持旧 ECB 格式**：仅 GCM 单一格式，无 ECB 向后兼容与自动升级逻辑
 
-> 密钥为十六进制字符串，长度需为 **32/48/64 位**（对应 AES-128/192/256），且为偶数位；无效长度在启动期即报错。
+> 密钥为十六进制字符串，长度需为 **32/48/64 位**（对应 AES-128/192/256），且为偶数位；**无效长度或含非十六进制字符均在启动期即报错**（fail-fast，与运行期 `EncryptUtil` 的十六进制解析一致）。
 
 ### 自动填充
 
 `FieldAutoFillHandler` 在 INSERT / UPDATE 时自动填充审计字段和租户 ID（实体字段需标注 `@TableField(fill = ...)`），**字段已有值时不会覆盖**。
 
 - `createBy` / `updateBy`：取自 `SecurityContext`（昵称优先，否则账号）；
-- **无登录上下文（匿名/系统任务）写库不抛错**：操作人降级为 `system`，INSERT 租户填 `0`（系统租户）；日志按 debug 记录，避免批量写入刷屏。
+- **无登录上下文（匿名/系统任务）写库不因操作人缺失而报错**：操作人降级为 `system`（日志按 debug 记录，避免批量写入刷屏）；但若启用多租户且取不到租户上下文，INSERT 会 fail-closed 抛 `BizException`，除非配置了 `default-tenant-id`（见「多租户隔离」）。
 
 ### 分页
 
@@ -206,7 +210,8 @@ snowdrift:
 |------|------|--------|------|
 | `enabled` | Boolean | false | 多租户开关（默认关闭） |
 | `tenant-id-column` | String | tenant_id | 租户 ID 字段名 |
-| `ignore-tables` | List\<String\> | [] | 忽略的表名 |
+| `ignore-tables` | Set\<String\> | — | 忽略租户过滤的表名（匹配忽略大小写） |
+| `default-tenant-id` | Long | — | 无租户上下文写入时使用的默认租户；不配置则 fail-closed 抛错 |
 
 ### snowdrift.orm.mp.pagination
 

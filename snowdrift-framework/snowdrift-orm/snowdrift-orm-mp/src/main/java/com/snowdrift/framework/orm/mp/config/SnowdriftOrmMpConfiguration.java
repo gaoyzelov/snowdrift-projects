@@ -20,6 +20,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
+import java.util.HexFormat;
 import java.util.Optional;
 
 /**
@@ -61,6 +62,14 @@ public class SnowdriftOrmMpConfiguration {
         int keyBytes = key.length() / 2;
         if (keyBytes != 16 && keyBytes != 24 && keyBytes != 32) {
             throw new BizException("数据加密密钥长度无效");
+        }
+        // 长度合法但非十六进制字符的密钥（如 32 个 'z'）会通过上面的长度校验，
+        // 却在首次加密写库时才由 EncryptUtil.parseHexKey 抛错（fail-late）。
+        // 此处与运行期一致地用 HexFormat 校验，把配置错误提前到启动期暴露。
+        try {
+            HexFormat.of().parseHex(key);
+        } catch (IllegalArgumentException e) {
+            throw new BizException("数据加密密钥必须是合法的十六进制字符串");
         }
         CryptoKeyHolder.setKey(key);
         log.info("AES 加密密钥已初始化，密钥长度: {} 位。提示：本开关只初始化密钥、不自动加密任何字段，"
