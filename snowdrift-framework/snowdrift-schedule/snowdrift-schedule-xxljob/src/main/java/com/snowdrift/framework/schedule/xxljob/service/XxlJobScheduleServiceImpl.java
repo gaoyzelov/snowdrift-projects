@@ -6,8 +6,8 @@ import com.alibaba.fastjson2.JSONObject;
 import com.alibaba.fastjson2.TypeReference;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.snowdrift.framework.base.constant.StrConst;
-import com.snowdrift.framework.base.util.AssertUtil;
 import com.snowdrift.framework.schedule.exception.ScheduleException;
 import com.snowdrift.framework.base.util.HttpUtil;
 import com.snowdrift.framework.schedule.core.IScheduleService;
@@ -190,8 +190,13 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     // ========== 内部方法：参数构建 ==========
 
     private Map<String, String> buildJobParam(XxlJobRequest request, int groupId) {
-        AssertUtil.notBlank(request.getName(), "任务名称不能为空");
-        AssertUtil.notBlank(request.getCron(), "Cron 表达式不能为空");
+        // 统一抛 ScheduleException（与 Quartz 实现及 README 契约一致），避免 AssertUtil 抛裸 BizException
+        if (StringUtils.isBlank(request.getName())) {
+            throw new ScheduleException("XXL-JOB 任务名称不能为空");
+        }
+        if (StringUtils.isBlank(request.getCron())) {
+            throw new ScheduleException("XXL-JOB Cron 表达式不能为空");
+        }
         Map<String, String> param = new HashMap<>();
         param.put("jobGroup", String.valueOf(groupId));
         param.put("jobDesc", StringUtils.defaultString(request.getDescription()));
@@ -442,7 +447,9 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         String appName = StringUtils.isNotBlank(group) ? group : properties.getAppName();
         try {
             return executorGroupCache.get(appName, () -> loadExecutorGroupId(appName));
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            // Guava 将 loader 抛出的受检异常包装为 ExecutionException、运行时异常（含 ScheduleException）
+            // 包装为 UncheckedExecutionException，二者都需捕获并还原，避免裸包装异常外泄破坏统一异常契约
             if (e.getCause() instanceof ScheduleException) {
                 throw (ScheduleException) e.getCause();
             }
@@ -480,7 +487,8 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     private String getExecutorAppName(int groupId) {
         try {
             return executorGroupIdCache.get(groupId, () -> loadExecutorAppName(groupId));
-        } catch (ExecutionException e) {
+        } catch (ExecutionException | UncheckedExecutionException e) {
+            // 同 getExecutorGroupId：ScheduleException 会被 Guava 包装为 UncheckedExecutionException，需一并捕获才能命中兜底
             log.warn("XXL-JOB 解析执行器 AppName 失败，使用 jobGroup 数字 ID 兜底: groupId={}", groupId);
             return String.valueOf(groupId);
         }

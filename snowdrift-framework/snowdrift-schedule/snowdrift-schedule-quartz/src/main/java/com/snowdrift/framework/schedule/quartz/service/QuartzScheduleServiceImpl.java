@@ -100,7 +100,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     @Override
     public void updateJob(QuartzJobKey jobKey, QuartzJobRequest request) {
         if (request.getJobClass() == null) {
-            throw new ScheduleException("Quartz 任务更新失败");
+            throw new ScheduleException("Quartz 任务类型不能为空");
         }
         if (StringUtils.isBlank(request.getName()) || StringUtils.isBlank(request.getCron())) {
             throw new ScheduleException("Quartz 任务名称与 cron 表达式不能为空");
@@ -109,7 +109,7 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
         TriggerKey triggerKey = TriggerKey.triggerKey(jobKey.getName(), jobKey.getGroup());
         try {
             if (!scheduler.checkExists(qJobKey)) {
-                throw new ScheduleException("Quartz 任务更新失败");
+                throw new ScheduleException("Quartz 任务不存在，无法更新");
             }
 
             // 1. 保存原始 Trigger（用于回滚）；不存在则显式失败，避免 rescheduleJob 静默 no-op

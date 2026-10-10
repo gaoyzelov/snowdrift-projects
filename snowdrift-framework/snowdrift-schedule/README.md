@@ -44,8 +44,9 @@ snowdrift:
       login-token-timeout: 1h
       admin-timeout: 5            # Admin API 超时（秒）
       ip:                         # 执行器 IP（留空自动探测）
-      port: 9999                  # 执行器端口
-      log-path:                   # 日志路径
+      port: 9999                  # 执行器端口（默认 9999）
+      address:                    # 执行器手动注册地址（留空则用 IP:PORT 自动注册）
+      log-path: logs/xxl-job      # 日志路径（默认 logs/xxl-job）
       log-retention-days: 30      # 日志保留天数
 ```
 
@@ -105,7 +106,7 @@ scheduleService.removeJob(key);
 |----|------|------|
 | `JobRequest` | name, group, cron, description, params, misfireStrategy | 公共字段 |
 | `QuartzJobRequest` | 继承 + jobClass | Quartz 独有：指定 Job 实现类 |
-| `XxlJobRequest` | 继承 + author, alarmEmail, routeStrategy, blockStrategy, timeout, retryCount | XXL-JOB 独有：路由策略、超时等 |
+| `XxlJobRequest` | 继承 + author, alarmEmail, routeStrategy, blockStrategy, timeout, retryCount, triggerStatus | XXL-JOB 独有：路由/阻塞策略、超时、重试、运行状态等 |
 | `JobDetails` | jobKey, name, group, cron, description, status, params, lastFireTime, nextFireTime | 任务详情 |
 | `QuartzJobKey` | name, group | Quartz 任务标识 |
 | `XxlJobKey` | id, groupId | XXL-JOB 任务标识 |
@@ -129,6 +130,9 @@ scheduleService.removeJob(key);
 - **Quartz**：`name` 与 `cron` 必填，非法 cron 抛 `ScheduleException`；新建后从未触发或已结束任务的 `lastFireTime` / `nextFireTime` 可能为 `null`（`getJob`/`JobDetails` 已空安全处理）；重复注册报“任务已存在”（含并发场景）。
 - **Quartz 更新**：任务存在但触发器缺失时更新会显式失败（避免 `rescheduleJob` 静默 no-op 造成“任务已存在却无调度”）。
 - **XXL-JOB**：运行时依赖 Admin 的登录会话与响应契约（建议对照实际部署的 Admin 版本联调，仓库内置 core 3.4.1 的 `ReturnT` 结构可能与实现假设不同）；登录过期判定、多实例并发登录与多 Admin 节点 Cookie 绑定属于运行时语义，生产前请在真实环境验证。
+- **XXL-JOB `triggerStatus`**：为空时一律按 `1`（运行）处理——`addJob` 创建后即启动，`updateJob` 会把已停止的任务重新启动；若需保持停止态，必须由调用方显式传 `0`。
+- **XXL-JOB `group`**：入参与查询返回的 `group` 均为执行器 AppName（非 Admin 端 `jobGroup` 数字 ID）；框架内部按 AppName 解析数字 ID 并缓存，详情/列表回填时反查 AppName，反查失败降级为数字 ID 字符串（不阻断查询）。
+- **XXL-JOB 分组解析失败**：统一抛 `ScheduleException`（如未配置 `admin-addresses` 报“未配置管理地址”、分组不存在报“分组未找到”），不会外泄底层包装异常。
 - 动态任务管理的所有操作均通过管理端调用 `IScheduleService`，不依赖注解扫描。
 
 ## 扩展
