@@ -80,6 +80,10 @@ public class OssStrategyFactory {
      * @throws OssException 当 configKey 不存在时抛出
      */
     public synchronized IOssService getService(String configKey) {
+        // configKey 为空时 ConcurrentHashMap.get(null) 会抛 NPE，与 javadoc 承诺的 OssException 不符，先行拦截
+        if (StringUtils.isBlank(configKey)) {
+            throw new OssException("OSS 配置不存在: " + configKey);
+        }
         IOssService service = serviceMap.get(configKey);
         if (service == null) {
             throw new OssException("OSS 配置不存在: " + configKey);

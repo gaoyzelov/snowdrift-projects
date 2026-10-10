@@ -96,7 +96,7 @@ OssUploadRequest request = OssUploadRequest.builder()
         .build();
 OssResult result = ossService.upload(request);
 
-// File 上传
+// File 上传（OssUploadRequest.from(File) 声明 throws IOException，需处理）
 OssResult result = ossService.upload(OssUploadRequest.from(new File("test.jpg")));
 ```
 
@@ -167,7 +167,7 @@ boolean exists = ossService.exists("avatar/user-123.jpg");
 | `configs.<name>.enabled` | Boolean | true | 是否启用该实例 |
 | `configs.<name>.is-default` | Boolean | false | 是否为默认配置 |
 | `configs.<name>.remark` | String | — | 配置备注 |
-| `configs.<name>.url-style` | UrlStyleEnum | PATH_STYLE | URL 风格（PATH_STYLE / VIRTUAL_HOSTED_STYLE） |
+| `configs.<name>.url-style` | UrlStyleEnum | PATH_STYLE | URL 风格枚举（`PATH_STYLE` / `VIRTUAL_HOST`）。**当前为预留字段，尚未被任何实现读取**（各 provider 的 URL 拼接由实现自行决定） |
 | `configs.<name>.chunk-size` | Long | 10485760 | 分片大小（字节），默认 10MB |
 | `configs.<name>.chunk-upload-url-expire` | Integer | 120 | 分片上传 URL 有效期（分钟） |
 | `configs.<name>.orphan-file-cleanup-days` | Integer | 7 | 孤儿文件清理周期（天） |

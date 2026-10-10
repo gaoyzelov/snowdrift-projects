@@ -26,5 +26,12 @@
             <artifactId>qiniu-java-sdk</artifactId>
         </dependency>
 
+        <!-- TEST -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 </project>

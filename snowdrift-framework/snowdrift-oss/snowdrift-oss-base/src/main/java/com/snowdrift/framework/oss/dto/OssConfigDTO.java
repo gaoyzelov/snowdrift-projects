@@ -47,7 +47,7 @@ public class OssConfigDTO {
     
     /**
      * 访问域名（公网/CDN）
-     * 示例：httpss://oss.example.com
+     * 示例：https://oss.example.com
      */
     private String domain;
     

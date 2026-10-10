@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 
 /**
@@ -61,11 +62,17 @@ public class OssUploadRequest {
      * @return 上传请求
      */
     public static OssUploadRequest from(@NonNull File file) throws IOException {
+        // 先完成可能抛 IOException 的探测（probeContentType），最后再打开输入流；
+        // 否则若探测失败，此前已 newInputStream 打开的流将无人关闭而泄漏
+        Path path = file.toPath();
+        String contentType = Files.probeContentType(path);
+        long size = file.length();
+        String name = file.getName();
         return OssUploadRequest.builder()
-                .objectKey(file.getName())
-                .inputStream(Files.newInputStream(file.toPath()))
-                .contentType(Files.probeContentType(file.toPath()))
-                .size(file.length())
+                .objectKey(name)
+                .contentType(contentType)
+                .size(size)
+                .inputStream(Files.newInputStream(path))
                 .build();
     }
 
