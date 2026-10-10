@@ -136,7 +136,7 @@ public class CustomTokenStore extends AbstractTokenStore {
   - `isAuthenticated()`：Sa-Token 对无效 token 返回 false；Spring Security 若未禁用匿名，无 token/坏 token 在 permitAll/`@Anonymous` 路径下可能被当成“已认证”。如需严格语义请禁用匿名或自行处理。
   - 权限/角色通配：Sa-Token 支持通配，Spring Security 实现为精确匹配。
 - **登录状态判断**：业务请通过 `SecurityContextHolder.peekContext()`（可空）或 `getContext()`（无上下文抛 `BizException`）读取；框架拦截器负责在请求结束清理上下文。
-- 双实现共存时只会启用其一（spring 模块有 `@ConditionalOnMissingBean(SaTokenConfig)` 防冲突），同一应用请勿同时启用 sa-token 与 spring。
+- 两个后端各由自身 `enabled` 属性驱动、**互不感知**。若同时启用 sa-token 与 spring，最终生效的 `ISecurityService` 由自动配置顺序决定（不可控），spring 模块启动时会打印 WARN 诊断提示；同一应用请仅启用其中一个。
 
 ## 配置属性参考
 

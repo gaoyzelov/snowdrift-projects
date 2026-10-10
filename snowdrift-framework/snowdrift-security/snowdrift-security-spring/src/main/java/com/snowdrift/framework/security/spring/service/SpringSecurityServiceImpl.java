@@ -9,6 +9,7 @@ import com.snowdrift.framework.security.spring.properties.SpringSecurityProperti
 import com.snowdrift.framework.security.spring.util.SpringSecurityHelper;
 import com.snowdrift.framework.security.spring.store.TokenStore;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -125,6 +126,9 @@ public class SpringSecurityServiceImpl implements ISecurityService {
 
     @Override
     public boolean hasRole(String role) {
+        if (StringUtils.isBlank(role)) {
+            return false;
+        }
         String roleAuthority = role.startsWith("ROLE_") ? role : "ROLE_" + role;
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
@@ -136,6 +140,9 @@ public class SpringSecurityServiceImpl implements ISecurityService {
 
     @Override
     public boolean hasPermission(String permission) {
+        if (StringUtils.isBlank(permission)) {
+            return false;
+        }
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || !authentication.isAuthenticated()) {
             return false;

@@ -10,9 +10,9 @@ import java.time.Duration;
  * 屏蔽底层存储差异（内存 / Redis），提供统一的 Token ↔ SecurityContext 映射存取能力。
  * </p>
  * <p>
- * <b>当前实现：</b>仅提供 {@link InMemoryTokenStore}（基于 ConcurrentHashMap），适用于单节点开发调试。
- * <br>
- * <b>待实现：</b>RedisTokenStore，分布式环境下通过 {@code StringRedisTemplate} 存取 Token。
+ * <b>实现：</b>{@link InMemoryTokenStore}（基于 Guava Cache，LRU 上限 2048，适用于单节点/开发调试）
+ * 与 {@link RedisTokenStore}（分布式环境，通过 {@code RedisTemplate} 存取 Token，多实例共享会话）。
+ * Spring 实现在 classpath 存在 {@code RedisConnectionFactory} 时自动选用 Redis，否则回退内存实现。
  * <br>
  * <b>注意：</b>Sa-Token 模块（snowdrift-security-satoken）自带 Redis 集成插件，
  * 引入 {@code sa-token-dao-redis-jackson} 依赖即可启用，无需此接口。

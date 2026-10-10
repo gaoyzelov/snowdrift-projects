@@ -126,6 +126,8 @@ public class SecurityContextFilter extends OncePerRequestFilter {
     /**
      * 从请求头提取 Token
      * 格式：Authorization: Bearer <token>
+     * <p>前缀比较大小写不敏感（RFC 7235：auth-scheme 大小写不敏感），
+     * 使 {@code bearer}/{@code BEARER} 等写法同样能正确去除前缀。</p>
      */
     private String extractToken(HttpServletRequest request) {
         String header = request.getHeader(securityProperties.getHeaderName());
@@ -133,7 +135,7 @@ public class SecurityContextFilter extends OncePerRequestFilter {
             return null;
         }
         String prefix = securityProperties.getPrefix();
-        if (StringUtils.isNotBlank(prefix) && header.startsWith(prefix)) {
+        if (StringUtils.isNotBlank(prefix) && StringUtils.startsWithIgnoreCase(header, prefix)) {
             return header.substring(prefix.length()).trim();
         }
         // 无前缀时直接返回
