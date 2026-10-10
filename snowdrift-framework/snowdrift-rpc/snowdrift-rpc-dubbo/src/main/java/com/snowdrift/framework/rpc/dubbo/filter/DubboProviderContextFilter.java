@@ -45,9 +45,12 @@ public class DubboProviderContextFilter implements Filter, Filter.Listener {
 
     /**
      * 从 Dubbo attachment 恢复上下文
+     * <p>显式使用 {@link RpcContext#getServerAttachment()}（Dubbo 3 提供端读取上游入站 attachment 的推荐通道，
+     * 框架 {@code ContextFilter} 将入站 attachment 放入其中），不依赖 {@code getServiceContext()}
+     * 标注 {@code @Experimental} 的兼容委托。</p>
      */
     private void restoreContext() {
-        RpcContext rpcContext = RpcContext.getServiceContext();
+        RpcContext rpcContext = RpcContext.getServerAttachment();
 
         // 检查 Consumer 端上下文注入失败标记
         String contextError = rpcContext.getAttachment(RpcContextConstants.CONTEXT_ERROR);

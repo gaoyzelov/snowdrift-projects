@@ -143,14 +143,16 @@ Consumer 端调用时自动向 RPC 附件注入 `traceId` 和 `SecurityContext`�
 
 ```log
 // Consumer 端：
-DEBUG Dubbo调用成功 [Consumer] com.example.OrderService.createOrder(), elapsed=45ms
-INFO  Dubbo业务异常  [Consumer] com.example.OrderService.createOrder(), elapsed=1203ms, msg=订单不存在
-ERROR Dubbo调用异常  [Consumer] com.example.PaymentService.pay(), elapsed=99ms, ...   (非 BizException)
+DEBUG Dubbo RPC调用成功 [Consumer] com.example.OrderService.createOrder(), elapsed=45ms
+INFO  Dubbo RPC业务异常 [Consumer] com.example.OrderService.createOrder(), elapsed=1203ms, msg=订单不存在
+ERROR Dubbo RPC调用异常 [Consumer] com.example.OrderService.createOrder(), elapsed=99ms   (result 携带非 BizException)
+ERROR Dubbo RPC调用失败 [Consumer] com.example.PaymentService.pay(), elapsed=99ms          (抛 RpcException，原样上抛)
 
 // Provider 端：
-DEBUG Dubbo服务成功 [Provider] com.example.OrderServiceImpl.createOrder(), caller=192.168.1.100, elapsed=42ms
-INFO  Dubbo业务异常  [Provider] com.example.OrderServiceImpl.createOrder(), caller=192.168.1.100, elapsed=1203ms, msg=订单不存在
-ERROR Dubbo服务失败 [Provider] com.example.PaymentServiceImpl.pay(), caller=192.168.1.100, elapsed=..., ...   (非 BizException / RpcException)
+DEBUG Dubbo RPC服务成功 [Provider] com.example.OrderServiceImpl.createOrder(), caller=192.168.1.100, elapsed=42ms
+INFO  Dubbo RPC业务异常 [Provider] com.example.OrderServiceImpl.createOrder(), caller=192.168.1.100, elapsed=1203ms, msg=订单不存在
+ERROR Dubbo RPC服务异常 [Provider] com.example.OrderServiceImpl.createOrder(), caller=192.168.1.100, elapsed=...   (result 携带非 BizException)
+ERROR Dubbo RPC服务失败 [Provider] com.example.PaymentServiceImpl.pay(), caller=192.168.1.100, elapsed=...          (抛 RpcException，原样上抛)
 ```
 
 > 接口名使用完全限定名（`invoker.getInterface().getName()`），方法名来自 `invocation.getMethodName()`。

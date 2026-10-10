@@ -82,7 +82,7 @@ public class DubboExceptionFilter implements Filter, Filter.Listener {
                 return;
             }
 
-            // BizException 直接抛出（Consumer 端必然有 snowdrift-common 依赖）
+            // BizException 直接抛出（Consumer 端必然有 snowdrift-base 依赖）
             if (exception instanceof BizException) {
                 return;
             }

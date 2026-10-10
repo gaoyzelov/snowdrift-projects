@@ -33,16 +33,20 @@ public class DubboConsumerContextFilter implements Filter {
         } catch (Exception e) {
             log.error("Dubbo RPC消费者上下文注入失败: interface={}, method={}",
                     invoker.getInterface().getName(), invocation.getMethodName(), e);
-            RpcContext.getServiceContext().setAttachment(RpcContextConstants.CONTEXT_ERROR, StrConst.TRUE);
+            // 降级信号写入 client attachment（消费端随请求发送的通道）
+            RpcContext.getClientAttachment().setAttachment(RpcContextConstants.CONTEXT_ERROR, StrConst.TRUE);
         }
         return invoker.invoke(invocation);
     }
 
     /**
      * 将 SecurityContext 和 traceId 注入到 Dubbo attachment
+     * <p>显式使用 {@link RpcContext#getClientAttachment()}（Dubbo 3 消费端隐式传参的推荐通道，
+     * 即 {@code AbstractInvoker} 实际收集并发送的 attachment），不依赖 {@code getServiceContext()}
+     * 标注 {@code @Experimental} 的兼容委托。</p>
      */
     private void injectContext() {
-        RpcContext rpcContext = RpcContext.getServiceContext();
+        RpcContext rpcContext = RpcContext.getClientAttachment();
 
         // 注入 TraceId（有则传，无则由 Provider 端自行生成）
         String traceId = MDC.get(TRACE_ID_KEY);
