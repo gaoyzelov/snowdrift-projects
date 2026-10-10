@@ -30,26 +30,32 @@ public class MqContextPropagator {
 
     public static final String TRACE_ID_KEY = "traceId";
 
+    /**
+     * 框架专有消息头前缀 — 所有 {@code x-snowdrift-*} 头均由框架注入与维护，
+     * 发送时禁止被用户自定义头覆盖（防止身份 / 签名伪造），见 {@code AbstractMqService#buildHeaders}。
+     */
+    public static final String HEADER_PREFIX = "x-snowdrift-";
+
     /** 发送端：消息 Key（仅内省用途，broker 分区键由实现模块另行映射） */
-    public static final String HEADER_MESSAGE_KEY = "x-snowdrift-message-key";
+    public static final String HEADER_MESSAGE_KEY = HEADER_PREFIX + "message-key";
 
     /** 链路追踪 ID */
-    public static final String HEADER_TRACE_ID = "x-snowdrift-trace-id";
+    public static final String HEADER_TRACE_ID = HEADER_PREFIX + "trace-id";
 
     /** 用户 ID */
-    public static final String HEADER_USER_ID = "x-snowdrift-user-id";
+    public static final String HEADER_USER_ID = HEADER_PREFIX + "user-id";
 
     /** 登录账号 */
-    public static final String HEADER_USERNAME = "x-snowdrift-username";
+    public static final String HEADER_USERNAME = HEADER_PREFIX + "username";
 
     /** 租户 ID */
-    public static final String HEADER_TENANT_ID = "x-snowdrift-tenant-id";
+    public static final String HEADER_TENANT_ID = HEADER_PREFIX + "tenant-id";
 
     /** 部门 ID */
-    public static final String HEADER_DEPT_ID = "x-snowdrift-dept-id";
+    public static final String HEADER_DEPT_ID = HEADER_PREFIX + "dept-id";
 
     /** 签名 */
-    private static final String SIGNATURE_HEADER = "x-snowdrift-signature";
+    private static final String SIGNATURE_HEADER = HEADER_PREFIX + "signature";
 
     private final MqProperties properties;
 

@@ -73,7 +73,7 @@ spring:
 # rocketmq.producer.group: snowdrift-producer
 ```
 
-> 同一时间只允许启用一种实现模块；若同时把 `kafka`/`rabbitmq`/`rocketmq` 置为 `enabled=true`，启动将失败（`MqBinderActivationGuard`）。
+> **同一时间只允许启用一种实现模块。** 若同时把 `kafka`/`rabbitmq`/`rocketmq` 中的多个置为 `enabled=true`，启动将失败（`MqBinderActivationGuard` 抛 `IllegalStateException` 并列出冲突开关）。因为 `IMqService` 门面以 `@ConditionalOnMissingBean` 注册，多启用会造成“发送用哪个实现不确定、而各实现消费钩子又同时注册”的不一致，故在启动期直接拦截。
 
 ## 消息发送
 
@@ -169,6 +169,8 @@ Producer 发送时自动写入以下消息头（broker 无关的 `x-snowdrift-*`
 | 租户 ID | `x-snowdrift-tenant-id` | `SecurityContextHolder` |
 | 部门 ID | `x-snowdrift-dept-id` | `SecurityContextHolder` |
 | 消息签名 | `x-snowdrift-signature` | HMAC-SHA256（`sign=true` 时启用，密钥必填） |
+
+> **安全（保留头不可覆盖）**：`x-snowdrift-*` 为框架专有保留头，发送时**用户自定义 `headers` 中与之同名的键会被忽略**（记 warn 日志），框架注入的身份/签名头始终以真实上下文为准。因此调用方无法通过自定义头伪造 `user-id`/`tenant-id` 等身份传递到消费端；若需传递业务元数据，请使用非 `x-snowdrift-` 前缀的自定义头。启用 `sign=true` 后，上下文头还会附带 HMAC-SHA256 签名，消费端校验不通过则拒收。
 
 容器级自动恢复的实现：
 

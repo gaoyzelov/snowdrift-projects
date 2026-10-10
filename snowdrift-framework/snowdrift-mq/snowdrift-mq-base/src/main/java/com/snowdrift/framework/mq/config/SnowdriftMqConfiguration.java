@@ -14,6 +14,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 import java.util.List;
@@ -41,6 +42,14 @@ import java.util.concurrent.Executor;
 @ConditionalOnProperty(prefix = "snowdrift.mq", name = "enabled",
         havingValue = "true", matchIfMissing = true)
 public class SnowdriftMqConfiguration {
+
+    /**
+     * 实现模块互斥守卫 — 同时启用多个 {@code snowdrift.mq.<vendor>.enabled=true} 时启动即失败
+     */
+    @Bean
+    public MqBinderActivationGuard mqBinderActivationGuard(Environment environment) {
+        return new MqBinderActivationGuard(environment);
+    }
 
     @Bean
     @ConditionalOnMissingBean(name = "mqAsyncExecutor")
@@ -90,7 +99,11 @@ public class SnowdriftMqConfiguration {
         return registry;
     }
 
+    /**
+     * 上下文传播器 — 与本类其余 Bean 一致支持用户覆盖（如需扩展传播头可注册同类型 Bean）
+     */
     @Bean
+    @ConditionalOnMissingBean(MqContextPropagator.class)
     public MqContextPropagator mqContextPropagator(MqProperties properties) {
         return new MqContextPropagator(properties);
     }

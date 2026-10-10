@@ -172,7 +172,11 @@ public abstract class AbstractMqService implements IMqService {
 
     /**
      * 组装消息头：上下文头（traceId / SecurityContext / 可选签名）→ 消息 Key 头 → 用户自定义头
-     * <p>用户自定义头可覆盖上下文头的同名键（与旧实现 MessageBuilder 语义一致）。</p>
+     * <p>
+     * 框架专有的 {@link MqContextPropagator#HEADER_PREFIX} 保留头（{@code x-snowdrift-*}）由框架独占：
+     * 用户自定义头中与之同名的键会被<b>忽略</b>（记 warn 日志），以防调用方伪造身份头
+     * （user-id / tenant-id 等）或签名头传递到消费端。其余自定义头正常写入。
+     * </p>
      */
     protected Map<String, String> buildHeaders(String key, Map<String, String> userHeaders) {
         Map<String, String> headers = new LinkedHashMap<>();
@@ -181,7 +185,14 @@ public abstract class AbstractMqService implements IMqService {
             headers.put(MqContextPropagator.HEADER_MESSAGE_KEY, key);
         }
         if (userHeaders != null && !userHeaders.isEmpty()) {
-            headers.putAll(userHeaders);
+            userHeaders.forEach((name, value) -> {
+                if (name != null && name.startsWith(MqContextPropagator.HEADER_PREFIX)) {
+                    // 拒绝覆盖框架保留头，避免身份 / 签名伪造
+                    log.warn("忽略试图覆盖框架保留消息头的自定义头: {}", name);
+                    return;
+                }
+                headers.put(name, value);
+            });
         }
         return headers;
     }
