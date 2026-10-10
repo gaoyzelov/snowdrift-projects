@@ -36,8 +36,7 @@ public class SnowdriftJacksonTimeConfiguration {
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer customizer() {
         return builder -> {
-            // 注册模块
-            builder.modules(getJavaTimeModule());
+            builder.modulesToInstall(getJavaTimeModule());
         };
     }
 

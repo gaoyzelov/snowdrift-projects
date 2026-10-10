@@ -159,12 +159,14 @@ public class CachedBodyRequestWrapper extends HttpServletRequestWrapper {
 
             @Override
             public boolean isFinished() {
-                return false;
+                // 缓存字节读尽即视为结束（符合 Servlet 3.1 非阻塞 IO 契约，避免消费方 while(!isFinished()) 死循环）
+                return bis.available() == 0;
             }
 
             @Override
             public boolean isReady() {
-                return false;
+                // 同步内存流，数据始终可无阻塞读取
+                return true;
             }
 
             @Override
@@ -174,7 +176,8 @@ public class CachedBodyRequestWrapper extends HttpServletRequestWrapper {
 
             @Override
             public int available() throws IOException {
-                return body.length;
+                // 返回剩余可读字节（而非恒为总长），与 InputStream#available 语义一致
+                return bis.available();
             }
         };
     }
@@ -191,6 +194,7 @@ public class CachedBodyRequestWrapper extends HttpServletRequestWrapper {
 
     @Override
     public BufferedReader getReader() {
-        return new BufferedReader(new InputStreamReader(this.getInputStream()));
+        // 显式使用请求字符集（与表单解析一致），避免依赖平台默认编码导致非 UTF-8 环境误解码
+        return new BufferedReader(new InputStreamReader(this.getInputStream(), resolveCharset()));
     }
 }

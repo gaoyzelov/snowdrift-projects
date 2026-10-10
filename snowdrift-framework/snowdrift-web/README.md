@@ -117,7 +117,7 @@ public CompletableFuture<Result<User>> getUser(Long id) {
 
 **重要说明：**
 - 全局异常响应**不走 i18n**——消息为 `ResultCode` 内置中文或业务中文直文，避免未启用/缺 key 时把 key 透给前端。
-- `snowdrift.i18n.enabled` 默认关闭；未启用（`messageSource==null`）或 bundle 缺 key 时，`I18nUtil.getMessage(...)` 仅 `log.warn` 后**原样返回 key**。请勿依赖它对前端文案做翻译。
+- `snowdrift.i18n.enabled` 默认关闭；未启用（`messageSource==null`）时 `I18nUtil.getMessage(...)` 记 `log.warn` 后**原样返回 key**；已启用时是否回退 key 取决于 `use-code-as-default-message`（默认 `true` → 缺 key 返回 key 本身；设为 `false` → 缺 key 抛 `NoSuchMessageException`）。请勿依赖它对前端文案做翻译。
 - 项目方向是**整体去掉 i18n**，各模块已陆续改为中文直文 / `ResultCode` 文案；届时 `I18nUtil` 相关链路会收敛或移除。
 
 ### XSS 防护 — Filter + MVC 双层防御
@@ -179,7 +179,7 @@ public class JsoupXssCleaner implements XssCleaner {
 
 `CachedBodyFilter` 在 Filter 链前端把普通 JSON/表单 Body 缓存为 `byte[]`，后续所有 Filter 和 Controller 均可重复调用 `getInputStream()` / `getReader()`。`CachedBodyRequestWrapper` 同时处理了 `x-www-form-urlencoded` 请求的表单参数解析，确保 Body 被缓存后 `getParameter()` 系列方法仍可正常使用。
 
-**安全限流**：`multipart/*`、`application/octet-stream` 及 `Content-Length > 5MB` 的请求不缓存（避免大文件整包入内存），仍由下游单次消费。
+**安全限流**：`multipart/*`、`application/octet-stream`、未知长度（chunked，`Content-Length < 0`）及 `Content-Length > 5MB` 的请求不缓存（避免大文件整包入内存），仍由下游单次消费。
 
 ### 链路追踪
 
