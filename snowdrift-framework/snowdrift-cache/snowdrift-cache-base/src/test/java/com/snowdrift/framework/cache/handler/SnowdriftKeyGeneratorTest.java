@@ -20,12 +20,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SnowdriftKeyGeneratorTest {
 
-    private static final String TYPE = SnowdriftKeyGeneratorTest.Target.class.getName();
+    private static final String TYPE = SnowdriftKeyGeneratorTest.Target.class.getSimpleName();
 
     private final SnowdriftKeyGenerator generator = new SnowdriftKeyGenerator();
 
     private static Method method(String name, Class<?>... types) throws Exception {
         return Target.class.getDeclaredMethod(name, types);
+    }
+
+    /** 独立重建摘要口径：参数段（类型:值，值转义后）整体取 SHA-256 前 128 位 */
+    private static String digestOf(String section) {
+        return EncryptUtil.sha256(section).substring(0, 32);
     }
 
     @SuppressWarnings("unused")
@@ -81,36 +86,38 @@ class SnowdriftKeyGeneratorTest {
     }
 
     @Test
-    @DisplayName("无参数：完整类名#方法名（完整类名可避免不同包同名类互相撞 key）")
+    @DisplayName("无参数：简单类名#方法名（带参数才摘要）")
     void noArgs() throws Exception {
         assertThat(generator.generate(new Target(), method("noArgs"))).isEqualTo(TYPE + "#noArgs");
-        assertThat(TYPE).contains(".").doesNotContain("#");
+        assertThat(TYPE).isEqualTo("Target").doesNotContain(".");
     }
 
     @Test
-    @DisplayName("参数格式为「类型:值」，简单类型值直接用 toString")
-    void simpleParams() throws Exception {
-        assertThat(generator.generate(new Target(), method("one", String.class), "abc"))
-                .isEqualTo(TYPE + "#one:java.lang.String:abc");
+    @DisplayName("带参数：参数段「类型:值」整体摘要（32 位十六进制），明文值不进入 key")
+    void paramsAreDigested() throws Exception {
+        Object key = generator.generate(new Target(), method("one", String.class), "abc");
+
+        assertThat(key).isEqualTo(TYPE + "#one:" + digestOf("String:abc"));
+        assertThat(key.toString()).hasSize(TYPE.length() + "#one:".length() + 32);
         assertThat(generator.generate(new Target(), method("enumArg", Level.class), Level.HIGH))
-                .isEqualTo(TYPE + "#enumArg:" + Level.class.getName() + ":HIGH");
+                .isEqualTo(TYPE + "#enumArg:" + digestOf("Level:HIGH"));
     }
 
     @Test
-    @DisplayName("回归：同名重载方法不再撞 key（key 携带参数类型）")
+    @DisplayName("回归：同名重载方法不再撞 key（类型参与摘要输入）")
     void overloadsDoNotCollide() throws Exception {
         Object integerKey = generator.generate(new Target(), method("overloaded", Integer.class), 1);
         Object longKey = generator.generate(new Target(), method("overloaded", Long.class), 1L);
         Object stringKey = generator.generate(new Target(), method("overloaded", String.class), "1");
 
         assertThat(List.of(integerKey, longKey, stringKey)).doesNotHaveDuplicates();
-        assertThat(integerKey).isEqualTo(TYPE + "#overloaded:java.lang.Integer:1");
-        assertThat(longKey).isEqualTo(TYPE + "#overloaded:java.lang.Long:1");
-        assertThat(stringKey).isEqualTo(TYPE + "#overloaded:java.lang.String:1");
+        assertThat(integerKey).isEqualTo(TYPE + "#overloaded:" + digestOf("Integer:1"));
+        assertThat(longKey).isEqualTo(TYPE + "#overloaded:" + digestOf("Long:1"));
+        assertThat(stringKey).isEqualTo(TYPE + "#overloaded:" + digestOf("String:1"));
     }
 
     @Test
-    @DisplayName("复杂对象使用字段序列化（不依赖 toString，跨实例稳定）")
+    @DisplayName("复杂对象按字段序列化后参与摘要（跨实例稳定、内容不同则 key 不同）")
     void complexParams() throws Exception {
         Payload first = new Payload();
         first.setName("a");
@@ -118,62 +125,71 @@ class SnowdriftKeyGeneratorTest {
         Payload second = new Payload();
         second.setName("a");
         second.setValue(1);
+        Payload other = new Payload();
+        other.setName("a");
+        other.setValue(2);
 
         Object key1 = generator.generate(new Target(), method("pojo", Payload.class), first);
         Object key2 = generator.generate(new Target(), method("pojo", Payload.class), second);
+        Object key3 = generator.generate(new Target(), method("pojo", Payload.class), other);
 
         assertThat(key1).isEqualTo(key2);
-        assertThat(key1.toString()).startsWith(TYPE + "#pojo:" + Payload.class.getName() + ":").contains("\"name\"");
+        assertThat(key1).isNotEqualTo(key3);
+        assertThat(key1.toString()).startsWith(TYPE + "#pojo:").hasSize(TYPE.length() + "#pojo:".length() + 32);
     }
 
     @Test
-    @DisplayName("超长参数取 sha256: 前缀摘要；且与「值恰为摘要字串」的参数不再撞 key")
-    void longParamIsHashedWithoutColliding() throws Exception {
-        String longName = "x".repeat(200);
-        String digest = EncryptUtil.sha256(longName);
+    @DisplayName("参数长度不做限制：任意长度参数 key 长度恒定（32 位摘要）")
+    void keyLengthIsConstant() throws Exception {
+        String shortValue = "x".repeat(10);
+        String hugeValue = "x".repeat(5000);
 
-        Object hashedKey = generator.generate(new Target(), method("one", String.class), longName);
-        Object literalDigestKey = generator.generate(new Target(), method("one", String.class), digest);
+        Object shortKey = generator.generate(new Target(), method("one", String.class), shortValue);
+        Object hugeKey = generator.generate(new Target(), method("one", String.class), hugeValue);
 
-        assertThat(hashedKey.toString()).contains("sha256");
-        assertThat(hashedKey.toString()).hasSize((TYPE + "#one:java.lang.String:").length() + "sha256\\:".length() + 64);
-        assertThat(hashedKey).isNotEqualTo(literalDigestKey);
+        assertThat(shortKey.toString()).hasSize(TYPE.length() + "#one:".length() + 32);
+        assertThat(hugeKey.toString()).hasSize(TYPE.length() + "#one:".length() + 32);
+        assertThat(hugeKey).isEqualTo(TYPE + "#one:" + digestOf("String:" + hugeValue));
+        assertThat(shortKey).isNotEqualTo(hugeKey);
     }
 
     @Test
-    @DisplayName("恰好 64 字符的参数原样保留，不摘要")
-    void boundaryLengthIsKept() throws Exception {
-        String exactly64 = "y".repeat(64);
+    @DisplayName("多参数按位置参与摘要：(\"a\", null) 与 (null, \"a\") 得到不同 key")
+    void nullPositionMatters() throws Exception {
+        Object firstNull = generator.generate(new Target(), method("two", String.class, String.class), "a", null);
+        Object secondNull = generator.generate(new Target(), method("two", String.class, String.class), null, "a");
 
-        assertThat(generator.generate(new Target(), method("one", String.class), exactly64))
-                .isEqualTo(TYPE + "#one:java.lang.String:" + exactly64);
+        assertThat(firstNull).isEqualTo(TYPE + "#two:" + digestOf("String:a:String:"));
+        // (null, "a")：null 的空片段自身带一个冒号，再接分隔符，故为 String::String:a
+        assertThat(secondNull).isEqualTo(TYPE + "#two:" + digestOf("String::String:a"));
+        assertThat(firstNull).isNotEqualTo(secondNull);
     }
 
     @Test
-    @DisplayName("分隔符转义：m(\"a:b\") 与 m(\"a\",\"b\") 不会撞成同一个 key")
+    @DisplayName("分隔符转义参与摘要输入：m(\"a:String:b\") 与 m(\"a\",\"b\") 不会摘要出相同 key")
     void escapesDelimiters() throws Exception {
-        Object single = generator.generate(new Target(), method("one", String.class), "a:b");
+        Object single = generator.generate(new Target(), method("one", String.class), "a:String:b");
         Object two = generator.generate(new Target(), method("two", String.class, String.class), "a", "b");
 
-        assertThat(single).isEqualTo(TYPE + "#one:java.lang.String:a\\:b");
-        assertThat(two).isEqualTo(TYPE + "#two:java.lang.String:a:java.lang.String:b");
+        assertThat(single).isEqualTo(TYPE + "#one:" + digestOf("String:a\\:String\\:b"));
+        assertThat(two).isEqualTo(TYPE + "#two:" + digestOf("String:a:String:b"));
         assertThat(single).isNotEqualTo(two);
     }
 
     @Test
-    @DisplayName("反斜杠先转义，保证结果可逆")
+    @DisplayName("反斜杠先转义，保证摘要输入可逆")
     void escapesBackslash() throws Exception {
         assertThat(generator.generate(new Target(), method("one", String.class), "a\\:b"))
-                .isEqualTo(TYPE + "#one:java.lang.String:a\\\\\\:b");
+                .isEqualTo(TYPE + "#one:" + digestOf("String:a\\\\\\:b"));
     }
 
     @Test
-    @DisplayName("已知歧义：同样声明类型下 null 与空串生成相同片段（javadoc 已声明）")
+    @DisplayName("已知歧义：同样声明类型下 null 与空串摘要输入相同（javadoc 已声明）")
     void nullAndEmptyCollide() throws Exception {
         Object nullArg = generator.generate(new Target(), method("one", String.class), (Object) null);
         Object emptyArg = generator.generate(new Target(), method("one", String.class), "");
 
-        assertThat(nullArg).isEqualTo(emptyArg).isEqualTo(TYPE + "#one:java.lang.String:");
+        assertThat(nullArg).isEqualTo(emptyArg).isEqualTo(TYPE + "#one:" + digestOf("String:"));
     }
 
     @Test

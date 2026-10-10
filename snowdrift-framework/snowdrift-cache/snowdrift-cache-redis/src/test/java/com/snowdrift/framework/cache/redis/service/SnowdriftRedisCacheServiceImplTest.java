@@ -2,7 +2,7 @@ package com.snowdrift.framework.cache.redis.service;
 
 import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
-import com.snowdrift.framework.cache.serialize.FastJson2CacheSerializer;
+import com.snowdrift.framework.cache.serialize.JacksonCacheSerializer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -50,14 +50,14 @@ class SnowdriftRedisCacheServiceImplTest {
         properties.setKeyPrefix("");
         when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(redisTemplate.opsForHash()).thenReturn(hashOperations);
-        service = new SnowdriftRedisCacheServiceImpl(properties, new FastJson2CacheSerializer(), redisTemplate);
+        service = new SnowdriftRedisCacheServiceImpl(properties, new JacksonCacheSerializer(), redisTemplate);
     }
 
     @Test
     @DisplayName("构造期校验：RedisTemplate 为 null 时快速失败（而不是首个命令才 NPE）")
     void nullRedisTemplateRejected() {
         assertThatThrownBy(() -> new SnowdriftRedisCacheServiceImpl(
-                new SnowdriftCacheProperties(), new FastJson2CacheSerializer(), null))
+                new SnowdriftCacheProperties(), new JacksonCacheSerializer(), null))
                 .isInstanceOf(BizException.class)
                 .hasMessageContaining("RedisTemplate");
     }
@@ -186,7 +186,7 @@ class SnowdriftRedisCacheServiceImplTest {
         SnowdriftCacheProperties properties = new SnowdriftCacheProperties();
         properties.setKeyPrefix("app");
         SnowdriftRedisCacheServiceImpl prefixed =
-                new SnowdriftRedisCacheServiceImpl(properties, new FastJson2CacheSerializer(), redisTemplate);
+                new SnowdriftRedisCacheServiceImpl(properties, new JacksonCacheSerializer(), redisTemplate);
 
         prefixed.put("user:1", "v");
 

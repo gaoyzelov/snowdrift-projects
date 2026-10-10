@@ -1,5 +1,6 @@
 package com.snowdrift.framework.cache.config;
 
+import com.snowdrift.framework.base.util.EncryptUtil;
 import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -123,7 +124,7 @@ class SnowdriftCachingIntegrationTest {
     }
 
     @Test
-    @DisplayName("@Cacheable 默认使用框架 KeyGenerator（ClassName#method:type:value），而不是 Spring 的 SimpleKey")
+    @DisplayName("@Cacheable 默认使用框架 KeyGenerator（简单类名#方法:参数段摘要），而不是 Spring 的 SimpleKey")
     void cacheableUsesFrameworkKeyGenerator() {
         new ApplicationContextRunner()
                 .withConfiguration(AutoConfigurations.of(SnowdriftCacheConfiguration.class))
@@ -142,7 +143,7 @@ class SnowdriftCachingIntegrationTest {
                     @SuppressWarnings("unchecked")
                     Map<Object, Object> nativeCache = (Map<Object, Object>) cache.getNativeCache();
                     assertThat(nativeCache).containsKey(
-                            UserService.class.getName() + "#find:java.lang.Long:1");
+                            UserService.class.getSimpleName() + "#find:" + EncryptUtil.sha256("Long:1").substring(0, 32));
                 });
     }
 

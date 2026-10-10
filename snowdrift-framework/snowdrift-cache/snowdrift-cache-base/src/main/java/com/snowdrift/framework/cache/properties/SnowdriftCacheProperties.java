@@ -1,6 +1,5 @@
 package com.snowdrift.framework.cache.properties;
 
-import com.snowdrift.framework.cache.SerializerType;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -38,11 +37,5 @@ public class SnowdriftCacheProperties {
      */
     @Min(1)
     private long maxSize = 10000;
-
-    /**
-     * 序列化器类型，默认 Jackson
-     */
-    @NotNull
-    private SerializerType serializer = SerializerType.JACKSON;
 
 }

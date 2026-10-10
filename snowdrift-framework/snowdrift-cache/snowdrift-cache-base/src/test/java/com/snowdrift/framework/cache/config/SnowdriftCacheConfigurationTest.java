@@ -2,13 +2,11 @@ package com.snowdrift.framework.cache.config;
 
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.IDistributedLockService;
-import com.snowdrift.framework.cache.SerializerType;
 import com.snowdrift.framework.cache.aspect.DistributedLockAspect;
 import com.snowdrift.framework.cache.aspect.RepeatSubmitAspect;
 import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
 import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
-import com.snowdrift.framework.cache.serialize.FastJson2CacheSerializer;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import com.snowdrift.framework.cache.serialize.JacksonCacheSerializer;
 import org.junit.jupiter.api.DisplayName;
@@ -53,16 +51,6 @@ class SnowdriftCacheConfigurationTest {
     }
 
     @Test
-    @DisplayName("snowdrift.cache.serializer=FASTJSON2 时切换为 Fastjson2 序列化器")
-    void serializerSwitchByProperty() {
-        runner.withPropertyValues("snowdrift.cache.serializer=FASTJSON2").run(context -> {
-            assertThat(context.getBean(ICacheSerializer.class)).isInstanceOf(FastJson2CacheSerializer.class);
-            assertThat(context.getBean(SnowdriftCacheProperties.class).getSerializer())
-                    .isEqualTo(SerializerType.FASTJSON2);
-        });
-    }
-
-    @Test
     @DisplayName("业务自定义 ICacheSerializer 生效（@ConditionalOnMissingBean）")
     void customSerializerWins() {
         ICacheSerializer custom = mock(ICacheSerializer.class);
@@ -89,14 +77,13 @@ class SnowdriftCacheConfigurationTest {
     }
 
     @Test
-    @DisplayName("默认配置值：空前缀、1 小时 TTL、Jackson、10000 条")
+    @DisplayName("默认配置值：空前缀、1 小时 TTL、10000 条")
     void defaultPropertyValues() {
         runner.run(context -> {
             SnowdriftCacheProperties properties = context.getBean(SnowdriftCacheProperties.class);
 
             assertThat(properties.getKeyPrefix()).isEmpty();
             assertThat(properties.getKeyTtl()).isEqualTo(Duration.ofHours(1));
-            assertThat(properties.getSerializer()).isEqualTo(SerializerType.JACKSON);
             assertThat(properties.getMaxSize()).isEqualTo(10000L);
         });
     }

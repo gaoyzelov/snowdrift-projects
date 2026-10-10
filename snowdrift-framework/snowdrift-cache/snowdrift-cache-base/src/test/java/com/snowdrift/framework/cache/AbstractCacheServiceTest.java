@@ -2,7 +2,7 @@ package com.snowdrift.framework.cache;
 
 import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
-import com.snowdrift.framework.cache.serialize.FastJson2CacheSerializer;
+import com.snowdrift.framework.cache.serialize.JacksonCacheSerializer;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -173,7 +173,7 @@ class AbstractCacheServiceTest {
     }
 
     private FakeCacheService service(String keyPrefix) {
-        return new FakeCacheService(properties(keyPrefix), new FastJson2CacheSerializer());
+        return new FakeCacheService(properties(keyPrefix), new JacksonCacheSerializer());
     }
 
     @Nested
@@ -313,7 +313,7 @@ class AbstractCacheServiceTest {
         void fallsBackToNoTtlOverload() {
             SnowdriftCacheProperties props = properties("");
             props.setKeyTtl(null);
-            FakeCacheService service = new FakeCacheService(props, new FastJson2CacheSerializer());
+            FakeCacheService service = new FakeCacheService(props, new JacksonCacheSerializer());
 
             service.putIfAbsent("k", "v", null);
             assertThat(service.usedTwoArgPutIfAbsent).isTrue();

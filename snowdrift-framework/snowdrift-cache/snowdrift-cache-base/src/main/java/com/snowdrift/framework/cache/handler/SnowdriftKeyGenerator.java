@@ -9,23 +9,28 @@ import org.springframework.cache.interceptor.KeyGenerator;
 
 import java.lang.reflect.Method;
 import java.util.Objects;
-import java.util.StringJoiner;
 
 /**
  * 统一缓存 Key 生成器
  * <p>
- * 生成格式：{@code 全限定类名#方法名[:参数类型:参数值...]}（每个参数占「类型、值」两段）
+ * 生成格式：{@code 简单类名#方法名[:参数段摘要]}；无参数时不带摘要，带参数时把各参数的
+ * 「类型:值」按序拼接（值转义）成参数段，整体取 SHA-256 前 128 位摘要（32 个十六进制字符），
+ * key 长度恒定、参数值不进入明文 key。
  * </p>
  * <ul>
- *   <li>无参数时：{@code com.example.UserService#findById}</li>
- *   <li>简单参数（{@link CharSequence} / {@link Number} / {@link Boolean} / {@link Enum} / {@link Character}）：
- *       直接使用 {@code toString()}；{@code null} 参数写出空片段</li>
- *   <li>复杂对象参数：使用<b>字段序列化</b>（fastjson2 {@code FieldBased}）而非 {@code toString()}，
- *       以保证跨实例、跨 JVM 稳定；片段超过 64 字符时取<b>完整 SHA-256 十六进制摘要（64 字符）</b>，
- *       并加 {@code sha256:} 前缀以区别于「本身就是该摘要串」的参数</li>
- *   <li>参数类型必须参与 key：同名重载方法（{@code m(Integer)} / {@code m(Long)} / {@code m(String)}）
- *       若只写参数值，值相同时会撞成同一个 key</li>
- *   <li>每个参数片段中的 {@code \} 与 {@code :} 会被转义，保证 {@code m("a:b")} 与 {@code m("a", "b")} 不撞 key</li>
+ *   <li>无参数时：{@code UserService#findById}（不摘要）</li>
+ *   <li>摘要输入口径——简单参数（{@link CharSequence} / {@link Number} / {@link Boolean} / {@link Enum} /
+ *       {@link Character}）：直接使用 {@code toString()}；{@code null} 参数写出空片段</li>
+ *   <li>摘要输入口径——复杂对象参数：使用<b>字段序列化</b>（fastjson2 {@code FieldBased}）而非 {@code toString()}，
+ *       保证跨实例、跨 JVM 稳定；序列化失败回退 {@code toString()} 并告警</li>
+ *   <li>参数类型必须参与摘要输入：同名重载方法（{@code m(Integer)} / {@code m(Long)} / {@code m(String)}）
+ *       若只写参数值，值相同时会摘要出同一个 key；类型用简单名以控制输入长度</li>
+ *   <li>参数段中的 {@code \} 与 {@code :} 转义后再摘要，保证 {@code m("a:String:b")} 与 {@code m("a", "b")}
+ *       不会拼出相同的摘要输入</li>
+ *   <li>摘要为 <b>SHA-256 前 128 位</b>（32 个十六进制字符，统一摘要后参数段只有这一种形态，无需前缀）：无实用
+ *       碰撞攻击（生日碰撞界 2^64），且输出长度恒定，参数再长 key 也不变长</li>
+ *   <li><b>类名与类型名均使用简单名</b>（{@link Class#getSimpleName()}）以缩短 key；代价是不同包下的
+ *       同名类若共用同一 cacheName 且方法名、参数相同会撞 key，属已知取舍</li>
  *   <li><b>本类不拼接 {@code snowdrift.cache.key-prefix}</b>：前缀由各后端加，Redis 侧由
  *       {@code RedisCacheConfiguration#computePrefixWith} 拼成 {@code prefix:cacheName:key}，
  *       Caffeine 侧不加前缀。{@code ICacheService} 的 key 前缀则在 {@code AbstractCacheService#buildKey} 中拼接</li>
@@ -33,12 +38,11 @@ import java.util.StringJoiner;
  *
  * <pre>
  * // 示例（方法签名 OrderService#create(Long id, String level)）
- * com.example.UserService#findById:java.lang.Long:123
- * com.example.OrderService#create:java.lang.Long:1:java.lang.String:VIP
- * com.example.OrderService#batch:java.lang.String:sha256:9f2a...（超长参数取 SHA-256 摘要）
+ * UserService#findById（无参数：不摘要）
+ * OrderService#create:8b1d4a...（参数段整体摘要：SHA-256 前 128 位，32 个十六进制字符）
  * </pre>
  * <p>
- * <b>已知歧义：</b>{@code null} 参数与空字符串参数都会生成空片段，因此 {@code m(null)} 与 {@code m("")}
+ * <b>已知歧义：</b>{@code null} 参数与空字符串参数会写出相同的摘要输入，因此 {@code m(null)} 与 {@code m("")}
  * 的 key 相同。若业务需要区分二者，请勿让它们共用同一个缓存方法。
  * </p>
  *
@@ -50,45 +54,39 @@ import java.util.StringJoiner;
 public class SnowdriftKeyGenerator implements KeyGenerator {
 
     /**
-     * 单个参数片段的最大长度，超过后使用摘要
+     * 摘要保留的十六进制长度（SHA-256 前 128 位）
+     * <p>缓存 key 场景 128 位的生日碰撞界（2^64）已足够；截短使参数段固定 32 字符、key 长度恒定。</p>
      */
-    private static final int MAX_PARAM_LENGTH = 64;
-
-    /**
-     * 超长参数摘要的前缀
-     * <p>加前缀是为了与「恰好等于某个摘要十六进制串」的原始参数区分开：
-     * 摘要固定 64 个十六进制字符，与阈值相同，不加前缀时两者会拼出同一个 key。</p>
-     */
-    private static final String DIGEST_PREFIX = "sha256:";
+    private static final int DIGEST_HEX_LENGTH = 32;
 
     @Override
     public Object generate(Object target, Method method, Object... params) {
-        StringBuilder sb = new StringBuilder();
-        // 1. 完整类名#方法名：用 simpleName 会让不同包下的同名类（p1.Inner / p2.Inner）撞同一个 key
-        sb.append(method.getDeclaringClass().getName())
-          .append(StrConst.HASH)
-          .append(method.getName());
-
-        // 2. 参数：类型 + 值。类型必须参与，否则同名重载方法（m(Integer)/m(Long)/m(String)）
-        //    在参数值相同时会生成同一个 key，同一 cache 名下会互相读到错误数据
-        if (params.length > 0) {
-            StringJoiner joiner = new StringJoiner(StrConst.COLON);
-            Class<?>[] parameterTypes = method.getParameterTypes();
-            for (int i = 0; i < params.length; i++) {
-                Class<?> type = i < parameterTypes.length
-                        ? parameterTypes[i]
-                        : (params[i] == null ? Object.class : params[i].getClass());
-                joiner.add(escapeDelimiter(type.getName()));
-                joiner.add(escapeDelimiter(toParamString(params[i])));
-            }
-            sb.append(StrConst.COLON).append(joiner);
+        StringBuilder key = new StringBuilder(64);
+        // 简单类名#方法名：完整类名会让 key 明显过长，简单名的撞 key 边界见类注释
+        key.append(typeName(method.getDeclaringClass()))
+           .append(StrConst.HASH)
+           .append(method.getName());
+        if (params.length == 0) {
+            return key.toString();
         }
 
-        return sb.toString();
+        // 摘要输入：类型 + 值。类型必须参与，否则同名重载方法（m(Integer)/m(Long)/m(String)）
+        // 在参数值相同时会摘要出同一个 key，同一 cache 名下会互相读到错误数据
+        Class<?>[] parameterTypes = method.getParameterTypes();
+        StringBuilder section = new StringBuilder(64);
+        for (int i = 0; i < params.length; i++) {
+            if (i > 0) {
+                section.append(StrConst.COLON);
+            }
+            section.append(typeName(parameterTypes[i]))
+                   .append(StrConst.COLON)
+                   .append(escapeDelimiter(toParamString(params[i])));
+        }
+        return key.append(StrConst.COLON).append(digest(section.toString())).toString();
     }
 
     /**
-     * 将参数转为缓存 key 片段
+     * 将参数转为摘要输入片段（未转义）
      * <p>
      * 简单类型直接使用 {@code toString()}；复杂对象使用字段序列化，避免
      * {@code ClassName@identityHashCode} 形式的 {@code toString()} 使 key 跨实例/跨 JVM 不稳定
@@ -99,8 +97,7 @@ public class SnowdriftKeyGenerator implements KeyGenerator {
         if (Objects.isNull(param)) {
             return StrConst.EMPTY;
         }
-        String str = isSimpleType(param) ? param.toString() : stableSerialize(param);
-        return str.length() <= MAX_PARAM_LENGTH ? str : DIGEST_PREFIX + EncryptUtil.sha256(str);
+        return isSimpleType(param) ? param.toString() : stableSerialize(param);
     }
 
     /**
@@ -122,10 +119,33 @@ public class SnowdriftKeyGenerator implements KeyGenerator {
     }
 
     /**
+     * 类/类型的 key 展示名
+     * <p>
+     * 使用 {@link Class#getSimpleName()} 控制 key 长度；匿名类等简单名为空的场景回退全限定名
+     * （全限定名不含 {@code :} 与 {@code \}，无需转义）。
+     * </p>
+     */
+    private String typeName(Class<?> type) {
+        String simpleName = type.getSimpleName();
+        return simpleName.isEmpty() ? type.getName() : simpleName;
+    }
+
+    /**
+     * 参数段整体摘要
+     * <p>
+     * 取 SHA-256 前 128 位（32 个十六进制字符）：无实用碰撞攻击（生日碰撞界 2^64），
+     * 输出长度恒定，参数值再长 key 也不增长。
+     * </p>
+     */
+    private String digest(String section) {
+        return EncryptUtil.sha256(section).substring(0, DIGEST_HEX_LENGTH);
+    }
+
+    /**
      * 转义参数片段中的分隔符
      * <p>
-     * 若不转义，{@code m("a:b")} 与 {@code m("a", "b")} 会拼出同一个 key，
-     * 从而命中彼此的缓存并返回错误数据。反斜杠须先转义，保证结果可逆。
+     * 若不转义，{@code m("a:String:b")} 与 {@code m("a", "b")} 会拼出相同的摘要输入，
+     * 从而摘要出同一个 key 并返回错误数据。反斜杠须先转义，保证结果可逆。
      * </p>
      */
     private String escapeDelimiter(String fragment) {
@@ -133,7 +153,7 @@ public class SnowdriftKeyGenerator implements KeyGenerator {
     }
 
     /**
-     * 判断是否为简单类型（可直接 toString 作为 key 片段）
+     * 判断是否为简单类型（可直接 toString 作为摘要输入片段）
      */
     private boolean isSimpleType(Object param) {
         return param instanceof CharSequence

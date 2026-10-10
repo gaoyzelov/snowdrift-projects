@@ -10,16 +10,8 @@ import java.lang.reflect.Type;
  * 确保切换后端时数据格式一致。
  * </p>
  * <p>
- * 框架默认提供两种实现：
- * <ul>
- *   <li>{@link JacksonCacheSerializer} — 基于 Jackson，默认启用</li>
- *   <li>{@link FastJson2CacheSerializer} — 基于 Fastjson2</li>
- * </ul>
- * 均继承自 {@link AbstractCacheSerializer}，后者统一处理 null-guard 和异常包装。
- * 通过 {@code snowdrift.cache.serializer=jackson|fastjson2} 切换。
- * 两个实现已按「字段口径 + 键序 + 日期时间格式」对齐：同一对象产出同一 JSON、且数据可互相读取，
- * 因此切换该配置不会改变缓存值格式（详见各自的类注释）。
- * 消费者也可自行实现此接口并注册为 Spring Bean 以完全自定义序列化行为。
+ * 框架默认提供基于 Jackson 的实现 {@link JacksonCacheSerializer}（继承自 {@link AbstractCacheSerializer}，
+ * 后者统一处理 null-guard 和异常包装）。消费者也可自行实现此接口并注册为 Spring Bean 以完全自定义序列化行为。
  * </p>
  *
  * @author gaoyzelov

@@ -153,23 +153,6 @@ class SnowdriftRedisConfigurationTest {
         });
     }
 
-    @Test
-    @DisplayName("serializer=FASTJSON2 不影响 @Cacheable 的值序列化器：仍是带 @class 的那一套（回归）")
-    void serializerSwitchDoesNotAffectCacheable() {
-        runner.withPropertyValues("snowdrift.cache.serializer=FASTJSON2").run(context -> {
-            byte[] bytes = write(context, "users", java.util.Map.of("k", "v"));
-            String json = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
-
-            // 刻意不随配置切换：Jackson 的 @class 与 fastjson2 的 @type 互不可读，
-            // 若随配置切换，改一次配置就会让既有 @Cacheable 缓存整体读不出来
-            assertThat(json).contains("@class").doesNotContain("@type");
-
-            // 该配置只影响 ICacheService 的序列化器（两个实现已对齐，值格式一致）
-            assertThat(context.getBean(com.snowdrift.framework.cache.serialize.ICacheSerializer.class))
-                    .isInstanceOf(com.snowdrift.framework.cache.serialize.FastJson2CacheSerializer.class);
-        });
-    }
-
     /** 取指定 cache 的 Redis 配置：CacheManager 开了事务感知，取到的是装饰器，需要取回目标 cache */
     private static RedisCacheConfiguration cacheConfiguration(
             org.springframework.boot.test.context.assertj.AssertableApplicationContext context, String cacheName) {

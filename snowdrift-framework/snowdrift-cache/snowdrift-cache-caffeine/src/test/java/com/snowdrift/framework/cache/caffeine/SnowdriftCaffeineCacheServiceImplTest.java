@@ -3,7 +3,6 @@ package com.snowdrift.framework.cache.caffeine;
 import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.caffeine.service.SnowdriftCaffeineCacheServiceImpl;
-import com.snowdrift.framework.cache.serialize.FastJson2CacheSerializer;
 import com.snowdrift.framework.cache.serialize.JacksonCacheSerializer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -54,11 +53,11 @@ class SnowdriftCaffeineCacheServiceImplTest {
     }
 
     private static SnowdriftCaffeineCacheServiceImpl service() {
-        return new SnowdriftCaffeineCacheServiceImpl(properties(), new FastJson2CacheSerializer());
+        return new SnowdriftCaffeineCacheServiceImpl(properties(), new JacksonCacheSerializer());
     }
 
     private static SnowdriftCaffeineCacheServiceImpl service(SnowdriftCacheProperties properties) {
-        return new SnowdriftCaffeineCacheServiceImpl(properties, new FastJson2CacheSerializer());
+        return new SnowdriftCaffeineCacheServiceImpl(properties, new JacksonCacheSerializer());
     }
 
     private static User user(Long id, String name) {
@@ -117,18 +116,13 @@ class SnowdriftCaffeineCacheServiceImplTest {
         }
 
         @Test
-        @DisplayName("读取类型与写入类型不匹配时的行为随序列化器而异（fastjson2 宽松、Jackson 严格）")
-        void wrongTypeBehaviourDependsOnSerializer() {
-            SnowdriftCaffeineCacheServiceImpl fastjson2Service = service();
-            fastjson2Service.put("user:1", user(1L, "张三"));
-            // fastjson2 把 JSON 对象按 String 返回原文，不抛异常
-            assertThat(fastjson2Service.get("user:1", String.class)).contains("\"id\"");
+        @DisplayName("读取类型与写入类型不匹配时抛 BizException（Jackson 严格）")
+        void wrongTypeReadFails() {
+            SnowdriftCaffeineCacheServiceImpl service = service();
+            service.put("user:1", user(1L, "张三"));
 
-            SnowdriftCacheProperties properties = properties();
-            SnowdriftCaffeineCacheServiceImpl jacksonService =
-                    new SnowdriftCaffeineCacheServiceImpl(properties, new JacksonCacheSerializer());
-            jacksonService.put("user:1", user(1L, "张三"));
-            assertThatThrownBy(() -> jacksonService.get("user:1", String.class))
+            // 写入的是 POJO（JSON 对象），按 String 读取时 Jackson 无法映射，包装为 BizException
+            assertThatThrownBy(() -> service.get("user:1", String.class))
                     .isInstanceOf(BizException.class)
                     .hasMessage("缓存反序列化失败");
         }

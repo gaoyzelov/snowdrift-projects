@@ -79,30 +79,12 @@ public class SnowdriftRedisConfiguration {
     }
 
     /**
-     * Spring Cache 管理器（供 {@code @Cacheable} 使用，JSON 序列化、统一前缀 + TTL）
-     * <p>
-     * <b>本 Bean 不加 {@code @ConditionalOnMissingBean} 是有意为之</b>：它需要优先于 Boot
-     * {@code CacheAutoConfiguration} 自动注册的默认 {@code CacheManager}（Redis 场景下 Boot 的默认实现
-     * 使用 JDK 序列化与默认配置）。若给它加上该条件，一旦 Boot 的配置先生效，本 Bean 便会静默退避，
-     * 使 {@code snowdrift.cache.*} 配置的序列化器、key 前缀与 TTL <b>全部悄无声息地失效</b>——
-     * 这是 fail-silent，比直接报错更难发现。
-     * </p>
-     * <p>
-     * 应用若需使用自定义 {@code CacheManager}，请给自身 Bean 标注 {@code @Primary}，
-     * 或用 {@code spring.autoconfigure.exclude} 排除本自动配置，<b>不要依赖本 Bean 自动退避</b>；
-     * 否则容器内会同时存在两个 {@code CacheManager}——<b>启动期</b>就会因
-     * {@code NoUniqueBeanDefinitionException} 失败（Spring 在初始化缓存基础设施时即需选定唯一的
-     * {@code CacheManager}，不会等到 {@code @Cacheable} 调用时才报错）。
+     * Spring Cache 管理器
      * </p>
      */
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
         RedisSerializer<String> keySerializer = new StringRedisSerializer();
-        // Spring Cache 的 RedisSerializer 拿不到方法返回类型，必须用带类型信息的 mapper（写 @class），
-        // 否则反序列化得到 LinkedHashMap、调用方强转时抛 ClassCastException。
-        // 这里**不随 snowdrift.cache.serializer 切换**：Jackson 的 @class 与 fastjson2 的 @type 两种类型元数据
-        // 互不可读，若随配置切换，改一次配置就会让既有 @Cacheable 缓存整体读不出来；
-        // 该配置只影响 ICacheService 的序列化器（两个实现已对齐，值格式一致）。
         RedisSerializer<Object> valueSerializer =
                 new Jackson2JsonRedisSerializer<>(JacksonCacheSerializer.cacheValueMapper(), Object.class);
         RedisCacheConfiguration config = RedisCacheConfiguration.defaultCacheConfig()

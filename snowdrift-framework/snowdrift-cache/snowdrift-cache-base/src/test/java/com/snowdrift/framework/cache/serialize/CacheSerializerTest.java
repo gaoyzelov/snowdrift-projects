@@ -1,11 +1,13 @@
 package com.snowdrift.framework.cache.serialize;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.snowdrift.framework.base.exception.BizException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
+import java.lang.reflect.Type;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -18,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * @author gaoyzelov
  * @date 2026/10/9
- * @description 缓存序列化器单元测试（两个实现的共同契约与各自差异）
+ * @description 缓存序列化器（Jackson）单元测试
  * @since 1.0.0
  */
 class CacheSerializerTest {
@@ -56,8 +58,7 @@ class CacheSerializerTest {
 
     /**
      * 只有 getter、没有 setter——序列化侧必须走字段（否则读回来是默认值）。
-     * <p>字段初始值刻意与写入值不同：若读侧没有按字段还原，断言会立刻暴露
-     * （这正是此前 fastjson2 读侧缺 {@code FieldBased} 时被漏掉的场景）。</p>
+     * <p>字段初始值刻意与写入值不同：若读侧没有按字段还原，断言会立刻暴露。</p>
      */
     public static class GetterOnly {
         private String no = "DEFAULT-no";
@@ -120,7 +121,7 @@ class CacheSerializerTest {
         assertThat(back.getName()).isEqualTo("张三");
         assertThat(back.getCreatedAt()).isEqualTo(LocalDateTime.of(2026, 10, 9, 12, 0, 0));
 
-        // 2. setter-less 类：字段值必须真正还原，而不是保留字段默认值（回归：fastjson2 读侧曾静默丢数据）
+        // 2. setter-less 类：字段值必须真正还原，而不是保留字段默认值
         GetterOnly getterOnly = new GetterOnly();
         setField(getterOnly, "no", "SN-123");
         setField(getterOnly, "amount", 999);
@@ -193,9 +194,9 @@ class CacheSerializerTest {
         }
 
         @Test
-        @DisplayName("时间按标准格式落盘（空格分隔、JVM 默认时区），与 fastjson2 输出一致")
-        void datesUseCanonicalFormat() {
-            assertThat(serializer.serialize(user())).contains("\"createdAt\":\"2026-10-09 12:00:00\"");
+        @DisplayName("时间按 ISO-8601 字符串落盘（LocalDateTime → 2026-10-09T12:00:00）")
+        void datesUseIsoFormat() {
+            assertThat(serializer.serialize(user())).contains("\"createdAt\":\"2026-10-09T12:00:00\"");
         }
 
         @Test
@@ -203,6 +204,24 @@ class CacheSerializerTest {
         void serializationFailureIsWrapped() {
             assertThatThrownBy(() -> serializer.serialize(new BrokenGetter()))
                     .isInstanceOf(BizException.class).hasMessage("缓存序列化失败");
+        }
+
+        @Test
+        @DisplayName("泛型 Type 重载：集合元素还原为目标类型（List<User> / Map<String,User>）")
+        void typeOverloadRestoresGenerics() {
+            List<User> users = List.of(user());
+            Type listType = new TypeReference<List<User>>() {
+            }.getType();
+            Type mapType = new TypeReference<Map<String, User>>() {
+            }.getType();
+
+            Object listBack = serializer.deserialize(serializer.serialize(users), listType);
+            assertThat(listBack).isInstanceOf(List.class);
+            assertThat(((List<?>) listBack).get(0)).isInstanceOf(User.class);
+            assertThat(((User) ((List<?>) listBack).get(0)).getName()).isEqualTo("张三");
+
+            Object mapBack = serializer.deserialize(serializer.serialize(Map.of("u", users.get(0))), mapType);
+            assertThat(((Map<?, ?>) mapBack).get("u")).isInstanceOf(User.class);
         }
 
         @Test
@@ -216,51 +235,6 @@ class CacheSerializerTest {
             Object back = mapper.readValue(json, Object.class);
             assertThat(back).isInstanceOf(List.class);
             assertThat(((List<?>) back).get(0)).isInstanceOf(User.class);
-        }
-    }
-
-    @Nested
-    @DisplayName("FastJson2CacheSerializer")
-    class FastJson2 {
-
-        private final ICacheSerializer serializer = new FastJson2CacheSerializer();
-
-        @Test
-        @DisplayName("满足缓存序列化器共同契约（含 setter-less 类的字段还原）")
-        void contract() throws Exception {
-            assertCommonContract(serializer);
-        }
-
-        @Test
-        @DisplayName("不写入类型元数据（关闭 @type）")
-        void noTypeMetadata() {
-            assertThat(serializer.serialize(user())).doesNotContain("@type");
-        }
-
-        @Test
-        @DisplayName("时间以空格分隔的日期时间字符串落盘（与 Jackson 对齐后的同一格式）")
-        void datesUseSpaceSeparator() {
-            assertThat(serializer.serialize(user())).contains("\"createdAt\":\"2026-10-09 12:00:00\"");
-        }
-
-        @Test
-        @DisplayName("读写同用字段模式：无 getter 的私有字段也能往返")
-        void fieldBasedBothDirections() throws Exception {
-            NoAccessors sample = new NoAccessors();
-            setField(sample, "no", "NA-1");
-
-            NoAccessors restored = serializer.deserialize(serializer.serialize(sample), NoAccessors.class);
-
-            assertThat(restored.getNo()).isEqualTo("NA-1");
-        }
-    }
-
-    /** 私有字段、无 getter、无 setter：只有字段模式才能读写 */
-    public static class NoAccessors {
-        private String no = "DEFAULT-no";
-
-        public String getNo() {
-            return no;
         }
     }
 }

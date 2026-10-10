@@ -2,16 +2,13 @@ package com.snowdrift.framework.cache.config;
 
 import com.snowdrift.framework.cache.ICacheService;
 import com.snowdrift.framework.cache.IDistributedLockService;
-import com.snowdrift.framework.cache.SerializerType;
 import com.snowdrift.framework.cache.aspect.DistributedLockAspect;
 import com.snowdrift.framework.cache.aspect.RepeatSubmitAspect;
 import com.snowdrift.framework.cache.handler.SnowdriftCachingErrorHandler;
 import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
-import com.snowdrift.framework.cache.serialize.FastJson2CacheSerializer;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import com.snowdrift.framework.cache.serialize.JacksonCacheSerializer;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -35,35 +32,21 @@ import org.springframework.context.annotation.Bean;
  * @date 2026/6/2
  * @since 1.0.0
  */
-@Slf4j
 @EnableCaching
 @AutoConfiguration
 @EnableConfigurationProperties(SnowdriftCacheProperties.class)
 public class SnowdriftCacheConfiguration implements CachingConfigurer {
 
-    private final SnowdriftCacheProperties properties;
-
-    public SnowdriftCacheConfiguration(SnowdriftCacheProperties properties) {
-        this.properties = properties;
-    }
-
     /**
      * 缓存序列化器 Bean
      * <p>
-     * 根据 {@code snowdrift.cache.serializer} 配置选择实现：
-     * {@code jackson}（默认）或 {@code fastjson2}。
+     * 统一使用基于 Jackson 的 {@link JacksonCacheSerializer}。
      * 消费者可注册自定义 {@link ICacheSerializer} Bean 完全替换。
      * </p>
      */
     @Bean
     @ConditionalOnMissingBean(ICacheSerializer.class)
     public ICacheSerializer cacheSerializer() {
-        SerializerType type = properties.getSerializer();
-        if (type == SerializerType.FASTJSON2) {
-            log.info("缓存序列化器: Fastjson2");
-            return new FastJson2CacheSerializer();
-        }
-        log.info("缓存序列化器: Jackson");
         return new JacksonCacheSerializer();
     }
 
@@ -76,7 +59,7 @@ public class SnowdriftCacheConfiguration implements CachingConfigurer {
     }
 
     /**
-     * 统一缓存 Key 生成器，格式：[prefix:]ClassName#methodName[:params...]
+     * 统一缓存 Key 生成器：简单类名#方法名[:参数段摘要]，参数段整体取 SHA-256 前 128 位摘要
      */
     @Override
     public KeyGenerator keyGenerator() {
