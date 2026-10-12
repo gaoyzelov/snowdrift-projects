@@ -10,7 +10,6 @@ import com.baomidou.mybatisplus.extension.plugins.inner.TenantLineInnerIntercept
 import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.orm.mp.CryptoKeyHolder;
 import com.snowdrift.framework.orm.mp.handler.FieldAutoFillHandler;
-import com.snowdrift.framework.orm.mp.interceptor.TenantStatementGuardInterceptor;
 import com.snowdrift.framework.orm.mp.properties.OrmMpBaseProperties;
 import com.snowdrift.framework.orm.mp.properties.OrmMpPaginationProperties;
 import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
@@ -127,31 +126,12 @@ class SnowdriftOrmMpConfigurationTest {
     }
 
     @Test
-    @DisplayName("租户开启：额外装配 TenantLineInnerInterceptor 与语句守卫")
+    @DisplayName("租户开启：额外装配 TenantLineInnerInterceptor")
     void interceptorsWithTenant() {
         List<InnerInterceptor> inners = interceptor(true, false).getInterceptors();
 
-        assertThat(inners).hasSize(5);
+        assertThat(inners).hasSize(4);
         assertThat(inners).anyMatch(i -> i instanceof TenantLineInnerInterceptor);
-        assertThat(inners).anyMatch(i -> i instanceof TenantStatementGuardInterceptor);
-    }
-
-    @Test
-    @DisplayName("租户关闭：不装配语句守卫（无租户条件可注入时守卫无意义）")
-    void noGuardWhenTenantDisabled() {
-        List<InnerInterceptor> inners = interceptor(false, false).getInterceptors();
-
-        assertThat(inners).noneMatch(i -> i instanceof TenantStatementGuardInterceptor);
-    }
-
-    @Test
-    @DisplayName("语句守卫排在租户拦截器之前：否则 REPLACE/MERGE 已被放行，守卫无从拦截")
-    void guardPrecedesTenantInterceptor() {
-        List<InnerInterceptor> inners = interceptor(true, false).getInterceptors();
-
-        int guardIndex = indexOf(inners, TenantStatementGuardInterceptor.class);
-        assertThat(guardIndex).isGreaterThanOrEqualTo(0);
-        assertThat(guardIndex).isLessThan(indexOf(inners, TenantLineInnerInterceptor.class));
     }
 
     @Test

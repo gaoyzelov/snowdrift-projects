@@ -92,15 +92,16 @@ TenantUtil.ignore(() -> {
 > （典型来源：`BeanUtils.copyProperties(requestBody, entity)` 把请求体里的 `tenantId` 拷进实体）会让**请求方**
 > 决定数据落进哪个租户。无租户上下文时仍保留既有的两个逃生口：显式设置实体 `tenantId`，或配置 `default-tenant-id`。
 
-> **不支持的语句类型会被拒绝：** MyBatis-Plus 的租户拦截器只处理 `SELECT/INSERT/UPDATE/DELETE`，
-> 其余语句（`REPLACE`、`MERGE` 等）会被**原样放行且不报错**，导致租户条件静默失效。
-> 框架注册了 `TenantStatementGuardInterceptor` 在租户拦截器之前拦下这类语句并抛 `BizException`，
-> 除非该语句涉及的表全部列在 `ignore-tables` 中。请改用 `INSERT`/`UPDATE`/`DELETE`。
-
-> **已知限制（子查询位置）：** 租户条件注入依赖 MyBatis-Plus 对 SQL 的遍历，它**不会**进入
-> `CASE` 表达式、`HAVING`、`ORDER BY` 以及函数参数内部的子查询——这些位置的租户表**不会**被加上租户条件。
-> 手写 SQL 请把子查询限定在 `FROM`/`JOIN`/`WHERE` 的 `IN`、`EXISTS`、比较运算等受支持的位置，
-> 否则存在跨租户读取风险。
+> **使用限制（务必遵守）：** 租户条件由 MyBatis-Plus 默认的 `TenantLineInnerInterceptor` 注入，
+> 它的覆盖范围有边界，以下写法**不会被注入租户条件**，请避免：
+>
+> | 限制 | 说明 |
+> |------|------|
+> | 语句类型 | 只处理 `SELECT`/`INSERT`/`UPDATE`/`DELETE`。`REPLACE`、`MERGE` 等会被**原样放行且不报错**，请改用 `INSERT`/`UPDATE`/`DELETE` |
+> | 子查询位置 | 不会进入 `CASE` 表达式、`HAVING`、`ORDER BY` 以及函数参数内部的子查询。请把子查询放在 `FROM`/`JOIN`/`WHERE` 的 `IN`、`EXISTS`、比较运算等受支持的位置 |
+> | 子查询不能替代外层 | `SELECT * FROM t_a WHERE id IN (SELECT id FROM t_b WHERE tenant_id = 42)` 里的 `t_a` 仍未被过滤 |
+>
+> 也就是说：**租户表出现在上述位置时会形成跨租户读取，且不会被框架拦下。** 手写 XML/注解 SQL 时请人工确认每张租户表都带了租户条件。
 
 ### 数据权限 — @DataScope
 

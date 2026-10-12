@@ -9,7 +9,6 @@ import com.snowdrift.framework.orm.mp.CryptoKeyHolder;
 import com.snowdrift.framework.orm.mp.handler.DataScopeHandler;
 import com.snowdrift.framework.orm.mp.handler.FieldAutoFillHandler;
 import com.snowdrift.framework.orm.mp.handler.MultiTenantLineHandler;
-import com.snowdrift.framework.orm.mp.interceptor.TenantStatementGuardInterceptor;
 import com.snowdrift.framework.orm.mp.properties.OrmMpBaseProperties;
 import com.snowdrift.framework.orm.mp.properties.OrmMpPaginationProperties;
 import com.snowdrift.framework.orm.mp.properties.OrmMpTenantProperties;
@@ -90,23 +89,16 @@ public class SnowdriftOrmMpConfiguration {
     @ConditionalOnMissingBean
     public MybatisPlusInterceptor mybatisPlusInterceptor(OrmMpPaginationProperties paginationProperties, OrmMpTenantProperties tenantProperties, Optional<IDataScopeProvider> optProvider) {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
-        MultiTenantLineHandler tenantHandler = null;
-        if (Boolean.TRUE.equals(tenantProperties.getEnabled())) {
-            tenantHandler = new MultiTenantLineHandler(tenantProperties);
-            // 守卫必须排在租户拦截器之前：MyBatis-Plus 对无法分派的语句（REPLACE/MERGE 等）既不注入租户条件
-            // 也不报错，只有先拦下来才能避免租户隔离静默失效
-            interceptor.addInnerInterceptor(new TenantStatementGuardInterceptor(tenantHandler));
-        }
 
         // 防止全表更新与删除插件。
-        // 必须排在租户拦截器之前：租户拦截器会先把 `UPDATE t SET x = 1` 改写成带 WHERE 的语句，
+        // 排在租户拦截器之前：租户拦截器会先把 `UPDATE t SET x = 1` 改写成带 WHERE 的语句，
         // 排在它后面时 BlockAttackInnerInterceptor 读到的是已改写的 SQL，守卫不再触发，
         // 其承诺的“阻止不带 WHERE 的 UPDATE/DELETE”形同虚设。
         interceptor.addInnerInterceptor(new BlockAttackInnerInterceptor());
 
-        // 多租户插件
-        if (tenantHandler != null) {
-            interceptor.addInnerInterceptor(this.getTenantLineInnerInterceptor(tenantHandler));
+        // 多租户插件（使用 MyBatis-Plus 默认的 TenantLineInnerInterceptor）
+        if (Boolean.TRUE.equals(tenantProperties.getEnabled())) {
+            interceptor.addInnerInterceptor(this.getTenantLineInnerInterceptor(new MultiTenantLineHandler(tenantProperties)));
         }
         // 数据权限插件（始终注册；未配置 IDataScopeProvider 时，由 DataScopeHandler 对携带 @DataScope 的语句显式抛错）
         interceptor.addInnerInterceptor(this.getDataPermissionInterceptor(optProvider));
