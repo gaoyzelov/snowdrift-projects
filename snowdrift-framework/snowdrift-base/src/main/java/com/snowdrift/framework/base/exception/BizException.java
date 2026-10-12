@@ -17,10 +17,6 @@ import java.io.Serial;
 @Getter
 public class BizException extends RuntimeException {
 
-    /**
-     * 固定序列化版本号：异常随 RPC / MQ / 缓存跨进程传递时，避免因类结构演进导致
-     * 两端计算的 serialVersionUID 不一致而抛 InvalidClassException
-     */
     @Serial
     private static final long serialVersionUID = 1L;
 

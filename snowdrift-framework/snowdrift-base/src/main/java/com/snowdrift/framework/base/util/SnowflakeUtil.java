@@ -193,18 +193,10 @@ public final class SnowflakeUtil {
 
     /**
      * 获取实例（使用默认 workerId=0, datacenterId=0）
-     * <p>
-     * <b>注意：</b>多节点/多JVM部署时，使用此方法创建的实例会产生重复ID。
-     * 分布式环境下请使用 {@link #getInstance(long, long)} 为每个节点显式指定
-     * 不同的 workerId 和 datacenterId。
-     * </p>
      *
      * @return SnowflakeUtil 实例（单例）
      */
     public static SnowflakeUtil getInstance() {
-        // 上面的 Javadoc 警告不会被运行时开发者看到，多副本部署下这是「无声地产生重复 ID」，
-        // 因此在运行期留下可观测痕迹。刻意每次调用都提示而非「整个 JVM 只提示一次」：
-        // 后者在多副本场景下只能保证其中一个副本告警，其余副本日志干净，反而更难排查。
         log.warn("[Snowdrift-Base] SnowflakeUtil.getInstance() 使用默认 workerId=0, datacenterId=0，"
                 + "多节点/多 JVM 部署会产生重复 ID。分布式环境必须显式指定标识，"
                 + "例如 getInstance(workerId, datacenterId)。是否使用默认值可用本方法的日志确认。");
