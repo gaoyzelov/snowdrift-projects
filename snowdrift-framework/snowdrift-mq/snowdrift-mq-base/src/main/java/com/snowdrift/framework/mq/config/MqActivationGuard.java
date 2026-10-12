@@ -23,7 +23,7 @@ import java.util.List;
  * @since 1.0.0
  */
 @Slf4j
-public class MqBinderActivationGuard {
+public class MqActivationGuard {
 
     /** 三种实现模块的启用开关（与各实现模块 {@code @ConditionalOnProperty} 前缀保持一致） */
     private static final List<String> VENDOR_ENABLED_KEYS = List.of(
@@ -31,10 +31,10 @@ public class MqBinderActivationGuard {
             "snowdrift.mq.rabbitmq.enabled",
             "snowdrift.mq.rocketmq.enabled");
 
-    public MqBinderActivationGuard(Environment environment) {
+    public MqActivationGuard(Environment environment) {
         List<String> enabled = new ArrayList<>();
         for (String key : VENDOR_ENABLED_KEYS) {
-            if (Boolean.TRUE.equals(environment.getProperty(key, Boolean.class, Boolean.FALSE))) {
+            if (environment.getProperty(key, Boolean.class, Boolean.FALSE)) {
                 enabled.add(key);
             }
         }

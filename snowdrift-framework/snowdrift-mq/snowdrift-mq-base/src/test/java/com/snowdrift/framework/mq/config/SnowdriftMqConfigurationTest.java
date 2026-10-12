@@ -115,7 +115,7 @@ class SnowdriftMqConfigurationTest {
         MockEnvironment env = new MockEnvironment();
         env.setProperty("snowdrift.mq.kafka.enabled", "true");
 
-        assertThat(configuration.mqBinderActivationGuard(env))
-                .isInstanceOf(MqBinderActivationGuard.class);
+        assertThat(configuration.mqActivationGuard(env))
+                .isInstanceOf(MqActivationGuard.class);
     }
 }

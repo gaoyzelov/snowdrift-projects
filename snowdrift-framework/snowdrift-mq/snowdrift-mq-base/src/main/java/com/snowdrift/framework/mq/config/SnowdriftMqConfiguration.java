@@ -47,8 +47,8 @@ public class SnowdriftMqConfiguration {
      * 实现模块互斥守卫 — 同时启用多个 {@code snowdrift.mq.<vendor>.enabled=true} 时启动即失败
      */
     @Bean
-    public MqBinderActivationGuard mqBinderActivationGuard(Environment environment) {
-        return new MqBinderActivationGuard(environment);
+    public MqActivationGuard mqActivationGuard(Environment environment) {
+        return new MqActivationGuard(environment);
     }
 
     @Bean

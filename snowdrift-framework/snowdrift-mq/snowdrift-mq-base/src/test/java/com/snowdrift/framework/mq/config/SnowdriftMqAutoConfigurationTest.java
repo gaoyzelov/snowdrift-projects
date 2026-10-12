@@ -33,7 +33,7 @@ class SnowdriftMqAutoConfigurationTest {
             assertThat(ctx).hasSingleBean(MqContextPropagator.class);
             assertThat(ctx).hasSingleBean(MqInterceptorRegistry.class);
             assertThat(ctx).hasBean("mqAsyncExecutor");
-            assertThat(ctx).hasSingleBean(MqBinderActivationGuard.class);
+            assertThat(ctx).hasSingleBean(MqActivationGuard.class);
             assertThat(ctx.getBean(MqMessageConverter.class)).isInstanceOf(FastJson2MqMessageConverter.class);
         });
     }

@@ -75,7 +75,7 @@ spring:
 # rocketmq.producer.group: snowdrift-producer
 ```
 
-> **同一时间只允许启用一种实现模块。** 若同时把 `kafka`/`rabbitmq`/`rocketmq` 中的多个置为 `enabled=true`，启动将失败（`MqBinderActivationGuard` 抛 `IllegalStateException` 并列出冲突开关）。因为 `IMqService` 门面以 `@ConditionalOnMissingBean` 注册，多启用会造成“发送用哪个实现不确定、而各实现消费钩子又同时注册”的不一致，故在启动期直接拦截。
+> **同一时间只允许启用一种实现模块。** 若同时把 `kafka`/`rabbitmq`/`rocketmq` 中的多个置为 `enabled=true`，启动将失败（`MqActivationGuard` 抛 `IllegalStateException` 并列出冲突开关）。因为 `IMqService` 门面以 `@ConditionalOnMissingBean` 注册，多启用会造成“发送用哪个实现不确定、而各实现消费钩子又同时注册”的不一致，故在启动期直接拦截。
 
 ## 消息发送
 
