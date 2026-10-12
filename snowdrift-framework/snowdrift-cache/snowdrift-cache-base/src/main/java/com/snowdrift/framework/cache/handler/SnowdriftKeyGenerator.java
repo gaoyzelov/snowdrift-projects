@@ -17,24 +17,6 @@ import java.util.Objects;
  * 「类型:值」按序拼接（值转义）成参数段，整体取 SHA-256 前 128 位摘要（32 个十六进制字符），
  * key 长度恒定、参数值不进入明文 key。
  * </p>
- * <ul>
- *   <li>无参数时：{@code UserService#findById}（不摘要）</li>
- *   <li>摘要输入口径——简单参数（{@link CharSequence} / {@link Number} / {@link Boolean} / {@link Enum} /
- *       {@link Character}）：直接使用 {@code toString()}；{@code null} 参数写出空片段</li>
- *   <li>摘要输入口径——复杂对象参数：使用<b>字段序列化</b>（fastjson2 {@code FieldBased}）而非 {@code toString()}，
- *       保证跨实例、跨 JVM 稳定；序列化失败回退 {@code toString()} 并告警</li>
- *   <li>参数类型必须参与摘要输入：同名重载方法（{@code m(Integer)} / {@code m(Long)} / {@code m(String)}）
- *       若只写参数值，值相同时会摘要出同一个 key；类型用简单名以控制输入长度</li>
- *   <li>参数段中的 {@code \} 与 {@code :} 转义后再摘要，保证 {@code m("a:String:b")} 与 {@code m("a", "b")}
- *       不会拼出相同的摘要输入</li>
- *   <li>摘要为 <b>SHA-256 前 128 位</b>（32 个十六进制字符，统一摘要后参数段只有这一种形态，无需前缀）：无实用
- *       碰撞攻击（生日碰撞界 2^64），且输出长度恒定，参数再长 key 也不变长</li>
- *   <li><b>类名与类型名均使用简单名</b>（{@link Class#getSimpleName()}）以缩短 key；代价是不同包下的
- *       同名类若共用同一 cacheName 且方法名、参数相同会撞 key，属已知取舍</li>
- *   <li><b>本类不拼接 {@code snowdrift.cache.key-prefix}</b>：前缀由各后端加，Redis 侧由
- *       {@code RedisCacheConfiguration#computePrefixWith} 拼成 {@code prefix:cacheName:key}，
- *       Caffeine 侧不加前缀。{@code ICacheService} 的 key 前缀则在 {@code AbstractCacheService#buildKey} 中拼接</li>
- * </ul>
  *
  * <pre>
  * // 示例（方法签名 OrderService#create(Long id, String level)）
