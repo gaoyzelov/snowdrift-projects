@@ -57,4 +57,35 @@ class JobStatusEnumTest {
         assertThat(IEnum.getByNote(JobStatusEnum.class, "不存在")).contains(JobStatusEnum.NONE);
         assertThat(IEnum.getByNote(JobStatusEnum.class, "无此状态")).isEmpty();
     }
+
+    @Test
+    @DisplayName("IEnum.getByNote：六种描述全部可反查，null 描述返回空 Optional")
+    void getByNoteAllNotes() {
+        assertThat(IEnum.getByNote(JobStatusEnum.class, "正常")).contains(JobStatusEnum.NORMAL);
+        assertThat(IEnum.getByNote(JobStatusEnum.class, "暂停")).contains(JobStatusEnum.PAUSED);
+        assertThat(IEnum.getByNote(JobStatusEnum.class, "完成")).contains(JobStatusEnum.COMPLETE);
+        assertThat(IEnum.getByNote(JobStatusEnum.class, "错误")).contains(JobStatusEnum.ERROR);
+        assertThat(IEnum.getByNote(JobStatusEnum.class, "阻塞")).contains(JobStatusEnum.BLOCKED);
+        assertThat(IEnum.getByNote(JobStatusEnum.class, "不存在")).contains(JobStatusEnum.NONE);
+
+        assertThat(IEnum.getByNote(JobStatusEnum.class, null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("IEnum.getByCode 边界：负数与整数极值均返回空 Optional")
+    void getByCodeBoundaries() {
+        assertThat(IEnum.getByCode(JobStatusEnum.class, -1)).isEmpty();
+        assertThat(IEnum.getByCode(JobStatusEnum.class, Integer.MIN_VALUE)).isEmpty();
+        assertThat(IEnum.getByCode(JobStatusEnum.class, Integer.MAX_VALUE)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("声明顺序与接口契约：NORMAL 起、NONE 止，且全部实现 IEnum")
+    void declarationOrderAndInterface() {
+        JobStatusEnum[] values = JobStatusEnum.values();
+
+        assertThat(values[0]).isEqualTo(JobStatusEnum.NORMAL);
+        assertThat(values[values.length - 1]).isEqualTo(JobStatusEnum.NONE);
+        assertThat(values).allSatisfy(e -> assertThat(e).isInstanceOf(IEnum.class));
+    }
 }

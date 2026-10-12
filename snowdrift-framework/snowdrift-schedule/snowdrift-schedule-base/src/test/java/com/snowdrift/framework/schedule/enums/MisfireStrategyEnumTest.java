@@ -40,4 +40,24 @@ class MisfireStrategyEnumTest {
                 .contains(MisfireStrategyEnum.FIRE_ONCE_NOW);
         assertThat(IEnum.getByCode(MisfireStrategyEnum.class, "UNKNOWN")).isEmpty();
     }
+
+    @Test
+    @DisplayName("IEnum.getByNote：按中文描述反查，未知描述返回空 Optional")
+    void getByNote() {
+        assertThat(IEnum.getByNote(MisfireStrategyEnum.class, "忽略")).contains(MisfireStrategyEnum.DO_NOTHING);
+        assertThat(IEnum.getByNote(MisfireStrategyEnum.class, "立即执行一次")).contains(MisfireStrategyEnum.FIRE_ONCE_NOW);
+        assertThat(IEnum.getByNote(MisfireStrategyEnum.class, "无此策略")).isEmpty();
+        assertThat(IEnum.getByNote(MisfireStrategyEnum.class, null)).isEmpty();
+    }
+
+    @Test
+    @DisplayName("接口与命名契约：均实现 IEnum、code 与常量名一致；null/空串 code 返回空 Optional")
+    void codeEqualsNameAndNullLookup() {
+        assertThat(MisfireStrategyEnum.values()).allSatisfy(e -> assertThat(e).isInstanceOf(IEnum.class));
+        assertThat(MisfireStrategyEnum.values())
+                .allSatisfy(e -> assertThat(e.getCode()).isEqualTo(e.name()));
+
+        assertThat(IEnum.getByCode(MisfireStrategyEnum.class, null)).isEmpty();
+        assertThat(IEnum.getByCode(MisfireStrategyEnum.class, "")).isEmpty();
+    }
 }

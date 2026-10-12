@@ -237,6 +237,28 @@ class SecurityContextHolderTest {
         }
 
         @Test
+        @DisplayName("隐患：worker 在「已登录期间」首次创建会永久继承该用户身份，之后 clear 也清不掉")
+        void workerCreatedWhileLoggedInPermanentlyInheritsIdentity() throws Exception {
+            // 不预热线程池：让 worker 在 setContext 之后才创建，从而走 InheritableThreadLocal 继承路径。
+            // 未包装 TTL 的池不会逐任务还原，且无人清理该 worker —— 下一个落到它上面的任务
+            // 仍会以「上一个用户」的身份运行。这正是 MQ 异步线程 / 调度线程必须显式 clear() 的原因。
+            ExecutorService pool = Executors.newSingleThreadExecutor();
+            try {
+                SecurityContext userA = SecurityContext.builder()
+                        .userId(1L).username("alice").tenantId(11L).build();
+                SecurityContextHolder.setContext(userA);
+                pool.submit(SecurityContextHolder::peekContext).get(10, TimeUnit.SECONDS);
+
+                SecurityContextHolder.clear();
+
+                assertThat(pool.submit(SecurityContextHolder::peekContext).get(10, TimeUnit.SECONDS))
+                        .isSameAs(userA);
+            } finally {
+                shutdown(pool);
+            }
+        }
+
+        @Test
         @DisplayName("子线程与父线程共享同一可变实例：子线程修改字段对父线程可见")
         void childThreadMutatesSameInstance() throws Exception {
             ExecutorService pool = preExistingPool();

@@ -16,6 +16,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -51,6 +52,240 @@ class LocalOssServiceImplTest {
                 .size((long) bytes.length)
                 .contentType("text/plain")
                 .build();
+    }
+
+    private OssUploadRequest uploadRequest(String objectKey, InputStream stream, Long size) {
+        return OssUploadRequest.builder()
+                .objectKey(objectKey)
+                .inputStream(stream)
+                .size(size)
+                .contentType("application/octet-stream")
+                .build();
+    }
+
+    /** 惰性产出指定字节数的流，避免测试里真的分配大数组 */
+    private static InputStream lazyStream(long size) {
+        return new InputStream() {
+            private long produced;
+
+            @Override
+            public int read() {
+                return produced++ < size ? 'a' : -1;
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) {
+                if (produced >= size) {
+                    return -1;
+                }
+                int n = (int) Math.min(len, size - produced);
+                java.util.Arrays.fill(b, off, off + n, (byte) 'a');
+                produced += n;
+                return n;
+            }
+        };
+    }
+
+    /** 产出 n 字节后抛 IOException 的流，模拟客户端上传中途断开 */
+    private static InputStream abortedStream(int n) {
+        return new InputStream() {
+            private int produced;
+
+            @Override
+            public int read() throws IOException {
+                if (produced++ >= n) {
+                    throw new IOException("client aborted");
+                }
+                return 'a';
+            }
+
+            @Override
+            public int read(byte[] b, int off, int len) throws IOException {
+                if (produced >= n) {
+                    throw new IOException("client aborted");
+                }
+                int c = (int) Math.min(len, n - produced);
+                java.util.Arrays.fill(b, off, off + c, (byte) 'a');
+                produced += c;
+                return c;
+            }
+        };
+    }
+
+    private static long regularFileCount(Path root) throws IOException {
+        try (var walk = Files.walk(root)) {
+            return walk.filter(Files::isRegularFile).count();
+        }
+    }
+
+    // ========== 路径安全 ==========
+
+    @Test
+    @DisplayName("路径穿越的所有变体（正斜杠/反斜杠/多级/尾随）在四个入口一律被拒")
+    void rejectsAllTraversalVariants(@TempDir Path tempDir) {
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(tempDir.toString(), DOMAIN));
+        String[] hostileKeys = {
+                "../outside.txt",
+                "a/../outside.txt",
+                "a/b/../../outside.txt",
+                "a/..",
+                "..\\outside.txt",
+                "\\..\\outside.txt"
+        };
+
+        for (String key : hostileKeys) {
+            assertThatThrownBy(() -> service.download(key))
+                    .as("download(%s)", key).isInstanceOf(OssException.class).hasMessageContaining("路径穿越");
+            assertThatThrownBy(() -> service.delete(key))
+                    .as("delete(%s)", key).isInstanceOf(OssException.class).hasMessageContaining("路径穿越");
+            assertThatThrownBy(() -> service.exists(key))
+                    .as("exists(%s)", key).isInstanceOf(OssException.class).hasMessageContaining("路径穿越");
+            assertThatThrownBy(() -> service.getUrl(key, null))
+                    .as("getUrl(%s)", key).isInstanceOf(OssException.class).hasMessageContaining("路径穿越");
+        }
+    }
+
+    @Test
+    @DisplayName("越界键（穿越 / 绝对路径）绝不触碰存储根之外的文件")
+    void hostileKeysNeverTouchFilesOutsideStorageRoot(@TempDir Path tempDir) throws IOException {
+        // canary：与存储根同级的根外文件，任何越界操作都不能删除或读到它
+        Path root = Files.createDirectory(tempDir.resolve("storage"));
+        Path canary = Files.writeString(tempDir.resolve("canary.txt"), "do-not-touch");
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(root.toString(), DOMAIN));
+
+        String[] hostileKeys = {
+                "../canary.txt",
+                "..\\canary.txt",
+                "/../canary.txt",
+                "./../canary.txt",
+                canary.toAbsolutePath().toString(),
+                canary.toAbsolutePath().toString().replace('\\', '/')
+        };
+        for (String key : hostileKeys) {
+            assertThatThrownBy(() -> service.download(key)).as("download(%s)", key).isInstanceOf(OssException.class);
+            assertThatThrownBy(() -> service.delete(key)).as("delete(%s)", key).isInstanceOf(OssException.class);
+            assertThatThrownBy(() -> service.exists(key)).as("exists(%s)", key).isInstanceOf(OssException.class);
+            assertThat(canary).as("canary 必须存活（key=%s）", key).exists();
+            assertThat(Files.readString(canary)).isEqualTo("do-not-touch");
+        }
+    }
+
+    @Test
+    @DisplayName("编码过的 ..（%2e%2e）不被解码，落在根内作为普通目录名，不构成逃逸")
+    void encodedTraversalStaysInsideRoot(@TempDir Path tempDir) throws IOException {
+        Path root = Files.createDirectory(tempDir.resolve("storage"));
+        Path canary = Files.writeString(tempDir.resolve("canary.txt"), "do-not-touch");
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(root.toString(), DOMAIN));
+
+        OssResult result = service.upload(uploadRequest("%2e%2e/canary.txt", "payload"));
+
+        assertThat(result.getObjectKey()).startsWith("%2e%2e/");
+        assertThat(Files.readString(canary)).isEqualTo("do-not-touch");
+        assertThat(service.exists(result.getObjectKey())).isTrue();
+    }
+
+    @Test
+    @DisplayName("名字里只是含点或连点（..bar / a.b / v1..2）不算穿越，正常放过")
+    void allowsDotLikeSegmentNames(@TempDir Path tempDir) throws IOException {
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(tempDir.toString(), DOMAIN));
+
+        for (String key : new String[]{"..bar/x.txt", "a.b/c.txt", "nested/v1..2.txt"}) {
+            OssResult result = service.upload(uploadRequest(key, "payload"));
+
+            assertThat(result.getObjectKey()).as("key=%s", key).contains("/");
+            assertThat(service.exists(result.getObjectKey())).as("key=%s", key).isTrue();
+        }
+    }
+
+    @Test
+    @DisplayName("根键 '/' 归一后为空：非空存储根不会被删掉，操作以 OssException 失败")
+    void rootOnlyKeyCannotDeleteNonEmptyStorageRoot(@TempDir Path tempDir) throws IOException {
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(tempDir.toString(), DOMAIN));
+        OssResult result = service.upload(uploadRequest("a/b.txt", "payload"));
+
+        assertThatThrownBy(() -> service.delete("/")).isInstanceOf(OssException.class);
+
+        assertThat(tempDir).exists();
+        assertThat(service.exists(result.getObjectKey())).isTrue();
+    }
+
+    // ========== 上传边界 ==========
+
+    @Test
+    @DisplayName("上传：嵌套 objectKey 自动创建多级父目录")
+    void uploadCreatesNestedDirectories(@TempDir Path tempDir) throws IOException {
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(tempDir.toString(), DOMAIN));
+
+        OssResult result = service.upload(uploadRequest("a/b/c/d.txt", "payload"));
+
+        assertThat(result.getObjectKey()).startsWith("a/b/c/");
+        Path stored = tempDir.resolve(result.getObjectKey());
+        assertThat(stored).exists();
+        assertThat(Files.readString(stored)).isEqualTo("payload");
+    }
+
+    @Test
+    @DisplayName("上传：size 为空（未知长度）时按实际读取字节数返回")
+    void uploadWithoutDeclaredSize(@TempDir Path tempDir) throws IOException {
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(tempDir.toString(), DOMAIN));
+
+        OssResult result = service.upload(uploadRequest("x.txt",
+                new ByteArrayInputStream("hello".getBytes(StandardCharsets.UTF_8)), null));
+
+        assertThat(result.getSize()).isEqualTo(5L);
+    }
+
+    @Test
+    @DisplayName("上传中断（流抛 IOException）：抛 OssException，且当前实现会在目标路径留下半截文件（已知限制 OSS-04）")
+    void uploadAbortLeavesPartialFile(@TempDir Path tempDir) throws IOException {
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(tempDir.toString(), DOMAIN));
+
+        assertThatThrownBy(() -> service.upload(uploadRequest("big.bin", abortedStream(1024), null)))
+                .isInstanceOf(OssException.class)
+                .hasMessageContaining("上传失败");
+
+        // 直接写最终路径、无临时文件 + 原子 rename，失败时不清理 —— 记录当前行为，修好原子写后本断言应改为 0
+        assertThat(regularFileCount(tempDir)).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("上传：当前实现无字节上限，2 MiB 流原样落盘（已知限制 OSS-03）")
+    void uploadHasNoSizeLimit(@TempDir Path tempDir) throws IOException {
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(tempDir.toString(), DOMAIN));
+
+        OssResult result = service.upload(uploadRequest("big.bin", lazyStream(2L * 1024 * 1024), null));
+
+        assertThat(result.getSize()).isEqualTo(2L * 1024 * 1024);
+        assertThat(Files.size(tempDir.resolve(result.getObjectKey()))).isEqualTo(2L * 1024 * 1024);
+    }
+
+    // ========== 键校验与 URL ==========
+
+    @Test
+    @DisplayName("空白 objectKey 在四个入口一律抛 OssException")
+    void rejectsBlankObjectKey(@TempDir Path tempDir) {
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(tempDir.toString(), DOMAIN));
+
+        for (String key : new String[]{"", "   "}) {
+            assertThatThrownBy(() -> service.download(key))
+                    .as("download(%s)", key).isInstanceOf(OssException.class).hasMessageContaining("对象键不能为空");
+            assertThatThrownBy(() -> service.delete(key))
+                    .as("delete(%s)", key).isInstanceOf(OssException.class).hasMessageContaining("对象键不能为空");
+            assertThatThrownBy(() -> service.exists(key))
+                    .as("exists(%s)", key).isInstanceOf(OssException.class).hasMessageContaining("对象键不能为空");
+            assertThatThrownBy(() -> service.getUrl(key, null))
+                    .as("getUrl(%s)", key).isInstanceOf(OssException.class).hasMessageContaining("对象键不能为空");
+        }
+    }
+
+    @Test
+    @DisplayName("本地存储不支持签名 URL：expiry 参数被忽略，超长有效期不改变结果")
+    void localIgnoresExpiry(@TempDir Path tempDir) {
+        LocalOssServiceImpl service = new LocalOssServiceImpl(config(tempDir.toString(), DOMAIN));
+
+        assertThat(service.getUrl("a/b.txt", Duration.ofDays(3650)))
+                .isEqualTo(service.getUrl("a/b.txt", null))
+                .isEqualTo(DOMAIN + "/a/b.txt");
     }
 
     // ========== 构造 ==========
