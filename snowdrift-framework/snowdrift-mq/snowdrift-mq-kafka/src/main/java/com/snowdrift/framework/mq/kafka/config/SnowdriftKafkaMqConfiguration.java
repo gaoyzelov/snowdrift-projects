@@ -40,6 +40,7 @@ import java.util.concurrent.Executor;
 @Slf4j
 @AutoConfiguration(afterName = "org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration")
 @EnableConfigurationProperties(KafkaMqProperties.class)
+@ConditionalOnProperty(prefix = "snowdrift.mq", name = "enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnProperty(prefix = "snowdrift.mq.kafka", name = "enabled", havingValue = "true")
 @ConditionalOnClass(KafkaTemplate.class)
 public class SnowdriftKafkaMqConfiguration {

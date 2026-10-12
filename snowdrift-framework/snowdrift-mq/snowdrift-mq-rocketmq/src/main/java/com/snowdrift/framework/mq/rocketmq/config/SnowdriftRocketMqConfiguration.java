@@ -36,6 +36,7 @@ import java.util.concurrent.Executor;
 @Slf4j
 @AutoConfiguration(afterName = "org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration")
 @EnableConfigurationProperties(RocketMqProperties.class)
+@ConditionalOnProperty(prefix = "snowdrift.mq", name = "enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnProperty(prefix = "snowdrift.mq.rocketmq", name = "enabled", havingValue = "true")
 @ConditionalOnClass(RocketMQTemplate.class)
 public class SnowdriftRocketMqConfiguration {

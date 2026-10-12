@@ -76,8 +76,9 @@ long n = cacheService.increment("login:fail:1", Duration.ofMinutes(5));
 说明：
 - `getExpire`：单位秒，`-1` 表示永不过期、`-2` 表示 key 不存在（Redis 与 Caffeine 两个实现语义一致）。
 - Hash 操作（`hget/hput/hdelete`）与 `increment` **仅 Redis 后端支持**；Caffeine 调用会抛 `UnsupportedOperationException`。
-- **per-key TTL 两个后端都支持**：Caffeine 通过 Caffeine 的 `expireAfter(Expiry)` + `Policy.VarExpiration` 实现「带 TTL 写入 / `expire` / `getExpire`」；未显式指定 TTL 时按全局 `key-ttl` 过期（配置为非正数表示永不过期）。
-- 显式传入的 TTL 必须为正数，否则直接抛 `BizException("缓存TTL必须大于 0")`（不会落到后端抛各自的原始异常）。
+- **per-key TTL 两个后端都支持**：Caffeine 通过 Caffeine 的 `expireAfter(Expiry)` + `Policy.VarExpiration` 实现「带 TTL 写入 / `expire` / `getExpire`」；未显式指定 TTL 时按全局 `key-ttl` 过期。全局 `key-ttl` 配为 `null` 表示交给后端自持的默认过期策略。
+- **TTL 必须为正数**：显式传入的 TTL 与全局 `key-ttl` 都受同一约束，非正数直接抛 `BizException("缓存TTL必须大于 0")`。
+  注意 `key-ttl: 0` 在 Redis 侧 `entryTtl(ZERO)` 表示**不设置过期**（条目永不过期、无上界增长），与配置意图相反，因此这里统一 fail-fast 而不是静默放行。
 
 ### 分布式锁 — @DistributedLock
 
@@ -193,6 +194,8 @@ public class ProtoBufSerializer implements ICacheSerializer {
 
 `SnowdriftCachingErrorHandler` 对 Spring Cache 注解（`@Cacheable` / `@CachePut` / `@CacheEvict`）执行异常记录 WARN 后静默放行：GET 失败降级穿透、PUT/EVICT 失败跳过写入，缓存故障不阻断主流程。
 
+> **注意**：降级是 fail-open 的。配合下面的多态反序列化默认值，**如果缓存内容与当前实体结构不兼容，表现为“缓存从不命中”而不是报错**——排查时请留意 WARN 日志。
+
 ## 装配与自定义
 
 - 后端配置类只在**各自的 Bean 上**做条件判断：自定义 `ICacheService` 只会让框架实现退让，`CacheManager`、`snowdriftRedisTemplate` 与 key 前缀/TTL 配置**仍然生效**（此前类级条件会把它们一并关掉，导致 `@Cacheable` 静默退化）。
@@ -216,7 +219,7 @@ public class ProtoBufSerializer implements ICacheSerializer {
 
 ## @Cacheable 的 key 生成
 
-容器内注册了统一的 `SnowdriftKeyGenerator`（`CachingConfigurer#keyGenerator`），生成格式：
+容器内注册了统一的 `SnowdriftKeyGenerator`，生成格式：
 
 ```
 简单类名#方法名[:参数段摘要]
@@ -234,6 +237,35 @@ OrderService#create:8b1d4a...（参数段整体摘要：SHA-256 前 128 位，32
 - 参数值中的 `\` 与 `:` 会被转义后再摘要，`m("a:String:b")` 与 `m("a","b")` 不会摘要出相同的 key；
 - 已知歧义：同一形参类型下 `null` 与 `""` 摘要输入相同 → key 相同；
 - 简单类名参与 key：类**重命名**会改变 key（旧缓存自然失效），**移动包不再影响 key**；`key-prefix` 由 `ICacheService` 拼接，不参与 `@Cacheable` 的 key（Redis 侧的 cacheName 前缀由 CacheManager 负责）。
+
+### 自定义 KeyGenerator / CacheErrorHandler
+
+替换框架默认实现有两条路，都被支持：
+
+```java
+// 方式一（推荐）：只替换单个组件，框架的 CachingConfigurer 会自动让位
+@Bean
+public KeyGenerator myKeyGenerator() { return new MyKeyGenerator(); }
+
+@Bean
+public CacheErrorHandler myErrorHandler() { return new MyErrorHandler(); }
+```
+
+```java
+// 方式二：整体接管缓存配置，框架的 CachingConfigurer 完全退避
+@Configuration
+public class MyCacheConfig implements CachingConfigurer {
+    @Override public KeyGenerator keyGenerator() { return new MyKeyGenerator(); }
+    @Override public CacheErrorHandler errorHandler() { return new MyErrorHandler(); }
+}
+```
+
+> **为什么必须这样写**：Spring 只允许容器中存在一个 `CachingConfigurer`，多于一个会在启动时抛
+> `IllegalStateException("N implementations of CachingConfigurer were found when only 1 was expected")`；
+> 同时 `CacheErrorHandler` **只能**经 `CachingConfigurer` 生效（`CacheAspectSupport` 不会按类型从容器解析它，
+> 缺失时一律用 `SimpleCacheErrorHandler`，即缓存故障直接抛给业务）。因此框架注册的是
+> 「带 `@ConditionalOnMissingBean` 退避、且每个方法优先采用宿主同类 Bean」的独立 `CachingConfigurer`。
+> 把这两个组件注册成普通 `@Bean` 由框架读取是不生效的。
 
 ## 测试
 
@@ -276,7 +308,7 @@ OrderService#create:8b1d4a...（参数段整体摘要：SHA-256 前 128 位，32
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `key-prefix` | String | `""` | key 全局前缀（空串无前缀） |
-| `key-ttl` | Duration | `1h` | 全局默认 TTL |
+| `key-ttl` | Duration | `1h` | 全局默认 TTL。必须为正数；配 `null` 表示由后端自持默认策略 |
 | `max-size` | long | `10000` | Caffeine 最大条目数 |
 
 ### snowdrift.cache.redisson

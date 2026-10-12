@@ -9,10 +9,13 @@ import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.concurrent.ConcurrentMapCacheManager;
+import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -121,6 +124,65 @@ class SnowdriftCachingIntegrationTest {
         CacheManager cacheManager() {
             return new ExplodingCacheManager();
         }
+    }
+
+    /** 宿主自定义 KeyGenerator：所有 key 统一为固定值，便于断言它是否真的被采用 */
+    static class HostKeyGenerator implements KeyGenerator {
+
+        @Override
+        public Object generate(Object target, Method method, Object... params) {
+            return "host-key";
+        }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class HostKeyGeneratorConfig {
+
+        @Bean
+        UserService userService() {
+            return new UserService();
+        }
+
+        @Bean
+        CacheManager cacheManager() {
+            return new ConcurrentMapCacheManager();
+        }
+
+        @Bean
+        KeyGenerator hostKeyGenerator() {
+            return new HostKeyGenerator();
+        }
+    }
+
+    @Test
+    @DisplayName("宿主自定义 KeyGenerator 时框架退避：@Cacheable 真正采用宿主的 key 生成器")
+    void hostKeyGeneratorWins() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(SnowdriftCacheConfiguration.class))
+                .withUserConfiguration(HostKeyGeneratorConfig.class)
+                .run(context -> {
+                    assertThat(context).hasNotFailed();
+                    UserService service = context.getBean(UserService.class);
+
+                    assertThat(service.find(1L)).isEqualTo("user-1");
+
+                    Cache cache = context.getBean(CacheManager.class).getCache("users");
+                    assertThat(cache).isNotNull();
+                    @SuppressWarnings("unchecked")
+                    Map<Object, Object> nativeCache = (Map<Object, Object>) cache.getNativeCache();
+                    assertThat(nativeCache).containsKey("host-key");
+                });
+    }
+
+    @Test
+    @DisplayName("宿主提供自己的 CachingConfigurer 时容器仍能启动（不会出现多个 CachingConfigurer 而启动失败）")
+    void hostCachingConfigurerDoesNotConflict() {
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(SnowdriftCacheConfiguration.class))
+                .withUserConfiguration(CacheableConfig.class)
+                .withBean("hostCachingConfigurer", CachingConfigurer.class, () -> new CachingConfigurer() {
+                })
+                .run(context -> assertThat(context).hasNotFailed());
     }
 
     @Test

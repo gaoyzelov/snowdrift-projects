@@ -122,6 +122,17 @@ Consumer 端调用时自动向 RPC 附件注入 `traceId` 和 `SecurityContext`�
 - `SecurityContext` 为**可选**：系统任务等无登录上下文的 Consumer 调用不会注入（`TraceId` 仍透传），Provider 端在无上下文时按自身逻辑兜底（如租户拦截 fail-closed 抛错 / 审计自动填充系统值）。
 - 仅当上下文**注入失败**（如不可序列化等真实异常）时，Consumer 端才设置 `x-snowdrift-context-error=true` 标记；Provider 端检测到后跳过上下文恢复并记录 WARN。
 
+> **安全（Provider 默认不信任服务间传来的身份）**：Dubbo 附件完全由调用方控制——任何能连到 Provider 端口的一方都能塞入任意 `userId`/`tenantId`/`roleKeys`。因此 **Provider 端默认只恢复 `traceId`，不恢复 `SecurityContext`**（会记一条 WARN 说明原因）。
+>
+> 要让 Provider 采用调用方传来的身份，必须显式声明调用方可信（mTLS / 服务网格 / 网关已校验并注入身份）后开启：
+>
+> ```bash
+> -Dsnowdrift.rpc.dubbo.trust-inbound-security-context=true
+> # 或环境变量 SNOWDRIFT_RPC_DUBBO_TRUST_INBOUND_SECURITY_CONTEXT=true
+> ```
+>
+> 若下游依赖 Provider 侧的 `SecurityContext`（多租户过滤、操作人审计），未开启时会在使用点 fail-closed 报错，而不是静默使用伪造身份。
+
 ### 异常智能化处理
 
 `DubboExceptionFilter` 在 Provider 端响应阶段根据异常类型智能判断是否可直接序列化到 Consumer 端：
@@ -131,10 +142,21 @@ Consumer 端调用时自动向 RPC 附件注入 `traceId` 和 `SecurityContext`�
 | 已检查异常（非 RuntimeException） | 直接传播 | Java 标准语义 |
 | 方法签名声明的异常 | 直接传播 | Consumer 端有对应类 |
 | 与接口同 JAR 包的异常 | 直接传播 | Consumer 端有对应类 |
-| JDK 异常（`java.*` / `javax.*`） | 直接传播 | 所有 JVM 均有 |
+| JDK 异常（`java.*` / `javax.*` / `jakarta.*`） | 直接传播 | 所有 JVM 均有 |
 | `RpcException` | 直接传播 | Dubbo 标准异常 |
 | `BizException` | 直接传播 | Consumer 端必有 `snowdrift-base` |
 | 其他未知异常 | 包装为 `BizException` | 防止序列化失败 |
+| **已被 Dubbo 内置 `ExceptionFilter` 包装的异常** | **替换为无细节的 `BizException`** | 见下 |
+
+> **关于内置 `ExceptionFilter` 的包装**：Dubbo 内置的 `ExceptionFilter`（`order=0`，比本过滤器更靠内层）会把
+> 「未在方法签名声明、且与接口不在同一 codebase」的异常改写成
+> `new RuntimeException(StringUtils.toString(原异常))`，而该 message **包含原异常的类名与完整堆栈**
+> （内部包名、文件、行号）。本过滤器在外层收到后会把这类包装**剥离成 `RPC 调用异常`**，
+> 避免内部实现细节随响应泄露给调用方。
+>
+> 相应地，`DubboExceptionFilter` 的激活顺序（`order=-100`）**必须保持在内置 `ExceptionFilter` 之外**，
+> 否则在响应阶段只能看到已改写后的 `java.lang.RuntimeException`，既无法剥离细节、也无法按本表判定原异常类型。
+> `DubboExceptionFilterTest` 中有专门的不变量用例守护这一点。
 
 ### 调用日志
 

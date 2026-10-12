@@ -45,20 +45,36 @@ class DubboProviderContextFilterTest {
         RpcContext.removeServiceContext();
         MDC.clear();
         SecurityContextHolder.clear();
+        System.clearProperty(DubboProviderContextFilter.TRUST_INBOUND_SECURITY_CONTEXT_PROPERTY);
     }
 
     @Test
-    @DisplayName("从 server attachment 恢复 traceId 与安全上下文，并委托 invoker.invoke")
-    void restoresFromServerAttachment() throws RpcException {
+    @DisplayName("默认不信任调用方传来的安全上下文：只恢复 traceId，身份留空")
+    void doesNotTrustInboundSecurityContextByDefault() throws RpcException {
         when(invoker.invoke(invocation)).thenReturn(result);
-        SecurityContext ctx = SecurityContext.builder().userId(7L).tenantId(8L).build();
+        SecurityContext forged = SecurityContext.builder().userId(999L).tenantId(999L).build();
         RpcContext.getServerAttachment().setObjectAttachment(RpcContextConstants.TRACE_ID, "t-9");
-        RpcContext.getServerAttachment().setObjectAttachment(RpcContextConstants.SECURITY_CONTEXT, ctx);
+        RpcContext.getServerAttachment().setObjectAttachment(RpcContextConstants.SECURITY_CONTEXT, forged);
 
         Result returned = filter.invoke(invoker, invocation);
 
         assertThat(returned).isSameAs(result);
         verify(invoker).invoke(invocation);
+        assertThat(MDC.get("traceId")).isEqualTo("t-9");
+        assertThat(SecurityContextHolder.peekContext()).isNull();
+    }
+
+    @Test
+    @DisplayName("显式开启信任开关后才恢复调用方身份（需网络层可信隔离）")
+    void restoresInboundSecurityContextOnlyWhenExplicitlyTrusted() throws RpcException {
+        System.setProperty(DubboProviderContextFilter.TRUST_INBOUND_SECURITY_CONTEXT_PROPERTY, "true");
+        when(invoker.invoke(invocation)).thenReturn(result);
+        SecurityContext ctx = SecurityContext.builder().userId(7L).tenantId(8L).build();
+        RpcContext.getServerAttachment().setObjectAttachment(RpcContextConstants.TRACE_ID, "t-9");
+        RpcContext.getServerAttachment().setObjectAttachment(RpcContextConstants.SECURITY_CONTEXT, ctx);
+
+        filter.invoke(invoker, invocation);
+
         assertThat(MDC.get("traceId")).isEqualTo("t-9");
         assertThat(SecurityContextHolder.getContext()).isSameAs(ctx);
     }

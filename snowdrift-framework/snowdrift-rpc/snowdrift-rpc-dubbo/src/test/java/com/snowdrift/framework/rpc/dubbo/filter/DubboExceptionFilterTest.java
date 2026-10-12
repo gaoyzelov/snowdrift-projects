@@ -185,6 +185,52 @@ class DubboExceptionFilterTest {
     }
 
     @Test
+    @DisplayName("被内置 ExceptionFilter 改写的异常（java.lang.RuntimeException + 含堆栈的消息）仍被替换为无细节 BizException")
+    void rewritesExceptionAlreadyWrappedByBuiltInFilter() {
+        // Dubbo 内置 ExceptionFilter 会把「未在签名声明且跨 codebase」的异常改写为
+        // new RuntimeException(StringUtils.toString(原异常))，消息里带着原异常类名与完整堆栈。
+        // 本过滤器必须把它重新剥离成无细节的 BizException，否则内部包名/文件行号会随响应泄露给调用方。
+        String leaked = "org.springframework.jdbc.BadSqlGrammarException: ### Error querying database\n"
+                + "\tat com.acme.internal.SecretRepository.query(SecretRepository.java:42)\n"
+                + "\tat com.acme.order.OrderServiceImpl.list(OrderServiceImpl.java:88)";
+        stub(DemoService.class, "plain", new Class[0], new RuntimeException(leaked));
+
+        filter.onResponse(appResponse, invoker, invocation);
+
+        ArgumentCaptor<Throwable> captor = ArgumentCaptor.forClass(Throwable.class);
+        verify(appResponse).setException(captor.capture());
+        assertThat(captor.getValue())
+                .isInstanceOf(BizException.class)
+                .hasMessage("RPC 调用异常")
+                .hasMessageNotContaining("com.acme.internal");
+    }
+
+    @Test
+    @DisplayName("业务自己抛出的普通 java.lang.RuntimeException（消息不含堆栈）原样传播，不误伤")
+    void plainRuntimeExceptionWithoutStackTraceMarkerPropagates() {
+        stub(DemoService.class, "plain", new Class[0], new RuntimeException("订单已存在"));
+
+        filter.onResponse(appResponse, invoker, invocation);
+
+        verify(appResponse, never()).setException(any());
+    }
+
+    @Test
+    @DisplayName("顺序不变量：本过滤器必须比内置 ExceptionFilter 更靠外层（order 更小），否则看不到它改写后的异常")
+    void activatedOutsideBuiltInExceptionFilter() {
+        int builtIn = org.apache.dubbo.rpc.filter.ExceptionFilter.class
+                .getAnnotation(org.apache.dubbo.common.extension.Activate.class).order();
+        int ours = DubboExceptionFilter.class
+                .getAnnotation(org.apache.dubbo.common.extension.Activate.class).order();
+
+        // Dubbo 中 order 越小越靠外层；响应监听器按「内层先执行」回调，
+        // 因此 order 更小的本过滤器会在内置 ExceptionFilter 之后收到 onResponse，
+        // 才有机会把它改写出来的 java.lang.RuntimeException 再剥离成无细节的 BizException。
+        // 若日后把本过滤器调到内置之后（order 更大），将永远看不到被改写的异常，本条与上一条用例都会失败。
+        assertThat(ours).isLessThan(builtIn);
+    }
+
+    @Test
     @DisplayName("onError 记录 ERROR 日志（含接口与方法名）")
     void onErrorLogs() {
         Logger logger = (Logger) LoggerFactory.getLogger(DubboExceptionFilter.class);

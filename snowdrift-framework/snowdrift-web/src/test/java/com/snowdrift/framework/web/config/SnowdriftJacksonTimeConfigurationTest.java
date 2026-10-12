@@ -1,10 +1,15 @@
 package com.snowdrift.framework.web.config;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.module.SimpleModule;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -72,5 +77,40 @@ class SnowdriftJacksonTimeConfigurationTest {
     }
 
     record Dto(LocalDateTime time) {
+    }
+
+    static class Money {
+        private final String amount;
+
+        Money(String amount) {
+            this.amount = amount;
+        }
+
+        public String getAmount() {
+            return amount;
+        }
+    }
+
+    @Test
+    @DisplayName("不覆盖宿主应用已注册的 Jackson 模块（Boot 用追加重载注册 @JsonComponent 与自定义 Module Bean）")
+    void keepsHostApplicationModules() throws Exception {
+        SimpleModule hostModule = new SimpleModule("host-module");
+        hostModule.addSerializer(Money.class, new JsonSerializer<>() {
+            @Override
+            public void serialize(Money value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+                gen.writeString("CNY:" + value.getAmount());
+            }
+        });
+
+        Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
+        // 复现 Boot StandardJackson2ObjectMapperBuilderCustomizer 的注册方式（追加重载），它先于本框架的 customizer 执行
+        builder.modulesToInstall(modules -> modules.add(hostModule));
+        new SnowdriftJacksonTimeConfiguration().customizer().customize(builder);
+
+        ObjectMapper mapper = builder.build();
+
+        assertThat(mapper.writeValueAsString(new Money("1.00"))).isEqualTo("\"CNY:1.00\"");
+        assertThat(mapper.writeValueAsString(LocalDateTime.of(2026, 1, 2, 3, 4, 5)))
+                .isEqualTo("\"2026-01-02 03:04:05\"");
     }
 }

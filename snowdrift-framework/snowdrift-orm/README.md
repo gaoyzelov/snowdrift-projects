@@ -87,6 +87,21 @@ TenantUtil.ignore(() -> {
 
 > **安全语义（fail-closed）：** 查询若取不到当前租户上下文会抛 `BizException`（`MultiTenantLineHandler`），避免跨租户读写；系统任务需放行时用 `TenantUtil.ignore(...)` 显式跳过。写入侧（`FieldAutoFillHandler`）在启用多租户且取不到租户上下文时**同样 fail-closed 抛 `BizException`**，除非显式配置 `snowdrift.orm.mp.tenant.default-tenant-id`（此时写入该默认租户并记 WARN）；**不会静默写 `tenant_id = 0`**。
 
+> **写入侧身份以安全上下文为准：** 有租户上下文时，实体自带的 `tenantId` **必须与上下文一致**，否则直接抛 `BizException` 拒绝写入。
+> 原因：MyBatis-Plus 的租户拦截器在“插入列中已包含租户列”时会跳过注入，因此实体上非空的 `tenantId`
+> （典型来源：`BeanUtils.copyProperties(requestBody, entity)` 把请求体里的 `tenantId` 拷进实体）会让**请求方**
+> 决定数据落进哪个租户。无租户上下文时仍保留既有的两个逃生口：显式设置实体 `tenantId`，或配置 `default-tenant-id`。
+
+> **不支持的语句类型会被拒绝：** MyBatis-Plus 的租户拦截器只处理 `SELECT/INSERT/UPDATE/DELETE`，
+> 其余语句（`REPLACE`、`MERGE` 等）会被**原样放行且不报错**，导致租户条件静默失效。
+> 框架注册了 `TenantStatementGuardInterceptor` 在租户拦截器之前拦下这类语句并抛 `BizException`，
+> 除非该语句涉及的表全部列在 `ignore-tables` 中。请改用 `INSERT`/`UPDATE`/`DELETE`。
+
+> **已知限制（子查询位置）：** 租户条件注入依赖 MyBatis-Plus 对 SQL 的遍历，它**不会**进入
+> `CASE` 表达式、`HAVING`、`ORDER BY` 以及函数参数内部的子查询——这些位置的租户表**不会**被加上租户条件。
+> 手写 SQL 请把子查询限定在 `FROM`/`JOIN`/`WHERE` 的 `IN`、`EXISTS`、比较运算等受支持的位置，
+> 否则存在跨租户读取风险。
+
 ### 数据权限 — @DataScope
 
 基于注解的声明式行级权限控制，支持五种范围。
@@ -180,7 +195,7 @@ snowdrift:
 
 | 能力 | 默认 | 说明 |
 |------|------|------|
-| 防全表操作 | ✅ 开启 | `BlockAttackInnerInterceptor` 阻止无 WHERE 的 UPDATE/DELETE |
+| 防全表操作 | ✅ 开启 | `BlockAttackInnerInterceptor` 阻止无 WHERE 的 UPDATE/DELETE。它排在多租户拦截器**之前**，否则租户条件会先把无 WHERE 语句改写掉，守卫不再触发 |
 | 乐观锁 | ❌ 关闭 | 配合 `@Version` 注解使用，`optimistic-lock: true` 开启 |
 
 ```yaml

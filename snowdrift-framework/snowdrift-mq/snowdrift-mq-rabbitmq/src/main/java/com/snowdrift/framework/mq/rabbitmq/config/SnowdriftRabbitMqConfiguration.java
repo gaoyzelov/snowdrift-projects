@@ -34,6 +34,7 @@ import java.util.concurrent.Executor;
 @Slf4j
 @AutoConfiguration(afterName = "org.springframework.boot.autoconfigure.amqp.RabbitAutoConfiguration")
 @EnableConfigurationProperties(RabbitMqProperties.class)
+@ConditionalOnProperty(prefix = "snowdrift.mq", name = "enabled", havingValue = "true", matchIfMissing = true)
 @ConditionalOnProperty(prefix = "snowdrift.mq.rabbitmq", name = "enabled", havingValue = "true")
 @ConditionalOnClass(RabbitTemplate.class)
 public class SnowdriftRabbitMqConfiguration {

@@ -91,6 +91,14 @@ TokenInfo token = securityService.login(ctx);
 public Result<TokenInfo> login(@RequestBody LoginDTO dto) { ... }
 ```
 
+> **认证覆盖所有处理器类型**：登录校验对 DispatcherServlet 分发的**全部**处理器生效，包括非
+> `HandlerMethod` 的处理器——静态资源（`ResourceHttpRequestHandler`，即 `snowdrift.resource.mappings`
+> 暴露的路径）、函数式端点（`RouterFunction`）。只有标注 `@Anonymous` 的**方法**才会放行。
+>
+> 因此如果你的应用需要匿名访问静态资源（`/static/**`、`/css/**`、`/js/**`、`/webjars/**` 等），
+> 必须把它们显式加进 `exclude-path-patterns`，否则会返回未登录。这是有意的 fail-closed 默认值：
+> 此前的实现会把这类处理器整体跳过认证，导致映射出来的文件在未登录时可直接下载。
+
 ### 权限校验
 
 ```java
@@ -148,7 +156,7 @@ public class CustomTokenStore extends AbstractTokenStore {
 | `timeout` | long | 86400 | 绝对超时（秒） |
 | `active-timeout` | long | 1800 | 闲置超时（秒） |
 | `prefix` | String | Bearer | Token 前缀 |
-| `exclude-path-patterns` | List\<String\> | /favicon.ico, /swagger-resources/**, /v2/api-docs/**, /v3/api-docs/**, /doc.html, /swagger-ui.html, /error | 放行路径 |
+| `exclude-path-patterns` | List\<String\> | /favicon.ico, /swagger-resources/**, /v2/api-docs/**, /v3/api-docs/**, /doc.html, /swagger-ui.html, /error | 放行路径。**需要匿名访问的静态资源路径（`/static/**` 等）必须自行添加**——登录校验对静态资源同样生效 |
 
 ### snowdrift.security.sa-token
 

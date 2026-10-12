@@ -365,6 +365,28 @@ class AbstractCacheServiceTest {
         }
 
         @Test
+        @DisplayName("全局默认 TTL 配成 0 时同样抛错，而不是静默变成“永不过期”")
+        void rejectsZeroGlobalTtl() {
+            SnowdriftCacheProperties props = properties("");
+            props.setKeyTtl(Duration.ZERO);
+            FakeCacheService service = new FakeCacheService(props, new JacksonCacheSerializer());
+
+            assertThatThrownBy(() -> service.put("k", "v", null))
+                    .isInstanceOf(BizException.class).hasMessage("缓存TTL必须大于 0");
+        }
+
+        @Test
+        @DisplayName("全局默认 TTL 配成负数时同样抛错")
+        void rejectsNegativeGlobalTtl() {
+            SnowdriftCacheProperties props = properties("");
+            props.setKeyTtl(Duration.ofSeconds(-1));
+            FakeCacheService service = new FakeCacheService(props, new JacksonCacheSerializer());
+
+            assertThatThrownBy(() -> service.putIfAbsent("k", "v", null))
+                    .isInstanceOf(BizException.class).hasMessage("缓存TTL必须大于 0");
+        }
+
+        @Test
         @DisplayName("非正 TTL 统一抛 BizException（不再由各后端抛原始异常）")
         void rejectsNonPositiveTtl() {
             FakeCacheService service = service("");

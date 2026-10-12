@@ -36,7 +36,12 @@ public class SnowdriftJacksonTimeConfiguration {
     @Bean
     public Jackson2ObjectMapperBuilderCustomizer customizer() {
         return builder -> {
-            builder.modulesToInstall(getJavaTimeModule());
+            // 必须使用 Consumer 重载：modulesToInstall(Module...) 是「替换」语义
+            // （Jackson2ObjectMapperBuilder 内部直接 this.modules = new ArrayList<>(...)），
+            // 而 Spring Boot 的 StandardJackson2ObjectMapperBuilderCustomizer 用追加方式注册了
+            // @JsonComponent、@JsonMixin 及全部使用者自定义 Module Bean，且它先于本 customizer 执行。
+            // 用 varargs 重载会把那些模块整体清空，导致宿主应用的序列化定制静默失效。
+            builder.modulesToInstall(modules -> modules.add(getJavaTimeModule()));
         };
     }
 

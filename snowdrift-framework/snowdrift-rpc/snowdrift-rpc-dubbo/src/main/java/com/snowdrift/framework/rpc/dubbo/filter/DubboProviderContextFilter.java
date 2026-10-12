@@ -27,6 +27,29 @@ public class DubboProviderContextFilter implements Filter, Filter.Listener {
 
     private static final String TRACE_ID_KEY = StrConst.TRACE_ID;
 
+    /**
+     * 是否信任调用方通过 RPC 附件传来的 {@code SecurityContext}
+     * <p><b>默认 false。</b>Dubbo 附件完全由调用方控制，任何能连到 Provider 端口的一方都能塞入任意
+     * {@code userId/tenantId/roleKeys}。默认不恢复身份，只恢复 traceId，避免把身份认定权交给对端。</p>
+     * <p>仅当调用方与提供方之间存在网络层可信隔离（mTLS / 服务网格 / 严格 ACL），
+     * 或已由网关注入并校验过身份时才可置为 {@code true}。可通过 JVM 参数
+     * {@code -Dsnowdrift.rpc.dubbo.trust-inbound-security-context=true}
+     * 或同名环境变量 {@code SNOWDRIFT_RPC_DUBBO_TRUST_INBOUND_SECURITY_CONTEXT=true} 开启。</p>
+     */
+    public static final String TRUST_INBOUND_SECURITY_CONTEXT_PROPERTY =
+            "snowdrift.rpc.dubbo.trust-inbound-security-context";
+
+    /**
+     * 是否信任入站身份；每次调用读取，便于运行期调整与测试
+     */
+    static boolean trustInboundSecurityContext() {
+        String value = System.getProperty(TRUST_INBOUND_SECURITY_CONTEXT_PROPERTY);
+        if (StringUtils.isBlank(value)) {
+            value = System.getenv("SNOWDRIFT_RPC_DUBBO_TRUST_INBOUND_SECURITY_CONTEXT");
+        }
+        return Boolean.parseBoolean(value);
+    }
+
     @Override
     public Result invoke(Invoker<?> invoker, Invocation invocation) throws RpcException {
         restoreContext();
@@ -67,11 +90,18 @@ public class DubboProviderContextFilter implements Filter, Filter.Listener {
             MDC.put(TRACE_ID_KEY, UUID.randomUUID().toString());
         }
 
-        // 恢复安全上下文
+        // 恢复安全上下文：附件由调用方完全控制，默认不信任
         SecurityContext ctx = (SecurityContext) rpcContext.getObjectAttachment(RpcContextConstants.SECURITY_CONTEXT);
-        if (ctx != null) {
-            SecurityContextHolder.setContext(ctx);
+        if (ctx == null) {
+            return;
         }
+        if (!trustInboundSecurityContext()) {
+            log.warn("忽略调用方传来的 SecurityContext（userId={}）：RPC 附件可被调用方任意伪造。"
+                            + "如已通过 mTLS/服务网格/网关校验保证调用方可信，可设置 -D{}=true 开启恢复",
+                    ctx.getUserId(), TRUST_INBOUND_SECURITY_CONTEXT_PROPERTY);
+            return;
+        }
+        SecurityContextHolder.setContext(ctx);
     }
 
     /**

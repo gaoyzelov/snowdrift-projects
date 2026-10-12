@@ -39,8 +39,10 @@ snowdrift:
   mq:
     # 基础开关，默认 true（依赖 base 时保持开启）
     # enabled: true
-    # sign: false            # 是否启用消息 HMAC-SHA256 签名
-    # sign-key: xxx          # sign=true 时必填，否则启动失败
+    # 幂等：总闸关闭时各厂商配置（kafka/rabbitmq/rocketmq）一并退避
+    # 消息签名默认开启：消费端会用消息头里的身份覆盖 SecurityContext，必须防伪造
+    # sign: true
+    sign-key: xxx            # 默认必填；未配置则启动失败（避免生产者不签名 / 消费端全量拒收）
     executor:
       core-size: 4           # 异步发送线程池
       max-size: 8
@@ -168,9 +170,11 @@ Producer 发送时自动写入以下消息头（broker 无关的 `x-snowdrift-*`
 | 登录账号 | `x-snowdrift-username` | `SecurityContextHolder` |
 | 租户 ID | `x-snowdrift-tenant-id` | `SecurityContextHolder` |
 | 部门 ID | `x-snowdrift-dept-id` | `SecurityContextHolder` |
-| 消息签名 | `x-snowdrift-signature` | HMAC-SHA256（`sign=true` 时启用，密钥必填） |
+| 消息签名 | `x-snowdrift-signature` | HMAC-SHA256（默认启用，密钥必填） |
 
-> **安全（保留头不可覆盖）**：`x-snowdrift-*` 为框架专有保留头，发送时**用户自定义 `headers` 中与之同名的键会被忽略**（记 warn 日志），框架注入的身份/签名头始终以真实上下文为准。因此调用方无法通过自定义头伪造 `user-id`/`tenant-id` 等身份传递到消费端；若需传递业务元数据，请使用非 `x-snowdrift-` 前缀的自定义头。启用 `sign=true` 后，上下文头还会附带 HMAC-SHA256 签名，消费端校验不通过则拒收。
+> **安全（保留头不可覆盖）**：`x-snowdrift-*` 为框架专有保留头，发送时**用户自定义 `headers` 中与之同名的键会被忽略**（记 warn 日志），框架注入的身份/签名头始终以真实上下文为准。因此调用方无法通过自定义头伪造 `user-id`/`tenant-id` 等身份传递到消费端；若需传递业务元数据，请使用非 `x-snowdrift-` 前缀的自定义头。
+
+> **安全（跨进程身份必须签名，默认开启）**：消费端会用消息头里的身份（`user-id`/`username`/`tenant-id`/`dept-id`）**覆盖当前线程的 `SecurityContext`**，而任何能向同一 topic/queue 发布消息的一方都能伪造这些头——上面那条“保留头不可覆盖”只防住了**本进程**的调用方，防不住另一个服务。因此 `sign` **默认为 `true`**，`sign-key` 必填（未配置则启动失败），签名不通过的消息消费端直接拒收。只有在完全信任所有生产者且有网络隔离时才可显式 `sign: false` 关闭。
 
 容器级自动恢复的实现：
 
@@ -255,8 +259,8 @@ registry.unregister(someInterceptor);
 | `executor.thread-name-prefix` | String | `snowdrift-mq-async-` | 线程名前缀 |
 | `executor.wait-for-tasks-to-complete-on-shutdown` | boolean | `true` | 关闭时等待任务完成 |
 | `executor.await-termination-seconds` | int | `30` | 关闭等待超时 |
-| `sign` | Boolean | `false` | 是否启用消息 HMAC-SHA256 签名 |
-| `sign-key` | String | — | 签名密钥（`sign=true` 时必填，否则启动失败） |
+| `sign` | Boolean | `true` | 是否启用消息 HMAC-SHA256 签名。默认开启：消费端会信任头里的跨进程身份，必须防伪造 |
+| `sign-key` | String | — | 签名密钥，**默认必填**（`sign=true` 而未配置则启动失败）。各生产端与消费端共享同一密钥 |
 
 ### snowdrift.mq.kafka
 

@@ -173,4 +173,28 @@ class FieldAutoFillHandlerTest {
 
         assertThat(entity.getTenantId()).isNull();
     }
+
+    @Test
+    @DisplayName("INSERT：实体自带 tenantId 与上下文租户不一致时拒绝写入，避免跨租户污染")
+    void insertFillRejectsTenantMismatch() {
+        SecurityContextHolder.setContext(SecurityContext.builder().username("acct").tenantId(42L).build());
+        TestTenantEntity entity = new TestTenantEntity();
+        entity.setTenantId(999L);
+
+        assertThatThrownBy(() -> handler(true, null).insertFill(meta(entity)))
+                .isInstanceOf(BizException.class)
+                .hasMessageContaining("tenantId")
+                .hasMessageContaining("999");
+    }
+
+    @Test
+    @DisplayName("INSERT：多租户开启时，没有 tenantId 属性的实体不应因填充而报错")
+    void insertFillToleratesEntityWithoutTenantProperty() {
+        SecurityContextHolder.setContext(SecurityContext.builder().username("acct").tenantId(42L).build());
+        TestEntity entity = new TestEntity();
+
+        handler(true, null).insertFill(meta(entity));
+
+        assertThat(entity.getCreateBy()).isEqualTo("acct");
+    }
 }

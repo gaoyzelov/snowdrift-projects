@@ -190,11 +190,15 @@ public abstract class AbstractCacheService implements ICacheService {
      * 这里统一快速失败为 BizException。</p>
      */
     protected Duration effectiveTtl(Duration ttl) {
-        if (ttl == null) {
-            return properties.getKeyTtl();
+        Duration effective = ttl == null ? properties.getKeyTtl() : ttl;
+        if (effective == null) {
+            // 全局默认未配置：交给各后端自持的默认过期策略
+            return null;
         }
-        AssertUtil.predicate(() -> !ttl.isZero() && !ttl.isNegative(), "缓存TTL必须大于 0");
-        return ttl;
+        // 全局默认值也必须受同一约束：Redis 侧 entryTtl(ZERO/负数) 表示“不设置过期”，
+        // 静默放行会把全局默认 TTL 变成永不过期（条目无上界增长），与配置意图相反。
+        AssertUtil.predicate(() -> !effective.isZero() && !effective.isNegative(), "缓存TTL必须大于 0");
+        return effective;
     }
 
     protected abstract String doGet(String key);

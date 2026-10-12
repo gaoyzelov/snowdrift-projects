@@ -46,37 +46,43 @@ public class SecurityInterceptor extends SaInterceptor {
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
-        if (handler instanceof HandlerMethod handlerMethod) {
-            Method method = handlerMethod.getMethod();
+        // 非 HandlerMethod 的处理器（静态资源 ResourceHttpRequestHandler、RouterFunction 端点、
+        // BeanNameUrlHandlerMapping 的 handler）同样会被 DispatcherServlet 分发，也注册了本拦截器，
+        // 因此同样必须校验登录。只有 @Anonymous 能放行，且它只允许标注在方法上。
+        Method method = handler instanceof HandlerMethod handlerMethod ? handlerMethod.getMethod() : null;
 
-            // 1. 标记了 @Anonymous 的方法直接放行
-            if (method.isAnnotationPresent(Anonymous.class)) {
-                return true;
+        // 1. 标记了 @Anonymous 的方法直接放行
+        if (Objects.nonNull(method) && method.isAnnotationPresent(Anonymous.class)) {
+            return true;
+        }
+
+        // 2. 调用安全服务校验登录状态（对全部处理器类型生效）
+        securityService.checkLogin();
+
+        if (Objects.isNull(method)) {
+            // 没有可检视的方法，也就没有方法级上下文/注解需要处理；登录校验已在上方完成
+            return true;
+        }
+
+        // 3. 从会话中捞出 SecurityContext 并放入 ThreadLocal，供后续业务代码使用
+        SecurityContext sc = securityService.getContext();
+        if (Objects.isNull(sc)) {
+            throw new SecurityException(ResultCode.UNAUTHORIZED);
+        }
+        SecurityContextHolder.setContext(sc);
+
+        try {
+            // 4. 兼容 Sa-Token 自身的注解鉴权（@SaCheckLogin、@SaCheckRole 等）
+            if (isAnnotation) {
+                SaAnnotationStrategy.instance.checkMethodAnnotation.accept(method);
             }
-
-            // 2. 调用安全服务校验登录状态
-            securityService.checkLogin();
-
-            // 3. 从会话中捞出 SecurityContext 并放入 ThreadLocal，供后续业务代码使用
-            SecurityContext sc = securityService.getContext();
-            if (Objects.isNull(sc)) {
-                throw new SecurityException(ResultCode.UNAUTHORIZED);
-            }
-            SecurityContextHolder.setContext(sc);
-
-            try {
-                // 4. 兼容 Sa-Token 自身的注解鉴权（@SaCheckLogin、@SaCheckRole 等）
-                if (isAnnotation) {
-                    SaAnnotationStrategy.instance.checkMethodAnnotation.accept(method);
-                }
-            } catch (RuntimeException | Error t) {
-                // preHandle 抛异常时 Spring MVC 不会回调本拦截器的 afterCompletion
-                // （HandlerExecutionChain 仅在 preHandle 返回 true 后才推进 interceptorIndex），
-                // 已写入的上下文会残留在容器线程上被后续请求复用，因此在此主动清理后再抛出。
-                // try 的范围紧贴 setContext 之后：此前的 checkLogin/getContext 抛异常时无上下文需要清理。
-                SecurityContextHolder.clear();
-                throw t;
-            }
+        } catch (RuntimeException | Error t) {
+            // preHandle 抛异常时 Spring MVC 不会回调本拦截器的 afterCompletion
+            // （HandlerExecutionChain 仅在 preHandle 返回 true 后才推进 interceptorIndex），
+            // 已写入的上下文会残留在容器线程上被后续请求复用，因此在此主动清理后再抛出。
+            // try 的范围紧贴 setContext 之后：此前的 checkLogin/getContext 抛异常时无上下文需要清理。
+            SecurityContextHolder.clear();
+            throw t;
         }
         return true;
     }

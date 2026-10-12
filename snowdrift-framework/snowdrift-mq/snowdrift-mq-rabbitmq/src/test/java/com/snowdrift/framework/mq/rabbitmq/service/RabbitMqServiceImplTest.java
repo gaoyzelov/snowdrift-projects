@@ -49,7 +49,7 @@ class RabbitMqServiceImplTest {
     private RabbitMqServiceImpl newService() {
         return new RabbitMqServiceImpl(rabbitTemplate, rabbitProperties, DIRECT_EXECUTOR,
                 new FastJson2MqMessageConverter(), new MqInterceptorRegistry(),
-                new MqContextPropagator(new MqProperties()));
+                new MqContextPropagator(mqProperties()));
     }
 
     @Test
@@ -126,5 +126,12 @@ class RabbitMqServiceImplTest {
         assertThat(captor.getValue().getMessageProperties().getDelayLong()).isNull();
         assertThat(captor.getValue().getMessageProperties().getHeaders())
                 .containsEntry("x-delay", "not-a-number");
+    }
+
+    /** 默认配置已开启消息签名，发送/消费流水线测试提供测试密钥 */
+    private static MqProperties mqProperties() {
+        MqProperties properties = new MqProperties();
+        properties.setSignKey("unit-test-sign-key");
+        return properties;
     }
 }

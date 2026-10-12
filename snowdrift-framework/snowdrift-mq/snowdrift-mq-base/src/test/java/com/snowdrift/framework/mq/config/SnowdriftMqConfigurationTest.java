@@ -97,15 +97,16 @@ class SnowdriftMqConfigurationTest {
     }
 
     @Test
-    @DisplayName("上下文传播器：默认（不签名）正常创建；开启签名却缺密钥则失败")
+    @DisplayName("上下文传播器：默认即开启签名，缺密钥时启动失败；配置密钥后正常创建")
     void contextPropagatorSignKeyValidation() {
-        assertThat(configuration.mqContextPropagator(new MqProperties()))
-                .isInstanceOf(MqContextPropagator.class);
+        assertThatThrownBy(() -> configuration.mqContextPropagator(new MqProperties()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("sign-key");
 
-        MqProperties signNoKey = new MqProperties();
-        signNoKey.setSign(true);
-        assertThatThrownBy(() -> configuration.mqContextPropagator(signNoKey))
-                .isInstanceOf(IllegalStateException.class);
+        MqProperties signed = new MqProperties();
+        signed.setSignKey("unit-test-sign-key");
+        assertThat(configuration.mqContextPropagator(signed))
+                .isInstanceOf(MqContextPropagator.class);
     }
 
     @Test

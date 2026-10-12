@@ -51,7 +51,7 @@ class AbstractMqServiceTest {
     @BeforeEach
     void setUp() {
         registry = new MqInterceptorRegistry();
-        propagator = new MqContextPropagator(new MqProperties());
+        propagator = new MqContextPropagator(mqProperties());
         converter = new FastJson2MqMessageConverter();
         recorder = new RecordingInterceptor();
         registry.register(recorder);
@@ -212,11 +212,13 @@ class AbstractMqServiceTest {
 
         service.send("topic", "key-1", "hello", userHeaders);
 
-        // 保留头由框架注入的真实上下文决定，未被伪造值覆盖
+        // 保留头由框架注入的真实上下文决定，未被伪造值覆盖；签名头由框架按真实上下文重新计算
         assertThat(service.lastHeaders)
                 .containsEntry(MqContextPropagator.HEADER_USER_ID, "1")
-                .containsEntry(MqContextPropagator.HEADER_USERNAME, "real")
-                .doesNotContainKey("x-snowdrift-signature");
+                .containsEntry(MqContextPropagator.HEADER_USERNAME, "real");
+        assertThat(service.lastHeaders.get("x-snowdrift-signature"))
+                .isNotBlank()
+                .isNotEqualTo("forged");
         // 普通业务头正常写入
         assertThat(service.lastHeaders).containsEntry("biz", "pay");
     }
@@ -392,5 +394,12 @@ class AbstractMqServiceTest {
                 .hasMessageContaining("总数：2")
                 .hasMessageContaining("成功：1")
                 .hasMessageContaining("失败：1");
+    }
+
+    /** 默认配置已开启消息签名，发送/消费流水线测试提供测试密钥 */
+    private static MqProperties mqProperties() {
+        MqProperties properties = new MqProperties();
+        properties.setSignKey("unit-test-sign-key");
+        return properties;
     }
 }

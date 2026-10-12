@@ -21,8 +21,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  */
 class SnowdriftMqAutoConfigurationTest {
 
+    /** 消息签名默认开启，故除签名相关用例外，统一提供测试密钥 */
     private final ApplicationContextRunner runner = new ApplicationContextRunner()
-            .withConfiguration(AutoConfigurations.of(SnowdriftMqConfiguration.class));
+            .withConfiguration(AutoConfigurations.of(SnowdriftMqConfiguration.class))
+            .withPropertyValues("snowdrift.mq.sign-key=unit-test-sign-key");
 
     @Test
     @DisplayName("默认（缺省视为开启）装配全部基础 Bean")
@@ -66,9 +68,10 @@ class SnowdriftMqAutoConfigurationTest {
     }
 
     @Test
-    @DisplayName("开启签名却未配置密钥时上下文启动失败")
+    @DisplayName("默认开启签名：未配置 sign-key 时上下文启动失败，不允许无声地信任未签名身份头")
     void signWithoutKeyFailsContext() {
-        runner.withPropertyValues("snowdrift.mq.sign=true")
+        new ApplicationContextRunner()
+                .withConfiguration(AutoConfigurations.of(SnowdriftMqConfiguration.class))
                 .run(ctx -> assertThat(ctx).hasFailed());
     }
 

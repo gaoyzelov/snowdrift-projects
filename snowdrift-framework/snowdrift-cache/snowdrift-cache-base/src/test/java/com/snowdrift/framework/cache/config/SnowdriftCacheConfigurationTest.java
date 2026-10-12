@@ -13,6 +13,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.cache.annotation.CachingConfigurer;
 
 import java.time.Duration;
 
@@ -43,10 +44,9 @@ class SnowdriftCacheConfigurationTest {
             assertThat(context).hasSingleBean(ICacheSerializer.class);
             assertThat(context.getBean(ICacheSerializer.class)).isInstanceOf(JacksonCacheSerializer.class);
 
-            SnowdriftCacheConfiguration configuration = context.getBean(SnowdriftCacheConfiguration.class);
-            assertThat(configuration.errorHandler()).isInstanceOf(SnowdriftCachingErrorHandler.class);
-            assertThat(configuration.keyGenerator()).isInstanceOf(SnowdriftKeyGenerator.class);
-            assertThat(configuration.cacheManager()).isNull();
+            CachingConfigurer configurer = context.getBean(CachingConfigurer.class);
+            assertThat(configurer.errorHandler()).isInstanceOf(SnowdriftCachingErrorHandler.class);
+            assertThat(configurer.keyGenerator()).isInstanceOf(SnowdriftKeyGenerator.class);
         });
     }
 

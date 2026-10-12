@@ -102,10 +102,19 @@ class SecurityInterceptorTest {
     }
 
     @Test
-    @DisplayName("非 HandlerMethod（如静态资源）直接放行")
-    void nonHandlerMethodPassesThrough() throws Exception {
+    @DisplayName("非 HandlerMethod（静态资源、RouterFunction 端点）同样校验登录：认证不因处理器类型而失效")
+    void nonHandlerMethodStillRequiresLogin() throws Exception {
         assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
-        verify(securityService, never()).checkLogin();
+        verify(securityService).checkLogin();
+    }
+
+    @Test
+    @DisplayName("非 HandlerMethod 且未登录：checkLogin 抛出的异常原样上抛，不放行")
+    void nonHandlerMethodLoginFailurePropagates() throws Exception {
+        doThrow(new SecurityException("未登录")).when(securityService).checkLogin();
+
+        assertThatThrownBy(() -> interceptor.preHandle(request, response, new Object()))
+                .isInstanceOf(SecurityException.class);
     }
 
     @Test

@@ -33,7 +33,7 @@ class SnowdriftKafkaMqConfigurationTest {
     private static final Executor DIRECT_EXECUTOR = Runnable::run;
 
     private final SnowdriftKafkaMqConfiguration configuration = new SnowdriftKafkaMqConfiguration();
-    private final MqContextPropagator propagator = new MqContextPropagator(new MqProperties());
+    private final MqContextPropagator propagator = new MqContextPropagator(mqProperties());
 
     @Test
     @DisplayName("构建面向 byte[] 的 producer 工厂与 KafkaTemplate")
@@ -69,5 +69,12 @@ class SnowdriftKafkaMqConfigurationTest {
         assertThat(recordInterceptor).isNotNull();
         assertThat(batchInterceptor).isNotNull();
         assertThat(binder).isInstanceOf(MqKafkaContainerContextBinder.class);
+    }
+
+    /** 默认配置已开启消息签名，发送/消费流水线测试提供测试密钥 */
+    private static MqProperties mqProperties() {
+        MqProperties properties = new MqProperties();
+        properties.setSignKey("unit-test-sign-key");
+        return properties;
     }
 }

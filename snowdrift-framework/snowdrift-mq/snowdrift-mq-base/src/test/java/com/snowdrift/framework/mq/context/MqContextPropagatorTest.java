@@ -185,7 +185,7 @@ class MqContextPropagatorTest {
     }
 
     @Test
-    @DisplayName("未开启签名：即使头部含伪造签名也不做校验，正常恢复")
+    @DisplayName("未开启签名（显式 opt-out）：即使头部含伪造签名也不做校验，正常恢复")
     void signDisabledSkipsVerification() {
         MqContextPropagator propagator = new MqContextPropagator(props(false, null));
         Map<String, String> headers = new HashMap<>();
@@ -195,5 +195,34 @@ class MqContextPropagatorTest {
         propagator.restore(headers);
 
         assertThat(SecurityContextHolder.getContext().getUserId()).isEqualTo(55L);
+    }
+
+    @Test
+    @DisplayName("默认配置即开启签名：未配置 sign-key 时构造失败，不 silently 信任未签名身份头")
+    void signatureEnabledByDefault() {
+        assertThat(new MqProperties().getSign()).isTrue();
+        assertThatThrownBy(() -> new MqContextPropagator(new MqProperties()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("sign-key");
+    }
+
+    @Test
+    @DisplayName("默认配置下，携带伪造身份头的无签名消息被拒绝，不写入任何身份")
+    void forgedIdentityRejectedByDefault() {
+        MqProperties properties = new MqProperties();
+        properties.setSignKey("unit-test-sign-key");
+        MqContextPropagator propagator = new MqContextPropagator(properties);
+
+        Map<String, String> forged = new HashMap<>();
+        forged.put(MqContextPropagator.HEADER_USER_ID, "1");
+        forged.put(MqContextPropagator.HEADER_USERNAME, "attacker");
+        forged.put(MqContextPropagator.HEADER_TENANT_ID, "999");
+        forged.put(MqContextPropagator.HEADER_DEPT_ID, "1");
+        forged.put(SIGNATURE_HEADER, "forged");
+
+        assertThatThrownBy(() -> propagator.restore(forged))
+                .isInstanceOf(MqException.class)
+                .hasMessageContaining("签名");
+        assertThat(SecurityContextHolder.peekContext()).isNull();
     }
 }

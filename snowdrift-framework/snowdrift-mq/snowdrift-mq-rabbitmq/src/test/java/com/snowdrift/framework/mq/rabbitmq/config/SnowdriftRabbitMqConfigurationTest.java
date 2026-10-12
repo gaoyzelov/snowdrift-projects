@@ -31,7 +31,7 @@ class SnowdriftRabbitMqConfigurationTest {
     private static final Executor DIRECT_EXECUTOR = Runnable::run;
 
     private final SnowdriftRabbitMqConfiguration configuration = new SnowdriftRabbitMqConfiguration();
-    private final MqContextPropagator propagator = new MqContextPropagator(new MqProperties());
+    private final MqContextPropagator propagator = new MqContextPropagator(mqProperties());
 
     @Test
     @DisplayName("注册 IMqService 的 RabbitMQ 实现")
@@ -52,5 +52,12 @@ class SnowdriftRabbitMqConfigurationTest {
 
         assertThat(advice).isNotNull();
         assertThat(binder).isInstanceOf(MqRabbitListenerContextBinder.class);
+    }
+
+    /** 默认配置已开启消息签名，发送/消费流水线测试提供测试密钥 */
+    private static MqProperties mqProperties() {
+        MqProperties properties = new MqProperties();
+        properties.setSignKey("unit-test-sign-key");
+        return properties;
     }
 }

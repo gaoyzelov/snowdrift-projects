@@ -30,7 +30,7 @@ class SnowdriftRocketMqConfigurationTest {
     private static final Executor DIRECT_EXECUTOR = Runnable::run;
 
     private final SnowdriftRocketMqConfiguration configuration = new SnowdriftRocketMqConfiguration();
-    private final MqContextPropagator propagator = new MqContextPropagator(new MqProperties());
+    private final MqContextPropagator propagator = new MqContextPropagator(mqProperties());
 
     @Test
     @DisplayName("注册 IMqService 的 RocketMQ 实现")
@@ -48,5 +48,12 @@ class SnowdriftRocketMqConfigurationTest {
         MqRocketContainerContextBinder binder = configuration.mqRocketContainerContextBinder(propagator);
 
         assertThat(binder).isInstanceOf(MqRocketContainerContextBinder.class);
+    }
+
+    /** 默认配置已开启消息签名，发送/消费流水线测试提供测试密钥 */
+    private static MqProperties mqProperties() {
+        MqProperties properties = new MqProperties();
+        properties.setSignKey("unit-test-sign-key");
+        return properties;
     }
 }

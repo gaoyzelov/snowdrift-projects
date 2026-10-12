@@ -61,7 +61,7 @@ class KafkaMqServiceImplTest {
 
     private KafkaMqServiceImpl newService() {
         return new KafkaMqServiceImpl(kafkaTemplate, DIRECT_EXECUTOR, new FastJson2MqMessageConverter(),
-                new MqInterceptorRegistry(), new MqContextPropagator(new MqProperties()));
+                new MqInterceptorRegistry(), new MqContextPropagator(mqProperties()));
     }
 
     private void stubMetadata(String topic, int partition, long offset, long timestamp) {
@@ -185,5 +185,12 @@ class KafkaMqServiceImplTest {
         static Map<String, String> headers(ProducerRecord<String, byte[]> record) {
             return com.snowdrift.framework.mq.kafka.context.KafkaHeaderCodec.toMap(record.headers());
         }
+    }
+
+    /** 默认配置已开启消息签名，发送/消费流水线测试提供测试密钥 */
+    private static MqProperties mqProperties() {
+        MqProperties properties = new MqProperties();
+        properties.setSignKey("unit-test-sign-key");
+        return properties;
     }
 }

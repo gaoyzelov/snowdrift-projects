@@ -26,12 +26,18 @@ public class MqProperties {
     private Boolean enabled = Boolean.TRUE;
 
     /**
-     * 消息签名配置
+     * 是否对消息中的身份头做 HMAC-SHA256 签名校验
+     * <p><b>默认开启。</b>消费端会用消息头里的身份（userId / username / tenantId / deptId）覆盖当前线程的
+     * {@code SecurityContext}，因此这些头在跨进程传递时必须有完整性保护：任何能向同一 topic/queue
+     * 发布消息的一方都能伪造它们。关闭后消费端将无条件信任未签名的身份头，等同于把身份认定权交给生产者——
+     * 仅在你完全信任所有生产者且有网络隔离时才可关闭。</p>
+     * <p>开启时 {@code sign-key} 必填，否则启动即失败（避免生产者不签名 / 消费者全量拒收的错误组合）。</p>
      */
-    private Boolean sign = Boolean.FALSE;
+    private Boolean sign = Boolean.TRUE;
 
     /**
-     * 消息签名密钥
+     * 消息签名密钥（{@code sign=true} 时必填）
+     * <p>需在所有生产端与消费端之间共享同一密钥；建议通过环境变量或配置中心注入，不要明文入库。</p>
      */
     private String signKey;
 
