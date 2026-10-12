@@ -6,11 +6,11 @@
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://www.apache.org/licenses/LICENSE-2.0)
 [![Java](https://img.shields.io/badge/java-17-orange.svg)](https://adoptium.net/)
-[![Spring Boot](https://img.shields.io/badge/spring--boot-3.5.14-brightgreen.svg)](https://spring.io/projects/spring-boot)
+[![Spring Boot](https://img.shields.io/badge/spring--boot-3.5.16-brightgreen.svg)](https://spring.io/projects/spring-boot)
 [![Spring Cloud](https://img.shields.io/badge/spring--cloud-2025.0.2-brightgreen.svg)](https://spring.io/projects/spring-cloud)
 [![MyBatis-Plus](https://img.shields.io/badge/mybatis--plus-3.5.15-blue.svg)](https://baomidou.com/)
-[![Sa-Token](https://img.shields.io/badge/sa--token-1.45.0-5b8c5a.svg)](https://sa-token.cc/)
-[![Redisson](https://img.shields.io/badge/redisson-4.3.0-red.svg)](https://redisson.org/)
+[![Sa-Token](https://img.shields.io/badge/sa--token-1.46.0-5b8c5a.svg)](https://sa-token.cc/)
+[![Redisson](https://img.shields.io/badge/redisson-3.52.0-red.svg)](https://redisson.org/)
 [![Dubbo](https://img.shields.io/badge/dubbo-3.3.6-orange.svg)](https://dubbo.apache.org/)
 [![Knife4j](https://img.shields.io/badge/knife4j-4.5.0-brightgreen.svg)](https://doc.xiaominfo.com/)
 [![Hutool](https://img.shields.io/badge/hutool-5.8.44-6c9d99.svg)](https://hutool.cn/)
@@ -18,7 +18,7 @@
 
 **Snowdrift（雪堆）** 是一个面向 Spring Cloud 微服务架构的开源基础设施脚手架，以"开箱即用、按需引入、安全默认"为设计理念，为 Java 后端开发团队提供经过工程验证的企业级基础能力层。
 
-项目涵盖 **13 个功能模块、35 个 Maven 子模块**，覆盖了微服务开发中最高频的基础设施需求——从统一响应与异常处理，到多后端缓存与分布式锁；从多租户 ORM 增强到消息队列封装；从对象存储策略化接入到 Dubbo RPC 上下文传播。所有模块均在 Spring Boot 3.x 自动配置机制之上构建，通过 `@ConditionalOnProperty` 等条件注解实现按需激活，零代码侵入即可集成到既有项目中。
+项目涵盖 **11 个功能模块（含多后端实现共 33 个 Maven 子模块）**，覆盖了微服务开发中最高频的基础设施需求——从统一响应与异常处理，到多后端缓存与分布式锁；从多租户 ORM 增强到消息队列封装；从对象存储策略化接入到 Dubbo RPC 上下文传播。所有模块均在 Spring Boot 3.x 自动配置机制之上构建，通过 `@ConditionalOnProperty` 等条件注解实现按需激活，零代码侵入即可集成到既有项目中。
 
 ## 快速开始
 
@@ -30,7 +30,7 @@ mvn clean install -DskipTests
 mvn clean install -pl snowdrift-framework/snowdrift-base
 
 # 构建深层子模块
-mvn clean install -pl snowdrift-framework/snowdrift-cache/snowdrift-cache-redisson
+mvn clean install -pl snowdrift-framework/snowdrift-cache/snowdrift-cache-redis
 ```
 
 **环境要求**：Java 17+、Maven 3.8+
@@ -46,14 +46,13 @@ snowdrift（雪堆）
 │   ├── snowdrift-context    ← 请求上下文：HttpContext / SecurityContext（TTL 跨线程）
 │   ├── snowdrift-log        ← 日志审计：@ApiLog / @LoginLog AOP 切面
 │   ├── snowdrift-web        ← Web 自动配置：CORS、i18n、异常处理、异步上下文传播
-│   ├── snowdrift-cache      ← 多后端缓存：Caffeine / Redis / Redisson
+│   ├── snowdrift-cache      ← 多后端缓存：Caffeine / Redis（Redisson 分布式锁内置于 Redis 后端）
 │   ├── snowdrift-oss        ← 对象存储：Local / MinIO / 阿里云 / 七牛云 / 腾讯云
 │   ├── snowdrift-security   ← 安全认证：Sa-Token / Spring Security 双实现
 │   ├── snowdrift-schedule   ← 分布式调度：Quartz / XXL-JOB 双实现
 │   ├── snowdrift-mq         ← 消息队列：Kafka / RocketMQ / RabbitMQ
 │   ├── snowdrift-orm        ← ORM 增强：自动填充、多租户、数据权限、字段加密
-│   ├── snowdrift-rpc        ← RPC 集成：Dubbo 上下文传播、异常处理、调用日志
-│   └── snowdrift-plugin     ← 插件基础设施（规划中）
+│   └── snowdrift-rpc        ← RPC 集成：Dubbo 上下文传播、异常处理、调用日志
 ```
 
 ## 📖 文档索引
@@ -73,42 +72,32 @@ snowdrift（雪堆）
 | snowdrift-mq | [README](snowdrift-framework/snowdrift-mq/README.md) | Kafka / RocketMQ / RabbitMQ 消息队列 |
 | snowdrift-orm | [README](snowdrift-framework/snowdrift-orm/README.md) | MyBatis-Plus：多租户、数据权限、字段加密 |
 | snowdrift-rpc | [README](snowdrift-framework/snowdrift-rpc/README.md) | Dubbo 上下文传播、异常处理 |
-| snowdrift-plugin | [README](snowdrift-framework/snowdrift-plugin/README.md) | 插件基础设施（规划中） |
 
 ## 核心特性
 
 ### 统一响应
 
-所有 API 返回 `Result<T>` 统一格式（code / msg / data / timestamp），全局 `WebExceptionHandler` 覆盖 16 种异常类型，异常自动兜底。
+所有 API 返回 `Result<T>` 统一格式（code / msg / data / timestamp），全局 `WebExceptionHandler` 覆盖 17 种异常类型，异常自动兜底。
 
 ```java
 // 成功
 return Result.ok(data);
-// 失败（i18n key）
-throw new BizException("common.not.found");
+// 失败（业务异常，message 为可直接展示的中文，非 i18n key）
+throw new BizException("订单不存在");
 // 失败（自定义）
 return Result.err(ResultCode.BAD_REQUEST);
 ```
 
-### 国际化（i18n）
+### 响应消息与国际化（i18n）
 
-每个模块独立维护 i18n 资源，请求级语言切换，响应消息自动解析。
+框架**不使用 i18n key 承载响应文案**：`Result.msg` 取自 `ResultCode` 内置中文，或业务抛出的中文直文（`BizException` 及各模块异常的 message 即“可直接展示的中文描述”），避免未配置 i18n 时把 key 透传给前端。因此**不存在** per-module 的 `*-messages` 资源包。
 
-| 模块 | 资源文件 | 覆盖范围 |
-|------|---------|---------|
-| snowdrift-web | `web-messages` | 通用状态码、参数校验、文件上传 |
-| snowdrift-oss | `oss-messages` | 全部 5 种存储后端 |
-| snowdrift-security | `security-messages` | 认证/鉴权异常 |
-| snowdrift-cache | `cache-messages` | 缓存操作、分布式锁、防重提交 |
-| snowdrift-schedule | `schedule-messages` | Quartz + XXL-JOB |
-| snowdrift-mq | `mq-messages` | 消息发送、消费、序列化 |
-| snowdrift-orm | `orm-messages` | 多租户、字段加密 |
-| snowdrift-rpc | `rpc-messages` | Dubbo RPC 调用异常 |
+`snowdrift-web` 另提供**可选**的请求级 i18n 基础设施（`I18nInterceptor` 按 URL 参数 > `Accept-Language` > 默认语言解析 Locale，`I18nUtil` 取消息），默认关闭且不附带任何消息资源包；项目整体方向是收敛到中文直文，无多语言诉求时无需开启。
 
 ```yaml
 snowdrift:
   i18n:
-    enabled: true
+    enabled: false        # 默认关闭
     default-locale: zh_CN
     supported-locales:
       - zh_CN
@@ -164,7 +153,7 @@ snowdrift:
     max-size: 10000
 ```
 
-后端自动选择优先级：**Redisson > Redis > Caffeine**。
+后端自动选择优先级：**Redis 优先、Caffeine 兜底**（进程内、无外部依赖）；分布式锁由 `snowdrift-cache-redis` 内置的 Redisson 提供，未引入 Redis 后端时 `@DistributedLock` 不生效。
 
 ### 安全认证
 
@@ -254,7 +243,8 @@ snowdrift:
           - sys_dict
       crypto:
         enabled: true
-        crypto-key: your-16-byte-key!
+        # 十六进制字符串，长度须为 32/48/64（对应 AES-128/192/256）；非法长度或含非十六进制字符启动即报错
+        crypto-key: 0123456789abcdef0123456789abcdef
       pagination:
         db-type: MYSQL
         max-limit: 1000
@@ -276,7 +266,7 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 | 类 | 功能 |
 |----|------|
 | `Result<T>` / `ResultCode` | 统一响应 + 可扩展状态码 |
-| `BizException` | 业务异常（i18n key + 参数化） |
+| `BizException` | 业务异常（message 为可直接展示的中文，支持 ResultCode 与参数化 args） |
 | `AssertUtil` | 断言式参数校验 |
 | `DateTimeUtil` | 时间格式化/解析/转换 |
 | `EncryptUtil` | MD5 / SHA / AES / RSA |
@@ -288,18 +278,20 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 
 ## 技术栈
 
+下表为 `snowdrift-dependencies`（BOM）统一管理版本的关键第三方依赖（部分供下游应用选用，框架自身模块未必全部直接引用）：
+
 | 类别 | 技术 | 版本 |
 |------|------|------|
-| 基础框架 | Spring Boot / Spring Cloud / Spring Cloud Alibaba | 3.5.14 / 2025.0.2 / 2025.0.0.0 |
+| 基础框架 | Spring Boot / Spring Cloud / Spring Cloud Alibaba | 3.5.16 / 2025.0.2 / 2025.0.0.0 |
 | ORM | MyBatis-Plus | 3.5.15 |
 | 工具库 | Hutool | 5.8.44 |
 | 对象映射 | MapStruct（Lombok 兼容） | 1.6.3 |
 | API 文档 | Knife4j（OpenAPI 3） | 4.5.0 |
-| 安全框架 | Sa-Token | 1.45.0 |
-| 分布式锁 | Redisson | 4.3.0 |
-| 多级缓存 | JetCache | 2.7.9 |
+| 安全框架 | Sa-Token | 1.46.0 |
+| 分布式锁 | Redisson | 3.52.0 |
+| 多级缓存（BOM 备选） | JetCache | 2.7.9 |
 | 分布式调度 | XXL-JOB | 3.4.1 |
-| JSON | FastJson2 | 2.0.61 |
+| JSON | FastJson2 | 2.0.65 |
 | Excel | FastExcel | 1.3.0 |
 | 数据库连接池 | Druid | 1.2.28 |
 | 配置加密 | Jasypt | 4.0.4 |
@@ -323,7 +315,6 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 | snowdrift-mq | ✅ 完成 |
 | snowdrift-orm | ✅ 完成 |
 | snowdrift-rpc | ✅ 完成 |
-| snowdrift-plugin | 🚧 规划中 |
 
 ## 提交规范
 
