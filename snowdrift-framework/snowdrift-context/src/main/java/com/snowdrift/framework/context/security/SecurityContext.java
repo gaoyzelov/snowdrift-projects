@@ -4,6 +4,8 @@ import lombok.*;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -75,5 +77,33 @@ public class SecurityContext implements Serializable {
      */
     @ToString.Exclude
     private Map<String, Object> attributes;
+
+    /**
+     * 复制一份字段等价的上下文。
+     * <p>
+     * 用于「存储层把身份交付给调用方」的场景。本类是可变 {@code @Data}，若 {@code TokenStore}
+     * 直接把存储内的实例交出去，业务代码对它调用任何 setter 都会<b>永久写回该 token 的会话</b>，
+     * 污染同一会话的后续所有请求；并发请求之间还存在数据竞争。因此交付前先复制。
+     * </p>
+     * <p>
+     * 可变容器（{@link #roleKeys}/{@link #permissions}/{@link #attributes}）会重建为新容器，
+     * 其中的元素本身仍按引用共享 —— {@code attributes} 的值可能是任意业务对象，不做深拷贝。
+     * </p>
+     *
+     * @return 字段等价、可变容器独立的新实例；对空上下文的复制同样返回空上下文
+     */
+    public SecurityContext copy() {
+        return SecurityContext.builder()
+                .userId(userId)
+                .username(username)
+                .nickname(nickname)
+                .tenantId(tenantId)
+                .deptId(deptId)
+                .roleKeys(roleKeys == null ? null : new ArrayList<>(roleKeys))
+                .permissions(permissions == null ? null : new ArrayList<>(permissions))
+                .platform(platform)
+                .attributes(attributes == null ? null : new HashMap<>(attributes))
+                .build();
+    }
 
 }

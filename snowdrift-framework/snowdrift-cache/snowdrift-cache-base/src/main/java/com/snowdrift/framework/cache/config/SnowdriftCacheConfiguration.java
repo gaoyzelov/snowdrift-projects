@@ -9,11 +9,14 @@ import com.snowdrift.framework.cache.handler.SnowdriftKeyGenerator;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
 import com.snowdrift.framework.cache.serialize.JacksonCacheSerializer;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.cache.annotation.CachingConfigurer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cache.interceptor.CacheErrorHandler;
@@ -33,6 +36,7 @@ import org.springframework.context.annotation.Bean;
  * @date 2026/6/2
  * @since 1.0.0
  */
+@Slf4j
 @EnableCaching
 @AutoConfiguration
 @EnableConfigurationProperties(SnowdriftCacheProperties.class)
@@ -118,5 +122,33 @@ public class SnowdriftCacheConfiguration {
     @ConditionalOnBean(ICacheService.class)
     public RepeatSubmitAspect repeatSubmitAspect(ICacheService cacheService) {
         return new RepeatSubmitAspect(cacheService);
+    }
+
+    /**
+     * 切面退避告警
+     * <p>
+     * 两个切面分别以 {@code @ConditionalOnBean} 挂在 {@link IDistributedLockService} /
+     * {@link ICacheService} 上。缺后端时切面<b>根本不注册</b>，{@code @DistributedLock} 与
+     * {@code @RepeatSubmit} 于是变成静默空操作 —— 不报错、不生效，是最难排查的一类故障
+     * （分布式互斥与幂等静默失效）。此处显式告警。
+     * </p>
+     * <p>
+     * 判据是「容器里有没有该切面 Bean」，因此使用者自行注册切面同样不会误报。
+     * </p>
+     */
+    @Bean
+    public SmartInitializingSingleton cacheAspectBackoffWarner(ConfigurableListableBeanFactory beanFactory) {
+        return () -> {
+            if (beanFactory.getBeanNamesForType(DistributedLockAspect.class, true, false).length == 0) {
+                log.warn("[Snowdrift-Cache] 未检测到 IDistributedLockService（分布式锁后端未装配），"
+                        + "@DistributedLock 将退化为空操作：注解不报错，也不会产生任何互斥效果。"
+                        + "请引入提供 IDistributedLockService 的后端（如 snowdrift-cache-redis）。");
+            }
+            if (beanFactory.getBeanNamesForType(RepeatSubmitAspect.class, true, false).length == 0) {
+                log.warn("[Snowdrift-Cache] 未检测到 ICacheService（缓存后端未装配），"
+                        + "@RepeatSubmit 将退化为空操作：重复提交不会被拦截。"
+                        + "请引入 snowdrift-cache-caffeine 或 snowdrift-cache-redis。");
+            }
+        };
     }
 }

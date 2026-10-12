@@ -236,18 +236,24 @@ public class OssStrategyFactory {
             log.warn("OSS 配置未启用，跳过注册: configKey={}", configKey);
             return;
         }
+        // 移除与注册必须使用<b>同一个</b> key。原实现「按入参 key 移除、按 config.getConfigKey() 注册」，
+        // 当配置对象没带 configKey（新建 DTO 的常见形态）时：旧实例已被移除，register 又因 key 为空抛异常，
+        // 结果是该 configKey 下彻底没有服务可用。此处统一取「配置自带 key，缺省回退入参 key」。
+        // 注意：若两者都非空且不一致，按配置自带的 key 注册 —— 旧实例会留在入参 key 下（而非服务缺失），
+        // 调用方若要改名应先 remove 旧 key。
+        String effectiveKey = StringUtils.isNotBlank(config.getConfigKey()) ? config.getConfigKey() : configKey;
         // 创建新实例
         IOssService newService = serviceCreator.create(config);
         // 移除旧实例
-        remove(configKey);
+        remove(effectiveKey);
         // 注册新实例
-        register(config.getConfigKey(), newService);
+        register(effectiveKey, newService);
         // 如果是默认配置，更新默认标识
         if (Boolean.TRUE.equals(config.getIsDefault())) {
-            setDefaultConfigKey(config.getConfigKey());
-            log.info("设置默认 OSS 配置: configKey={}", config.getConfigKey());
+            setDefaultConfigKey(effectiveKey);
+            log.info("设置默认 OSS 配置: configKey={}", effectiveKey);
         }
-        log.info("热更新 OSS 配置完成: configKey={}", configKey);
+        log.info("热更新 OSS 配置完成: configKey={}", effectiveKey);
     }
 
     /**

@@ -80,7 +80,10 @@ public abstract class AbstractTokenStore implements TokenStore {
         // 3. 刷新活跃时间
         touch(token, entry);
 
-        return entry.context;
+        // 交付副本而非存储内实例：SecurityContext 是可变 @Data，直接交出会让业务代码的 setter
+        // 永久写回该 token 的会话（污染同一会话的后续请求，并发下还有数据竞争）。
+        // Redis 后端本就每次反序列化出新对象，此处统一契约、不依赖后端实现细节。
+        return entry.context == null ? null : entry.context.copy();
     }
 
     // =================== 子类实现 ===================

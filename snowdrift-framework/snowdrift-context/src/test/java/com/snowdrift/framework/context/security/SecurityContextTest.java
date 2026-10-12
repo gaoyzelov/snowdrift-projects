@@ -107,6 +107,45 @@ class SecurityContextTest {
     }
 
     @Test
+    @DisplayName("copy：字段等价但实例与容器均独立，改副本不影响原对象")
+    void copyIsFieldEquivalentButContainerIndependent() {
+        SecurityContext original = SecurityContext.builder()
+                .userId(1L).username("admin").nickname("管理员")
+                .tenantId(100L).deptId(10L)
+                .roleKeys(new java.util.ArrayList<>(List.of("admin")))
+                .permissions(new java.util.ArrayList<>(List.of("sys:user:list")))
+                .platform("web")
+                .attributes(new HashMap<>(Map.of("token", "t")))
+                .build();
+
+        SecurityContext copy = original.copy();
+
+        assertThat(copy).isEqualTo(original).isNotSameAs(original);
+        assertThat(copy.getRoleKeys()).isNotSameAs(original.getRoleKeys());
+        assertThat(copy.getPermissions()).isNotSameAs(original.getPermissions());
+        assertThat(copy.getAttributes()).isNotSameAs(original.getAttributes());
+
+        copy.setTenantId(999L);
+        copy.getRoleKeys().add("hacked");
+        copy.getAttributes().put("injected", "x");
+
+        assertThat(original.getTenantId()).isEqualTo(100L);
+        assertThat(original.getRoleKeys()).containsExactly("admin");
+        assertThat(original.getAttributes()).containsOnlyKeys("token");
+    }
+
+    @Test
+    @DisplayName("copy：空字段的上下文复制后仍为空，不抛异常")
+    void copyOfEmptyContext() {
+        SecurityContext copy = SecurityContext.builder().build().copy();
+
+        assertThat(copy.getUserId()).isNull();
+        assertThat(copy.getRoleKeys()).isNull();
+        assertThat(copy.getPermissions()).isNull();
+        assertThat(copy.getAttributes()).isNull();
+    }
+
+    @Test
     @DisplayName("Serializable：Java 序列化往返后字段一致（Dubbo/缓存传递的前提）")
     void javaSerializationRoundTrip() throws Exception {
         Map<String, Object> attributes = new HashMap<>();

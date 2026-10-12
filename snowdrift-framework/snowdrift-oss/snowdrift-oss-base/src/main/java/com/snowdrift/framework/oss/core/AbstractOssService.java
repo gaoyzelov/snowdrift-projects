@@ -158,6 +158,11 @@ public abstract class AbstractOssService implements IOssService {
         while (key.startsWith(StrConst.SLASH)){
             key = key.substring(1);
         }
+        // 仅由斜杠组成的 key 归一后为空串，下游会把空串解析成存储根目录：
+        // delete("/") 变成「删除存储根」、exists("/") 恒为真。必须在此拦掉。
+        if (key.isEmpty()) {
+            throw new OssException("OSS 对象键不能指向存储根");
+        }
         // 路径穿越检测：仅当某一路径段恰为 ".." 时拒绝（避免误伤文件名内连点）
         for (String segment : key.split(StrConst.SLASH)) {
             if ("..".equals(segment)) {

@@ -276,6 +276,22 @@ class RepeatSubmitAspectTest {
     }
 
     @Test
+    @DisplayName("安全边界：IPv6 客户端地址中的冒号必须转义，否则身份段破坏 key 的段边界")
+    void ipv6AddressIsEscapedInKey() throws Throwable {
+        // IPv6 规范化串本身含 ':'，裸拼会让「身份段」与「接口段」的边界不可分辨。
+        // 注意 IpUtil 会先把地址规范化为完整 8 组形式（2001:db8::1 -> 2001:db8:0:0:0:0:0:1）。
+        MockHttpServletRequest request = new MockHttpServletRequest("POST", URI);
+        request.setRemoteAddr("2001:db8::1");
+        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
+
+        Method method = method("create", String.class);
+        aspect.around(succeeding(method, args("A"), "created"), anno(method));
+
+        assertThat(cache.store.keySet()).containsExactly(
+                "repeat:submit:ip:2001\\:db8\\:0\\:0\\:0\\:0\\:0\\:1:/order/create:order\\:A");
+    }
+
+    @Test
     @DisplayName("首次提交：写入标记并执行业务，TTL 取注解 interval（key = 前缀 + 身份 + 接口 + SpEL 结果）")
     void firstSubmitProceeds() throws Throwable {
         Method method = method("create", String.class);

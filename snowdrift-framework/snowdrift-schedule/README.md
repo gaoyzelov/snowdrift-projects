@@ -131,6 +131,14 @@ scheduleService.removeJob(key);
 - **Quartz 更新**：任务存在但触发器缺失时更新会显式失败（避免 `rescheduleJob` 静默 no-op 造成“任务已存在却无调度”）。
 - **XXL-JOB**：运行时依赖 Admin 的登录会话与响应契约（建议对照实际部署的 Admin 版本联调，仓库内置 core 3.4.1 的 `ReturnT` 结构可能与实现假设不同）；登录过期判定、多实例并发登录与多 Admin 节点 Cookie 绑定属于运行时语义，生产前请在真实环境验证。
 - **XXL-JOB `triggerStatus`**：为空时一律按 `1`（运行）处理——`addJob` 创建后即启动，`updateJob` 会把已停止的任务重新启动；若需保持停止态，必须由调用方显式传 `0`。
+  - **这是有意取舍，不是遗漏**：框架不替调用方回查旧状态，因为 Admin 侧没有可用的本地状态缓存，得知旧状态必须额外发一次 HTTP 请求（`updateJob` 会由 1 次变成 2 次）。
+  - **要保持当前状态**（例如只改 cron）时自行回填一次：
+    ```java
+    JobDetails current = scheduleService.getJob(key);
+    request.setTriggerStatus(current.getStatus() == JobStatusEnum.PAUSED ? 0 : 1);
+    scheduleService.updateJob(key, request);
+    ```
+  - `updateJob` 的成功日志会打印实际提交的 `triggerStatus`，可在日志里确认任务没有被意外重启。
 - **XXL-JOB `group`**：入参与查询返回的 `group` 均为执行器 AppName（非 Admin 端 `jobGroup` 数字 ID）；框架内部按 AppName 解析数字 ID 并缓存，详情/列表回填时反查 AppName，反查失败降级为数字 ID 字符串（不阻断查询）。
 - **XXL-JOB 分组解析失败**：统一抛 `ScheduleException`（如未配置 `admin-addresses` 报“未配置管理地址”、分组不存在报“分组未找到”），不会外泄底层包装异常。
 - 动态任务管理的所有操作均通过管理端调用 `IScheduleService`，不依赖注解扫描。

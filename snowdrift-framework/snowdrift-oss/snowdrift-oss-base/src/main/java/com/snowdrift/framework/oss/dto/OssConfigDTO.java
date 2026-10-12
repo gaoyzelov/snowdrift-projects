@@ -3,6 +3,7 @@ package com.snowdrift.framework.oss.dto;
 import com.snowdrift.framework.oss.enums.OssTypeEnum;
 import com.snowdrift.framework.oss.enums.UrlStyleEnum;
 import lombok.Data;
+import lombok.ToString;
 
 /**
  * OSS 配置 DTO
@@ -36,11 +37,13 @@ public class OssConfigDTO {
     /**
      * Access Key
      */
+    @ToString.Exclude
     private String accessKey;
     
     /**
      * Secret Key
      */
+    @ToString.Exclude
     private String secretKey;
     
     // ========== 访问配置 ==========

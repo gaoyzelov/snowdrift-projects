@@ -113,6 +113,21 @@ class AbstractOssServiceTest {
     }
 
     @Test
+    @DisplayName("安全边界：仅由斜杠组成的 key 归一后为空，必须拒绝 —— 否则 delete(\"/\") 会命中存储根")
+    void normalizeRejectsRootOnlyKeys() {
+        StubOssService service = new StubOssService(config(null));
+
+        // 归一化会剥掉全部前导斜杠，"/" 于是变成空串；不拦截的话下游会把空串解析为存储根目录，
+        // delete("/") 就变成「删除存储根」，exists("/") 则恒为真。
+        assertThatThrownBy(() -> service.normalize("/"))
+                .isInstanceOf(OssException.class).hasMessage("OSS 对象键不能指向存储根");
+        assertThatThrownBy(() -> service.normalize("//"))
+                .isInstanceOf(OssException.class).hasMessage("OSS 对象键不能指向存储根");
+        assertThatThrownBy(() -> service.normalize("\\\\"))
+                .isInstanceOf(OssException.class).hasMessage("OSS 对象键不能指向存储根");
+    }
+
+    @Test
     @DisplayName("normalize：路径段为 .. 时拒绝（路径穿越防护），文件名内连点不误伤")
     void normalizeRejectsTraversal() {
         StubOssService service = new StubOssService(config(null));

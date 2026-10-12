@@ -133,7 +133,9 @@ public class RepeatSubmitAspect {
         if (scope == null) {
             return null;
         }
-        return PREFIX + "ip:" + ip
+        // IP 段同样必须转义：IPv6 规范化串本身含 ':'（如 2001:db8::1），
+        // 裸拼会让「身份段」与「接口段」的边界不可分辨，破坏 key 的段边界不变量。
+        return PREFIX + "ip:" + escapeDelimiter(ip)
                 + StrConst.COLON + escapeDelimiter(StringUtils.defaultString(request.getRequestURI()))
                 + StrConst.COLON + escapeDelimiter(scope);
     }

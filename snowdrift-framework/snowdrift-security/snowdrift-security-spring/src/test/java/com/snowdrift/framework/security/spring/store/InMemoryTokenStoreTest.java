@@ -5,6 +5,10 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -13,7 +17,8 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author gaoyzelov
  * @date 2026/10/10
- * @description 内存 TokenStore（含 AbstractTokenStore 模板逻辑）黑盒测试：读写/移除、永不过期、绝对过期、闲置过期与活跃刷新
+ * @description 内存 TokenStore（含 AbstractTokenStore 模板逻辑）黑盒测试：读写/移除、永不过期、绝对过期、
+ * 闲置过期、活跃刷新，以及「get 交付副本、不交出存储内实例」的隔离契约
  * @since 1.0.0
  */
 class InMemoryTokenStoreTest {
@@ -30,7 +35,7 @@ class InMemoryTokenStoreTest {
 
         store.put("tok-1", context, null);
 
-        assertThat(store.get("tok-1")).isSameAs(context);
+        assertThat(store.get("tok-1")).isEqualTo(context).isNotSameAs(context);
         assertThat(store.get("unknown")).isNull();
     }
 
@@ -53,7 +58,7 @@ class InMemoryTokenStoreTest {
 
         store.put("tok", context, null);
 
-        assertThat(store.get("tok")).isSameAs(context);
+        assertThat(store.get("tok")).isEqualTo(context).isNotSameAs(context);
     }
 
     @Test
@@ -64,7 +69,7 @@ class InMemoryTokenStoreTest {
 
         store.put("tok", context, Duration.ofSeconds(60));
 
-        assertThat(store.get("tok")).isSameAs(context);
+        assertThat(store.get("tok")).isEqualTo(context).isNotSameAs(context);
     }
 
     @Test
@@ -91,6 +96,37 @@ class InMemoryTokenStoreTest {
     }
 
     @Test
+    @DisplayName("安全边界：get 返回副本，业务 setter 不得污染会话存储")
+    void getReturnsDefensiveCopy() {
+        InMemoryTokenStore store = new InMemoryTokenStore(3600, 1800);
+        SecurityContext stored = SecurityContext.builder()
+                .userId(1L).username("alice").nickname("爱丽丝")
+                .tenantId(11L).deptId(22L).platform("web")
+                .roleKeys(new ArrayList<>(List.of("admin")))
+                .permissions(new ArrayList<>(List.of("sys:user:list")))
+                .attributes(new HashMap<>(Map.of("token", "raw-secret")))
+                .build();
+        store.put("tok", stored, null);
+
+        SecurityContext first = store.get("tok");
+        assertThat(first).isNotSameAs(stored);
+
+        // 模拟业务代码对取到的上下文做任意修改
+        first.setUserId(999L);
+        first.setTenantId(999L);
+        first.getRoleKeys().add("hacked");
+        first.getPermissions().clear();
+        first.getAttributes().put("injected", "x");
+
+        SecurityContext second = store.get("tok");
+        assertThat(second.getUserId()).isEqualTo(1L);
+        assertThat(second.getTenantId()).isEqualTo(11L);
+        assertThat(second.getRoleKeys()).containsExactly("admin");
+        assertThat(second.getPermissions()).containsExactly("sys:user:list");
+        assertThat(second.getAttributes()).containsOnlyKeys("token");
+    }
+
+    @Test
     @DisplayName("活跃刷新：闲置窗口内多次 get 不会因闲置过期")
     void touchRefreshesIdleWindow() throws InterruptedException {
         InMemoryTokenStore store = new InMemoryTokenStore(3600, 1);
@@ -100,7 +136,7 @@ class InMemoryTokenStoreTest {
         // 每 500ms 访问一次，累计 1.5s 仍活跃（闲置窗口 1s 被不断刷新）
         for (int i = 0; i < 3; i++) {
             Thread.sleep(500);
-            assertThat(store.get("tok")).isSameAs(context);
+            assertThat(store.get("tok")).isEqualTo(context).isNotSameAs(context);
         }
     }
 }

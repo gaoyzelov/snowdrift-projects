@@ -31,12 +31,7 @@ public final class DataScopeUtil {
      * @param runnable 要执行的操作
      */
     public static void ignore(Runnable runnable) {
-        InterceptorIgnoreHelper.handle(IgnoreStrategy.builder().dataPermission(true).build());
-        try {
-            runnable.run();
-        } finally {
-            InterceptorIgnoreHelper.clearIgnoreStrategy();
-        }
+        InterceptorIgnoreScope.run(dataPermissionIgnoreStrategy(), runnable);
     }
 
     /**
@@ -47,11 +42,10 @@ public final class DataScopeUtil {
      * @return 操作结果
      */
     public static <T> T ignore(java.util.function.Supplier<T> supplier) {
-        InterceptorIgnoreHelper.handle(IgnoreStrategy.builder().dataPermission(true).build());
-        try {
-            return supplier.get();
-        } finally {
-            InterceptorIgnoreHelper.clearIgnoreStrategy();
-        }
+        return InterceptorIgnoreScope.call(dataPermissionIgnoreStrategy(), supplier);
+    }
+
+    private static IgnoreStrategy dataPermissionIgnoreStrategy() {
+        return IgnoreStrategy.builder().dataPermission(true).build();
     }
 }

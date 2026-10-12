@@ -222,6 +222,31 @@ class XxlJobScheduleServiceImplTest {
     }
 
     @Test
+    @DisplayName("updateJob：triggerStatus 未指定时按文档约定提交 1（运行）—— 会重启已暂停任务，属有意取舍")
+    @SuppressWarnings("unchecked")
+    void updateJobDefaultsTriggerStatusToRunning() {
+        service.updateJob(XxlJobKey.newInstance(42, 7), request());
+
+        ArgumentCaptor<Map<String, String>> captor = ArgumentCaptor.forClass(Map.class);
+        mockedHttp.verify(() -> HttpUtil.postForm(contains("/jobinfo/update"), captor.capture(), any(), any()));
+        assertThat(captor.getValue().get("triggerStatus")).isEqualTo("1");
+    }
+
+    @Test
+    @DisplayName("updateJob：显式传 0 时按 0 提交 —— 保持停止态的唯一手段（框架不回查旧状态，见 README）")
+    @SuppressWarnings("unchecked")
+    void updateJobHonoursExplicitStopStatus() {
+        XxlJobRequest stopped = request();
+        stopped.setTriggerStatus(0);
+
+        service.updateJob(XxlJobKey.newInstance(42, 7), stopped);
+
+        ArgumentCaptor<Map<String, String>> captor = ArgumentCaptor.forClass(Map.class);
+        mockedHttp.verify(() -> HttpUtil.postForm(contains("/jobinfo/update"), captor.capture(), any(), any()));
+        assertThat(captor.getValue().get("triggerStatus")).isEqualTo("0");
+    }
+
+    @Test
     @DisplayName("updateJob：使用 jobKey 的 groupId，携带 id 调用 update 接口")
     @SuppressWarnings("unchecked")
     void updateJob() {

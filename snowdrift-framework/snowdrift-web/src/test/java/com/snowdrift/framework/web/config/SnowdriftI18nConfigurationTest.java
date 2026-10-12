@@ -49,16 +49,17 @@ class SnowdriftI18nConfigurationTest {
     }
 
     @Test
-    @DisplayName("messageSource：basename 自动补 classpath: 前缀并解析到资源；同时初始化 I18nUtil")
-    void messageSourceResolvesBasenameAndInitializesUtil() {
+    @DisplayName("messageSource：basename 自动补 classpath: 前缀并解析到资源")
+    void messageSourceResolvesBasename() {
         SnowdriftI18nConfiguration configuration = new SnowdriftI18nConfiguration(props());
 
         MessageSource messageSource = configuration.messageSource();
 
         assertThat(messageSource).isInstanceOf(ReloadableResourceBundleMessageSource.class);
         assertThat(messageSource.getMessage("greeting", null, Locale.ENGLISH)).isEqualTo("Hello");
-        // messageSource() 内部调用 I18nUtil.initMessageSource，工具类随即可用
-        assertThat(I18nUtil.getMessage("greeting", Locale.ENGLISH)).isEqualTo("Hello");
+        // 注意：绑定 I18nUtil 不再是本方法的副作用（宿主提供 MessageSource 时本方法根本不会执行），
+        // 已改由 i18nUtilMessageSourceBinder 在启动完成后统一绑定，
+        // 见 SnowdriftI18nMessageSourceBindingTest。
     }
 
     @Test

@@ -105,6 +105,16 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
         if (StringUtils.isBlank(request.getName()) || StringUtils.isBlank(request.getCron())) {
             throw new ScheduleException("Quartz 任务名称与 cron 表达式不能为空");
         }
+        // 身份以 jobKey 为准，请求里的 name/group 只作描述。旧实现在两者不一致时静默沿用旧名，
+        // 却把新名字写进日志，调用方会以为改名成功 —— 改名/改分组需显式删除后重建，故此处显式失败。
+        if (!StringUtils.equals(jobKey.getName(), request.getName())) {
+            throw new ScheduleException("Quartz 任务不支持改名，请先删除再创建: jobKey="
+                    + jobKey.getName() + ", request=" + request.getName());
+        }
+        if (StringUtils.isNotBlank(request.getGroup()) && !StringUtils.equals(jobKey.getGroup(), request.getGroup())) {
+            throw new ScheduleException("Quartz 任务不支持改分组，请先删除再创建: jobKey="
+                    + jobKey.getGroup() + ", request=" + request.getGroup());
+        }
         JobKey qJobKey = JobKey.jobKey(jobKey.getName(), jobKey.getGroup());
         TriggerKey triggerKey = TriggerKey.triggerKey(jobKey.getName(), jobKey.getGroup());
         try {
@@ -127,11 +137,12 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
             scheduler.rescheduleJob(triggerKey, newTrigger);
 
             // 3. 再更新 JobDetail，失败时回滚 Trigger
+            // 刻意不调用 storeDurably()：durable 表示「即使没有 Trigger 也保留 JobDetail」，
+            // 而本框架的任务总是与 Trigger 成对创建，更新时顺手置为 durable 会悄悄改变任务的持久化语义。
             JobDetail detail = JobBuilder.newJob(request.getJobClass())
                     .withIdentity(qJobKey)
                     .withDescription(request.getDescription())
                     .usingJobData(new JobDataMap(request.getParams() != null ? request.getParams() : new HashMap<>()))
-                    .storeDurably()
                     .build();
             try {
                 scheduler.addJob(detail, true);
@@ -189,8 +200,15 @@ public class QuartzScheduleServiceImpl implements IScheduleService<QuartzJobRequ
     @Override
     public void triggerJob(QuartzJobKey jobKey, Map<String, Object> params) {
         try {
+            // 与 pause/resume/update 一致地做存在性检查：缺了它，任务不存在时 Quartz 抛的是
+            // 语义模糊的 JobPersistenceException，被下面的 catch 包装成「触发失败」，排查时无法区分
+            // 「任务不存在」与「调度器故障」。
+            JobKey qJobKey = JobKey.jobKey(jobKey.getName(), jobKey.getGroup());
+            if (!scheduler.checkExists(qJobKey)) {
+                throw new ScheduleException("Quartz 任务不存在，无法手动触发");
+            }
             JobDataMap dataMap = new JobDataMap(params != null ? params : new HashMap<>());
-            scheduler.triggerJob(JobKey.jobKey(jobKey.getName(), jobKey.getGroup()), dataMap);
+            scheduler.triggerJob(qJobKey, dataMap);
             log.info("Quartz 任务手动触发: name={}, group={}", jobKey.getName(), jobKey.getGroup());
         } catch (SchedulerException e) {
             log.error("Quartz 任务触发失败: name={}, group={}", jobKey.getName(), jobKey.getGroup(), e);

@@ -90,8 +90,11 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         Map<String, String> param = buildJobParam(request, groupId);
         param.put("id", String.valueOf(jobKey.getId()));
         callAdminPostApi(XxlJobApiConst.JOB_UPDATE_PATH, param);
-        log.info("XXL-JOB 任务更新成功: id={}, name={}, cron={}",
-                jobKey.getId(), request.getName(), request.getCron());
+        // 打印实际提交的 triggerStatus：调用方未显式指定时会被默认成 1（运行），
+        // 那会把已暂停的任务重新启动。日志里留痕，避免这种副作用只能靠事后翻 SQL 才发现。
+        log.info("XXL-JOB 任务更新成功: id={}, name={}, cron={}, triggerStatus={}"
+                        + "（未显式指定该字段时按默认运行态 1 提交，会重启已暂停的任务）",
+                jobKey.getId(), request.getName(), request.getCron(), param.get("triggerStatus"));
     }
 
     @Override

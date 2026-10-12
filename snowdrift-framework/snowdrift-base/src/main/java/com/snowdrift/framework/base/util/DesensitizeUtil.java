@@ -20,9 +20,15 @@ public final class DesensitizeUtil {
 
     /**
      * 脱敏
+     * <p>
+     * 正则缺失（null / 空白）属于调用方的编程错误，此时 <b>fail-closed</b> 返回整体掩码
+     * {@link StrConst#MASK_REPLACEMENT}，而不是把原文原样交出去 —— 后者会让「脱敏」变成明文的
+     * 直通通道（手机号、身份证等会以「已脱敏」的名义落进日志）。本类专用的脱敏方法在参数非法时
+     * 同样返回整体掩码，此处与之一致。
+     * </p>
      *
      * @param text    待脱敏文本
-     * @param regex   正则表达式
+     * @param regex   正则表达式；缺失时整体掩码
      * @param replace 替换字符
      * @return 脱敏后的文本
      */
@@ -31,7 +37,7 @@ public final class DesensitizeUtil {
             return StrConst.EMPTY;
         }
         if (StringUtils.isBlank(regex)){
-            return text;
+            return StrConst.MASK_REPLACEMENT;
         }
         return RegExUtils.replaceAll(text, regex, replace);
     }

@@ -58,8 +58,12 @@ public class SnowdriftRabbitMqConfiguration {
         return new MqRabbitContextAdvice(contextPropagator);
     }
 
+    /**
+     * <b>必须是 static</b>：本类实现 {@link BeanPostProcessor}，非 static 工厂方法会迫使配置类提前实例化
+     * （连带其依赖在 BeanPostProcessor 就绪前被创建），且容器对这种情况不打日志。
+     */
     @Bean
-    public MqRabbitListenerContextBinder mqRabbitListenerContextBinder(MqRabbitContextAdvice mqRabbitContextAdvice) {
+    public static MqRabbitListenerContextBinder mqRabbitListenerContextBinder(MqRabbitContextAdvice mqRabbitContextAdvice) {
         return new MqRabbitListenerContextBinder(mqRabbitContextAdvice);
     }
 }

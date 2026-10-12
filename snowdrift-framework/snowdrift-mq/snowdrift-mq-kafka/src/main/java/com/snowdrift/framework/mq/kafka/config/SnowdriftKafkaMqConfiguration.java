@@ -88,8 +88,13 @@ public class SnowdriftKafkaMqConfiguration {
         return new MqKafkaContextBatchInterceptor(contextPropagator);
     }
 
+    /**
+     * <b>必须是 static</b>：本类实现 {@link BeanPostProcessor}，BeanPostProcessor 的工厂方法
+     * 若为非 static，会迫使配置类提前实例化（连带其依赖在 BeanPostProcessor 就绪前被创建），
+     * 而容器对这种情况不打日志（只有 BeanFactoryPostProcessor 会），属于静默的装配顺序劣化。
+     */
     @Bean
-    public MqKafkaContainerContextBinder mqKafkaContainerContextBinder(
+    public static MqKafkaContainerContextBinder mqKafkaContainerContextBinder(
             MqKafkaContextRecordInterceptor mqKafkaContextRecordInterceptor,
             MqKafkaContextBatchInterceptor mqKafkaContextBatchInterceptor) {
         return new MqKafkaContainerContextBinder(mqKafkaContextRecordInterceptor, mqKafkaContextBatchInterceptor);

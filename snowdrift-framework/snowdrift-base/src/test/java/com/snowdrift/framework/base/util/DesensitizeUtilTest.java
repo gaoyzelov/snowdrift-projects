@@ -305,12 +305,24 @@ class DesensitizeUtilTest {
         }
 
         @Test
-        @DisplayName("空白文本返回空串，空正则原样返回")
+        @DisplayName("空白文本返回空串；正则缺失时 fail-closed 整体掩码，绝不原样返回明文")
         void edgeInputs() {
             assertThat(DesensitizeUtil.process(null, "\\d", "*")).isEmpty();
             assertThat(DesensitizeUtil.process("  ", "\\d", "*")).isEmpty();
-            assertThat(DesensitizeUtil.process("abc", "", "*")).isEqualTo("abc");
-            assertThat(DesensitizeUtil.process("abc", null, "*")).isEqualTo("abc");
+            // 正则缺失是调用方的编程错误，此时「原样返回」等于把明文当脱敏结果交出去。
+            // 同类专用脱敏方法在参数非法时一律返回整体掩码，此处对齐该约定。
+            assertThat(DesensitizeUtil.process("abc", "", "*")).isEqualTo(StrConst.MASK_REPLACEMENT);
+            assertThat(DesensitizeUtil.process("abc", null, "*")).isEqualTo(StrConst.MASK_REPLACEMENT);
+        }
+
+        @Test
+        @DisplayName("安全边界：正则缺失时不得泄露原文（如手机号、身份证）")
+        void missingRegexNeverLeaksPlaintext() {
+            assertThat(DesensitizeUtil.process("13812345678", "  ", "*"))
+                    .doesNotContain("13812345678")
+                    .isEqualTo(StrConst.MASK_REPLACEMENT);
+            assertThat(DesensitizeUtil.process("110101199003074567", null, "*"))
+                    .doesNotContain("110101199003074567");
         }
 
         @Test

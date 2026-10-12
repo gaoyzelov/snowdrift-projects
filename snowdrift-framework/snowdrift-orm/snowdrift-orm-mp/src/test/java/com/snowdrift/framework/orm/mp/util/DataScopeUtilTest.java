@@ -1,5 +1,6 @@
 package com.snowdrift.framework.orm.mp.util;
 
+import com.baomidou.mybatisplus.core.plugins.InterceptorIgnoreHelper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -49,5 +50,31 @@ class DataScopeUtilTest {
                 .isInstanceOf(IllegalStateException.class).hasMessage("ds-boom");
         assertThatThrownBy(() -> DataScopeUtil.ignore(failingSupplier))
                 .isInstanceOf(IllegalStateException.class).hasMessage("ds-boom2");
+    }
+
+    @Test
+    @DisplayName("嵌套（反方向）：外层忽略数据权限、内层忽略租户时，两者在体内共存且退出后正确回收")
+    void nestedIgnoreKeepsOuterDataPermissionFlag() {
+        DataScopeUtil.ignore(() -> {
+            assertThat(dataPermissionIgnored()).isTrue();
+
+            TenantUtil.ignore(() -> {
+                assertThat(dataPermissionIgnored()).isTrue();
+                assertThat(tenantIgnored()).isTrue();
+            });
+
+            assertThat(dataPermissionIgnored()).isTrue();
+            assertThat(tenantIgnored()).isFalse();
+        });
+
+        assertThat(InterceptorIgnoreHelper.hasIgnoreStrategy()).isFalse();
+    }
+
+    private static boolean tenantIgnored() {
+        return InterceptorIgnoreHelper.willIgnoreTenantLine("snowdrift-probe");
+    }
+
+    private static boolean dataPermissionIgnored() {
+        return InterceptorIgnoreHelper.willIgnoreDataPermission("snowdrift-probe");
     }
 }

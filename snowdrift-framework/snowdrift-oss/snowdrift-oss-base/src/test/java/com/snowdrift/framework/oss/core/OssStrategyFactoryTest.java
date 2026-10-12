@@ -50,6 +50,34 @@ class OssStrategyFactoryTest {
         return config;
     }
 
+    @Test
+    @DisplayName("reload：DTO 未携带 configKey 时回退到入参 key，不得出现「旧实例已删、新实例未注册」")
+    void reloadFallsBackToParameterKeyWhenDtoKeyBlank() {
+        IOssService oldService = mockService();
+        factory.register("inst", oldService);
+
+        IOssService newService = mockService();
+        // 真实形态：调用方知道 key 是 "inst"，但配置对象是新建的、没带 configKey
+        OssConfigDTO reloaded = config(null, true, false);
+
+        factory.reload("inst", reloaded, cfg -> newService);
+
+        assertThat(factory.contains("inst")).isTrue();
+        assertThat(factory.getService("inst")).isSameAs(newService);
+    }
+
+    @Test
+    @DisplayName("reload：DTO 自带 configKey 时，移除与注册使用同一个 key")
+    void reloadUsesSameKeyForRemoveAndRegister() {
+        IOssService newService = mockService();
+        OssConfigDTO reloaded = config("inst", true, false);
+        factory.register("inst", mockService());
+
+        factory.reload("inst", reloaded, cfg -> newService);
+
+        assertThat(factory.getService("inst")).isSameAs(newService);
+    }
+
     // ========== register / getService ==========
 
     @Test

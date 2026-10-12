@@ -17,6 +17,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.beans.factory.SmartInitializingSingleton;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 
@@ -112,6 +115,40 @@ public class SnowdriftOrmMpConfiguration {
         PaginationInnerInterceptor paginationInterceptor = this.getPaginationInnerInterceptor(paginationProperties);
         interceptor.addInnerInterceptor(paginationInterceptor);
         return interceptor;
+    }
+
+    /**
+     * 拦截器被使用者覆盖时的诊断告警
+     * <p>
+     * {@link #mybatisPlusInterceptor} 带 {@code @ConditionalOnMissingBean}，使用者只要声明一个
+     * {@link MybatisPlusInterceptor} Bean，框架的多租户、数据权限、防全表、乐观锁、分页就会<b>整体退避</b>。
+     * 退避本身是必要的（否则会与使用者的实例冲突），但它是「一行 Bean 定义让租户隔离归零」的形态，
+     * 静默不可接受 —— 此处显式告警，指明哪些保护没有注册。
+     * </p>
+     * <p>
+     * 判据是「容器里生效的 MybatisPlusInterceptor 是否由本配置类声明」，
+     * 因此使用者自行注册、或通过其它配置类注册都能被识别。
+     * </p>
+     */
+    @Bean
+    public SmartInitializingSingleton ormMpInterceptorOverrideWarner(ConfigurableListableBeanFactory beanFactory,
+                                                                    OrmMpTenantProperties tenantProperties) {
+        return () -> {
+            for (String beanName : beanFactory.getBeanNamesForType(MybatisPlusInterceptor.class, true, false)) {
+                BeanDefinition definition = beanFactory.getBeanDefinition(beanName);
+                String factoryBeanName = definition.getFactoryBeanName();
+                if (factoryBeanName != null
+                        && beanFactory.getBean(factoryBeanName) instanceof SnowdriftOrmMpConfiguration) {
+                    // 框架自己的拦截器生效，无需告警
+                    return;
+                }
+            }
+            log.warn("[Snowdrift-ORM] MybatisPlusInterceptor 已被使用者提供的实例取代，"
+                            + "框架的{}、数据权限、防全表更新删除、乐观锁、分页拦截器均未注册。"
+                            + "若需要这些保护，请不要自行声明 MybatisPlusInterceptor 实例，"
+                            + "而是在框架已注册的实例上追加自定义 InnerInterceptor。",
+                    Boolean.TRUE.equals(tenantProperties.getEnabled()) ? "多租户隔离" : "多租户隔离（当前已关闭）");
+        };
     }
 
     /**

@@ -55,8 +55,12 @@ public class SnowdriftRocketMqConfiguration {
 
     // ========== 消费上下文自动恢复（原生 @RocketMQMessageListener 容器级） ==========
 
+    /**
+     * <b>必须是 static</b>：本类实现 {@link BeanPostProcessor}，非 static 工厂方法会迫使配置类提前实例化
+     * （连带其依赖在 BeanPostProcessor 就绪前被创建），且容器对这种情况不打日志。
+     */
     @Bean
-    public MqRocketContainerContextBinder mqRocketContainerContextBinder(MqContextPropagator contextPropagator) {
+    public static MqRocketContainerContextBinder mqRocketContainerContextBinder(MqContextPropagator contextPropagator) {
         return new MqRocketContainerContextBinder(contextPropagator);
     }
 }

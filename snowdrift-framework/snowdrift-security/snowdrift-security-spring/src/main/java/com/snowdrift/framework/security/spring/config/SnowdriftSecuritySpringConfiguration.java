@@ -77,6 +77,7 @@ public class SnowdriftSecuritySpringConfiguration {
      * </p>
      */
     @Bean
+    @ConditionalOnMissingBean(SecurityFilterChain.class)
     public SecurityFilterChain securityFilterChain(HttpSecurity http, TokenStore tokenStore,
                                                    RequestMappingHandlerMapping handlerMapping) throws Exception {
         List<String> anonymousPaths = AnonymousScanner.scan(handlerMapping);

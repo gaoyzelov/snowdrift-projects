@@ -332,6 +332,9 @@ class QuartzScheduleServiceImplTest {
     @Test
     @DisplayName("triggerJob：透传 params 到 JobDataMap；null 时用空 map")
     void triggerJob() throws SchedulerException {
+        // 前置存在性检查（与 pause/resume/update 一致）
+        when(scheduler.checkExists(any(JobKey.class))).thenReturn(true);
+
         service.triggerJob(key("j", "g"), Map.of("p", 1));
 
         ArgumentCaptor<JobDataMap> captor = ArgumentCaptor.forClass(JobDataMap.class);
@@ -345,8 +348,19 @@ class QuartzScheduleServiceImplTest {
     }
 
     @Test
+    @DisplayName("triggerJob：任务不存在时报“不存在”，不再退化成语义模糊的“触发失败”")
+    void triggerJobRejectsMissingJob() throws SchedulerException {
+        when(scheduler.checkExists(any(JobKey.class))).thenReturn(false);
+
+        assertThatThrownBy(() -> service.triggerJob(key("j", "g"), null))
+                .isInstanceOf(ScheduleException.class)
+                .hasMessage("Quartz 任务不存在，无法手动触发");
+    }
+
+    @Test
     @DisplayName("triggerJob：SchedulerException 报“触发失败”")
     void triggerJobSchedulerException() throws SchedulerException {
+        when(scheduler.checkExists(any(JobKey.class))).thenReturn(true);
         doThrow(new SchedulerException("boom")).when(scheduler).triggerJob(any(JobKey.class), any(JobDataMap.class));
 
         assertThatThrownBy(() -> service.triggerJob(key("j", "g"), null))

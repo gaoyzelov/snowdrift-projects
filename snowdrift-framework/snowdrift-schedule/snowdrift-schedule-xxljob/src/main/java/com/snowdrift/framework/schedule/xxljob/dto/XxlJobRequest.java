@@ -51,6 +51,18 @@ public class XxlJobRequest extends JobRequest {
 
     /**
      * 任务运行状态：0=停止，1=运行
+     * <p>
+     * <b>{@code null} 会被当作 1（运行）提交</b>，对 {@code updateJob} 而言这意味着一件事：
+     * 只改 cron、没带该字段的调用，会把一个<b>已暂停的任务重新启动</b>。要「保持当前状态」，
+     * 必须显式回填：{@code request.setTriggerStatus(getJob(jobKey).getStatus() == JobStatusEnum.PAUSED ? 0 : 1)}，
+     * 或先调 {@code getJob} 查询后再更新。
+     * </p>
+     * <p>
+     * 之所以不做「{@code null} 时自动回查当前状态」：xxl-job admin 没有实现本地状态缓存，
+     * 得知旧状态只能额外发一次 HTTP 请求（更新由此从 1 次请求变成 2 次）。这是一处
+     * <b>有意的取舍</b>——由调用方按需选择是否付出这次回查。因此 update 成功日志会打印
+     * 实际提交的 {@code triggerStatus}，便于在日志里确认任务没有被意外重启。
+     * </p>
      */
     private Integer triggerStatus;
 }

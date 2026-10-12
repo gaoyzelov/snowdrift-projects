@@ -1,6 +1,7 @@
 package com.snowdrift.framework.base.util;
 
 import com.snowdrift.framework.base.exception.BizException;
+import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -13,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @description 雪花ID工具类 参考地址：https://www.cnblogs.com/relucent/p/4955340.html
  * @since 1.0.0
  */
+@Slf4j
 public final class SnowflakeUtil {
 
     // ==============================Fields===========================================
@@ -200,6 +202,12 @@ public final class SnowflakeUtil {
      * @return SnowflakeUtil 实例（单例）
      */
     public static SnowflakeUtil getInstance() {
+        // 上面的 Javadoc 警告不会被运行时开发者看到，多副本部署下这是「无声地产生重复 ID」，
+        // 因此在运行期留下可观测痕迹。刻意每次调用都提示而非「整个 JVM 只提示一次」：
+        // 后者在多副本场景下只能保证其中一个副本告警，其余副本日志干净，反而更难排查。
+        log.warn("[Snowdrift-Base] SnowflakeUtil.getInstance() 使用默认 workerId=0, datacenterId=0，"
+                + "多节点/多 JVM 部署会产生重复 ID。分布式环境必须显式指定标识，"
+                + "例如 getInstance(workerId, datacenterId)。是否使用默认值可用本方法的日志确认。");
         return getInstance(0, 0);
     }
 
