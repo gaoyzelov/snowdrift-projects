@@ -27,6 +27,13 @@ public class OrmMpBaseProperties implements Serializable {
     private Boolean optimisticLock = Boolean.FALSE;
 
     /**
+     * 是否显式允许业务自定义的 MybatisPlusInterceptor 完整替换框架默认实例。
+     * 默认禁止，以免多租户、数据权限、防全表操作和分页等保护被无意整体绕过。
+     */
+    @NotNull
+    private Boolean allowInterceptorOverride = Boolean.FALSE;
+
+    /**
      * 是否启用字段加解密能力（默认关闭）
      * <p><b>本开关只负责校验并初始化密钥，不会自动加密任何字段。</b>指定哪些字段需要加解密由使用者在实体上标注，
      * 完整用法：</p>

@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
  * <p>
  * 拦截 Sa-Token 框架抛出的异常，统一转换为 {@link Result} 响应。
  * 与 {@code WebExceptionHandler} 配合使用，对 Sa-Token 的特定异常
- * 做更精确的映射（401 未登录、403 无权限/无角色等）。
+ * 做更精确的业务错误映射（未登录、无权限/无角色等）。
  * </p>
  *
  * @author gaoyzelov
@@ -60,7 +60,7 @@ public class SaTokenExceptionHandler {
     }
 
     /**
-     * 账号封禁异常 — 归为禁止访问（403），避免落入通用 500
+     * 账号封禁异常 — 归为禁止访问业务错误，避免落入通用 500
      */
     @ExceptionHandler(DisableServiceException.class)
     public Result<Void> handleDisableServiceException(DisableServiceException e, HttpServletRequest request) {

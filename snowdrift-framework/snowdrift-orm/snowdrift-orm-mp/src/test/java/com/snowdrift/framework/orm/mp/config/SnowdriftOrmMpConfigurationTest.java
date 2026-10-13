@@ -110,7 +110,7 @@ class SnowdriftOrmMpConfigurationTest {
         OrmMpTenantProperties tenantProps = new OrmMpTenantProperties();
         tenantProps.setEnabled(tenantEnabled);
         return configuration.mybatisPlusInterceptor(new OrmMpPaginationProperties(), tenantProps,
-                Optional.<IDataScopeProvider>empty());
+                Optional.<IDataScopeProvider>empty(), List.of());
     }
 
     @Test

@@ -26,5 +26,6 @@ class SpringSecurityPropertiesTest {
         assertThat(properties.getHeaderName()).isEqualTo("Authorization");
         assertThat(properties.getTimeout()).isEqualTo(86400L);
         assertThat(properties.getPrefix()).isEqualTo("Bearer");
+        assertThat(properties.getTokenStoreMode()).isEqualTo(SpringSecurityProperties.TokenStoreMode.REDIS);
     }
 }

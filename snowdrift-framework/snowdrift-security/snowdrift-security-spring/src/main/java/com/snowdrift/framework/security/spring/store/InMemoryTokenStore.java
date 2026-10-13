@@ -8,11 +8,11 @@ import lombok.extern.slf4j.Slf4j;
 import java.time.Duration;
 
 /**
- * 基于内存的 {@link TokenStore} 默认实现
+ * 基于内存的 {@link TokenStore} 实现
  * <p>
  * 使用 Guava Cache 存储 Token 映射，LRU 自动淘汰防止内存溢出。
  * 绝对过期和闲置过期由 {@link AbstractTokenStore#get(String)} 统一校验。
- * 生产环境建议启用 Redis（引入 {@code spring-boot-starter-data-redis} 即可自动切换）。
+ * 仅适用于开发或单实例部署；使用者必须显式选择 MEMORY 模式，Redis 不可用时不会自动回退。
  * </p>
  *
  * @author gaoyzelov

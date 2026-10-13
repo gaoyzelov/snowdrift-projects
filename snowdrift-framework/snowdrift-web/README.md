@@ -71,7 +71,7 @@ snowdrift:
 `@RestControllerAdvice` 统一拦截异常并包装为 `Result` 返回。
 
 **响应语义：**
-- **HTTP 状态**：本 advice 返回 `Result`，HTTP 状态统一为 **200**（业务成败由 body.code 区分）；安全模块在 filter 级会单独设置 HTTP 401/403。
+- **HTTP 状态**：本 advice 返回 `Result`，HTTP 状态统一为 **200**（业务成败由 body.code 区分）；Spring Security filter 级认证/鉴权失败也统一返回 HTTP 200，由 body.code 区分错误类型。
 - **body.code**：遵循 `ResultCode`——成功 `1`、失败 `0`、`1xxx` 客户端/资源侧、`2xxx` 服务端。
 - **body.msg**：为 `ResultCode` 内置中文或业务抛出的中文直文，**不依赖 i18n 开关**，不会把 i18n key 透给前端。
 

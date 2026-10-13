@@ -60,9 +60,10 @@ snowdrift:
       enabled: false                 # 设为 true 启用
       csrf-enabled: false             # REST API 默认关闭 CSRF
       cors-enabled: false             # 默认关闭 CORS
+      token-store-mode: redis          # 默认 Redis；memory 必须显式配置且只适用于开发/单实例
 ```
 
-> Token 存储自动选择：classpath 中有 `RedisConnectionFactory` 时使用 `RedisTokenStore`，否则使用 `InMemoryTokenStore`。无需单独配置。
+> Spring Security 的 TokenStore 默认使用 Redis：启用模块时必须存在 `RedisConnectionFactory`，否则启动失败。开发或单实例部署可显式设置 `snowdrift.security.spring.token-store-mode=memory`；该模式不会在多实例间共享登录态。提供自定义 `TokenStore` Bean 时会覆盖内置选择。
 
 ## 代码示例
 
@@ -118,7 +119,18 @@ String username = SecurityContextHolder.getUsername();
 Long tenantId = SecurityContextHolder.getTenantId();
 ```
 
-### 自定义 Token 存储（Spring Security 实现）
+### Token 存储模式与自定义实现（Spring Security）
+
+Redis 是默认模式，可在配置文件中明确指定；内存模式需显式启用：
+
+```yaml
+snowdrift:
+  security:
+    spring:
+      token-store-mode: memory # 仅建议开发或单实例部署
+```
+
+也可以提供自定义 `TokenStore` Bean（例如数据库实现），它优先于内置模式：
 
 ```java
 @Component
@@ -133,18 +145,18 @@ public class CustomTokenStore extends AbstractTokenStore {
 |------|----------|-----------------|
 | 框架体积 | 轻量 | 重量 |
 | 注解鉴权 | `@SaCheckLogin` / `@SaCheckRole` / `@SaCheckPermission` | `@PreAuthorize` |
-| Token 存储 | Sa-Token 内置 DAO | 可插拔 TokenStore（InMemory / Redis，自动选择） |
+| Token 存储 | Sa-Token 内置 DAO | 可插拔 TokenStore（默认 Redis；内存模式需显式启用） |
 | 学习曲线 | 低 | 高 |
 | 企业集成 | — | ✅ 标准安全体系 |
 
 ## 注意事项
 
-- **统一业务码**：未登录 = `1001`、无权限/无角色/账号封禁 = `1002`，body 文案来自 `ResultCode`（中文直文、不依赖 i18n 开关）。Spring Security 模块在 filter 级会同时把 HTTP 状态置为 401/403，advice/Controller 级为 HTTP 200 + body 业务码——前端应**以 body.code 为准**。
+- **统一业务码**：未登录 = `1001`、无权限/无角色/账号封禁 = `1002`，body 文案来自 `ResultCode`（中文直文、不依赖 i18n 开关）。Spring Security filter 级认证/鉴权失败当前也返回 HTTP 200，错误类型通过 body 业务码表达；前端应**以 body.code 为准**。
 - **两套实现语义差异**：
-  - `isAuthenticated()`：Sa-Token 对无效 token 返回 false；Spring Security 若未禁用匿名，无 token/坏 token 在 permitAll/`@Anonymous` 路径下可能被当成“已认证”。如需严格语义请禁用匿名或自行处理。
+  - `isAuthenticated()`：Sa-Token 对无效 token 返回 false；Spring Security 自动配置禁用了匿名认证，未认证请求不会被包装为已认证的匿名身份。
   - 权限/角色通配：Sa-Token 支持通配，Spring Security 实现为精确匹配。
 - **登录状态判断**：业务请通过 `SecurityContextHolder.peekContext()`（可空）或 `getContext()`（无上下文抛 `BizException`）读取；框架拦截器负责在请求结束清理上下文。
-- 两个后端各由自身 `enabled` 属性驱动、**互不感知**。若同时启用 sa-token 与 spring，最终生效的 `ISecurityService` 由自动配置顺序决定（不可控），spring 模块启动时会打印 WARN 诊断提示；同一应用请仅启用其中一个。
+- 两个后端各由自身 `enabled` 属性驱动；若同时启用 sa-token 与 spring，Spring Security 模块会在启动期直接失败并说明冲突。一个应用只应启用其中一个后端。
 
 ## 配置属性参考
 
@@ -190,3 +202,4 @@ public class CustomTokenStore extends AbstractTokenStore {
 | `enabled` | Boolean | false | 启用开关 |
 | `csrf-enabled` | boolean | false | CSRF 开关 |
 | `cors-enabled` | boolean | false | CORS 开关 |
+| `token-store-mode` | `REDIS` / `MEMORY` | `REDIS` | Token 存储模式。Redis 模式缺少 `RedisConnectionFactory` 时启动失败；MEMORY 需显式启用，仅适用于开发/单实例。自定义 `TokenStore` Bean 优先 |

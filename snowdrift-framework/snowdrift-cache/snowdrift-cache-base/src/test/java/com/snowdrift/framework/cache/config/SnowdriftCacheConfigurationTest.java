@@ -89,21 +89,21 @@ class SnowdriftCacheConfigurationTest {
     }
 
     @Test
-    @DisplayName("切面按 Bean 条件装配：无 ICacheService / IDistributedLockService 时不注册")
-    void aspectsAreConditional() {
+    @DisplayName("切面始终注册：后端缺失时仍拦截注解方法，由切面 fail-closed")
+    void aspectsAreAlwaysRegistered() {
         runner.run(context -> {
-            assertThat(context).doesNotHaveBean(RepeatSubmitAspect.class);
-            assertThat(context).doesNotHaveBean(DistributedLockAspect.class);
+            assertThat(context).hasSingleBean(RepeatSubmitAspect.class);
+            assertThat(context).hasSingleBean(DistributedLockAspect.class);
         });
 
         runner.withBean(ICacheService.class, () -> mock(ICacheService.class)).run(context -> {
             assertThat(context).hasSingleBean(RepeatSubmitAspect.class);
-            assertThat(context).doesNotHaveBean(DistributedLockAspect.class);
+            assertThat(context).hasSingleBean(DistributedLockAspect.class);
         });
 
         runner.withBean(IDistributedLockService.class, () -> mock(IDistributedLockService.class)).run(context -> {
             assertThat(context).hasSingleBean(DistributedLockAspect.class);
-            assertThat(context).doesNotHaveBean(RepeatSubmitAspect.class);
+            assertThat(context).hasSingleBean(RepeatSubmitAspect.class);
         });
     }
 

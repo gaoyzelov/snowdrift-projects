@@ -153,7 +153,7 @@ snowdrift:
     max-size: 10000
 ```
 
-后端自动选择优先级：**Redis 优先、Caffeine 兜底**（进程内、无外部依赖）；分布式锁由 `snowdrift-cache-redis` 内置的 Redisson 提供，未引入 Redis 后端时 `@DistributedLock` 不生效。
+缓存后端自动选择优先级：**Redis 优先、Caffeine 兜底**（进程内、无外部依赖）。分布式锁由 `snowdrift-cache-redis` 内置的 Redisson 提供；若没有锁后端，`@DistributedLock` 标注的方法会在业务执行前失败，不会静默无锁执行。
 
 ### 安全认证
 

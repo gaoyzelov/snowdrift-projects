@@ -118,7 +118,7 @@ User user = lockService.executeWithLock("order:pay:1", 3, 10, TimeUnit.SECONDS,
         () -> orderService.doPay(orderId));
 ```
 
-> - 分布式锁由 **Redisson** 提供，需引入 `snowdrift-cache-redis`；未引入时无 `IDistributedLockService` Bean，`@DistributedLock` 切面不生效（注解静默无效，请确保按需引入）。
+> - 分布式锁由 **Redisson** 提供，需引入 `snowdrift-cache-redis` 或提供自定义 `IDistributedLockService`。切面始终注册；若缺少锁后端，调用标注 `@DistributedLock` 的方法会在业务执行前抛 `IllegalStateException`，不会无锁放行业务。
 > - `tryLock` 等待期间线程被中断会抛 `BizException("获取分布式锁被中断")`，与“锁竞争失败”语义区分。
 > - `@DistributedLock` 拿到锁后由切面在 finally 释放；业务执行时长不应超过 `leaseTime`（非看门狗时），否则锁会被其它请求抢占。
 
@@ -202,7 +202,7 @@ public class ProtoBufSerializer implements ICacheSerializer {
 - 需要自定义 `CacheManager`：给自己的 Bean 加 `@Primary`，或用 `spring.autoconfigure.exclude` 排除本模块的自动配置。**不要**依赖框架侧的 `CacheManager` 自动退避——Redis 侧的 `CacheManager` 故意不带 `@ConditionalOnMissingBean`（否则 Boot 的默认 `CacheManager` 会先生效，使本模块的序列化器与 TTL 配置静默失效）；两个同类型 Bean 且都没有 `@Primary` 时，启动期即报 `NoUniqueBeanDefinitionException`。
 - 框架专用的 `snowdriftRedisTemplate`（`RedisTemplate<String, String>`）**不再标注 `@Primary`**：应用按类型注入 `RedisTemplate` 时若容器中还有 Boot 的模板，会因多个候选而显式报错（而不是静默拿到 String-String 模板）；框架内部按 Bean 名注入。
 - Bean Validation 实现（`hibernate-validator`）由 `snowdrift-base` 显式声明并向下传递，`@Validated @ConfigurationProperties` 可正常绑定；`bizlog-sdk` 偶然带进来的旧版实现已在 `snowdrift-log` 中排除。
-- **自动配置顺序（改动前请先读）**：核心配置 `SnowdriftCacheConfiguration` 用 `@ConditionalOnBean(ICacheService.class)` / `@ConditionalOnBean(IDistributedLockService.class)` 决定是否注册 `@RepeatSubmit`、`@DistributedLock` 切面，而 Bean 条件**只能看到解析顺序上先处理过的配置类**。因此后端配置必须显式排在核心配置之前（`SnowdriftRedissonConfiguration` / `SnowdriftRedisConfiguration` / `SnowdriftCaffeineConfiguration` 均声明了 `before = SnowdriftCacheConfiguration.class`）。按类名排序时 `cache.config.*` 会排在 `cache.redis.*` **之前**，此前 Redis 侧缺少该声明，导致 **`@RepeatSubmit`、`@DistributedLock` 全部静默失效且不报错**；`SnowdriftRedisConfigurationTest` 中两个切面装配用例即为该回归的守卫。
+- `@RepeatSubmit` 与 `@DistributedLock` 切面始终注册，后端配置顺序不会让注解静默失效：调用时若分别缺少 `ICacheService` 或 `IDistributedLockService`，会在执行业务前抛 `IllegalStateException`。为保证保护实际生效，请按部署需要引入缓存/锁后端或提供自定义实现。
 
 ## 后端对比
 
@@ -299,7 +299,7 @@ public class MyCacheConfig implements CachingConfigurer {
 - **新增泛型 API**：`ICacheService#get(String, Type)`、`#hget(String, String, Type)` 与 `ICacheSerializer#deserialize(String, Type)`；`ICacheService#get(key, List.class)` 只能得到 Map 元素的老问题，改用这些重载即可正确还原元素类型。
 - **`@Cacheable` 值序列化器**：恒为 `cacheValueMapper()`（写 `@class`）；Spring Cache 拿不到方法返回类型，类型信息必须随 JSON 落盘。
 - **细节修复**：Caffeine 后端对超过纳秒上限（约 292 年）的 `key-ttl` 不再抛 `ArithmeticException`，按"永不过期"处理；`SnowdriftRedisCacheServiceImpl` / `SnowdriftRedissonDistributedLockServiceImpl` 补构造期协作者校验（缺失时快速失败，不再等到首个命令才 NPE）。
-- **修复（切面静默失效）**：Redis / Redisson 后端下 `@RepeatSubmit`、`@DistributedLock` 此前因自动配置顺序（后端排在核心配置之后）而**完全没有生效**；现由后端配置的 `before = SnowdriftCacheConfiguration.class` 修正。升级后这两个注解会真正开始拦截——若历史上依赖过“防重/加锁没生效”的现状（例如靠数据库唯一键兜底），请回归验证。
+- **切面装配改为 fail-closed**：`@RepeatSubmit`、`@DistributedLock` 切面始终注册，不再依赖后端配置顺序；缺少相应服务时，被注解方法会在执行业务前失败。此前依赖“防重/加锁没生效”的应用（例如靠数据库唯一键兜底）升级后请确认已引入对应后端。
 
 ## 配置属性参考
 

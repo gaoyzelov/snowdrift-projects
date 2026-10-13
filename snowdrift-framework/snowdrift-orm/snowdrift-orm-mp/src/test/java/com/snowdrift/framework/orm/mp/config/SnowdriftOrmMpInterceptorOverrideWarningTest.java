@@ -1,6 +1,7 @@
 package com.snowdrift.framework.orm.mp.config;
 
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import com.baomidou.mybatisplus.extension.plugins.inner.InnerInterceptor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -11,6 +12,7 @@ import org.springframework.boot.test.system.OutputCaptureExtension;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import static org.mockito.Mockito.mock;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
@@ -18,8 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author gaoyzelov
  * @date 2026/10/12
- * @description 使用者自建 MybatisPlusInterceptor 时的诊断：多租户/数据权限/防全表拦截器会整体退避，
- *              必须留下 WARN 而不是静默失效
+ * @description 使用者自建 MybatisPlusInterceptor 时默认启动失败；显式允许后告警，扩展器可安全追加插件
  * @since 1.0.0
  */
 @ExtendWith(OutputCaptureExtension.class)
@@ -34,25 +35,53 @@ class SnowdriftOrmMpInterceptorOverrideWarningTest {
                     "snowdrift.orm.mp.tenant.enabled=true");
 
     @Test
-    @DisplayName("使用者自建 MybatisPlusInterceptor：框架整体退避，并给出 WARN 说明哪些保护未注册")
-    void warnsWhenFrameworkInterceptorIsReplaced(CapturedOutput output) {
+    @DisplayName("默认禁止使用者整体替换 MybatisPlusInterceptor，启动失败并给出扩展建议")
+    void failsWhenFrameworkInterceptorIsReplacedByDefault() {
         runner.withUserConfiguration(UserInterceptorConfiguration.class).run(context -> {
-            assertThat(context).hasSingleBean(MybatisPlusInterceptor.class);
-            assertThat(context.getBean(MybatisPlusInterceptor.class))
-                    .isSameAs(UserInterceptorConfiguration.USER_INTERCEPTOR);
-
-            assertThat(output).contains(MARKER);
-            assertThat(output).contains("多租户");
-            assertThat(output).contains("数据权限");
+            assertThat(context).hasFailed();
+            Throwable cause = rootCause(context.getStartupFailure());
+            assertThat(cause)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining(MARKER)
+                    .hasMessageContaining("MybatisPlusInterceptorCustomizer");
         });
     }
 
     @Test
-    @DisplayName("无人覆盖时不告警，避免假警报")
+    @DisplayName("显式允许整体替换后启动并告警说明框架保护未注册")
+    void allowsOverrideOnlyWhenExplicitlyConfigured(CapturedOutput output) {
+        runner.withPropertyValues("snowdrift.orm.mp.allow-interceptor-override=true")
+                .withUserConfiguration(UserInterceptorConfiguration.class).run(context -> {
+                    assertThat(context).hasNotFailed();
+                    assertThat(context).hasSingleBean(MybatisPlusInterceptor.class);
+                    assertThat(context.getBean(MybatisPlusInterceptor.class))
+                            .isSameAs(UserInterceptorConfiguration.USER_INTERCEPTOR);
+
+                    assertThat(output).contains(MARKER);
+                    assertThat(output).contains("多租户");
+                    assertThat(output).contains("数据权限");
+                });
+    }
+
+    @Test
+    @DisplayName("无人覆盖时不告警，默认框架拦截器正常注册")
     void silentWhenFrameworkInterceptorApplied(CapturedOutput output) {
         runner.run(context -> {
             assertThat(context).hasBean("mybatisPlusInterceptor");
             assertThat(output).doesNotContain(MARKER);
+        });
+    }
+
+    @Test
+    @DisplayName("通过扩展器追加自定义拦截器，不替换框架默认保护")
+    void customizerAppendsToFrameworkInterceptor() {
+        runner.withUserConfiguration(UserCustomizerConfiguration.class).run(context -> {
+            assertThat(context).hasNotFailed();
+            MybatisPlusInterceptor interceptor = context.getBean(MybatisPlusInterceptor.class);
+            assertThat(interceptor.getInterceptors())
+                    .contains(UserCustomizerConfiguration.CUSTOM_INTERCEPTOR);
+            assertThat(interceptor.getInterceptors())
+                    .anyMatch(i -> i instanceof com.baomidou.mybatisplus.extension.plugins.inner.BlockAttackInnerInterceptor);
         });
     }
 
@@ -65,5 +94,24 @@ class SnowdriftOrmMpInterceptorOverrideWarningTest {
         MybatisPlusInterceptor userMybatisPlusInterceptor() {
             return USER_INTERCEPTOR;
         }
+    }
+
+    @Configuration(proxyBeanMethods = false)
+    static class UserCustomizerConfiguration {
+
+        static final InnerInterceptor CUSTOM_INTERCEPTOR = mock(InnerInterceptor.class);
+
+        @Bean
+        MybatisPlusInterceptorCustomizer mybatisPlusInterceptorCustomizer() {
+            return interceptor -> interceptor.addInnerInterceptor(CUSTOM_INTERCEPTOR);
+        }
+    }
+
+    private static Throwable rootCause(Throwable failure) {
+        Throwable cause = failure;
+        while (cause != null && cause.getCause() != null) {
+            cause = cause.getCause();
+        }
+        return cause;
     }
 }

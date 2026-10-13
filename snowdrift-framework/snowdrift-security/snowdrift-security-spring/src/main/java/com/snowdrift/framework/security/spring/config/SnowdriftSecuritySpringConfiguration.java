@@ -13,14 +13,15 @@ import com.snowdrift.framework.security.spring.store.AbstractTokenStore;
 import com.snowdrift.framework.security.spring.store.InMemoryTokenStore;
 import com.snowdrift.framework.security.spring.store.RedisTokenStore;
 import com.snowdrift.framework.security.spring.store.TokenStore;
+import com.snowdrift.framework.security.spring.properties.SpringSecurityProperties.TokenStoreMode;
 import com.snowdrift.framework.security.spring.util.AnonymousScanner;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.core.env.Environment;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
@@ -128,12 +129,29 @@ public class SnowdriftSecuritySpringConfiguration {
     }
 
     /**
-     * Redis TokenStore（当容器中存在 RedisTemplate 时优先使用）
+     * 默认 Redis TokenStore。使用者可提供自定义 {@link TokenStore} 覆盖；
+     * 内存模式必须通过配置显式启用。
      */
     @Bean
-    @ConditionalOnBean(RedisConnectionFactory.class)
     @ConditionalOnMissingBean(TokenStore.class)
-    public TokenStore redisTokenStore(RedisConnectionFactory connectionFactory) {
+    public TokenStore tokenStore(ObjectProvider<RedisConnectionFactory> connectionFactories) {
+        if (properties.getTokenStoreMode() == TokenStoreMode.MEMORY) {
+            log.warn("[Snowdrift-Security] TokenStore 已显式配置为进程内 MEMORY 模式；"
+                    + "该模式不在实例间共享，重启或扩缩容后登录态不会保留。仅建议用于开发或单实例部署。");
+            return new InMemoryTokenStore(properties.getTimeout(), properties.getActiveTimeout());
+        }
+
+        RedisConnectionFactory connectionFactory = connectionFactories.getIfAvailable();
+        if (connectionFactory == null) {
+            throw new IllegalStateException("[Snowdrift-Security] TokenStore 默认模式为 REDIS，"
+                    + "但容器中没有 RedisConnectionFactory。请配置 Redis 连接，"
+                    + "或显式设置 snowdrift.security.spring.token-store-mode=memory "
+                    + "（仅适用于开发/单实例部署），也可提供自定义 TokenStore Bean。");
+        }
+        return redisTokenStore(connectionFactory);
+    }
+
+    private TokenStore redisTokenStore(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
         template.setKeySerializer(RedisSerializer.string());
@@ -145,15 +163,6 @@ public class SnowdriftSecuritySpringConfiguration {
                 properties.getTimeout(),
                 properties.getActiveTimeout(),
                 properties.getHeaderName() + StrConst.COLON + "token");
-    }
-
-    /**
-     * 内存 TokenStore（Redis 不可用时的默认实现）
-     */
-    @Bean
-    @ConditionalOnMissingBean(TokenStore.class)
-    public TokenStore inMemoryTokenStore() {
-        return new InMemoryTokenStore(properties.getTimeout(), properties.getActiveTimeout());
     }
 
     /**

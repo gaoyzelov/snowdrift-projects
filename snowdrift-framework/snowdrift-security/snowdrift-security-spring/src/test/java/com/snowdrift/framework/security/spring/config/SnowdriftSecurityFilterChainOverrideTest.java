@@ -38,7 +38,8 @@ class SnowdriftSecurityFilterChainOverrideTest {
                     SecurityAutoConfiguration.class,
                     SnowdriftSecuritySpringConfiguration.class))
             .withUserConfiguration(StubHandlerMappingConfiguration.class)
-            .withPropertyValues("snowdrift.security.spring.enabled=true");
+            .withPropertyValues("snowdrift.security.spring.enabled=true",
+                    "snowdrift.security.spring.token-store-mode=memory");
 
     @Test
     @DisplayName("无人提供 SecurityFilterChain 时注册框架链，且 Boot 默认链退避（全局仅一条）")

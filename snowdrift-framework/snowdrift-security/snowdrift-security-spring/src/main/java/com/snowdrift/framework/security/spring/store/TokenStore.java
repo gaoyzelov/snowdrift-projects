@@ -12,7 +12,7 @@ import java.time.Duration;
  * <p>
  * <b>实现：</b>{@link InMemoryTokenStore}（基于 Guava Cache，LRU 上限 2048，适用于单节点/开发调试）
  * 与 {@link RedisTokenStore}（分布式环境，通过 {@code RedisTemplate} 存取 Token，多实例共享会话）。
- * Spring 实现在 classpath 存在 {@code RedisConnectionFactory} 时自动选用 Redis，否则回退内存实现。
+ * Spring 实现默认要求 {@code RedisConnectionFactory} 并使用 Redis；内存实现必须通过配置显式启用。
  * <br>
  * <b>注意：</b>Sa-Token 模块（snowdrift-security-satoken）自带 Redis 集成插件，
  * 引入 {@code sa-token-dao-redis-jackson} 依赖即可启用，无需此接口。

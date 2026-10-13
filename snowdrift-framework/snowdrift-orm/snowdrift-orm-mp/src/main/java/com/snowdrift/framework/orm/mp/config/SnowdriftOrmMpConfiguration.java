@@ -24,6 +24,7 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 import org.springframework.context.annotation.Bean;
 
 import java.util.HexFormat;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -86,11 +87,15 @@ public class SnowdriftOrmMpConfiguration {
      * @param paginationProperties  分页配置属性
      * @param tenantProperties      多租户配置属性
      * @param optProvider     数据权限提供者（可选，业务应用实现后可自动注入）
+     * @param customizers     业务自定义扩展（按 Spring {@code @Order} 排序，在框架拦截器之后追加）
      * @return MybatisPlusInterceptor 实例
      */
     @Bean
     @ConditionalOnMissingBean
-    public MybatisPlusInterceptor mybatisPlusInterceptor(OrmMpPaginationProperties paginationProperties, OrmMpTenantProperties tenantProperties, Optional<IDataScopeProvider> optProvider) {
+    public MybatisPlusInterceptor mybatisPlusInterceptor(OrmMpPaginationProperties paginationProperties,
+                                                         OrmMpTenantProperties tenantProperties,
+                                                         Optional<IDataScopeProvider> optProvider,
+                                                         List<MybatisPlusInterceptorCustomizer> customizers) {
         MybatisPlusInterceptor interceptor = new MybatisPlusInterceptor();
 
         // 防止全表更新与删除插件。
@@ -114,6 +119,8 @@ public class SnowdriftOrmMpConfiguration {
         // 分页插件
         PaginationInnerInterceptor paginationInterceptor = this.getPaginationInnerInterceptor(paginationProperties);
         interceptor.addInnerInterceptor(paginationInterceptor);
+
+        customizers.forEach(customizer -> customizer.customize(interceptor));
         return interceptor;
     }
 
@@ -122,8 +129,8 @@ public class SnowdriftOrmMpConfiguration {
      * <p>
      * {@link #mybatisPlusInterceptor} 带 {@code @ConditionalOnMissingBean}，使用者只要声明一个
      * {@link MybatisPlusInterceptor} Bean，框架的多租户、数据权限、防全表、乐观锁、分页就会<b>整体退避</b>。
-     * 退避本身是必要的（否则会与使用者的实例冲突），但它是「一行 Bean 定义让租户隔离归零」的形态，
-     * 静默不可接受 —— 此处显式告警，指明哪些保护没有注册。
+     * 这是明显的保护降级，因此默认启动失败；仅在显式配置 {@code allow-interceptor-override=true} 后允许替换，
+     * 同时保留告警。通常应使用 {@link MybatisPlusInterceptorCustomizer} 扩展默认实例，而不是整体替换。
      * </p>
      * <p>
      * 判据是「容器里生效的 MybatisPlusInterceptor 是否由本配置类声明」，
@@ -143,11 +150,16 @@ public class SnowdriftOrmMpConfiguration {
                     return;
                 }
             }
-            log.warn("[Snowdrift-ORM] MybatisPlusInterceptor 已被使用者提供的实例取代，"
-                            + "框架的{}、数据权限、防全表更新删除、乐观锁、分页拦截器均未注册。"
-                            + "若需要这些保护，请不要自行声明 MybatisPlusInterceptor 实例，"
-                            + "而是在框架已注册的实例上追加自定义 InnerInterceptor。",
-                    Boolean.TRUE.equals(tenantProperties.getEnabled()) ? "多租户隔离" : "多租户隔离（当前已关闭）");
+            String message = "[Snowdrift-ORM] MybatisPlusInterceptor 已被使用者提供的实例取代，"
+                    + "框架的" + (Boolean.TRUE.equals(tenantProperties.getEnabled())
+                    ? "多租户隔离" : "多租户隔离（当前已关闭）")
+                    + "、数据权限、防全表更新删除、乐观锁、分页拦截器均未注册。"
+                    + "推荐注册 MybatisPlusInterceptorCustomizer 追加扩展；如确需完整替换，"
+                    + "请显式设置 snowdrift.orm.mp.allow-interceptor-override=true。";
+            if (!Boolean.TRUE.equals(baseProperties.getAllowInterceptorOverride())) {
+                throw new IllegalStateException(message + " 当前默认禁止拦截器整体替换。");
+            }
+            log.warn(message + " 已显式允许整体替换，请确认业务自行提供了所需保护。");
         };
     }
 

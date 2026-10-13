@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * <p>
  * 拦截 {@link DistributedLock @DistributedLock} 注解的方法，
  * 自动进行加锁 → 执行业务 → 释放锁。
- * 仅在容器中存在 {@link IDistributedLockService} Bean 时生效（即 Redisson 模块激活时）。
+ * 当锁后端未装配时，调用被注解方法会立即失败，不会无锁执行。
  * </p>
  *
  * @author gaoyzelov
@@ -42,6 +42,10 @@ public class DistributedLockAspect {
      */
     @Around("@annotation(lockAnno)")
     public Object around(ProceedingJoinPoint joinPoint, DistributedLock lockAnno) throws Throwable {
+        if (lockService == null) {
+            throw new IllegalStateException("@DistributedLock 未配置 IDistributedLockService，已拒绝执行业务方法；"
+                    + "请引入 snowdrift-cache-redis 或注册自定义锁实现");
+        }
         String key = SpELUtil.parseExpression(lockAnno.key(), joinPoint);
         if (StringUtils.isBlank(key)) {
             throw new BizException("SpEL 锁 key 解析失败，请检查 @DistributedLock key 配置: " + lockAnno.key());

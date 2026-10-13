@@ -25,6 +25,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class SpringSecurityProperties extends SecurityProperties {
 
     /**
+     * Token 存储模式。默认使用 Redis，避免多实例部署时登录态只保存在单个进程内。
+     */
+    @NotNull
+    private TokenStoreMode tokenStoreMode = TokenStoreMode.REDIS;
+
+    /**
      * 是否启用 CSRF 防护
      * REST API 默认关闭
      */
@@ -36,4 +42,14 @@ public class SpringSecurityProperties extends SecurityProperties {
      */
     @NotNull
     private Boolean corsEnabled = Boolean.FALSE;
+
+    /**
+     * Spring Security TokenStore 存储模式。
+     */
+    public enum TokenStoreMode {
+        /** Redis 不可用时启动失败；适用于共享登录态的常规部署。 */
+        REDIS,
+        /** 显式进程内存储；仅适用于开发或单实例部署。 */
+        MEMORY
+    }
 }

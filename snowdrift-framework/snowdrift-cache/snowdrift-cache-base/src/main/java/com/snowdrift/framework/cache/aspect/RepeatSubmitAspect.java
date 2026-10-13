@@ -54,6 +54,10 @@ public class RepeatSubmitAspect {
 
     @Around("@annotation(repeatSubmit)")
     public Object around(ProceedingJoinPoint joinPoint, RepeatSubmit repeatSubmit) throws Throwable {
+        if (cacheService == null) {
+            throw new IllegalStateException("@RepeatSubmit 未配置 ICacheService，已拒绝执行业务方法；"
+                    + "请引入 snowdrift-cache-caffeine、snowdrift-cache-redis 或注册自定义缓存实现");
+        }
         AssertUtil.predicate(() -> repeatSubmit.interval() > 0, "防重间隔必须大于 0");
         // 非 Web 环境直接放行
         RequestAttributes requestAttributes = RequestContextHolder.getRequestAttributes();

@@ -208,7 +208,16 @@ snowdrift:
 
 ## 扩展
 
-实现 `IDataScopeProvider` 接口自定义数据权限规则，实现 `MetaObjectHandler` 接口自定义自动填充逻辑。
+实现 `IDataScopeProvider` 接口自定义数据权限规则，实现 `MetaObjectHandler` 接口自定义自动填充逻辑。需要扩展 MyBatis-Plus 拦截器时使用 `MybatisPlusInterceptorCustomizer`，保留框架默认的租户、数据权限、防全表操作和分页保护：
+
+```java
+@Bean
+MybatisPlusInterceptorCustomizer customizer() {
+    return interceptor -> interceptor.addInnerInterceptor(new MyCustomInnerInterceptor());
+}
+```
+
+直接声明 `MybatisPlusInterceptor` 会整体替换框架默认实例，默认启动失败。只有确实要自行承担全部拦截器保护时，才显式设置 `snowdrift.orm.mp.allow-interceptor-override=true`；启动时仍会记录告警。
 
 ## 配置属性参考
 
@@ -217,6 +226,7 @@ snowdrift:
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `optimistic-lock` | Boolean | false | 乐观锁开关 |
+| `allow-interceptor-override` | Boolean | false | 是否显式允许自定义 `MybatisPlusInterceptor` 整体替换框架默认实例；开启后会告警，通常应改用 `MybatisPlusInterceptorCustomizer` |
 | `crypto` | Boolean | false | 字段加密开关 |
 | `crypto-key` | String | — | AES 密钥（十六进制，32/48/64 位对应 AES-128/192/256） |
 

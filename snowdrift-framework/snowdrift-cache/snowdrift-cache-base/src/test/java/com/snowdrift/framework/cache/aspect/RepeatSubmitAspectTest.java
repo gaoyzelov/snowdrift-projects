@@ -608,4 +608,19 @@ class RepeatSubmitAspectTest {
         assertThatThrownBy(() -> failingAspect.around(joinPoint, anno(method)))
                 .isInstanceOf(IllegalStateException.class).hasMessage("缓存不可用");
     }
+
+    @Test
+    @DisplayName("缺少缓存后端：即使非 Web 调用也 fail-closed，不执行业务")
+    void missingCacheBackendFailsClosed() throws Throwable {
+        RequestContextHolder.resetRequestAttributes();
+        RepeatSubmitAspect missingBackendAspect = new RepeatSubmitAspect(null);
+        Method method = method("create", String.class);
+        ProceedingJoinPoint joinPoint = joinPoint(method, args("A001"));
+
+        assertThatThrownBy(() -> missingBackendAspect.around(joinPoint, anno(method)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("ICacheService");
+
+        verify(joinPoint, never()).proceed();
+    }
 }

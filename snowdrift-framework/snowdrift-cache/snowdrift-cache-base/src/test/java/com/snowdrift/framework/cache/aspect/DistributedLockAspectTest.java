@@ -210,4 +210,17 @@ class DistributedLockAspectTest {
         assertThat(lockService.events).isEmpty();
         verify(joinPoint, never()).proceed();
     }
+
+    @Test
+    @DisplayName("缺少分布式锁后端：注解方法 fail-closed，不执行业务")
+    void missingLockBackendFailsClosed() throws Throwable {
+        DistributedLockAspect aspect = new DistributedLockAspect(null);
+        ProceedingJoinPoint joinPoint = succeeding("pay", new Object[]{1L}, "paid");
+
+        assertThatThrownBy(() -> aspect.around(joinPoint, anno("pay")))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("IDistributedLockService");
+
+        verify(joinPoint, never()).proceed();
+    }
 }
