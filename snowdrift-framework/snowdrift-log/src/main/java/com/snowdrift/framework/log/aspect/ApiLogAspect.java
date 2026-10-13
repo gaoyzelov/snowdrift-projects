@@ -3,6 +3,7 @@ package com.snowdrift.framework.log.aspect;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONArray;
 import com.alibaba.fastjson2.JSONObject;
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.base.result.Result;
 import com.snowdrift.framework.base.result.ResultCode;
@@ -89,9 +90,9 @@ public class ApiLogAspect {
         try {
             result = joinPoint.proceed();
         } catch (Throwable t) {
-            // 同时捕获 Error，避免异常状态漏记（仍会原样抛出）
+            // 统一转换为 BizException，避免框架切面向外泄漏其他 Throwable 类型。
             exception = t;
-            throw t;
+            throw BizException.wrap(t);
         } finally {
             stopWatch.stop();
             try {

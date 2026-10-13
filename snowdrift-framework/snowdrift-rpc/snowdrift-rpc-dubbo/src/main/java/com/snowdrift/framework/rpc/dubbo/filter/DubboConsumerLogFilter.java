@@ -54,7 +54,7 @@ public class DubboConsumerLogFilter implements Filter {
             stopWatch.stop();
             log.error("Dubbo RPC调用失败 [Consumer] {}.{}(), elapsed={}ms",
                     interfaceName, methodName, stopWatch.getDuration().toMillis(), e);
-            throw e;
+            throw BizException.wrap(e);
         }
     }
 

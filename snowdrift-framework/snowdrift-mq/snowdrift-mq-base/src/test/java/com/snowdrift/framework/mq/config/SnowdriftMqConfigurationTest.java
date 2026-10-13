@@ -100,7 +100,7 @@ class SnowdriftMqConfigurationTest {
     @DisplayName("上下文传播器：默认即开启签名，缺密钥时启动失败；配置密钥后正常创建")
     void contextPropagatorSignKeyValidation() {
         assertThatThrownBy(() -> configuration.mqContextPropagator(new MqProperties()))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(MqException.class)
                 .hasMessageContaining("sign-key");
 
         MqProperties signed = new MqProperties();

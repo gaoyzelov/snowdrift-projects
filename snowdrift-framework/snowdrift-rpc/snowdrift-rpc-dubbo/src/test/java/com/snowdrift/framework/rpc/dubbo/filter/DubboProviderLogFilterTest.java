@@ -1,5 +1,6 @@
 package com.snowdrift.framework.rpc.dubbo.filter;
 
+import com.snowdrift.framework.base.exception.BizException;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import ch.qos.logback.classic.spi.ILoggingEvent;
@@ -103,11 +104,14 @@ class DubboProviderLogFilterTest {
     }
 
     @Test
-    @DisplayName("invoker 抛 RpcException：记 ERROR 并原样抛出")
+    @DisplayName("invoker 抛 RpcException：记 ERROR 并包装为 BizException")
     void rpcExceptionLoggedAndRethrown() throws RpcException {
         when(invoker.invoke(invocation)).thenThrow(new RpcException("timeout"));
 
-        assertThatThrownBy(() -> filter.invoke(invoker, invocation)).isInstanceOf(RpcException.class);
+        assertThatThrownBy(() -> filter.invoke(invoker, invocation))
+                .isInstanceOf(BizException.class)
+                .hasCauseInstanceOf(RpcException.class)
+                .hasRootCauseMessage("timeout");
         assertThat(hasLog(Level.ERROR, "call")).isTrue();
     }
 }

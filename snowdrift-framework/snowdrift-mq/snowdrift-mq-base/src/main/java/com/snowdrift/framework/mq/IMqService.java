@@ -2,6 +2,7 @@ package com.snowdrift.framework.mq;
 
 import com.snowdrift.framework.mq.model.MqMessage;
 import com.snowdrift.framework.mq.model.MqSendResult;
+import com.snowdrift.framework.mq.exception.MqException;
 
 import java.time.Duration;
 import java.util.List;
@@ -110,8 +111,8 @@ public interface IMqService {
      * <p>
      * 各 MQ 实现能力不同，遵循「原生优先、无原生则显式拒绝」：
      * — RocketMQ：原生延迟级别（1-18），由实现模块换算延迟级别；
-     * — RabbitMQ：依赖 rabbitmq-delayed-message-exchange 插件（x-delay 头），未启用插件时抛 {@link UnsupportedOperationException}；
-     * — Kafka：无原生延迟能力，抛 {@link UnsupportedOperationException}。
+     * — RabbitMQ：依赖 rabbitmq-delayed-message-exchange 插件（x-delay 头），未启用插件时抛 {@link MqException}；
+     * — Kafka：无原生延迟能力，抛 {@link MqException}。
      * </p>
      *
      * @param topic   目标 topic
@@ -141,7 +142,7 @@ public interface IMqService {
     /**
      * 延迟发送带自定义头部的消息
      * <p>
-     * 默认不支持延迟发送并抛 {@link UnsupportedOperationException}；
+     * 默认不支持延迟发送并抛 {@link MqException}；
      * 具备原生延迟能力的实现（如 RocketMQ 延迟级别、RabbitMQ x-delay 插件）应覆写本方法。
      * </p>
      *
@@ -154,7 +155,7 @@ public interface IMqService {
      * @return 发送结果
      */
     default <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers) {
-        throw new UnsupportedOperationException("当前消息中间件不支持延迟消息发送");
+        throw new MqException("当前消息中间件不支持延迟消息发送");
     }
 
     // ========== 批量发送 ==========

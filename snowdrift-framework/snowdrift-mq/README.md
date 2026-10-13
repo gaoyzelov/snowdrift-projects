@@ -75,7 +75,7 @@ spring:
 # rocketmq.producer.group: snowdrift-producer
 ```
 
-> **同一时间只允许启用一种实现模块。** 若同时把 `kafka`/`rabbitmq`/`rocketmq` 中的多个置为 `enabled=true`，启动将失败（`MqActivationGuard` 抛 `IllegalStateException` 并列出冲突开关）。因为 `IMqService` 门面以 `@ConditionalOnMissingBean` 注册，多启用会造成“发送用哪个实现不确定、而各实现消费钩子又同时注册”的不一致，故在启动期直接拦截。
+> **同一时间只允许启用一种实现模块。** 若同时把 `kafka`/`rabbitmq`/`rocketmq` 中的多个置为 `enabled=true`，启动将失败（`MqActivationGuard` 抛 `MqException` 并列出冲突开关）。因为 `IMqService` 门面以 `@ConditionalOnMissingBean` 注册，多启用会造成“发送用哪个实现不确定、而各实现消费钩子又同时注册”的不一致，故在启动期直接拦截。
 
 ## 消息发送
 
@@ -121,8 +121,8 @@ List<MqSendResult> results = mqService.sendBatch("order-topic", batch);
 | MQ | 行为 |
 |----|------|
 | RocketMQ | 原生延迟级别（1~18），`Duration` 就近向上映射（见 `RocketDelayLevels`），超 2h 钳制到 18 |
-| RabbitMQ | 依赖 delayed-message-exchange 插件：需 `delay-plugin-enabled=true` 且发送目标 exchange 为 delayed-exchange；否则抛 `UnsupportedOperationException` |
-| Kafka | 无原生延迟能力，抛 `UnsupportedOperationException` |
+| RabbitMQ | 依赖 delayed-message-exchange 插件：需 `delay-plugin-enabled=true` 且发送目标 exchange 为 delayed-exchange；否则抛 `MqException` |
+| Kafka | 无原生延迟能力，抛 `MqException` |
 
 ```java
 mqService.sendDelay("order-timeout", orderEvent, Duration.ofSeconds(30));

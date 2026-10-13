@@ -1,5 +1,6 @@
 package com.snowdrift.framework.mq;
 
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.FastJson2MqMessageConverter;
@@ -162,14 +163,14 @@ class AbstractMqServiceTest {
     }
 
     @Test
-    @DisplayName("原生发送抛异常：触发 onSendError 并原样上抛")
+    @DisplayName("原生发送抛异常：触发 onSendError 并统一包装")
     void sendFailureFiresOnError() {
         StubMqService service = newService();
         service.failure = new IllegalStateException("broker down");
 
         assertThatThrownBy(() -> service.send("order-paid", "k1", "hello"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("broker down");
+                .isInstanceOf(BizException.class)
+                .hasCauseInstanceOf(IllegalStateException.class);
         assertThat(recorder.events).containsExactly("before:order-paid", "error:order-paid");
     }
 
@@ -293,12 +294,12 @@ class AbstractMqServiceTest {
     // ========== 延迟发送 ==========
 
     @Test
-    @DisplayName("默认不支持延迟：未覆写时抛 UnsupportedOperationException")
+    @DisplayName("默认不支持延迟：未覆写时抛 MqException")
     void sendDelayUnsupportedByDefault() {
         StubMqService service = newService();
 
         assertThatThrownBy(() -> service.sendDelay("topic", "hello", Duration.ofSeconds(1)))
-                .isInstanceOf(UnsupportedOperationException.class);
+                .isInstanceOf(MqException.class);
     }
 
     @Test

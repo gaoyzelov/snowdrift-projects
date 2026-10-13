@@ -2,6 +2,7 @@ package com.snowdrift.framework.log;
 
 import com.mzt.logapi.beans.LogRecord;
 import com.mzt.logapi.service.ILogRecordService;
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.base.util.DateTimeUtil;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
@@ -57,11 +58,11 @@ public class SnowdriftLogRecordServiceImpl implements ILogRecordService {
 
     @Override
     public List<LogRecord> queryLog(String bizNo, String type) {
-        throw new UnsupportedOperationException("操作日志查询能力未实现，请注册自定义 ILogRecordService 实现");
+        throw new BizException("操作日志查询能力未实现，请注册自定义 ILogRecordService 实现");
     }
 
     @Override
     public List<LogRecord> queryLogByBizNo(String bizNo, String type, String subType) {
-        throw new UnsupportedOperationException("操作日志查询能力未实现，请注册自定义 ILogRecordService 实现");
+        throw new BizException("操作日志查询能力未实现，请注册自定义 ILogRecordService 实现");
     }
 }

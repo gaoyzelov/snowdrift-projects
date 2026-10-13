@@ -7,6 +7,7 @@ import com.snowdrift.framework.base.util.ServletUtil;
 import com.snowdrift.framework.security.service.ISecurityService;
 import com.snowdrift.framework.security.spring.filter.SecurityContextFilter;
 import com.snowdrift.framework.security.spring.handler.SpringSecurityExceptionHandler;
+import com.snowdrift.framework.security.exception.SecurityException;
 import com.snowdrift.framework.security.spring.properties.SpringSecurityProperties;
 import com.snowdrift.framework.security.spring.service.SpringSecurityServiceImpl;
 import com.snowdrift.framework.security.spring.store.AbstractTokenStore;
@@ -143,7 +144,7 @@ public class SnowdriftSecuritySpringConfiguration {
 
         RedisConnectionFactory connectionFactory = connectionFactories.getIfAvailable();
         if (connectionFactory == null) {
-            throw new IllegalStateException("[Snowdrift-Security] TokenStore 默认模式为 REDIS，"
+            throw new SecurityException("[Snowdrift-Security] TokenStore 默认模式为 REDIS，"
                     + "但容器中没有 RedisConnectionFactory。请配置 Redis 连接，"
                     + "或显式设置 snowdrift.security.spring.token-store-mode=memory "
                     + "（仅适用于开发/单实例部署），也可提供自定义 TokenStore Bean。");
@@ -201,7 +202,7 @@ public class SnowdriftSecuritySpringConfiguration {
      */
     static void checkBackendExclusivity(boolean saTokenModulePresent, boolean saTokenEnabled) {
         if (saTokenModulePresent && saTokenEnabled) {
-            throw new IllegalStateException("[Snowdrift-Security] spring 与 sa-token 两个安全后端均已启用"
+            throw new SecurityException("[Snowdrift-Security] spring 与 sa-token 两个安全后端均已启用"
                     + "（snowdrift.security.spring.enabled=true 且 snowdrift.security.sa-token.enabled=true）。"
                     + "同一时间只允许启用一个：生效实现由自动配置顺序决定，行为不可控。"
                     + "请将其中一个置为 false，或移除对应实现依赖。");

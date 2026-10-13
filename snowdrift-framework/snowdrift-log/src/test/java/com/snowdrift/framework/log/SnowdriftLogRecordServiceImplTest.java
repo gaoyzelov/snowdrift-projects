@@ -1,6 +1,7 @@
 package com.snowdrift.framework.log;
 
 import com.mzt.logapi.beans.LogRecord;
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.log.holder.ApiLogHolder;
@@ -147,13 +148,13 @@ class SnowdriftLogRecordServiceImplTest {
     }
 
     @Test
-    @DisplayName("查询能力未实现，抛 UnsupportedOperationException")
+    @DisplayName("查询能力未实现，抛 BizException")
     void queryIsNotImplemented() {
         assertThatThrownBy(() -> service.queryLog("1001", "订单"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("操作日志查询能力未实现");
         assertThatThrownBy(() -> service.queryLogByBizNo("1001", "订单", "UPDATE"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("操作日志查询能力未实现");
     }
 }

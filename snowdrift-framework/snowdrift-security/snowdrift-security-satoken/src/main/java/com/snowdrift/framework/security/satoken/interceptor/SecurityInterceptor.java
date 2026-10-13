@@ -1,7 +1,12 @@
 package com.snowdrift.framework.security.satoken.interceptor;
 
 import cn.dev33.satoken.interceptor.SaInterceptor;
+import cn.dev33.satoken.exception.DisableServiceException;
+import cn.dev33.satoken.exception.NotLoginException;
+import cn.dev33.satoken.exception.NotPermissionException;
+import cn.dev33.satoken.exception.NotRoleException;
 import cn.dev33.satoken.strategy.SaAnnotationStrategy;
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.base.result.ResultCode;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
@@ -82,7 +87,18 @@ public class SecurityInterceptor extends SaInterceptor {
             // 已写入的上下文会残留在容器线程上被后续请求复用，因此在此主动清理后再抛出。
             // try 的范围紧贴 setContext 之后：此前的 checkLogin/getContext 抛异常时无上下文需要清理。
             SecurityContextHolder.clear();
-            throw t;
+            if (t instanceof BizException bizException) {
+                throw bizException;
+            }
+            if (t instanceof DisableServiceException
+                    || t instanceof NotPermissionException
+                    || t instanceof NotRoleException) {
+                throw new SecurityException(ResultCode.FORBIDDEN, t);
+            }
+            if (t instanceof NotLoginException) {
+                throw new SecurityException(ResultCode.UNAUTHORIZED, t);
+            }
+            throw BizException.wrap(t);
         }
         return true;
     }

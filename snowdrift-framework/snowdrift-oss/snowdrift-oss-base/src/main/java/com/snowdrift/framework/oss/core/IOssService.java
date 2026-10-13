@@ -1,5 +1,6 @@
 package com.snowdrift.framework.oss.core;
 
+import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.enums.OssTypeEnum;
@@ -95,7 +96,7 @@ public interface IOssService extends AutoCloseable {
      * 判断当前存储类型是否支持分片上传
      * <p>
      * 调用方可在分片上传流程前先探测能力，避免运行时才触发
-     * {@code UnsupportedOperationException}；默认不支持，实现类如支持需覆写为 {@code true}。
+     * {@link OssException}；默认不支持，实现类如支持需覆写为 {@code true}。
      *
      * @return {@code true} 表示支持分片上传
      */
@@ -112,10 +113,10 @@ public interface IOssService extends AutoCloseable {
      * @param objectKey   对象键，文件标识
      * @param contentType 文件 MIME 类型，如 image/jpeg、video/mp4 等
      * @return Upload ID，用于后续分片上传和合并
-     * @throws UnsupportedOperationException 当前存储类型不支持分片上传时抛出
+     * @throws OssException 当前存储类型不支持分片上传时抛出
      */
     default String initiateMultipartUpload(String objectKey, String contentType) {
-        throw new UnsupportedOperationException("当前存储类型不支持分片上传");
+        throw new OssException("当前存储类型不支持分片上传");
     }
     
     /**
@@ -129,11 +130,11 @@ public interface IOssService extends AutoCloseable {
      * @param partNumber  分片编号，从 1 开始递增
      * @param expiry      URL 有效期，过期后该 URL 不可用
      * @return 分片上传预签名 URL
-     * @throws UnsupportedOperationException 当前存储类型不支持分片上传时抛出
+     * @throws OssException 当前存储类型不支持分片上传时抛出
      */
     default String generatePresignedUploadUrlForChunk(String objectKey, String uploadId, 
                                                       int partNumber, Duration expiry) {
-        throw new UnsupportedOperationException("当前存储类型不支持分片上传");
+        throw new OssException("当前存储类型不支持分片上传");
     }
     
     /**
@@ -145,10 +146,10 @@ public interface IOssService extends AutoCloseable {
      * @param objectKey 对象键，文件标识
      * @param uploadId  Upload ID，由 initiateMultipartUpload 返回
      * @param parts     分片列表，包含每个分片的信息（ETag、PartNumber 等）
-     * @throws UnsupportedOperationException 当前存储类型不支持分片上传时抛出
+     * @throws OssException 当前存储类型不支持分片上传时抛出
      */
     default void completeMultipartUpload(String objectKey, String uploadId, List<?> parts) {
-        throw new UnsupportedOperationException("当前存储类型不支持分片上传");
+        throw new OssException("当前存储类型不支持分片上传");
     }
     
     /**
@@ -159,10 +160,10 @@ public interface IOssService extends AutoCloseable {
      *
      * @param objectKey 对象键，文件标识
      * @param uploadId  Upload ID，由 initiateMultipartUpload 返回
-     * @throws UnsupportedOperationException 当前存储类型不支持分片上传时抛出
+     * @throws OssException 当前存储类型不支持分片上传时抛出
      */
     default void abortMultipartUpload(String objectKey, String uploadId) {
-        throw new UnsupportedOperationException("当前存储类型不支持分片上传");
+        throw new OssException("当前存储类型不支持分片上传");
     }
     
     // ========== 配置信息 ==========

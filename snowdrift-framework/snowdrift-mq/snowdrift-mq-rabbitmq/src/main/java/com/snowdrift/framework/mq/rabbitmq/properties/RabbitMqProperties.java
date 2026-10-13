@@ -1,5 +1,6 @@
 package com.snowdrift.framework.mq.rabbitmq.properties;
 
+import com.snowdrift.framework.mq.exception.MqException;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -26,7 +27,7 @@ public class RabbitMqProperties {
     /**
      * 是否启用延迟消息插件（rabbitmq-delayed-message-exchange）
      * <p>
-     * 启用后使用 x-delay header 实现延迟消息；未启用时 {@code sendDelay} 抛 {@link UnsupportedOperationException}，
+     * 启用后使用 x-delay header 实现延迟消息；未启用时 {@code sendDelay} 抛 {@link MqException}，
      * 不做可能造成消息被静默丢弃的 TTL 降级。
      * </p>
      */

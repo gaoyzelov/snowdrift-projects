@@ -26,7 +26,7 @@ import java.util.concurrent.Executor;
  * <p>
  * 同步/异步发送均走 Kafka 原生 producer，可拿到真实 {@code topic-partition-offset} 等元数据；
  * key 作为 {@link ProducerRecord} 分区键参与分区路由。
- * Kafka 无原生延迟消息能力，{@link #sendDelay} 继承基类默认：抛 {@link UnsupportedOperationException}。
+ * Kafka 无原生延迟消息能力，{@link #sendDelay} 继承基类默认：抛 {@link MqException}。
  * 消费请直接使用原生 {@code @KafkaListener}，框架以 {@code RecordInterceptor} 自动恢复上下文。
  * </p>
  *
@@ -95,7 +95,7 @@ public class KafkaMqServiceImpl extends AbstractMqService {
             });
         } catch (RuntimeException e) {
             fireOnSendError(topic, e);
-            throw e;
+            throw toMqException(topic, e);
         }
     }
 

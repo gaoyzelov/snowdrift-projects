@@ -89,7 +89,7 @@ public class RocketMqServiceImpl extends AbstractMqService {
             return result;
         } catch (RuntimeException e) {
             fireOnSendError(topic, e);
-            throw e;
+            throw toSendException(topic, e);
         }
     }
 
@@ -134,7 +134,7 @@ public class RocketMqServiceImpl extends AbstractMqService {
             return future;
         } catch (RuntimeException e) {
             fireOnSendError(topic, e);
-            throw e;
+            throw toSendException(topic, e);
         }
     }
 

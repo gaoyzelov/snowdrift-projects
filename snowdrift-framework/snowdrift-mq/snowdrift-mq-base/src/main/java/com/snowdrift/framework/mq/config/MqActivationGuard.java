@@ -1,5 +1,6 @@
 package com.snowdrift.framework.mq.config;
 
+import com.snowdrift.framework.mq.exception.MqException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.env.Environment;
 
@@ -39,7 +40,7 @@ public class MqActivationGuard {
             }
         }
         if (enabled.size() > 1) {
-            throw new IllegalStateException(String.format(
+            throw new MqException(String.format(
                     "snowdrift-mq 同一时间只允许启用一种实现，当前启用了 %d 个：%s。请仅保留一个 snowdrift.mq.<vendor>.enabled=true",
                     enabled.size(), enabled));
         }

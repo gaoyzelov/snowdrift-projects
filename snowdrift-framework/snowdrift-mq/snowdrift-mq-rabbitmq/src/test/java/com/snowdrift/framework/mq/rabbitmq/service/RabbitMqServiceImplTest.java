@@ -92,13 +92,13 @@ class RabbitMqServiceImplTest {
     }
 
     @Test
-    @DisplayName("未启用延迟插件时 sendDelay 抛 UnsupportedOperationException")
+    @DisplayName("未启用延迟插件时 sendDelay 抛 MqException")
     void sendDelayRejectedWhenPluginDisabled() {
         rabbitProperties.setDelayPluginEnabled(false);
         RabbitMqServiceImpl service = newService();
 
         assertThatThrownBy(() -> service.sendDelay("delay-exchange", "payload", Duration.ofSeconds(5)))
-                .isInstanceOf(UnsupportedOperationException.class);
+                .isInstanceOf(MqException.class);
     }
 
     @Test

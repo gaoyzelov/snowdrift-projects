@@ -147,12 +147,12 @@ class KafkaMqServiceImplTest {
     }
 
     @Test
-    @DisplayName("延迟发送：Kafka 无原生延迟能力，抛 UnsupportedOperationException")
+    @DisplayName("延迟发送：Kafka 无原生延迟能力，抛 MqException")
     void sendDelayUnsupported() {
         KafkaMqServiceImpl service = newService();
 
         assertThatThrownBy(() -> service.sendDelay("order", "payload", java.time.Duration.ofSeconds(1)))
-                .isInstanceOf(UnsupportedOperationException.class);
+                .isInstanceOf(MqException.class);
     }
 
     @Test

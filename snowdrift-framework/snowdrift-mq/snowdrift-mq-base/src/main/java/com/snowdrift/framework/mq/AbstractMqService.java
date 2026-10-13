@@ -3,6 +3,7 @@ package com.snowdrift.framework.mq;
 import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
 import com.snowdrift.framework.mq.convert.MqMessageConverter;
 import com.snowdrift.framework.mq.exception.MqException;
@@ -85,7 +86,7 @@ public abstract class AbstractMqService implements IMqService {
         } catch (Exception e) {
             // 触发发送异常拦截器
             fireOnSendError(topic, e);
-            throw e;
+            throw BizException.wrap(e);
         }
     }
 
@@ -121,7 +122,7 @@ public abstract class AbstractMqService implements IMqService {
     }
 
     // ========== 延迟发送 ==========
-    // sendDelay 默认不支持（抛 UnsupportedOperationException），已由 IMqService 接口 default 提供；
+    // sendDelay 默认不支持（抛 MqException），已由 IMqService 接口 default 提供；
     // 具备原生延迟能力的实现（RocketMQ / RabbitMQ）覆写接口方法即可。以下模板供其复用：
 
     /**

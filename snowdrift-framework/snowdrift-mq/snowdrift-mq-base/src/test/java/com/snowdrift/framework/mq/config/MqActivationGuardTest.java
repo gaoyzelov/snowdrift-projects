@@ -1,5 +1,6 @@
 package com.snowdrift.framework.mq.config;
 
+import com.snowdrift.framework.mq.exception.MqException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.env.MockEnvironment;
@@ -43,7 +44,7 @@ class MqActivationGuardTest {
         env.setProperty("snowdrift.mq.rocketmq.enabled", "true");
 
         assertThatThrownBy(() -> new MqActivationGuard(env))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(MqException.class)
                 .hasMessageContaining("只允许启用一种实现")
                 .hasMessageContaining("snowdrift.mq.kafka.enabled")
                 .hasMessageContaining("snowdrift.mq.rocketmq.enabled");
@@ -58,7 +59,7 @@ class MqActivationGuardTest {
         env.setProperty("snowdrift.mq.rocketmq.enabled", "true");
 
         assertThatThrownBy(() -> new MqActivationGuard(env))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(MqException.class)
                 .hasMessageContaining("3");
     }
 }

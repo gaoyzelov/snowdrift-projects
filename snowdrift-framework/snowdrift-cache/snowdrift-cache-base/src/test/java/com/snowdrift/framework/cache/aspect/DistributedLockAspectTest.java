@@ -218,7 +218,7 @@ class DistributedLockAspectTest {
         ProceedingJoinPoint joinPoint = succeeding("pay", new Object[]{1L}, "paid");
 
         assertThatThrownBy(() -> aspect.around(joinPoint, anno("pay")))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("IDistributedLockService");
 
         verify(joinPoint, never()).proceed();

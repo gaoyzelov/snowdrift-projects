@@ -75,7 +75,7 @@ long n = cacheService.increment("login:fail:1", Duration.ofMinutes(5));
 
 说明：
 - `getExpire`：单位秒，`-1` 表示永不过期、`-2` 表示 key 不存在（Redis 与 Caffeine 两个实现语义一致）。
-- Hash 操作（`hget/hput/hdelete`）与 `increment` **仅 Redis 后端支持**；Caffeine 调用会抛 `UnsupportedOperationException`。
+- Hash 操作（`hget/hput/hdelete`）与 `increment` **仅 Redis 后端支持**；Caffeine 调用会抛 `BizException`。
 - **per-key TTL 两个后端都支持**：Caffeine 通过 Caffeine 的 `expireAfter(Expiry)` + `Policy.VarExpiration` 实现「带 TTL 写入 / `expire` / `getExpire`」；未显式指定 TTL 时按全局 `key-ttl` 过期。全局 `key-ttl` 配为 `null` 表示交给后端自持的默认过期策略。
 - **TTL 必须为正数**：显式传入的 TTL 与全局 `key-ttl` 都受同一约束，非正数直接抛 `BizException("缓存TTL必须大于 0")`。
   注意 `key-ttl: 0` 在 Redis 侧 `entryTtl(ZERO)` 表示**不设置过期**（条目永不过期、无上界增长），与配置意图相反，因此这里统一 fail-fast 而不是静默放行。
@@ -118,7 +118,7 @@ User user = lockService.executeWithLock("order:pay:1", 3, 10, TimeUnit.SECONDS,
         () -> orderService.doPay(orderId));
 ```
 
-> - 分布式锁由 **Redisson** 提供，需引入 `snowdrift-cache-redis` 或提供自定义 `IDistributedLockService`。切面始终注册；若缺少锁后端，调用标注 `@DistributedLock` 的方法会在业务执行前抛 `IllegalStateException`，不会无锁放行业务。
+> - 分布式锁由 **Redisson** 提供，需引入 `snowdrift-cache-redis` 或提供自定义 `IDistributedLockService`。切面始终注册；若缺少锁后端，调用标注 `@DistributedLock` 的方法会在业务执行前抛 `BizException`，不会无锁放行业务。
 > - `tryLock` 等待期间线程被中断会抛 `BizException("获取分布式锁被中断")`，与“锁竞争失败”语义区分。
 > - `@DistributedLock` 拿到锁后由切面在 finally 释放；业务执行时长不应超过 `leaseTime`（非看门狗时），否则锁会被其它请求抢占。
 
@@ -202,7 +202,7 @@ public class ProtoBufSerializer implements ICacheSerializer {
 - 需要自定义 `CacheManager`：给自己的 Bean 加 `@Primary`，或用 `spring.autoconfigure.exclude` 排除本模块的自动配置。**不要**依赖框架侧的 `CacheManager` 自动退避——Redis 侧的 `CacheManager` 故意不带 `@ConditionalOnMissingBean`（否则 Boot 的默认 `CacheManager` 会先生效，使本模块的序列化器与 TTL 配置静默失效）；两个同类型 Bean 且都没有 `@Primary` 时，启动期即报 `NoUniqueBeanDefinitionException`。
 - 框架专用的 `snowdriftRedisTemplate`（`RedisTemplate<String, String>`）**不再标注 `@Primary`**：应用按类型注入 `RedisTemplate` 时若容器中还有 Boot 的模板，会因多个候选而显式报错（而不是静默拿到 String-String 模板）；框架内部按 Bean 名注入。
 - Bean Validation 实现（`hibernate-validator`）由 `snowdrift-base` 显式声明并向下传递，`@Validated @ConfigurationProperties` 可正常绑定；`bizlog-sdk` 偶然带进来的旧版实现已在 `snowdrift-log` 中排除。
-- `@RepeatSubmit` 与 `@DistributedLock` 切面始终注册，后端配置顺序不会让注解静默失效：调用时若分别缺少 `ICacheService` 或 `IDistributedLockService`，会在执行业务前抛 `IllegalStateException`。为保证保护实际生效，请按部署需要引入缓存/锁后端或提供自定义实现。
+- `@RepeatSubmit` 与 `@DistributedLock` 切面始终注册，后端配置顺序不会让注解静默失效：调用时若分别缺少 `ICacheService` 或 `IDistributedLockService`，会在执行业务前抛 `BizException`。为保证保护实际生效，请按部署需要引入缓存/锁后端或提供自定义实现。
 
 ## 后端对比
 

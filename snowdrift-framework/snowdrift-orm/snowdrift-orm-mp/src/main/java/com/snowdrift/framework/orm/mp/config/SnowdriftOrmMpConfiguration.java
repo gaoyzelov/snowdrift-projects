@@ -157,7 +157,7 @@ public class SnowdriftOrmMpConfiguration {
                     + "推荐注册 MybatisPlusInterceptorCustomizer 追加扩展；如确需完整替换，"
                     + "请显式设置 snowdrift.orm.mp.allow-interceptor-override=true。";
             if (!Boolean.TRUE.equals(baseProperties.getAllowInterceptorOverride())) {
-                throw new IllegalStateException(message + " 当前默认禁止拦截器整体替换。");
+                throw new BizException(message + " 当前默认禁止拦截器整体替换。");
             }
             log.warn(message + " 已显式允许整体替换，请确认业务自行提供了所需保护。");
         };

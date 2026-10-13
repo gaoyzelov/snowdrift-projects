@@ -135,7 +135,7 @@ class MqContextPropagatorTest {
     @DisplayName("sign=true 但未配置 signKey 时构造即失败，避免签名不对称灾难")
     void signEnabledWithoutKeyFailsFast() {
         assertThatThrownBy(() -> new MqContextPropagator(props(true, "  ")))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(MqException.class)
                 .hasMessageContaining("sign-key");
     }
 
@@ -202,7 +202,7 @@ class MqContextPropagatorTest {
     void signatureEnabledByDefault() {
         assertThat(new MqProperties().getSign()).isTrue();
         assertThatThrownBy(() -> new MqContextPropagator(new MqProperties()))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(MqException.class)
                 .hasMessageContaining("sign-key");
     }
 

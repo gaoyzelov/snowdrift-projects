@@ -1,5 +1,6 @@
 package com.snowdrift.framework.security.spring.config;
 
+import com.snowdrift.framework.security.exception.SecurityException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -17,11 +18,11 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class SecurityBackendExclusivityTest {
 
     @Test
-    @DisplayName("两个后端同时启用：启动期抛 IllegalStateException，并在消息中指明两个开关")
+    @DisplayName("两个后端同时启用：启动期抛 SecurityException，并在消息中指明两个开关")
     void failsFastWhenBothBackendsEnabled() {
         assertThatThrownBy(() -> SnowdriftSecuritySpringConfiguration
                 .checkBackendExclusivity(true, true))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(SecurityException.class)
                 .hasMessageContaining("snowdrift.security.spring.enabled")
                 .hasMessageContaining("snowdrift.security.sa-token.enabled");
     }

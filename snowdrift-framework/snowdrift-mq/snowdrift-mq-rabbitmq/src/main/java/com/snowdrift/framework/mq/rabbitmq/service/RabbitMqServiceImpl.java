@@ -28,7 +28,7 @@ import java.util.concurrent.Executor;
  * 同步发送走原生 {@link RabbitTemplate#send(String, String, Message)}：<b>发出即返回，不含投递确认</b>，
  * 返回的 {@link MqSendResult} 表示"已交给客户端"而非"broker 已接收"；异步复用基类 executor 包装（Rabbit 无原生异步发送）。
  * 延迟消息依赖 rabbitmq-delayed-message-exchange 插件（{@code x-delay} 头，目标 exchange 须为 delayed-exchange）；
- * 未启用插件时 {@link #sendDelay} 直接抛 {@link UnsupportedOperationException}，不做静默 TTL 降级。
+ * 未启用插件时 {@link #sendDelay} 直接抛 {@link MqException}，不做静默 TTL 降级。
  * 消费请使用原生 {@code @RabbitListener}，框架以 adviceChain 拦截器（{@code MqRabbitContextAdvice}）自动恢复/清理上下文。
  * </p>
  *
@@ -108,7 +108,7 @@ public class RabbitMqServiceImpl extends AbstractMqService {
     @Override
     public <T> MqSendResult sendDelay(String topic, String key, T payload, Duration delay, Map<String, String> headers) {
         if (!Boolean.TRUE.equals(rabbitProperties.getDelayPluginEnabled())) {
-            throw new UnsupportedOperationException(
+            throw new MqException(
                     "RabbitMQ 延迟消息需要启用 rabbitmq-delayed-message-exchange 插件"
                             + "（snowdrift.mq.rabbitmq.delay-plugin-enabled=true）并将发送目标（topic）指向 delayed-exchange，"
                             + "当前未启用，不支持延迟发送");

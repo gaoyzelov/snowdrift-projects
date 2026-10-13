@@ -1,5 +1,6 @@
 package com.snowdrift.framework.oss.core;
 
+import com.snowdrift.framework.oss.exception.OssException;
 import com.snowdrift.framework.oss.dto.OssResult;
 import com.snowdrift.framework.oss.dto.OssUploadRequest;
 import com.snowdrift.framework.oss.enums.OssTypeEnum;
@@ -85,35 +86,35 @@ class IOssServiceMultipartDefaultsTest {
     }
 
     @Test
-    @DisplayName("未实现分片的后端：初始化分片抛 UnsupportedOperationException")
+    @DisplayName("未实现分片的后端：初始化分片抛 OssException")
     void initiateMultipartUploadThrows() {
         assertThatThrownBy(() -> minimal.initiateMultipartUpload("a.txt", "text/plain"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(OssException.class)
                 .hasMessage("当前存储类型不支持分片上传");
     }
 
     @Test
-    @DisplayName("未实现分片的后端：分片预签名 URL 抛 UnsupportedOperationException")
+    @DisplayName("未实现分片的后端：分片预签名 URL 抛 OssException")
     void presignedChunkUrlThrows() {
         assertThatThrownBy(() -> minimal.generatePresignedUploadUrlForChunk(
                 "a.txt", "upload-1", 1, Duration.ofMinutes(10)))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(OssException.class)
                 .hasMessage("当前存储类型不支持分片上传");
     }
 
     @Test
-    @DisplayName("未实现分片的后端：合并分片抛 UnsupportedOperationException")
+    @DisplayName("未实现分片的后端：合并分片抛 OssException")
     void completeMultipartUploadThrows() {
         assertThatThrownBy(() -> minimal.completeMultipartUpload("a.txt", "upload-1", List.of()))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(OssException.class)
                 .hasMessage("当前存储类型不支持分片上传");
     }
 
     @Test
-    @DisplayName("未实现分片的后端：取消分片抛 UnsupportedOperationException")
+    @DisplayName("未实现分片的后端：取消分片抛 OssException")
     void abortMultipartUploadThrows() {
         assertThatThrownBy(() -> minimal.abortMultipartUpload("a.txt", "upload-1"))
-                .isInstanceOf(UnsupportedOperationException.class)
+                .isInstanceOf(OssException.class)
                 .hasMessage("当前存储类型不支持分片上传");
     }
 }

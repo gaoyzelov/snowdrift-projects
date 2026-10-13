@@ -1,5 +1,6 @@
 package com.snowdrift.framework.security.spring.filter;
 
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.security.properties.SecurityProperties;
@@ -99,7 +100,7 @@ public class SecurityContextFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
         } catch (Exception e){
             log.error("SecurityContextFilter 执行异常: {}", e.getMessage(), e);
-            throw e;
+            throw BizException.wrap(e);
         } finally {
             // 请求结束后清理，防止线程池复用时的数据污染
             SecurityContextHolder.clear();

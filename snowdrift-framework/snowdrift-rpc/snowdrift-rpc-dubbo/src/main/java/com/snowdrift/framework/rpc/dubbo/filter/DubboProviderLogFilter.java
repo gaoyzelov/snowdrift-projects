@@ -58,7 +58,7 @@ public class DubboProviderLogFilter implements Filter {
             stopWatch.stop();
             log.error("Dubbo RPC服务失败 [Provider] {}.{}(), caller={}, elapsed={}ms",
                     interfaceName, methodName, remoteHost, stopWatch.getDuration().toMillis(), e);
-            throw e;
+            throw BizException.wrap(e);
         }
     }
 

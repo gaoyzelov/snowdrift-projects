@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.Expiry;
 import com.github.benmanes.caffeine.cache.Policy.VarExpiration;
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.cache.AbstractCacheService;
 import com.snowdrift.framework.cache.properties.SnowdriftCacheProperties;
 import com.snowdrift.framework.cache.serialize.ICacheSerializer;
@@ -20,7 +21,7 @@ import java.util.List;
  * </p>
  * <p>
  * 仍不支持（Caffeine 无对应结构与语义）：哈希操作 {@code hget} / {@code hput} / {@code hdelete}
- * 与原子自增 {@code increment}，调用将抛出 {@link UnsupportedOperationException}。
+ * 与原子自增 {@code increment}，调用将抛出 {@link BizException}。
  * </p>
  *
  * @author gaoyzelov
@@ -69,7 +70,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
                 })
                 .build();
         this.varExpiration = cache.policy().expireVariably()
-                .orElseThrow(() -> new IllegalStateException(
+                .orElseThrow(() -> new BizException(
                         "Caffeine 可变过期策略不可用：缓存必须以 expireAfter(Expiry) 构建"));
     }
 
@@ -100,7 +101,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     @Override
     protected String doHget(String key, String hashKey) {
-        throw new UnsupportedOperationException("Caffeine 不支持 hget 操作");
+        throw new BizException("Caffeine 不支持 hget 操作");
     }
 
     @Override
@@ -110,7 +111,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     @Override
     protected void doHput(String key, String hashKey, String value) {
-        throw new UnsupportedOperationException("Caffeine 不支持 hput 操作");
+        throw new BizException("Caffeine 不支持 hput 操作");
     }
 
     @Override
@@ -137,7 +138,7 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
 
     @Override
     protected boolean doHdelete(String key, String hashKey) {
-        throw new UnsupportedOperationException("Caffeine 不支持 hdelete 操作");
+        throw new BizException("Caffeine 不支持 hdelete 操作");
     }
 
     @Override
@@ -184,10 +185,10 @@ public class SnowdriftCaffeineCacheServiceImpl extends AbstractCacheService {
     }
 
     /**
-     * Caffeine 原生不支持原子自增，调用将抛出 {@link UnsupportedOperationException}
+     * Caffeine 原生不支持原子自增，调用将抛出 {@link BizException}
      */
     @Override
     protected long doIncrement(String key, Duration ttl) {
-        throw new UnsupportedOperationException("Caffeine 不支持 increment 操作");
+        throw new BizException("Caffeine 不支持 increment 操作");
     }
 }

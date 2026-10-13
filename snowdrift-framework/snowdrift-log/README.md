@@ -104,7 +104,7 @@ public class DbLogService implements ILogService {
 - 无登录上下文的系统任务也会记录，此时 userId/tenantId/operator 为 null。
 - 登录日志的账号提取支持两种写法：对象入参按 `accountField` 字段名提取；裸参数（如 `login(@RequestParam String username, ...)`）按**方法形参名**匹配 `accountField` 提取（依赖编译期 `-parameters`，父 pom 已开启）。两者都取不到时记为 `unknown`。
 - 操作人取框架 `SecurityContext`（昵称优先、回落账号）；bizlog `LogRecord` 自带的 `operator`/`tenant` 字段**不参与映射**。
-- **日志查询**（`queryLog` / `queryLogByBizNo`）在默认实现中**未实现**（抛 `UnsupportedOperationException`）；如需查询请自行实现 bizlog 的 `ILogRecordService`。
+- **日志查询**（`queryLog` / `queryLogByBizNo`）在默认实现中**未实现**（抛 `BizException`）；如需查询请自行实现 bizlog 的 `ILogRecordService`。
 
 ### 链路追踪 ID
 

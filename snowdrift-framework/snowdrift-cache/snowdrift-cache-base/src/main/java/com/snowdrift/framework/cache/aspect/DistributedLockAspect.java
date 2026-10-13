@@ -43,7 +43,7 @@ public class DistributedLockAspect {
     @Around("@annotation(lockAnno)")
     public Object around(ProceedingJoinPoint joinPoint, DistributedLock lockAnno) throws Throwable {
         if (lockService == null) {
-            throw new IllegalStateException("@DistributedLock 未配置 IDistributedLockService，已拒绝执行业务方法；"
+            throw new BizException("@DistributedLock 未配置 IDistributedLockService，已拒绝执行业务方法；"
                     + "请引入 snowdrift-cache-redis 或注册自定义锁实现");
         }
         String key = SpELUtil.parseExpression(lockAnno.key(), joinPoint);

@@ -85,6 +85,28 @@ class BizExceptionTest {
     }
 
     @Test
+    @DisplayName("wrap 保留业务异常，并将其他异常包装为通用服务端错误")
+    void wrapPreservesBusinessExceptionAndWrapsOthers() {
+        BizException source = new BizException("业务错误");
+        assertThat(BizException.wrap(source)).isSameAs(source);
+
+        IllegalStateException cause = new IllegalStateException("底层错误");
+        BizException wrapped = BizException.wrap(cause);
+        assertThat(wrapped.getCode()).isEqualTo(ResultCode.INTERNAL_SERVER_ERROR.code());
+        assertThat(wrapped.getMessage()).isEqualTo(ResultCode.INTERNAL_SERVER_ERROR.msg());
+        assertThat(wrapped.getCause()).isSameAs(cause);
+
+        AssertionError error = new AssertionError("非业务 Throwable");
+        BizException wrappedError = BizException.wrap(error);
+        assertThat(wrappedError).isInstanceOf(BizException.class);
+        assertThat(wrappedError.getCause()).isSameAs(error);
+
+        BizException withoutCause = BizException.wrap(null);
+        assertThat(withoutCause.getCode()).isEqualTo(ResultCode.INTERNAL_SERVER_ERROR.code());
+        assertThat(withoutCause.getCause()).isNull();
+    }
+
+    @Test
     @DisplayName("throwEx 总是抛出，且可直接用于 return 位置")
     void throwExAlwaysThrows() {
         assertThatThrownBy(() -> BizException.throwEx("失败"))

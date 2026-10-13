@@ -1,5 +1,6 @@
 package com.snowdrift.framework.orm.mp.config;
 
+import com.snowdrift.framework.base.exception.BizException;
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
 import com.baomidou.mybatisplus.extension.plugins.inner.InnerInterceptor;
 import org.junit.jupiter.api.DisplayName;
@@ -41,7 +42,7 @@ class SnowdriftOrmMpInterceptorOverrideWarningTest {
             assertThat(context).hasFailed();
             Throwable cause = rootCause(context.getStartupFailure());
             assertThat(cause)
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(BizException.class)
                     .hasMessageContaining(MARKER)
                     .hasMessageContaining("MybatisPlusInterceptorCustomizer");
         });

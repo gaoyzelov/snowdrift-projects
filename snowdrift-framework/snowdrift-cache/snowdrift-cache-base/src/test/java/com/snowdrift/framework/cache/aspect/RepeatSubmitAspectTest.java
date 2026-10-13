@@ -339,13 +339,14 @@ class RepeatSubmitAspectTest {
     }
 
     @Test
-    @DisplayName("业务抛异常：删除本请求写入的标记，允许修正后重新提交，原异常照常抛出")
+    @DisplayName("业务抛异常：删除本请求写入的标记，允许修正后重新提交，并统一包装")
     void businessFailureClearsMarker() throws Throwable {
         Method method = method("create", String.class);
         ProceedingJoinPoint joinPoint = failing(method, args("A001"), new IllegalStateException("业务失败"));
 
         assertThatThrownBy(() -> aspect.around(joinPoint, anno(method)))
-                .isInstanceOf(IllegalStateException.class).hasMessage("业务失败");
+                .isInstanceOf(BizException.class)
+                .hasCauseInstanceOf(IllegalStateException.class);
 
         assertThat(cache.store).doesNotContainKey(KEY_PREFIX + "order\\:A001");
     }
@@ -365,7 +366,8 @@ class RepeatSubmitAspectTest {
         });
 
         assertThatThrownBy(() -> aspect.around(joinPoint, anno(method)))
-                .isInstanceOf(IllegalStateException.class);
+                .isInstanceOf(BizException.class)
+                .hasCauseInstanceOf(IllegalStateException.class);
 
         assertThat(cache.store).containsEntry(key, rewritten.get());
     }
@@ -378,7 +380,9 @@ class RepeatSubmitAspectTest {
         ProceedingJoinPoint joinPoint = failing(method, args("A001"), new IllegalArgumentException("原始异常"));
 
         assertThatThrownBy(() -> aspect.around(joinPoint, anno(method)))
-                .isInstanceOf(IllegalArgumentException.class).hasMessage("原始异常");
+                .isInstanceOf(BizException.class)
+                .hasCauseInstanceOf(IllegalArgumentException.class)
+                .hasRootCauseMessage("原始异常");
     }
 
     @Test
@@ -390,7 +394,8 @@ class RepeatSubmitAspectTest {
 
         try {
             aspect.around(joinPoint, anno(method));
-        } catch (InterruptedException e) {
+        } catch (BizException e) {
+            assertThat(e.getCause()).isInstanceOf(InterruptedException.class);
             flagRestored.set(Thread.currentThread().isInterrupted());
         } finally {
             Thread.interrupted();
@@ -618,7 +623,7 @@ class RepeatSubmitAspectTest {
         ProceedingJoinPoint joinPoint = joinPoint(method, args("A001"));
 
         assertThatThrownBy(() -> missingBackendAspect.around(joinPoint, anno(method)))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(BizException.class)
                 .hasMessageContaining("ICacheService");
 
         verify(joinPoint, never()).proceed();

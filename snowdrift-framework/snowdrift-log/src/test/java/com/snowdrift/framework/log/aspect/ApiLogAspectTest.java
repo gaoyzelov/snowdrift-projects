@@ -1,5 +1,6 @@
 package com.snowdrift.framework.log.aspect;
 
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.base.result.Result;
 import com.snowdrift.framework.base.result.ResultCode;
 import com.snowdrift.framework.context.http.HttpContext;
@@ -271,13 +272,14 @@ class ApiLogAspectTest {
     }
 
     @Test
-    @DisplayName("方法抛异常：记为失败、记录根因消息，并原样抛出")
+    @DisplayName("方法抛异常：记为失败、记录根因消息，并包装为 BizException")
     void exceptionIsRecordedAndRethrown() throws Throwable {
         IllegalStateException root = new IllegalStateException("库存不足");
         Throwable wrapper = new RuntimeException("下单失败", root);
 
         assertThatThrownBy(() -> aspect.around(failingJoinPoint(wrapper), anno("defaultOptions", String.class)))
-                .isSameAs(wrapper);
+                .isInstanceOf(BizException.class)
+                .satisfies(thrown -> assertThat(thrown.getCause()).isSameAs(wrapper));
 
         ApiLogHolder holder = logService.single();
         assertThat(holder.getStatus()).isEqualTo(ResultCode.ERR.code());
@@ -286,12 +288,13 @@ class ApiLogAspectTest {
     }
 
     @Test
-    @DisplayName("抛出 Error 时同样记为失败，并原样抛出")
+    @DisplayName("抛出 Error 时同样记为失败，并包装为 BizException")
     void errorIsRecordedAndRethrown() throws Throwable {
         AssertionError error = new AssertionError("boom");
 
         assertThatThrownBy(() -> aspect.around(failingJoinPoint(error), anno("defaultOptions", String.class)))
-                .isSameAs(error);
+                .isInstanceOf(BizException.class)
+                .satisfies(thrown -> assertThat(thrown.getCause()).isSameAs(error));
 
         assertThat(logService.single().getStatus()).isEqualTo(ResultCode.ERR.code());
         assertThat(logService.single().getErrorMsg()).contains("boom");
@@ -503,12 +506,13 @@ class ApiLogAspectTest {
     }
 
     @Test
-    @DisplayName("业务方法抛 Error 时：仍然记失败、原样抛出，且日志链路的异常不得掩盖它")
+    @DisplayName("业务方法抛 Error 时：仍然记失败、统一包装，且日志链路异常不得掩盖它")
     void businessErrorIsPreservedEvenIfLoggingFails() throws Throwable {
         logService.failure = new StackOverflowError("模拟日志链路溢出");
         AssertionError businessError = new AssertionError("业务断言失败");
 
         assertThatThrownBy(() -> aspect.around(failingJoinPoint(businessError), anno("defaultOptions", String.class)))
-                .isSameAs(businessError);
+                .isInstanceOf(BizException.class)
+                .satisfies(thrown -> assertThat(thrown.getCause()).isSameAs(businessError));
     }
 }

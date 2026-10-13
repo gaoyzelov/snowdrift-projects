@@ -46,6 +46,11 @@ public class BizException extends RuntimeException {
         this.code = code;
     }
 
+    public BizException(int code, String message, Throwable cause) {
+        super(message, cause);
+        this.code = code;
+    }
+
     public BizException(String message, Object[] args) {
         super(message);
         this.code = ResultCode.ERR.code();
@@ -54,6 +59,11 @@ public class BizException extends RuntimeException {
 
     public BizException(ResultCode resultCode) {
         super(resultCode.msg());
+        this.code = resultCode.code();
+    }
+
+    public BizException(ResultCode resultCode, Throwable cause) {
+        super(resultCode.msg(), cause);
         this.code = resultCode.code();
     }
 
@@ -71,6 +81,18 @@ public class BizException extends RuntimeException {
     public BizException(Throwable cause) {
         super(ResultCode.ERR.msg(), cause);
         this.code = ResultCode.ERR.code();
+    }
+
+    /**
+     * 将非业务异常转换为统一服务端业务异常；若异常已经符合业务异常契约，则保留其原实例及子类类型。
+     * 原始原因仅保留在 cause 中，对外消息使用通用文案，避免泄漏底层异常细节。
+     */
+    public static BizException wrap(Throwable cause) {
+        if (cause instanceof BizException bizException) {
+            return bizException;
+        }
+        return new BizException(ResultCode.INTERNAL_SERVER_ERROR.code(),
+                ResultCode.INTERNAL_SERVER_ERROR.msg(), cause);
     }
 
     /**

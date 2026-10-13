@@ -1,5 +1,6 @@
 package com.snowdrift.framework.security.spring.filter;
 
+import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.security.properties.SecurityProperties;
@@ -147,7 +148,7 @@ class SecurityContextFilterTest {
     }
 
     @Test
-    @DisplayName("下游抛异常：异常上抛，finally 仍清理上下文")
+    @DisplayName("下游抛异常：包装为 BizException，finally 仍清理上下文")
     void exceptionPropagatesAndContextCleared() throws Exception {
         SecurityContext ctx = SecurityContext.builder().userId(11L).build();
         when(request.getServletPath()).thenReturn("/api/order");
@@ -156,7 +157,9 @@ class SecurityContextFilterTest {
         doThrow(new ServletException("downstream")).when(chain).doFilter(request, response);
 
         assertThatThrownBy(() -> filter.doFilterInternal(request, response, chain))
-                .isInstanceOf(ServletException.class);
+                .isInstanceOf(BizException.class)
+                .hasCauseInstanceOf(ServletException.class)
+                .hasRootCauseMessage("downstream");
         assertThat(SecurityContextHolder.peekContext()).isNull();
     }
 

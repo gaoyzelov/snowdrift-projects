@@ -253,19 +253,19 @@ class SnowdriftCaffeineCacheServiceImplTest {
         }
 
         @Test
-        @DisplayName("Hash 操作与 increment 不支持，抛 UnsupportedOperationException（README 已声明）")
+        @DisplayName("Hash 操作与 increment 不支持，抛 BizException（README 已声明）")
         void unsupportedOperations() {
             SnowdriftCaffeineCacheServiceImpl service = service();
             service.put("k", "v");
 
             assertThatThrownBy(() -> service.hget("k", "f", String.class))
-                    .isInstanceOf(UnsupportedOperationException.class).hasMessageContaining("hget");
+                    .isInstanceOf(BizException.class).hasMessageContaining("hget");
             assertThatThrownBy(() -> service.hput("k", "f", "v"))
-                    .isInstanceOf(UnsupportedOperationException.class).hasMessageContaining("hput");
+                    .isInstanceOf(BizException.class).hasMessageContaining("hput");
             assertThatThrownBy(() -> service.hdelete("k", "f"))
-                    .isInstanceOf(UnsupportedOperationException.class).hasMessageContaining("hdelete");
+                    .isInstanceOf(BizException.class).hasMessageContaining("hdelete");
             assertThatThrownBy(() -> service.increment("k", Duration.ofMinutes(1)))
-                    .isInstanceOf(UnsupportedOperationException.class).hasMessageContaining("increment");
+                    .isInstanceOf(BizException.class).hasMessageContaining("increment");
         }
     }
 }

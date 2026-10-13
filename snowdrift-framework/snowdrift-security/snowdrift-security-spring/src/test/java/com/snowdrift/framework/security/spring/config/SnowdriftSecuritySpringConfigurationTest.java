@@ -1,5 +1,6 @@
 package com.snowdrift.framework.security.spring.config;
 
+import com.snowdrift.framework.security.exception.SecurityException;
 import com.snowdrift.framework.security.service.ISecurityService;
 import com.snowdrift.framework.security.spring.handler.SpringSecurityExceptionHandler;
 import com.snowdrift.framework.security.spring.service.SpringSecurityServiceImpl;
@@ -34,7 +35,7 @@ class SnowdriftSecuritySpringConfigurationTest {
         runner.run(context -> {
             assertThat(context).hasFailed();
             assertThat(rootCause(context.getStartupFailure()))
-                    .isInstanceOf(IllegalStateException.class)
+                    .isInstanceOf(SecurityException.class)
                     .hasMessageContaining("TokenStore 默认模式为 REDIS")
                     .hasMessageContaining("token-store-mode=memory")
                     .hasMessageContaining("自定义 TokenStore Bean");

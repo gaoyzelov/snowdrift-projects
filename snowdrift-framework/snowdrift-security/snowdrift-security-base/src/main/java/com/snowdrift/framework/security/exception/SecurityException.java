@@ -20,4 +20,8 @@ public class SecurityException extends BizException {
     public SecurityException(ResultCode resultCode) {
         super(resultCode);
     }
+
+    public SecurityException(ResultCode resultCode, Throwable cause) {
+        super(resultCode, cause);
+    }
 }
