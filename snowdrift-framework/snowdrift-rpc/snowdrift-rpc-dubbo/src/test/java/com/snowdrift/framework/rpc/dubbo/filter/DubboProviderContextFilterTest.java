@@ -1,6 +1,8 @@
 package com.snowdrift.framework.rpc.dubbo.filter;
 
 import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.context.http.HttpContext;
+import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.rpc.dubbo.constant.RpcContextConstants;
@@ -45,6 +47,7 @@ class DubboProviderContextFilterTest {
         RpcContext.removeServiceContext();
         MDC.clear();
         SecurityContextHolder.clear();
+        HttpContextHolder.clear();
         System.clearProperty(DubboProviderContextFilter.TRUST_INBOUND_SECURITY_CONTEXT_PROPERTY);
     }
 
@@ -104,26 +107,31 @@ class DubboProviderContextFilterTest {
     }
 
     @Test
-    @DisplayName("onResponse 清理 MDC 与安全上下文，避免线程池复用污染")
+    @DisplayName("onResponse 清理 MDC、安全上下文与 HttpContext，避免线程池复用污染")
     void onResponseClearsContext() {
         MDC.put("traceId", "t");
         SecurityContextHolder.setContext(SecurityContext.builder().userId(1L).build());
+        // Provider 线程可能继承过某个 HTTP 请求的 HttpContext（TTL 继承自 InheritableThreadLocal）
+        HttpContextHolder.setContext(HttpContext.builder().ip("10.0.0.1").uri("/stale-request").build());
 
         filter.onResponse(result, invoker, invocation);
 
         assertThat(MDC.get("traceId")).isNull();
         assertThat(SecurityContextHolder.peekContext()).isNull();
+        assertThat(HttpContextHolder.getContext()).isNull();
     }
 
     @Test
-    @DisplayName("onError 同样清理上下文")
+    @DisplayName("onError 同样清理上下文（含 HttpContext）")
     void onErrorClearsContext() {
         MDC.put("traceId", "t");
         SecurityContextHolder.setContext(SecurityContext.builder().userId(1L).build());
+        HttpContextHolder.setContext(HttpContext.builder().ip("10.0.0.1").uri("/stale-request").build());
 
         filter.onError(new RuntimeException("x"), invoker, invocation);
 
         assertThat(MDC.get("traceId")).isNull();
         assertThat(SecurityContextHolder.peekContext()).isNull();
+        assertThat(HttpContextHolder.getContext()).isNull();
     }
 }

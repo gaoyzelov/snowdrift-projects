@@ -66,19 +66,23 @@ public class SecurityProperties {
     /**
      * 拦截器排除的路径列表
      * <p>
-     * 这些路径不会进行登录校验，通常包括静态资源、API 文档、错误页面等。
+     * 这些路径不会进行登录校验，通常包括静态资源、错误页面等。
      * 采用 Spring MVC 的路径模板语义（{@code PathPattern}，如 {@code /doc/**}、{@code /api/{id}}），
      * 安全链、上下文过滤器与 Sa-Token 拦截器共用同一份配置，语义保持一致。
+     * </p>
+     * <p>
+     * <b>默认不包含接口文档路径</b>（{@code /v3/api-docs/**}、{@code /doc.html}、{@code /swagger-ui.html}、
+     * {@code /swagger-resources/**}、{@code /v2/api-docs/**}）：这些路径会把全部接口定义与参数结构暴露出去，
+     * 是否对外可见应由使用方按环境决定，不宜由框架默认放行。生产环境请保持默认；开发/联调环境需要时自行加上。
+     * </p>
+     * <p>
+     * 该属性为<b>整份替换</b>语义：一旦配置，默认值全部失效，需要把 {@code /error} 等一并写回，例如
+     * {@code snowdrift.security.exclude-path-patterns=/favicon.ico,/error,/v3/api-docs/**,/doc.html}。
      * </p>
      */
     @NotEmpty
     private List<String> excludePathPatterns = List.of(
             "/favicon.ico",
-            "/swagger-resources/**",
-            "/v2/api-docs/**",
-            "/v3/api-docs/**",
-            "/doc.html",
-            "/swagger-ui.html",
             "/error"
     );
 }

@@ -129,7 +129,13 @@ scheduleService.removeJob(key);
 - **异常**：所有调度失败统一抛 `ScheduleException`（`BizException` 子类），message 为可直接展示的中文，不依赖 i18n。
 - **Quartz**：`name` 与 `cron` 必填，非法 cron 抛 `ScheduleException`；新建后从未触发或已结束任务的 `lastFireTime` / `nextFireTime` 可能为 `null`（`getJob`/`JobDetails` 已空安全处理）；重复注册报“任务已存在”（含并发场景）。
 - **Quartz 更新**：任务存在但触发器缺失时更新会显式失败（避免 `rescheduleJob` 静默 no-op 造成“任务已存在却无调度”）。
-- **XXL-JOB**：运行时依赖 Admin 的登录会话与响应契约（建议对照实际部署的 Admin 版本联调，仓库内置 core 3.4.1 的 `ReturnT` 结构可能与实现假设不同）；登录过期判定、多实例并发登录与多 Admin 节点 Cookie 绑定属于运行时语义，生产前请在真实环境验证。
+- **XXL-JOB**：运行时依赖 Admin 的登录会话与响应契约（建议对照实际部署的 Admin 版本联调，仓库内置 core 3.4.1 的 `ReturnT` 结构可能与实现假设不同）；多实例并发登录与多 Admin 节点 Cookie 绑定属于运行时语义，生产前请在真实环境验证。
+- **XXL-JOB 会话失效的判定依据**（对照本地 xxl-job 3.4.1 + `xxl-sso-core` 2.4.0 核对）：
+  1. `XxlSsoWebInterceptor#preHandle` 在未登录时，对 **`@ResponseBody` 端点**（框架调用的 `/jobinfo/*` 正是这类）**抛 `XxlSsoException(301, …)`**；只有页面请求才 `sendRedirect(contextPath + loginPath)`；
+  2. xxl-job-admin 与 xxl-sso-core **都没有注册**该异常的处理器，于是它落到容器默认错误响应；
+  3. 该错误响应的形态是不含 `code` 字段的 JSON（`{"timestamp":…,"status":500,…}`）或 HTML 错误页。
+  - 因此框架的判定取**结构性**判据：**响应不是「带 `code` 字段的 JSON」即为会话失效**，重登后重试一次。该判据同时覆盖上述两种形态，不依赖内容协商，也不需要猜 Admin 的错误文案。
+  - 反之，`code != 200` 的 **JSON** 响应一律按**业务错误**抛出（cron 非法、名称重复、执行器组非法…），**不**触发重登、**不**重放请求。此前实现把「`code != 200` 且 msg 非空」整体判为登录过期，会让每次业务报错都强制重登并重放同一次请求（非幂等操作可能重复执行），并把真实错误掩盖成「登录过期」。
 - **XXL-JOB `triggerStatus`**：为空时一律按 `1`（运行）处理——`addJob` 创建后即启动，`updateJob` 会把已停止的任务重新启动；若需保持停止态，必须由调用方显式传 `0`。
   - **这是有意取舍，不是遗漏**：框架不替调用方回查旧状态，因为 Admin 侧没有可用的本地状态缓存，得知旧状态必须额外发一次 HTTP 请求（`updateJob` 会由 1 次变成 2 次）。
   - **要保持当前状态**（例如只改 cron）时自行回填一次：

@@ -382,12 +382,11 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
         for (String baseUrl : adminUrls) {
             try {
                 String body = caller.call(normalizeUrl(baseUrl) + path, params, buildRequestHeaders());
-                JSONObject json = JSON.parseObject(body);
-                if (isLoginExpired(json) && !isRetry) {
-                    log.info("XXL-JOB 登录过期，强制重登并重试: path={}", path);
+                if (!isRetry && isSessionExpiredResponse(body)) {
+                    log.info("XXL-JOB 会话失效（响应不是 Admin API 的响应结构），强制重登并重试: path={}", path);
                     return callAdminApi(caller, path, params, true);
                 }
-                return validateApiResponse(json);
+                return validateApiResponse(JSON.parseObject(body));
             } catch (ScheduleException e) {
                 throw e;
             } catch (Exception e) {
@@ -417,21 +416,41 @@ public class XxlJobScheduleServiceImpl implements IScheduleService<XxlJobRequest
     }
 
     /**
-     * 判断 API 响应是否为登录过期
+     * 判断响应是否表示「会话已失效」
      * <p>
-     * XXL-JOB Admin 未登录或登录过期时返回 code!=200，
+     * 判据是<b>结构</b>而非文案：Admin API 的响应（无论成功还是业务失败）都是带 {@code code} 字段的 JSON；
+     * 凡不是这个结构，就说明请求压根没进到业务方法。依据（对照本地 xxl-job 3.4.1 + xxl-sso-core 2.4.0）：
      * </p>
+     * <ol>
+     *   <li>{@code XxlSsoWebInterceptor#preHandle} 在未登录时，对 {@code @ResponseBody} 端点
+     *       <b>抛 {@code XxlSsoException(301, …)}</b>（只有页面请求才 {@code sendRedirect} 到 loginPath）；</li>
+     *   <li>xxl-job-admin 与 xxl-sso-core 均<b>未注册</b>该异常的处理器，于是它落到容器默认错误响应：</li>
+     *   <li>该错误响应在无 {@code Accept} 时通常是 HTML 错误页，带 JSON 协商时是
+     *       {@code {"timestamp":…,"status":500,…}} —— 两种形态都不含 {@code code} 字段。</li>
+     * </ol>
+     * <p>
+     * 因此本方法同时覆盖这两种形态，不依赖内容协商的结果，也<b>无需也不应</b>去猜 Admin 的错误文案。
+     * </p>
+     * <p>
+     * 反过来说：{@code code != 200} 的 <b>JSON</b> 响应一律是业务错误（cron 非法、名称重复、执行器组非法…）。
+     * 原实现把「{@code code != 200} 且 msg 非空」全部判为登录过期，于是每次业务报错都会强制重登并
+     * <b>重放同一次请求</b>（非幂等操作可能重复执行），还把真实错误掩盖成「登录过期」。
+     * </p>
+     *
+     * @param body 响应体
+     * @return 不是「带 code 的 JSON」时为 true
      */
-    private boolean isLoginExpired(JSONObject json) {
-        if (json == null || json.getIntValue("code", -1) == SUCCESS_CODE) {
-            return false;
+    private boolean isSessionExpiredResponse(String body) {
+        String trimmed = StringUtils.trimToEmpty(body);
+        if (!trimmed.startsWith("{") && !trimmed.startsWith("[")) {
+            // 登录页 / 错误页等非 JSON 内容
+            return true;
         }
-        String msg = json.getString("msg");
-        if (StringUtils.isBlank(msg)) {
-            return false;
-        }
-        log.info("XXL-JOB 登录过期: {}", msg);
-        return true;
+        JSONObject json = JSON.parseObject(trimmed);
+        // Admin API 的响应（成功或业务失败）都带 code 字段；
+        // 不带 code 的 JSON 不是 Admin API 的响应，而是容器默认错误响应的 JSON 形态
+        // （{"timestamp":…,"status":500,"error":…,"path":…}）。
+        return json == null || !json.containsKey("code");
     }
 
     /**

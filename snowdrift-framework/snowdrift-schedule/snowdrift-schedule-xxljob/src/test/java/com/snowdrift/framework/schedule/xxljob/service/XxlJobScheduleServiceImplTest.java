@@ -271,10 +271,12 @@ class XxlJobScheduleServiceImplTest {
     }
 
     @Test
-    @DisplayName("登录过期：强制重登并重试一次后成功")
+    @DisplayName("会话失效：响应为重定向到的登录页（非 JSON）时强制重登并重试一次后成功")
     void loginExpiredRetriesOnce() {
+        // 上游 PermissionInterceptor 未登录时返回 302 → /toLogin，跟随重定向后得到的是登录页；
+        // 不是 JSON 错误体。（原用例以 {"code":500,"msg":"登录已过期"} 打桩，那是业务错误的形态。）
         mockedHttp.when(() -> HttpUtil.postForm(contains("/jobinfo/delete"), any(), any(), any()))
-                .thenReturn("{\"code\":500,\"msg\":\"登录已过期\"}")
+                .thenReturn("<html><head><title>XXL-JOB</title></head><body>请登录</body></html>")
                 .thenReturn("{\"code\":200}");
 
         service.removeJob(XxlJobKey.newInstance(42, 7));

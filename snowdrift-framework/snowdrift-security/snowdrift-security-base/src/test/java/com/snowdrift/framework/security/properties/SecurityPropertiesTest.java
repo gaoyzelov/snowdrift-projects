@@ -37,26 +37,24 @@ class SecurityPropertiesTest {
     }
 
     @Test
-    @DisplayName("默认放行路径包含静态资源/文档/错误页")
+    @DisplayName("默认只放行静态资源与错误页：接口文档路径不再默认放行（暴露面默认最小）")
     void defaultExcludePaths() {
         SecurityProperties properties = new SecurityProperties();
 
         assertThat(properties.getExcludePathPatterns())
-                .contains("/favicon.ico", "/v3/api-docs/**", "/doc.html", "/error");
+                .contains("/favicon.ico", "/error")
+                .noneMatch(path -> path.contains("api-docs")
+                        || path.contains("swagger")
+                        || path.contains("doc.html"));
     }
 
     @Test
-    @DisplayName("默认放行路径恰好 7 条且无重复，顺序与声明一致")
+    @DisplayName("默认放行路径恰好 2 条且无重复，顺序与声明一致")
     void defaultExcludePathsExactAndDistinct() {
         SecurityProperties properties = new SecurityProperties();
 
         assertThat(properties.getExcludePathPatterns()).containsExactly(
                 "/favicon.ico",
-                "/swagger-resources/**",
-                "/v2/api-docs/**",
-                "/v3/api-docs/**",
-                "/doc.html",
-                "/swagger-ui.html",
                 "/error");
         assertThat(properties.getExcludePathPatterns()).doesNotHaveDuplicates();
     }

@@ -56,6 +56,14 @@ public class ApiLogAspect {
      */
     private static final int MAX_MASK_DEPTH = 10;
 
+    /**
+     * 内置的凭据字段词表（小写），按<b>后缀</b>匹配字段名，无需使用者配置
+     * <p>只收较长的专用词：{@code password} 会命中 {@code userPassword}，而 {@code token} 不会命中
+     * {@code tokenCount}（后者不是敏感值）。词表之外的自定义敏感字段仍由 {@link ApiLog#mask()} 声明。</p>
+     */
+    private static final Set<String> DEFAULT_CREDENTIAL_SUFFIXES = Set.of(
+            "password", "passwd", "pwd", "secret", "token", "credential", "authorization", "privatekey");
+
     private final ILogService logService;
 
     @Value("${spring.application.name:unknown}")
@@ -195,22 +203,60 @@ public class ApiLogAspect {
     }
 
     /**
-     * 已配置 {@link ApiLog#mask()} 时对 JSON 脱敏，否则原样返回。
+     * 对 JSON 脱敏：注解 {@link ApiLog#mask()} 给出的字段名 + 内置凭据字段（见 {@link #isSensitiveKey}）。
      * <p>请求参数与响应体共用本方法：同一个敏感字段不应只因出现在返回值中就漏脱敏。</p>
+     * <p>内置凭据字段无条件生效 —— 未配置 {@code mask} 的接口若把 {@code password}/{@code token}
+     * 这类字段落库，等于把凭据写进审计表（{@code HttpContext.paramMap} 记录的是原始参数，
+     * 登录接口的明文口令就在其中），不应依赖使用者逐个补 {@code mask}。</p>
      *
      * @param apiLogAnno 接口日志注解
      * @param json       已序列化的 JSON 文本
-     * @return 脱敏后的 JSON；未配置 mask 或文本为空时原样返回
+     * @return 脱敏后的 JSON；文本为空或无需脱敏时原样返回
      */
     private String maskIfConfigured(ApiLog apiLogAnno, String json) {
-        if (StringUtils.isBlank(json) || ArrayUtils.isEmpty(apiLogAnno.mask())) {
+        if (StringUtils.isBlank(json)) {
             return json;
         }
         // 字段名统一按 ROOT Locale 小写：默认 Locale 下（如土耳其语）"ID" 会变成 "ıd"，导致掩码静默失效
         Set<String> maskFields = Arrays.stream(apiLogAnno.mask())
                 .map(field -> field.toLowerCase(Locale.ROOT))
                 .collect(Collectors.toSet());
+        if (!requiresMasking(json, maskFields)) {
+            // 未配置 mask 且文本里没有任何凭据词：免去一次 JSON 解析 + 重序列化
+            return json;
+        }
         return applyMask(json, maskFields);
+    }
+
+    /**
+     * 判断该段文本是否值得付出一次解析/重序列化的代价
+     * <p>注解给了字段名时保持既有行为（直接脱敏）；仅靠内置凭据词时才做一次廉价的子串预筛，
+     * 避免给所有 {@code @ApiLog} 请求都加上 JSON 解析开销。</p>
+     */
+    private static boolean requiresMasking(String json, Set<String> maskFields) {
+        if (!maskFields.isEmpty()) {
+            return true;
+        }
+        String lower = json.toLowerCase(Locale.ROOT);
+        return DEFAULT_CREDENTIAL_SUFFIXES.stream().anyMatch(lower::contains);
+    }
+
+    /**
+     * 字段是否需要脱敏
+     * <p>两条规则：</p>
+     * <ul>
+     *   <li>注解 {@code mask} 给出的名字 —— <b>精确</b>匹配（大小写不敏感），与既有语义保持一致，
+     *       避免使用者写了 {@code id} 这类短名后把 {@code orderId}/{@code userId} 一并抹掉</li>
+     *   <li>内置凭据词 —— <b>后缀</b>匹配，使 {@code userPassword}/{@code clientSecret}/{@code csrfToken}
+     *       这类组合命名同样被覆盖；词表只含较长的专用词，避免误伤</li>
+     * </ul>
+     */
+    private static boolean isSensitiveKey(String key, Set<String> maskFields) {
+        String lower = key.toLowerCase(Locale.ROOT);
+        if (maskFields.contains(lower)) {
+            return true;
+        }
+        return DEFAULT_CREDENTIAL_SUFFIXES.stream().anyMatch(lower::endsWith);
     }
 
     /**
@@ -277,7 +323,7 @@ public class ApiLogAspect {
         if (value instanceof JSONObject obj) {
             List<String> toMask = new ArrayList<>();
             for (String key : obj.keySet()) {
-                if (maskFields.contains(key.toLowerCase(Locale.ROOT))) {
+                if (isSensitiveKey(key, maskFields)) {
                     toMask.add(key);
                 } else if (depth + 1 > MAX_MASK_DEPTH) {
                     obj.put(key, StrConst.MASK_REPLACEMENT);

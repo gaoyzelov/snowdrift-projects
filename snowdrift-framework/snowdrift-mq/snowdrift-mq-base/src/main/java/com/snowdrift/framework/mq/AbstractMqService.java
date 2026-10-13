@@ -1,5 +1,6 @@
 package com.snowdrift.framework.mq;
 
+import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.mq.context.MqContextPropagator;
@@ -114,8 +115,7 @@ public abstract class AbstractMqService implements IMqService {
             try {
                 return doSend(topic, key, payload, headers);
             } finally {
-                SecurityContextHolder.clear();
-                MDC.clear();
+                clearReplayedContext();
             }
         }, executor);
     }
@@ -231,6 +231,20 @@ public abstract class AbstractMqService implements IMqService {
     // ========== 异步上下文恢复 ==========
     /**
      * 在异步任务线程中恢复调用方上下文
+     * <p>
+     * 只恢复 MDC 与 {@code SecurityContext}；{@code HttpContext} 刻意<b>不</b>恢复，而是<b>显式清空</b>。
+     * </p>
+     * <p>
+     * 原因：{@code HttpContextHolder} 用的是 {@code TransmittableThreadLocal}，它继承自
+     * {@code InheritableThreadLocal}，而 mqAsyncExecutor 是<b>裸线程池</b>（没有像
+     * {@code snowdriftAsyncExecutor} 那样挂 {@code TtlRunnable} 装饰器）。于是 worker 若在某个请求
+     * 处理期间首次创建，会在构造时永久继承那个请求的 {@code HttpContext}，且逐任务不还原、也无人清理 ——
+     * 之后任何读取（例如审计/日志切面）都会读到<b>另一个请求</b>的 IP 与 URI。
+     * </p>
+     * <p>
+     * 这里选择清空而非传播：异步发送任务本来就拿不到调用方的 {@code HttpContext}，清空让它
+     * <b>显式缺席</b>（读到 null，调用方可判空），好过读到另一个请求的陈旧值。
+     * </p>
      */
     protected void replayContext(Map<String, String> callerMdc, SecurityContext callerSecurity) {
         if (callerMdc != null) {
@@ -241,6 +255,20 @@ public abstract class AbstractMqService implements IMqService {
         if (callerSecurity != null) {
             SecurityContextHolder.setContext(callerSecurity);
         }
+        HttpContextHolder.clear();
+    }
+
+    /**
+     * 清理异步任务线程上的上下文
+     * <p>
+     * 三个上下文的清理统一走本方法，避免各厂商实现复制粘贴时再漏掉其中一个
+     * （历史上基类与 Kafka / RocketMQ 回调共 4 处副本<b>全都</b>漏了 {@code HttpContextHolder}）。
+     * </p>
+     */
+    protected void clearReplayedContext() {
+        SecurityContextHolder.clear();
+        MDC.clear();
+        HttpContextHolder.clear();
     }
 
     // ========== 拦截器辅助方法 ==========

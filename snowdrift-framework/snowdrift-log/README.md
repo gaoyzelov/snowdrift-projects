@@ -45,7 +45,14 @@ public Result<Order> createOrder(@RequestBody OrderDTO dto) { ... }
 | `saveResult` | boolean | false | 是否保存返回结果 |
 | `module` | String | "" | 功能模块 |
 | `summary` | String | "" | 操作摘要 |
-| `mask` | String[] | {} | 需脱敏的字段名：对 JSON **任意层级、名称匹配（不区分大小写）**的字段替换为 `******`；不支持按点路径精确定位 |
+| `mask` | String[] | {} | 需脱敏的字段名：对 JSON **任意层级、名称精确匹配（不区分大小写）**的字段替换为 `******`；不支持按点路径精确定位 |
+
+> **凭据字段无条件脱敏，无需配置 `mask`**：`password` / `passwd` / `pwd` / `secret` / `token`
+> / `credential` / `authorization` / `privateKey` 这组词按**后缀**匹配（`userPassword`、`clientSecret`、
+> `csrfToken` 都会命中），请求参数与响应体一视同仁。
+> 触发原因是 `HttpContext.paramMap` 记录的是**原始** URL 参数，登录接口的明文口令正在其中 ——
+> 若只在配置了 `mask` 的接口上脱敏，等于让「忘了写 `mask`」变成凭据落库。`mask` 里写的名字仍按精确匹配，
+> 以免写了 `id` 这类短名后把 `orderId`/`userId` 一并抹掉。
 
 > 结果判定：方法抛异常 **或返回的 `Result.code != 1`**（含 `code` 为 `null`）均记为失败（`status=0`，附根因/业务消息，异常仍原样抛给上层）；`Error` 亦记为失败。
 

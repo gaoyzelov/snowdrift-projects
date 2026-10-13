@@ -66,17 +66,55 @@ class XssFilterTest {
     }
 
     @Test
-    @DisplayName("doFilter：启用时包装为 XssRequestWrapper，参数被清洗")
-    void wrapsAndCleansWhenEnabled() throws Exception {
+    @DisplayName("doFilter：启用时包装为 XssRequestWrapper，但参数与 Header 默认都不被清洗")
+    void wrapsWithoutCleaningInputByDefault() throws Exception {
         MockHttpServletRequest request = reqWithServletPath("/api");
         request.setParameter("p", "<x>");
+        request.addHeader("X-Note", "<x>");
         AtomicReference<ServletRequest> seen = new AtomicReference<>();
         FilterChain chain = (req, resp) -> seen.set(req);
 
         filter(props(true, List.of())).doFilter(request, new MockHttpServletResponse(), chain);
 
         assertThat(seen.get()).isInstanceOf(XssRequestWrapper.class);
+        // 输入侧转义会改写业务数据、破坏协议语义值，默认都不做
+        assertThat(seen.get().getParameter("p")).isEqualTo("<x>");
+        assertThat(((jakarta.servlet.http.HttpServletRequest) seen.get()).getHeader("X-Note"))
+                .isEqualTo("<x>");
+    }
+
+    @Test
+    @DisplayName("doFilter：显式开启 escape-parameters 时参数与 QueryString 恢复清洗（下游平滑迁移用）")
+    void cleansParametersWhenExplicitlyEnabled() throws Exception {
+        MockHttpServletRequest request = reqWithServletPath("/api");
+        request.setParameter("p", "<x>");
+        request.setQueryString("q=<x>");
+        AtomicReference<ServletRequest> seen = new AtomicReference<>();
+        FilterChain chain = (req, resp) -> seen.set(req);
+
+        XssProperties withEscape = props(true, List.of());
+        withEscape.setEscapeParameters(true);
+        filter(withEscape).doFilter(request, new MockHttpServletResponse(), chain);
+
         assertThat(seen.get().getParameter("p")).isEqualTo("&lt;x&gt;");
+        assertThat(((jakarta.servlet.http.HttpServletRequest) seen.get()).getQueryString())
+                .isEqualTo("q=&lt;x&gt;");
+    }
+
+    @Test
+    @DisplayName("doFilter：显式开启 escape-headers 时 Header 恢复清洗")
+    void cleansHeadersWhenExplicitlyEnabled() throws Exception {
+        MockHttpServletRequest request = reqWithServletPath("/api");
+        request.addHeader("X-Note", "<x>");
+        AtomicReference<ServletRequest> seen = new AtomicReference<>();
+        FilterChain chain = (req, resp) -> seen.set(req);
+
+        XssProperties withEscape = props(true, List.of());
+        withEscape.setEscapeHeaders(true);
+        filter(withEscape).doFilter(request, new MockHttpServletResponse(), chain);
+
+        assertThat(((jakarta.servlet.http.HttpServletRequest) seen.get()).getHeader("X-Note"))
+                .isEqualTo("&lt;x&gt;");
     }
 
     @Test

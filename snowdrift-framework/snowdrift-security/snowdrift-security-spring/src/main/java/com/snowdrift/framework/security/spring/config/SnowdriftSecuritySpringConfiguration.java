@@ -45,7 +45,7 @@ import java.util.List;
  * 以 {@code snowdrift.security.spring.*} 为配置入口，
  * 通过 {@code snowdrift.security.spring.enabled} 控制模块开关。
  * 仅由自身 enabled 属性驱动，不受类路径上是否存在 Sa-Token（{@code SaTokenConfig}）影响；
- * 与 Sa-Token 后端是否同时启用，通过 {@link #warnIfBothBackendsEnabled(Environment)} 给出诊断。
+ * 与 Sa-Token 后端是否同时启用，通过 {@link #checkBackendExclusivity(boolean, boolean)} 在启动期直接失败。
  * </p>
  *
  * @author gaoyzelov
@@ -63,7 +63,7 @@ public class SnowdriftSecuritySpringConfiguration {
 
     public SnowdriftSecuritySpringConfiguration(SpringSecurityProperties properties, Environment environment) {
         this.properties = properties;
-        warnIfBothBackendsEnabled(environment);
+        assertBackendsExclusive(environment);
     }
 
     /**
@@ -80,7 +80,7 @@ public class SnowdriftSecuritySpringConfiguration {
     @ConditionalOnMissingBean(SecurityFilterChain.class)
     public SecurityFilterChain securityFilterChain(HttpSecurity http, TokenStore tokenStore,
                                                    RequestMappingHandlerMapping handlerMapping) throws Exception {
-        List<String> anonymousPaths = AnonymousScanner.scan(handlerMapping);
+        List<AnonymousScanner.Endpoint> anonymousEndpoints = AnonymousScanner.scan(handlerMapping);
         http
                 .csrf(csrf -> {
                     if (!properties.getCsrfEnabled()) {
@@ -93,8 +93,14 @@ public class SnowdriftSecuritySpringConfiguration {
                     for (String pattern : properties.getExcludePathPatterns()) {
                         auth.requestMatchers(pattern).permitAll();
                     }
-                    for (String pattern : anonymousPaths) {
-                        auth.requestMatchers(pattern).permitAll();
+                    // 按「路径 + 方法」放行：只按路径会连带放开同一路径上未被 @Anonymous 标注的方法
+                    for (AnonymousScanner.Endpoint endpoint : anonymousEndpoints) {
+                        if (endpoint.allMethods()) {
+                            auth.requestMatchers(endpoint.pattern()).permitAll();
+                        } else {
+                            endpoint.methods().forEach(method ->
+                                    auth.requestMatchers(method, endpoint.pattern()).permitAll());
+                        }
                     }
                     auth.anyRequest().authenticated();
                 })
@@ -169,26 +175,36 @@ public class SnowdriftSecuritySpringConfiguration {
     }
 
     /**
-     * 双后端互斥诊断
+     * 双后端互斥守卫
      * <p>
      * spring 与 sa-token 两个后端均为仅由各自 {@code enabled} 属性驱动的自动配置。
-     * 当两者同时启用时，最终由自动配置顺序决定生效的 {@link ISecurityService} 实现，行为不可控，
-     * 此处给出明确告警提示用户仅启用其中一个。
+     * 两者同时启用时，最终生效的 {@link ISecurityService} 实现由自动配置顺序决定（不保证），
+     * 表现为「谁在管认证」不可预测，且难以排查 —— 与 {@code MqActivationGuard} 处理多实现互斥的方式一致，
+     * 这里在<b>启动期</b>直接失败，而不是只打一条容易被忽略的告警。
+     * </p>
+     * <p>
+     * 仅当另一后端<b>模块在类路径上</b>且属性为 {@code true} 时才判定冲突：属性为 true 但实现不存在时
+     * 该后端根本不会生效，不构成冲突。
      * </p>
      *
-     * @param environment Spring 环境，用于读取另一后端的启用属性
+     * @param saTokenModulePresent sa-token 实现模块是否在类路径上
+     * @param saTokenEnabled       {@code snowdrift.security.sa-token.enabled} 是否为 true
      */
-    private void warnIfBothBackendsEnabled(Environment environment) {
-        boolean saTokenModulePresent = ClassUtils.isPresent(
-                "com.snowdrift.framework.security.satoken.config.SnowdriftSecuritySaTokenConfiguration",
-                getClass().getClassLoader());
-        if (saTokenModulePresent
-                && environment.getProperty("snowdrift.security.sa-token.enabled",
-                Boolean.class, Boolean.FALSE)) {
-            log.warn("[Snowdrift-Security] 检测到 spring 与 sa-token 两个安全后端均已启用"
+    static void checkBackendExclusivity(boolean saTokenModulePresent, boolean saTokenEnabled) {
+        if (saTokenModulePresent && saTokenEnabled) {
+            throw new IllegalStateException("[Snowdrift-Security] spring 与 sa-token 两个安全后端均已启用"
                     + "（snowdrift.security.spring.enabled=true 且 snowdrift.security.sa-token.enabled=true）。"
-                    + "最终生效实现由自动配置顺序决定，行为不可控；请仅启用其中一个"
-                    + "（将另一后端 enabled 置为 false，或移除对应实现依赖）。");
+                    + "同一时间只允许启用一个：生效实现由自动配置顺序决定，行为不可控。"
+                    + "请将其中一个置为 false，或移除对应实现依赖。");
         }
+    }
+
+    private void assertBackendsExclusive(Environment environment) {
+        checkBackendExclusivity(
+                ClassUtils.isPresent(
+                        "com.snowdrift.framework.security.satoken.config.SnowdriftSecuritySaTokenConfiguration",
+                        getClass().getClassLoader()),
+                environment.getProperty("snowdrift.security.sa-token.enabled",
+                        Boolean.class, Boolean.FALSE));
     }
 }

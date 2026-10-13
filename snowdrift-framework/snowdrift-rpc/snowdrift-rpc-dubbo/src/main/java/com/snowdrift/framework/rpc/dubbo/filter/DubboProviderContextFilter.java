@@ -1,6 +1,7 @@
 package com.snowdrift.framework.rpc.dubbo.filter;
 
 import com.snowdrift.framework.base.constant.StrConst;
+import com.snowdrift.framework.context.http.HttpContextHolder;
 import com.snowdrift.framework.context.security.SecurityContext;
 import com.snowdrift.framework.context.security.SecurityContextHolder;
 import com.snowdrift.framework.rpc.dubbo.constant.RpcContextConstants;
@@ -106,10 +107,17 @@ public class DubboProviderContextFilter implements Filter, Filter.Listener {
 
     /**
      * 清除上下文，避免线程池复用污染
+     * <p>
+     * 三个上下文都要清。{@code HttpContextHolder} 用的是 {@code TransmittableThreadLocal}（继承自
+     * {@code InheritableThreadLocal}）：Dubbo Provider 线程若在某个 HTTP 请求处理期间首次创建，
+     * 会永久继承那个请求的 {@code HttpContext}，此前这里只清 Security 与 traceId，导致该线程后续
+     * 读到的是<b>另一个请求</b>的 IP/URI（审计与日志切面会据此写错归属）。
+     * </p>
      */
     private void clearContext() {
         SecurityContextHolder.clear();
         MDC.remove(TRACE_ID_KEY);
+        HttpContextHolder.clear();
     }
 
 }

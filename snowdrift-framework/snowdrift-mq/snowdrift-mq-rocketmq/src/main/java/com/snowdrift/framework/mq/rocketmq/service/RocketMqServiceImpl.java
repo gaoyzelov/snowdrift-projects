@@ -115,8 +115,7 @@ public class RocketMqServiceImpl extends AbstractMqService {
                         fireAfterSend(topic, result);
                         future.complete(result);
                     } finally {
-                        SecurityContextHolder.clear();
-                        MDC.clear();
+                        clearReplayedContext();
                     }
                 }
 
@@ -128,8 +127,7 @@ public class RocketMqServiceImpl extends AbstractMqService {
                         fireOnSendError(topic, mqException);
                         future.completeExceptionally(mqException);
                     } finally {
-                        SecurityContextHolder.clear();
-                        MDC.clear();
+                        clearReplayedContext();
                     }
                 }
             }, sendTimeoutMillis);

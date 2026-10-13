@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>snowdrift-oss-base</artifactId>
-    <name>snowdrift-oss-core</name>
+    <name>snowdrift-oss-base</name>
     <description>Snowdrift OSS Base - OSS文件存储及抽象</description>
 
     <dependencies>

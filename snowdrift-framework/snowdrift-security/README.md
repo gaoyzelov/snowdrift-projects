@@ -156,7 +156,21 @@ public class CustomTokenStore extends AbstractTokenStore {
 | `timeout` | long | 86400 | 绝对超时（秒） |
 | `active-timeout` | long | 1800 | 闲置超时（秒） |
 | `prefix` | String | Bearer | Token 前缀 |
-| `exclude-path-patterns` | List\<String\> | /favicon.ico, /swagger-resources/**, /v2/api-docs/**, /v3/api-docs/**, /doc.html, /swagger-ui.html, /error | 放行路径。**需要匿名访问的静态资源路径（`/static/**` 等）必须自行添加**——登录校验对静态资源同样生效 |
+| `exclude-path-patterns` | List\<String\> | /favicon.ico, /error | 放行路径。**需要匿名访问的静态资源路径（`/static/**` 等）必须自行添加**——登录校验对静态资源同样生效 |
+
+> **接口文档路径默认不放行**（`/v3/api-docs/**`、`/v2/api-docs/**`、`/doc.html`、`/swagger-ui.html`、
+> `/swagger-resources/**`）：这些路径会把全部接口定义与参数结构暴露出去，是否对外可见应由使用方按环境决定。
+> 开发/联调环境需要时显式加回。该属性是**整份替换**语义，配置时记得把 `/error` 一并写回：
+>
+> ```yaml
+> snowdrift:
+>   security:
+>     exclude-path-patterns:
+>       - /favicon.ico
+>       - /error
+>       - /v3/api-docs/**
+>       - /doc.html
+> ```
 
 ### snowdrift.security.sa-token
 

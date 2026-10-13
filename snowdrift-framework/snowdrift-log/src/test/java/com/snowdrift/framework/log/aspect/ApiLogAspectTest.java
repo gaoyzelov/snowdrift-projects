@@ -98,6 +98,13 @@ class ApiLogAspectTest {
         public Result<String> disabled(String arg) {
             return Result.ok("ok");
         }
+
+        /** 未配置 mask，用于验证内置凭据字段的默认脱敏 */
+        @ApiLog(bizType = BizTypeEnum.SELECT, module = "查询", summary = "未配置掩码",
+                saveParams = true, saveResult = true)
+        public Result<String> noMask(String arg) {
+            return Result.ok("ok");
+        }
     }
 
     /** 含敏感字段的入参/出参 */
@@ -198,9 +205,13 @@ class ApiLogAspectTest {
     }
 
     private static void setupContexts() {
+        setupContexts(Map.of("page", "1"));
+    }
+
+    private static void setupContexts(Map<String, String> paramMap) {
         HttpContextHolder.setContext(HttpContext.builder()
                 .uri("/api/order").method("POST").ip("1.2.3.4").userAgent("ua")
-                .paramMap(Map.of("page", "1"))
+                .paramMap(paramMap)
                 .build());
         SecurityContextHolder.setContext(SecurityContext.builder()
                 .userId(1L).username("admin").nickname("管理员").tenantId(100L)
@@ -397,6 +408,63 @@ class ApiLogAspectTest {
 
         String requestParams = logService.single().getRequestParams();
         assertThat(requestParams).isNotBlank().contains("page", "1");
+    }
+
+    // ========== 内置凭据字段的默认脱敏（@ApiLog 未配置 mask 时也生效） ==========
+
+    @Test
+    @DisplayName("未配置 mask 时，URL 参数里的凭据字段默认脱敏，不得落库明文")
+    void masksCredentialUrlParamsWithoutAnnotationMask() throws Throwable {
+        setupContexts(Map.of(
+                "page", "1",
+                "password", "P@ssw0rd!",
+                "refreshToken", "rt.abc.def"));
+
+        aspect.around(joinPoint(Result.ok(), new Payload()), anno("noMask", String.class));
+
+        String requestParams = logService.single().getRequestParams();
+        assertThat(requestParams)
+                .doesNotContain("P@ssw0rd!", "rt.abc.def")
+                .contains("page", "1");
+    }
+
+    @Test
+    @DisplayName("凭据词按后缀匹配：userPassword/clientSecret 等组合命名同样脱敏")
+    void masksCredentialSuffixedKeys() throws Throwable {
+        setupContexts(Map.of(
+                "userPassword", "u-secret",
+                "clientSecret", "c-secret",
+                "csrfToken", "t-secret"));
+
+        aspect.around(joinPoint(Result.ok(), new Payload()), anno("noMask", String.class));
+
+        assertThat(logService.single().getRequestParams())
+                .doesNotContain("u-secret", "c-secret", "t-secret");
+    }
+
+    @Test
+    @DisplayName("响应体里的凭据字段同样默认脱敏（未配置 mask 时）")
+    void masksCredentialResponseBody() throws Throwable {
+        setupContexts();
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("accessToken", "at.xyz");
+        body.put("nickname", "管理员");
+
+        aspect.around(joinPoint(Result.ok(body), new Payload()), anno("noMask", String.class));
+
+        String responseBody = logService.single().getResponseBody();
+        assertThat(responseBody).doesNotContain("at.xyz").contains("管理员");
+    }
+
+    @Test
+    @DisplayName("普通字段不受影响：不因默认脱敏把常规入参一并抹掉")
+    void ordinaryFieldsSurviveDefaultMasking() throws Throwable {
+        setupContexts(Map.of("page", "1", "keyword", "tokenizer"));
+
+        aspect.around(joinPoint(Result.ok(), new Payload()), anno("noMask", String.class));
+
+        assertThat(logService.single().getRequestParams())
+                .contains("page", "1", "keyword", "tokenizer");
     }
 
     @Test

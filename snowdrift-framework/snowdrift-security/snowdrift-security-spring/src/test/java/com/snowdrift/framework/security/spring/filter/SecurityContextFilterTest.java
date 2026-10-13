@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -162,11 +163,15 @@ class SecurityContextFilterTest {
     @Test
     @DisplayName("通配排除模式（/v3/api-docs/**）命中子路径时放行")
     void excludePatternsParsedAtConstruction() throws Exception {
+        // 接口文档路径已不在默认放行列表中（SEC-06），此处显式声明以验证通配匹配与「构造期解析」
+        SecurityProperties custom = new SecurityProperties();
+        custom.setExcludePathPatterns(List.of("/v3/api-docs/**"));
+        SecurityContextFilter customFilter = new SecurityContextFilter(custom, tokenStore);
         when(request.getServletPath()).thenReturn("/v3/api-docs/swagger-config");
 
-        filter.doFilterInternal(request, response, chain);
+        customFilter.doFilterInternal(request, response, chain);
 
-        // /v3/api-docs/** 命中默认排除列表 → 放行、不查询 token
+        // /v3/api-docs/** 命中排除列表 → 放行、不查询 token
         verify(tokenStore, never()).get(any());
         verify(chain).doFilter(request, response);
     }

@@ -90,8 +90,7 @@ public class KafkaMqServiceImpl extends AbstractMqService {
                     fireAfterSend(topic, result);
                     return result;
                 } finally {
-                    SecurityContextHolder.clear();
-                    MDC.clear();
+                    clearReplayedContext();
                 }
             });
         } catch (RuntimeException e) {
