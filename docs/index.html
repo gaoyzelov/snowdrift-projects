@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Snowdrift 雪堆 — Spring Cloud 微服务基础设施，按构件取用</title>
-<meta name="description" content="Snowdrift 把认证、缓存、消息、对象存储、调度、ORM、日志、上下文拆成 11 个功能模块、26 个可依赖构件，每个构件都是一个独立的 Spring Boot 自动配置。Java 17 + Spring Boot 3.5 + Spring Cloud 2025。">
+<meta name="description" content="Snowdrift 将认证、缓存、消息、对象存储、调度、ORM、日志与请求上下文拆成 11 个功能模块、26 个可依赖构件，其中 20 个提供 Spring Boot 自动配置。Java 17 + Spring Boot 3.5 + Spring Cloud 2025。">
 <meta name="keywords" content="Snowdrift,雪堆,Spring Boot,Spring Cloud,微服务,脚手架,Java,自动配置,Gaoyzelov">
 <meta name="theme-color" content="#EAF1F7">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>❄️</text></svg>">
@@ -307,8 +307,9 @@ footer p { margin-top: 1.1rem; font-size: .82rem; }
             拆成 11 个功能模块、26 个可独立引入的构件。
         </p>
         <p class="lede">
-            26 个构件里有 20 个是带自动配置的 Spring Boot 模块，其余是纯基础库：引入坐标，能力生效；去掉坐标，它不参与启动。
-            不需要继承统一的父类，也不需要改启动类。基于 Java 17 与 Spring Boot 3.5，版本与 Spring Cloud 2025 对齐。
+            26 个构件中，20 个提供 Spring Boot 自动配置；其余提供基础 API、上下文抽象或 Dubbo SPI 扩展。
+            按能力选取依赖，无需继承统一的 Java 父类；自动配置由 Spring Boot 自动发现，不必为框架模块逐个添加 <span class="c">@EnableXxx</span>。
+            基于 Java 17 与 Spring Boot 3.5，版本与 Spring Cloud 2025 对齐。
         </p>
         <div class="cta">
             <a class="btn" href="#modules">查看模块</a>
@@ -319,7 +320,7 @@ footer p { margin-top: 1.1rem; font-size: .82rem; }
             <div><b>11</b><span>功能模块</span></div>
             <div><b>26</b><span>可依赖构件</span></div>
             <div><b>37</b><span>Maven 模块（含聚合 pom）</span></div>
-            <div><b>1362</b><span>回归测试 / 0 失败</span></div>
+            <div><b>1366</b><span>测试用例 / 0 失败</span></div>
         </div>
     </div>
 </section>
@@ -355,7 +356,7 @@ footer p { margin-top: 1.1rem; font-size: .82rem; }
                 <div class="l-body"><dl class="l-dl">
                     <dt>构件</dt><dd><code>com.snowdrift : snowdrift-context</code></dd>
                     <dt>配置</dt><dd>—</dd>
-                    <dt>能力</dt><dd>HttpContext / SecurityContext 两个请求级上下文；基于 TransmittableThreadLocal，跨 @Async 与线程池自动传递；过滤器在 finally 中清理，池化线程不残留上一个请求的数据。</dd>
+                    <dt>能力</dt><dd>HttpContext / SecurityContext 两个请求级上下文，基于 TransmittableThreadLocal；配合 Web 模块提供的异步线程池，可向 @Async 任务传递上下文；请求过滤器在 finally 中清理，避免池化线程残留上一个请求的数据。</dd>
                 </dl></div>
             </div>
 
@@ -368,7 +369,7 @@ footer p { margin-top: 1.1rem; font-size: .82rem; }
                 <div class="l-body"><dl class="l-dl">
                     <dt>构件</dt><dd><code>com.snowdrift : snowdrift-web</code></dd>
                     <dt>配置</dt><dd><code>snowdrift.i18n</code> · <code>snowdrift.cors</code> · <code>snowdrift.xss</code> · <code>snowdrift.resource</code> · <code>snowdrift.async</code></dd>
-                    <dt>能力</dt><dd>WebExceptionHandler：17 个 @ExceptionHandler，统一 Result 契约；i18n 与请求级语言切换；异步线程池装饰器 TTL + MDC 双通道，traceId 既不会丢也不会串；静态资源映射；XssFilter 与 XssJsonBodyAdvice（默认关闭）。</dd>
+                    <dt>能力</dt><dd>WebExceptionHandler：17 个 @ExceptionHandler，统一 Result 契约；i18n 与请求级语言切换；启用 <code>snowdrift.async</code> 后，框架异步线程池通过 TTL + MDC 双通道传递上下文与 traceId；静态资源映射；XssFilter 与 XssJsonBodyAdvice（默认关闭）。</dd>
                 </dl></div>
             </div>
 
@@ -571,16 +572,16 @@ footer p { margin-top: 1.1rem; font-size: .82rem; }
 <section class="sec" id="adopt">
     <div class="wrap">
         <div class="sec-label">引入</div>
-        <h2>两步接入</h2>
+        <h2>接入方式</h2>
         <p class="sec-sub">
-            先取源码安装到本地仓库，再用 BOM 统一版本仲裁。每个模块只依赖它自己需要的东西，
-            不会把没用到的后端 SDK 带进来。
+            可从源码安装到本地仓库，也可部署到团队 Maven 仓库；接入项目通过 BOM 统一版本仲裁。
+            模块按需引入，只携带所选能力需要的依赖。
         </p>
 
         <div class="adopt">
             <div class="surface pad">
-                <h3>1. 构建到本地仓库</h3>
-                <p class="sec-sub">当前尚未发布到 Maven 中央仓库，需要从源码安装。</p>
+                <h3>1. 从源码构建（可选）</h3>
+                <p class="sec-sub">在本地试用或尚未部署构件时，可运行以下命令将构件安装到本地 Maven 仓库。</p>
                 <div class="snip">
                     <div class="snip-cap"><span>Shell</span><button class="copy" data-copy="clone" type="button">复制</button></div>
                     <pre><code class="language-bash" id="clone">git clone https://github.com/gaoyzelov/snowdrift-projects.git
@@ -645,22 +646,18 @@ mvn clean install -DskipTests</code></pre>
 <!-- ═══ 现状与取舍 ═══ -->
 <section class="sec" id="status">
     <div class="wrap">
-        <div class="sec-label">现状与取舍</div>
-        <h2>它现在到哪一步，哪里有代价</h2>
-        <p class="sec-sub">选底座的时候，这两件事比多看十条能力介绍有用。</p>
+        <div class="sec-label">项目概况</div>
+        <h2>项目概况与约定</h2>
+        <p class="sec-sub">接入前先了解当前实现范围、响应契约与许可证。</p>
 
         <div class="status surface">
             <div>
                 <b>已实现</b>
-                <p>11 个功能模块、26 个可依赖构件全部落地。全量回归 <b>1362</b> 个测试，0 失败、0 错误、0 跳过。</p>
-            </div>
-            <div>
-                <b>分发</b>
-                <p>尚未发布到 Maven 中央仓库。当前用法是 clone 后 <span class="c">mvn clean install</span> 到本地仓库，再按坐标引入。</p>
+                <p>11 个功能模块、26 个可依赖构件已实现。最近一次全量测试报告汇总 <b>1366</b> 个测试用例，0 失败、0 错误、0 跳过。</p>
             </div>
             <div>
                 <b>响应契约</b>
-                <p>HTTP 状态码统一 200，成功与失败由响应体的 <span class="c">Result.code</span> 表达，认证与鉴权异常也不例外。网关、前端与监控请按 <span class="c">body.code</span> 判断，不要按 HTTP 状态码判断。</p>
+                <p>框架统一异常处理以 HTTP 200 返回 <span class="c">Result</span>，认证与鉴权失败也遵循此约定；业务结果由响应体的 <span class="c">Result.code</span> 表达。业务接口若显式设置 HTTP 状态码，则以接口实现为准。网关、前端与监控应读取 <span class="c">body.code</span> 判断业务结果。</p>
             </div>
             <div>
                 <b>许可</b>
