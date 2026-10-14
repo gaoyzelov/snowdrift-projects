@@ -43,6 +43,7 @@
         <module>snowdrift-context</module>
         <module>snowdrift-orm</module>
         <module>snowdrift-rpc</module>
+        <module>snowdrift-social</module>
     </modules>
 
 </project>
