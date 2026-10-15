@@ -8,10 +8,10 @@ import lombok.NoArgsConstructor;
 import java.io.Serializable;
 
 /**
- *
- * @author 83674
+ * UserAccessTokenVO
+ * @author gaoyzelov
  * @date 2026/10/14-14:56
- * @description
+ * @description 钉钉用户访问令牌VO
  * @since 1.0.0
  */
 @Data

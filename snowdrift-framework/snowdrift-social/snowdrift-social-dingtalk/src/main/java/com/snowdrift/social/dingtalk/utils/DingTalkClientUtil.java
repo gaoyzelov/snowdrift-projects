@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  * @since 1.0.0
  */
 @Slf4j
-public class ClientUtil {
+public class DingTalkClientUtil {
 
     private static final String PROTOCOL = "https";
 
@@ -29,7 +29,7 @@ public class ClientUtil {
         config.regionId = REGION_ID;
     }
 
-    private ClientUtil() {
+    private DingTalkClientUtil() {
     }
 
     public static <T extends Client> T getInstance(Class<T> clazz) {

@@ -3,11 +3,11 @@ package com.snowdrift.social.dingtalk.service;
 import com.aliyun.dingtalkoauth2_1_0.models.*;
 import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.base.util.AssertUtil;
-import com.snowdrift.social.dingtalk.config.DingTalkServiceConfig;
+import com.snowdrift.framework.base.util.ValidateUtil;
 import com.snowdrift.social.dingtalk.model.AppAccessTokenVO;
 import com.snowdrift.social.dingtalk.model.UserAccessTokenVO;
-import com.snowdrift.social.dingtalk.properties.DingTalkSocialProperties;
-import com.snowdrift.social.dingtalk.utils.ClientUtil;
+import com.snowdrift.social.dingtalk.properties.DingTalkSocialConfig;
+import com.snowdrift.social.dingtalk.utils.DingTalkClientUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
 import org.apache.commons.lang3.StringUtils;
@@ -15,35 +15,26 @@ import org.apache.commons.lang3.StringUtils;
 import java.net.URI;
 
 /**
+ * DingTalkServiceImpl
  *
  * @author 83674
  * @date 2026/10/14-14:08
- * @description
+ * @description 钉钉服务实现类
  * @since 1.0.0
  */
 @Slf4j
-public class IDingTalkServiceImpl implements IDingTalkService {
+public class DingTalkServiceImpl implements IDingTalkService {
 
-    private final DingTalkServiceConfig config;
+    private final DingTalkSocialConfig config;
 
-    /**
-     * 兼容直接使用旧单配置模型的调用方。
-     */
-    public IDingTalkServiceImpl(DingTalkSocialProperties properties) {
-        this(properties == null ? null : new DingTalkServiceConfig(
-                "default",
-                properties.getAppKey(),
-                properties.getAppSecret(),
-                properties.getOauthRedirectUri(),
-                true
-        ));
-    }
-
-    public IDingTalkServiceImpl(DingTalkServiceConfig config) {
+    public DingTalkServiceImpl(DingTalkSocialConfig config) {
         if (config == null) {
             throw new BizException("钉钉服务配置不能为空");
         }
-        this.config = config;
+        this.config = new DingTalkSocialConfig(config.getConfigKey(), config.getAppKey(),
+                config.getAppSecret(), config.getOauthRedirectUri());
+        AssertUtil.notBlank(this.config.getAppKey(), "钉钉appKey不能为空");
+        AssertUtil.notBlank(this.config.getAppSecret(), "钉钉appSecret不能为空");
     }
 
     @Override
@@ -54,7 +45,7 @@ public class IDingTalkServiceImpl implements IDingTalkService {
         request.setAppKey(config.getAppKey());
         request.setAppSecret(config.getAppSecret());
         try {
-            com.aliyun.dingtalkoauth2_1_0.Client oauthClient = ClientUtil.getInstance(com.aliyun.dingtalkoauth2_1_0.Client.class);
+            com.aliyun.dingtalkoauth2_1_0.Client oauthClient = DingTalkClientUtil.getInstance(com.aliyun.dingtalkoauth2_1_0.Client.class);
             GetAccessTokenResponse response = oauthClient.getAccessToken(request);
             if (response == null || !Integer.valueOf(200).equals(response.getStatusCode()) || response.getBody() == null) {
                 throw new BizException("钉钉应用 Token 响应无效");
@@ -70,7 +61,9 @@ public class IDingTalkServiceImpl implements IDingTalkService {
     @Override
     public String getUserOauthUrl(String state) {
         AssertUtil.notBlank(config.getAppKey(), "钉钉appKey不能为空");
-        validateRedirectUri();
+        if (!isOauthRedirectUri(config.getOauthRedirectUri())) {
+            throw new BizException("钉钉 OAuth 回调地址有误");
+        }
         try {
             HttpUrl.Builder builder = new HttpUrl.Builder()
                     .scheme("https")
@@ -108,7 +101,7 @@ public class IDingTalkServiceImpl implements IDingTalkService {
                 .setCode(authCode)
                 .setGrantType("authorization_code");
         try {
-            com.aliyun.dingtalkoauth2_1_0.Client oauthClient = ClientUtil.getInstance(com.aliyun.dingtalkoauth2_1_0.Client.class);
+            com.aliyun.dingtalkoauth2_1_0.Client oauthClient = DingTalkClientUtil.getInstance(com.aliyun.dingtalkoauth2_1_0.Client.class);
             GetUserTokenResponse response = oauthClient.getUserToken(request);
             if (response == null || !Integer.valueOf(200).equals(response.getStatusCode()) || response.getBody() == null) {
                 throw new BizException("钉钉用户 Token 响应无效");
@@ -121,16 +114,16 @@ public class IDingTalkServiceImpl implements IDingTalkService {
         }
     }
 
-    private void validateRedirectUri() {
-        AssertUtil.notBlank(config.getOauthRedirectUri(), "钉钉 OAuth 回调地址不能为空");
+    private boolean isOauthRedirectUri(String value) {
+        if (!ValidateUtil.isURL(value)) {
+            return false;
+        }
         try {
-            URI uri = URI.create(config.getOauthRedirectUri());
-            if ((!"https".equalsIgnoreCase(uri.getScheme()) && !"http".equalsIgnoreCase(uri.getScheme()))
-                    || StringUtils.isBlank(uri.getHost())) {
-                throw new IllegalArgumentException("Invalid redirect URI");
-            }
+            URI uri = URI.create(value);
+            return ("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))
+                    && StringUtils.isNotBlank(uri.getHost());
         } catch (IllegalArgumentException e) {
-            throw new BizException("钉钉 OAuth 回调地址必须为带主机名的绝对 HTTP/HTTPS 地址");
+            return false;
         }
     }
 

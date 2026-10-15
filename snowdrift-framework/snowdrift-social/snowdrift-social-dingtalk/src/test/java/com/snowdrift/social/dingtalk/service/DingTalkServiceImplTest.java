@@ -3,10 +3,10 @@ package com.snowdrift.social.dingtalk.service;
 import com.aliyun.dingtalkoauth2_1_0.Client;
 import com.aliyun.dingtalkoauth2_1_0.models.*;
 import com.snowdrift.framework.base.exception.BizException;
-import com.snowdrift.social.dingtalk.config.DingTalkServiceConfig;
+import com.snowdrift.social.dingtalk.properties.DingTalkSocialConfig;
 import com.snowdrift.social.dingtalk.model.AppAccessTokenVO;
 import com.snowdrift.social.dingtalk.model.UserAccessTokenVO;
-import com.snowdrift.social.dingtalk.utils.ClientUtil;
+import com.snowdrift.social.dingtalk.utils.DingTalkClientUtil;
 import okhttp3.HttpUrl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -19,10 +19,28 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-class IDingTalkServiceImplTest {
+class DingTalkServiceImplTest {
 
     private IDingTalkService service(String redirect) {
-        return new IDingTalkServiceImpl(new DingTalkServiceConfig("primary", "test-app", "test-secret", redirect, true));
+        return new DingTalkServiceImpl(new DingTalkSocialConfig("primary", "test-app", "test-secret", redirect));
+    }
+
+    @Test
+    void serviceCopiesCredentialsInsteadOfRetainingMutableInput() throws Exception {
+        DingTalkSocialConfig config = new DingTalkSocialConfig("primary", "original-app", "original-secret", null);
+        IDingTalkService service = new DingTalkServiceImpl(config);
+        config.setAppKey("changed-app");
+        config.setAppSecret("changed-secret");
+        Client client = mock(Client.class);
+        when(client.getAccessToken(any())).thenReturn(appResponse("access", 7200L));
+        try (MockedStatic<DingTalkClientUtil> clients = mockStatic(DingTalkClientUtil.class)) {
+            clients.when(() -> DingTalkClientUtil.getInstance(Client.class)).thenReturn(client);
+            service.getAppAccessToken();
+            ArgumentCaptor<GetAccessTokenRequest> request = ArgumentCaptor.forClass(GetAccessTokenRequest.class);
+            verify(client).getAccessToken(request.capture());
+            assertThat(request.getValue().getAppKey()).isEqualTo("original-app");
+            assertThat(request.getValue().getAppSecret()).isEqualTo("original-secret");
+        }
     }
 
     @Test
@@ -50,13 +68,13 @@ class IDingTalkServiceImplTest {
 
     @Test
     void validatesInputBeforeCallingSdk() {
-        try (MockedStatic<ClientUtil> clients = mockStatic(ClientUtil.class)) {
+        try (MockedStatic<DingTalkClientUtil> clients = mockStatic(DingTalkClientUtil.class)) {
             assertThatThrownBy(() -> service(null).getUserAccessToken(" ")).isInstanceOf(BizException.class);
-            IDingTalkService missingKey = new IDingTalkServiceImpl(new DingTalkServiceConfig("a", "", "secret", "https://example.com", true));
-            assertThatThrownBy(() -> missingKey.getUserOauthUrl(null)).isInstanceOf(BizException.class);
-            assertThatThrownBy(missingKey::getAppAccessToken).isInstanceOf(BizException.class);
-            IDingTalkService missingSecret = new IDingTalkServiceImpl(new DingTalkServiceConfig("a", "app", "", null, true));
-            assertThatThrownBy(() -> missingSecret.getUserAccessToken("code")).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> new DingTalkServiceImpl(null)).isInstanceOf(BizException.class);
+            assertThatThrownBy(() -> new DingTalkServiceImpl(new DingTalkSocialConfig("a", "", "secret", null)))
+                    .isInstanceOf(BizException.class).hasMessage("钉钉appKey不能为空");
+            assertThatThrownBy(() -> new DingTalkServiceImpl(new DingTalkSocialConfig("a", "app", "", null)))
+                    .isInstanceOf(BizException.class).hasMessage("钉钉appSecret不能为空");
             clients.verifyNoInteractions();
         }
     }
@@ -68,8 +86,8 @@ class IDingTalkServiceImplTest {
         when(client.getUserToken(any())).thenReturn(new GetUserTokenResponse().setStatusCode(200)
                 .setBody(new GetUserTokenResponseBody().setAccessToken("user-access").setExpireIn(3600L)
                         .setRefreshToken("refresh").setCorpId("corp")));
-        try (MockedStatic<ClientUtil> clients = mockStatic(ClientUtil.class)) {
-            clients.when(() -> ClientUtil.getInstance(Client.class)).thenReturn(client);
+        try (MockedStatic<DingTalkClientUtil> clients = mockStatic(DingTalkClientUtil.class)) {
+            clients.when(() -> DingTalkClientUtil.getInstance(Client.class)).thenReturn(client);
             IDingTalkService service = service(null);
             AppAccessTokenVO app = service.getAppAccessToken();
             assertThat(app.getAccessToken()).isEqualTo("access");
@@ -99,8 +117,8 @@ class IDingTalkServiceImplTest {
                 new GetAccessTokenResponse().setStatusCode(500), new GetAccessTokenResponse().setStatusCode(200),
                 appResponse(null, 3600L), appResponse(" ", 3600L), appResponse("access", null),
                 appResponse("access", 0L), appResponse("access", -1L)};
-        try (MockedStatic<ClientUtil> clients = mockStatic(ClientUtil.class)) {
-            clients.when(() -> ClientUtil.getInstance(Client.class)).thenReturn(client);
+        try (MockedStatic<DingTalkClientUtil> clients = mockStatic(DingTalkClientUtil.class)) {
+            clients.when(() -> DingTalkClientUtil.getInstance(Client.class)).thenReturn(client);
             for (GetAccessTokenResponse response : invalid) {
                 when(client.getAccessToken(any())).thenReturn(response);
                 assertThatThrownBy(service(null)::getAppAccessToken).isInstanceOf(BizException.class)
@@ -125,12 +143,12 @@ class IDingTalkServiceImplTest {
         when(client.getAccessToken(any())).thenThrow(sdkFailure);
         when(client.getUserToken(any())).thenThrow(sdkFailure);
         ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger)
-                org.slf4j.LoggerFactory.getLogger(IDingTalkServiceImpl.class);
+                org.slf4j.LoggerFactory.getLogger(DingTalkServiceImpl.class);
         ch.qos.logback.core.read.ListAppender<ch.qos.logback.classic.spi.ILoggingEvent> logs = new ch.qos.logback.core.read.ListAppender<>();
         logs.start();
         logger.addAppender(logs);
-        try (MockedStatic<ClientUtil> clients = mockStatic(ClientUtil.class)) {
-            clients.when(() -> ClientUtil.getInstance(Client.class)).thenReturn(client);
+        try (MockedStatic<DingTalkClientUtil> clients = mockStatic(DingTalkClientUtil.class)) {
+            clients.when(() -> DingTalkClientUtil.getInstance(Client.class)).thenReturn(client);
             assertThatThrownBy(service(null)::getAppAccessToken).isInstanceOf(BizException.class)
                     .hasMessage("获取钉钉应用 AccessToken 失败").hasCause(sdkFailure);
             assertThatThrownBy(() -> service(null).getUserAccessToken("auth-code")).isInstanceOf(BizException.class)
@@ -148,8 +166,8 @@ class IDingTalkServiceImplTest {
     @Test
     void wrapsClientCreationFailure() {
         RuntimeException failure = new IllegalStateException("secret");
-        try (MockedStatic<ClientUtil> clients = mockStatic(ClientUtil.class)) {
-            clients.when(() -> ClientUtil.getInstance(Client.class)).thenThrow(failure);
+        try (MockedStatic<DingTalkClientUtil> clients = mockStatic(DingTalkClientUtil.class)) {
+            clients.when(() -> DingTalkClientUtil.getInstance(Client.class)).thenThrow(failure);
             assertThatThrownBy(service(null)::getAppAccessToken).hasMessage("获取钉钉应用 AccessToken 失败").hasCause(failure);
             assertThatThrownBy(() -> service(null).getUserAccessToken("code")).hasMessage("获取钉钉用户 AccessToken 失败").hasCause(failure);
         }

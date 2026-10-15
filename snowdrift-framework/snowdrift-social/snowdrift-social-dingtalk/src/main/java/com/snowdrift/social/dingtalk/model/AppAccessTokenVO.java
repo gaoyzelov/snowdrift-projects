@@ -9,7 +9,7 @@ import java.io.Serializable;
 
 /**
  * AccessTokenVO
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/10/14-14:22
  * @description 钉钉AccessTokenVO
  * @since 1.0.0

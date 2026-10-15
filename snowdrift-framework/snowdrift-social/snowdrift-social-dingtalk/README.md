@@ -1,98 +1,141 @@
 # Snowdrift Social DingTalk
 
-钉钉 Stream 事件与 OAuth 接入模块。引入本模块后，Spring Boot 会自动加载钉钉配置；默认不开启。
+提供钉钉企业内部应用 Token、用户 OAuth 授权及 Stream 事件接入能力。模块是供下游服务引入的基础库，无需新增应用启动类。
+
+配置来源、租户与应用选择由下游负责；组件不加载数据库、不维护全局活动配置，不自动同步集群配置，也不缓存或刷新 Token。
+
+## 引入与配置
+
+使用 Snowdrift BOM/父 POM 管理版本后，引入：
+
+```xml
+<dependency>
+    <groupId>com.snowdrift</groupId>
+    <artifactId>snowdrift-social-dingtalk</artifactId>
+</dependency>
+```
+
+Spring Boot 自动发现模块配置。基础服务与 Stream 分别启用，默认均关闭，没有顶层总开关。
 
 ```yaml
 snowdrift:
   social:
     dingtalk:
-      enabled: true
-      active-config-key: primary
-      configs:
-        primary:
-          enabled: true
-          app-key: ${DINGTALK_APP_KEY}
-          app-secret: ${DINGTALK_APP_SECRET}
-          oauth-redirect-uri: https://example.com/oauth/callback
-        secondary:
-          enabled: true
-          app-key: ${DINGTALK_SECONDARY_APP_KEY}
-          app-secret: ${DINGTALK_SECONDARY_APP_SECRET}
-          oauth-redirect-uri: https://example.com/secondary/oauth/callback
+      base:
+        enabled: true
+        app-key: ${DINGTALK_APP_KEY}
+        app-secret: ${DINGTALK_APP_SECRET}
+        oauth-redirect-uri: https://example.com/oauth/callback
       event-listener:
         enabled: true
-        client-id: ${DINGTALK_CLIENT_ID}
-        client-secret: ${DINGTALK_CLIENT_SECRET}
+        client-id: ${DINGTALK_STREAM_CLIENT_ID}
+        client-secret: ${DINGTALK_STREAM_CLIENT_SECRET}
 ```
 
-`IDingTalkService` 是稳定门面，默认转发到 `active-config-key` 指定的配置；现有的注入与调用代码无需变化。需要显式选择一个应用时，可注入 `DingTalkServiceRegistry` 并调用 `getService("secondary")`。运行时切换可调用 `activate("secondary")`，后续通过门面发起的调用将使用新配置。
+| 配置前缀 `snowdrift.social.dingtalk` 下的属性 | 说明 |
+| --- | --- |
+| `base.enabled` | 是否自动注册默认 `IDingTalkService`，默认关闭 |
+| `base.app-key` / `base.app-secret` | 默认应用凭据；启用基础服务时必须非空 |
+| `base.oauth-redirect-uri` | 生成授权 URL 时必填，须是带主机名的绝对 HTTP/HTTPS 地址 |
+| `event-listener.enabled` | 是否创建并启动默认 Stream 客户端，默认关闭 |
+| `event-listener.client-id` / `event-listener.client-secret` | 默认 Stream 客户端凭据；启用监听时必须非空 |
 
-旧版单配置仍兼容：`app-key`、`app-secret`、`oauth-redirect-uri` 可直接写在 `snowdrift.social.dingtalk` 下；未配置 `configs` 时会映射为 `default`。如果同时配置新旧两种格式，`configs` 优先。
+仅使用基础服务时省略 `event-listener`；仅监听事件时省略 `base`，并注册事件处理器。未开启 `base` 时组件不会注册 `IDingTalkService`，手动工厂仍可使用。
 
-### 独立使用 Stream
+下游提供 `IDingTalkService` Bean 时默认基础服务退让。下游提供 `OpenDingTalkClient` Bean 时默认 Stream 客户端退让，其凭据校验、启动和关闭均由下游负责。
 
-Stream 凭据与服务配置相互独立，仅使用事件监听时无需配置 `configs` 或旧版服务凭据：
+## 使用默认服务
 
-```yaml
-snowdrift:
-  social:
-    dingtalk:
-      enabled: true
-      event-listener:
-        enabled: true
-        client-id: ${DINGTALK_CLIENT_ID}
-        client-secret: ${DINGTALK_CLIENT_SECRET}
-```
-
-未配置任何服务应用时，Registry 和 `IDingTalkService` 门面仍会注册，活动配置为空；调用服务方法时抛出“当前没有激活的钉钉服务配置”。存在应用配置时，凭据及活动配置必须有效；组件不会自动选择第一个应用。显式启用 Stream 时必须提供非空客户端凭据和至少一个 `IEventHandler` Bean，缺失会导致启动失败。如果下游提供自己的 `OpenDingTalkClient` Bean，默认客户端退让，由下游管理其启停。
-
-### OAuth 与 Token
-
-`getAppAccessToken()` 获取企业内部应用 Token；`getUserOauthUrl(state)` 生成用户授权地址；`getUserAccessToken(authCode)` 用回调授权码换取用户 Token。只获取 Token 的应用无需配置回调地址；生成授权地址时，`app-key` 必须非空，`oauth-redirect-uri` 必须是带主机名的绝对 HTTP/HTTPS 地址，并与钉钉应用登记的回调地址一致。
-
-多配置场景下，一次授权必须固定使用同一 `configKey`。默认门面每次调用都读取当前活动配置，如果授权期间切换活动应用，回调不能直接依赖门面选择配置。下面的流程由下游控制器/服务实现，`authorizationStateStore` 表示下游提供的授权上下文存储：
+启用 `base` 后直接注入 `IDingTalkService`。默认服务使用创建时的配置副本，不随配置对象的后续修改自动变化，也不会注册到静态工厂。
 
 ```java
-// 授权开始：生成不可预测的 state，并以短有效期保存一次性关联。
-String configKey = registry.getActiveConfigKey();
+import com.snowdrift.social.dingtalk.model.AppAccessTokenVO;
+import com.snowdrift.social.dingtalk.model.UserAccessTokenVO;
+import com.snowdrift.social.dingtalk.service.IDingTalkService;
+
+// dingTalkService 为下游通过构造器注入的 IDingTalkService。
+AppAccessTokenVO appToken = dingTalkService.getAppAccessToken();
+String authorizeUrl = dingTalkService.getUserOauthUrl(state);
+UserAccessTokenVO userToken = dingTalkService.getUserAccessToken(authCode);
+```
+
+`getAppAccessToken()` 获取应用 Token；`getUserOauthUrl(state)` 生成用户授权 URL；`getUserAccessToken(authCode)` 用回调授权码换取用户 Token。服务创建时校验应用凭据；回调地址仅在生成授权 URL 时校验，因此只获取应用 Token 时可不配置回调地址。
+
+Token 获取每次都会请求钉钉。响应成功且包含非空 Token、正数有效期才返回结果。`AppAccessTokenVO.expiresIn` 和 `UserAccessTokenVO.expireIn` 的单位均为秒。用户 Token 的刷新令牌由 VO 返回，模块暂不提供刷新接口。下游缓存须按应用隔离，结合有效期提前失效，并在凭据更新时清理。
+
+SDK 调用失败时抛出固定消息的 `BizException`，保留原始 `cause`；模块只记录操作、配置标识和异常类型。配置与 Token 对象的 `toString()` 排除密钥/令牌，但 JSON 序列化仍保留业务所需字段，不要直接记录其 JSON 或对外序列化异常链。
+
+## 多应用与手动工厂
+
+`DingTalkSocialConfig` 是普通配置 DTO，可由下游从数据库、配置中心或业务逻辑构造。工厂是静态工具，无需注入 Spring Bean，也不依赖 `base.enabled`。
+
+```java
+import com.snowdrift.social.dingtalk.properties.DingTalkSocialConfig;
+import com.snowdrift.social.dingtalk.service.DingTalkServiceFactory;
+import com.snowdrift.social.dingtalk.service.IDingTalkService;
+
+DingTalkSocialConfig config = new DingTalkSocialConfig(
+        "tenant-a", appKey, appSecret, "https://example.com/tenant-a/callback");
+IDingTalkService service = DingTalkServiceFactory.create(config);
+IDingTalkService sameService = DingTalkServiceFactory.get("tenant-a");
+boolean exists = DingTalkServiceFactory.contains("tenant-a");
+
+// 不需要全局缓存时，也可直接 new DingTalkServiceImpl(config)。
+```
+
+| 工厂方法 | 行为 |
+| --- | --- |
+| `create(config)` | 创建并缓存实例；同一标识重复或并发创建返回已有实例，首次成功创建的配置生效 |
+| `reload(config)` | 构建并校验新实例后原子替换映射，返回新实例；不存在则注册，失败保留旧实例 |
+| `get(configKey)` | 获取已有实例，未创建时返回 `null` |
+| `contains(configKey)` | 检查实例是否存在 |
+| `remove(configKey)` | 移除缓存项并返回旧实例，不存在时返回 `null` |
+
+所有方法拒绝空配置标识；`create` 和 `reload` 还拒绝空配置，构建新实例时须有有效凭据。创建失败不会占用标识。服务复制传入的配置，创建完成后修改原 DTO 不会改变实例；不要在调用创建或更新方法期间由其他线程修改同一个 DTO。相同标识已存在时，`create` 不会应用新 DTO 中的凭据。
+
+工厂缓存按 JVM/类加载器共享，不是数据库或集群注册中心。下游应使用能够区分租户和应用的标识，并在实例不再需要时调用 `remove`。默认 Spring 服务和工厂同名实例相互独立；移除工厂项不会改变默认服务或已持有的旧实例引用。
+
+更新凭据时直接调用 `DingTalkServiceFactory.reload(newConfig)`，使用配置中的 `configKey` 定位实例，无需先 `remove`。新实例构建期间旧实例仍可读取；构建成功后通过 `ConcurrentHashMap.put` 原子替换，后续 `get` 返回新实例。已持有的旧实例引用继续使用旧配置，默认 Spring 服务也不受影响。并发更新以最后执行替换的实例为准，不按请求开始时间或配置版本排序。
+
+`create`、`reload`、`get`、`remove` 的单次映射操作由并发 Map 保证线程安全，不额外使用全局 `synchronized`。更新期间显式并发 `remove` 仍可能移除该标识；`contains` 后再 `get` 等组合操作也不是原子操作。工厂不保证跨实例同步或旧版本覆盖防护，这些由下游协调。OAuth 授权跨越配置版本时，可使用带版本的新标识，并在旧授权完成后清理旧标识。
+
+## OAuth 回调与应用关联
+
+下游应保证一次授权开始与回调使用同一应用。组件仅编码透传 `state`，不生成、存储或验证授权上下文。以下为下游实现的流程示意，`authorizationStateStore` 表示业务提供的一次性上下文存储：
+
+```java
+// 授权开始：确定应用，生成不可预测的 state，保存短期且绑定会话的关联。
+String configKey = "tenant-a";
 String state = java.util.UUID.randomUUID().toString();
 authorizationStateStore.save(state, configKey, currentSessionId);
-String url = registry.getService(configKey).getUserOauthUrl(state);
-// 将浏览器重定向至 url。
+IDingTalkService service = DingTalkServiceFactory.get(configKey);
+if (service == null) {
+    throw new IllegalStateException("应用尚未初始化");
+}
+String authorizeUrl = service.getUserOauthUrl(state);
 
-// 回调：校验 state、有效期及发起授权的会话，并原子消费一次性关联。
-String originalConfigKey = authorizationStateStore.validateAndConsume(state, currentSessionId);
-UserAccessTokenVO token = registry.getService(originalConfigKey).getUserAccessToken(authCode);
+// 回调：校验 state、有效期和会话，原子消费后按原标识获取服务。
+String originalKey = authorizationStateStore.validateAndConsume(state, currentSessionId);
+IDingTalkService originalService = DingTalkServiceFactory.get(originalKey);
+if (originalService == null) {
+    throw new IllegalStateException("应用已移除，请重新授权");
+}
+UserAccessTokenVO userToken = originalService.getUserAccessToken(authCode);
 ```
 
-组件只透传 `state`，不生成、存储或校验授权上下文。存储应支持一次性原子消费；多实例部署时使用共享存储。原配置被删除或禁用后，回调会失败，应重新发起授权，不能回退到其他应用。
+多实例部署时，下游负责各实例的服务初始化，并使用共享授权上下文存储。一次授权期间应保留对应配置版本，避免同一标识被替换为另一个应用；原配置不可用时重新发起授权，不能自动回退到其他应用。回调地址还须与钉钉应用登记配置一致。
 
-Token 获取每次都会请求钉钉，组件不缓存 Token，也不提供用户 Token 刷新接口。下游如需缓存，应按应用配置隔离，结合响应有效期提前失效，并在凭据变化时清除旧 Token。`AppAccessTokenVO.expiresIn` 与 `UserAccessTokenVO.expireIn` 均以秒为单位。Token 对象的 `toString()` 排除令牌字段，JSON 序列化仍保留字段供调用方使用，因此不要直接记录其 JSON。
+## Stream 事件处理
 
-SDK 请求失败时抛出固定消息的 `BizException`，原始原因保留在 `cause` 中；模块日志不直接输出 SDK 异常消息或堆栈。下游对外返回错误时也应避免序列化原始异常链。
-
-### 数据库配置
-
-组件不依赖数据库或 ORM。下游应用可提供自己的 `IDingTalkConfigProvider` Bean：
-
-- `load()` 返回包含所有应用配置和唯一 `activeConfigKey` 的完整一致快照。
-- `activate(configKey)` 在数据库中持久化激活项。组件在持久化成功后切换当前实例的活动策略。
-- 数据发生变化后，在各应用实例调用 `DingTalkServiceRegistry.refresh()`；也可以通过消息通知或定时校准实现集群同步。
-
-数据库 Provider 存在时会覆盖默认的配置文件 Provider；两种来源不会自动合并。每个实例会在启动时加载并校验完整快照，刷新失败会保留上一份有效快照。多实例场景应以数据库中的唯一激活项作为事实来源，并自行广播激活变更或安排轮询；仅切换单实例内存状态不能保证集群一致。
-
-服务配置的 `app-secret` 不应输出到日志。配置文件中的凭据建议使用环境变量或密钥管理系统注入。
-
-启用 Stream 监听后，需要在 Spring 容器中提供 `IEventHandler` Bean。每个处理器通过 `supportType()` 声明一个唯一的钉钉事件类型，并在 `handle()` 中处理事件。事件数据以项目依赖管理的 Fastjson2 `JSONObject` 传入，可能为空；SDK 返回的 shaded JSON 对象会在模块内部转换。
+启用 `event-listener` 后，至少提供一个 `IEventHandler` Bean。每个处理器声明唯一且非空的事件类型；缺少处理器、重复类型或缺少客户端凭据会导致启动失败。Stream 不依赖基础服务或工厂中的应用，工厂实例变更不会重启 Stream。
 
 ```java
-import com.snowdrift.social.dingtalk.event.IEventHandler;
 import com.alibaba.fastjson2.JSONObject;
+import com.snowdrift.social.dingtalk.event.IEventHandler;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ExampleDingTalkEventHandler implements IEventHandler {
-
     @Override
     public String supportType() {
         return "bpms_instance_change";
@@ -100,11 +143,23 @@ public class ExampleDingTalkEventHandler implements IEventHandler {
 
     @Override
     public void handle(String eventId, JSONObject data) {
-        // 按事件类型解析并处理 data
+        // 根据 eventId 做幂等控制；data 可能为空。
     }
 }
 ```
 
-处理器抛出异常时，模块向 Stream SDK 返回稍后重试；未注册的事件类型会记录告警并确认成功，不会重试。下游处理器应根据 `eventId` 做幂等控制，并按可能并发投递设计线程安全逻辑；避免把客户端密钥写入日志或源码配置。
+SDK 的 shaded JSON 转换为项目使用的 Fastjson2 `JSONObject` 后传入处理器。处理成功返回成功确认；处理器异常或数据转换失败返回稍后重试；未知或空事件类型记录告警后确认忽略。处理器应按可能重复、并发投递设计幂等和线程安全逻辑。
 
-Stream 监听器仍独立于 OAuth 服务配置：上述数据库策略切换不会重启或切换 Stream 客户端。
+默认客户端在容器启动时启动、销毁时停止；启动失败会尝试清理，清理失败作为 suppressed exception 保留。重复关闭不会重复停止客户端。
+
+## 迁移与验证
+
+本次重构将默认应用配置移入 `base`，原顶层 `enabled`、`app-key`、`app-secret`、`oauth-redirect-uri` 及 `configs`、`active-config-key` 不再参与装配。请迁移到上述新格式，不能仅保留旧总开关。
+
+旧 Provider、配置快照、Registry 和活动门面已移除。原数据库配置加载及活动应用选择移至下游；多应用调用改用 `DingTalkServiceFactory.create/get`。实现类和客户端工具分别使用 `DingTalkServiceImpl`、`DingTalkClientUtil`。
+
+```bash
+mvn -B -ntp clean test -pl snowdrift-framework/snowdrift-social/snowdrift-social-dingtalk -am
+```
+
+测试覆盖两个能力的独立与组合装配、自定义 Bean 退让、配置转换与脱敏、工厂并发创建、原子更新和清理、OAuth 编码、Token 响应与异常处理、事件确认/重试及客户端生命周期。SDK 客户端均以 Mock 替代，无需真实凭据，不会连接钉钉。

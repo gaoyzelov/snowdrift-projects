@@ -21,8 +21,35 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class DingTalkEventListenerTest {
+
+    @Test
+    void retriesNullEventsAndIgnoresEventsWithoutAType() {
+        IEventHandler handler = mock(IEventHandler.class);
+        when(handler.supportType()).thenReturn("test");
+        DingTalkEventListener listener = new DingTalkEventListener(List.of(handler));
+        org.mockito.Mockito.clearInvocations(handler);
+        assertEquals(EventAckStatus.LATER, listener.onEvent(null));
+        assertEquals(EventAckStatus.SUCCESS, listener.onEvent(event(null, "event-1")));
+        assertEquals(EventAckStatus.SUCCESS, listener.onEvent(event(" ", "event-2")));
+        verifyNoInteractions(handler);
+    }
+
+    @Test
+    void conversionFailureIsRetriedWithoutCallingTheHandler() {
+        IEventHandler handler = mock(IEventHandler.class);
+        when(handler.supportType()).thenReturn("test");
+        DingTalkEventListener listener = new DingTalkEventListener(List.of(handler));
+        GenericOpenDingTalkEvent event = event("test", "event-1");
+        shade.com.alibaba.fastjson2.JSONObject data = mock(shade.com.alibaba.fastjson2.JSONObject.class);
+        when(data.toJSONString()).thenReturn("not-json");
+        when(event.getData()).thenReturn(data);
+        org.mockito.Mockito.clearInvocations(handler);
+        assertEquals(EventAckStatus.LATER, listener.onEvent(event));
+        verifyNoInteractions(handler);
+    }
 
     @Test
     void dispatchesRegisteredEventAndAcknowledgesSuccess() {

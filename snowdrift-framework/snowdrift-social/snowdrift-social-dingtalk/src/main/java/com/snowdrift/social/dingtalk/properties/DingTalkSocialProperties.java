@@ -1,12 +1,10 @@
 package com.snowdrift.social.dingtalk.properties;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
 import lombok.ToString;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.io.Serializable;
 
 /**
  * DingTalkSocialProperties
@@ -15,50 +13,22 @@ import java.util.Map;
  * @description 钉钉社交配置
  * @since 1.0.0
  */
-@Getter
-@Setter
+@Data
 @ConfigurationProperties(prefix = "snowdrift.social.dingtalk")
-public class DingTalkSocialProperties {
+public class DingTalkSocialProperties implements Serializable {
 
     /**
-     * 是否启用
+     * 基础配置
      */
-    private Boolean enabled;
-
-    /**
-     * 企业内部应用的 Client ID
-     */
-    private String appKey;
-
-    /**
-     * 企业内部应用的 Client Secret
-     */
-    @ToString.Exclude
-    private String appSecret;
-
-    /**
-     * OAuth重定向URI
-     */
-    private String oauthRedirectUri;
-
-    /**
-     * 当前激活的服务配置标识
-     */
-    private String activeConfigKey = "default";
-
-    /**
-     * 多个企业内部应用配置，key 为调用方使用的配置标识
-     */
-    private Map<String, DingTalkServiceProperties> configs = new LinkedHashMap<>();
+    private BaseProperties base;
 
     /**
      * Stream事件推送监听器配置
      */
     private EventListenerProperties eventListener;
 
-    @Getter
-    @Setter
-    public static class EventListenerProperties {
+    @Data
+    public static class EventListenerProperties implements Serializable {
 
         /**
          * 是否启用
@@ -72,24 +42,32 @@ public class DingTalkSocialProperties {
         /**
          * 客户端密钥
          */
+        @ToString.Exclude
         private String clientSecret;
     }
 
-    @Getter
-    @Setter
-    public static class DingTalkServiceProperties {
+    @Data
+    public static class BaseProperties implements Serializable {
 
-        /** 是否启用该应用配置 */
-        private Boolean enabled = true;
+        /**
+         * 是否启用
+         */
+        private Boolean enabled;
 
-        /** 企业内部应用的 Client ID */
+        /**
+         * 企业内部应用的 Client ID
+         */
         private String appKey;
 
-        /** 企业内部应用的 Client Secret */
+        /**
+         * 企业内部应用的 Client Secret
+         */
         @ToString.Exclude
         private String appSecret;
 
-        /** OAuth 重定向 URI */
+        /**
+         * OAuth重定向URI
+         */
         private String oauthRedirectUri;
     }
 }
