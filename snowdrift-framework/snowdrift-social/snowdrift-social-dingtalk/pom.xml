@@ -22,6 +22,10 @@
             <artifactId>dingtalk</artifactId>
         </dependency>
         <dependency>
+            <groupId>com.aliyun</groupId>
+            <artifactId>alibaba-dingtalk-service-sdk</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.dingtalk.open</groupId>
             <artifactId>app-stream-client</artifactId>
         </dependency>

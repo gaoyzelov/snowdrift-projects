@@ -4,7 +4,7 @@ import com.alibaba.fastjson2.JSONObject;
 
 /**
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/10/13-17:34
  * @description
  * @since 1.0.0

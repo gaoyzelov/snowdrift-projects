@@ -9,7 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * ClientUtil
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/10/14-13:26
  * @description 钉钉客户端工具类
  * @since 1.0.0

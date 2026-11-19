@@ -1,9 +1,6 @@
 package com.snowdrift.social.dingtalk.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.ToString;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -15,8 +12,7 @@ import java.io.Serializable;
  * @since 1.0.0
  */
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
+@Builder
 public class UserAccessTokenVO implements Serializable {
 
     /**

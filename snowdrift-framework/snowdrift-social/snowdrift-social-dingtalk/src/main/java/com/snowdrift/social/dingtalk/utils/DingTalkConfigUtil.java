@@ -6,7 +6,7 @@ import com.snowdrift.social.dingtalk.properties.DingTalkSocialProperties;
 
 /**
  * DingTalkConfigUtil
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/10/15-09:47
  * @description 钉钉社交配置工具类
  * @since 1.0.0

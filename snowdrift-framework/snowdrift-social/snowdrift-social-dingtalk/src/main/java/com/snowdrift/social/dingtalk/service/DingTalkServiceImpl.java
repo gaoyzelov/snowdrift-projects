@@ -1,23 +1,33 @@
 package com.snowdrift.social.dingtalk.service;
 
+import com.aliyun.dingtalkcontact_1_0.models.GetUserHeaders;
+import com.aliyun.dingtalkcontact_1_0.models.GetUserResponse;
+import com.aliyun.dingtalkcontact_1_0.models.GetUserResponseBody;
 import com.aliyun.dingtalkoauth2_1_0.models.*;
+import com.aliyun.teautil.models.RuntimeOptions;
+import com.dingtalk.api.DefaultDingTalkClient;
+import com.dingtalk.api.DingTalkClient;
+import com.dingtalk.api.request.OapiUserGetbyunionidRequest;
+import com.dingtalk.api.request.OapiV2UserGetRequest;
+import com.dingtalk.api.response.OapiUserGetbyunionidResponse;
+import com.dingtalk.api.response.OapiV2UserGetResponse;
 import com.snowdrift.framework.base.exception.BizException;
 import com.snowdrift.framework.base.util.AssertUtil;
 import com.snowdrift.framework.base.util.ValidateUtil;
 import com.snowdrift.social.dingtalk.model.AppAccessTokenVO;
 import com.snowdrift.social.dingtalk.model.UserAccessTokenVO;
+import com.snowdrift.social.dingtalk.model.UserInfoVO;
+import com.snowdrift.social.dingtalk.model.UserDetailVO;
 import com.snowdrift.social.dingtalk.properties.DingTalkSocialConfig;
 import com.snowdrift.social.dingtalk.utils.DingTalkClientUtil;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.HttpUrl;
 import org.apache.commons.lang3.StringUtils;
 
-import java.net.URI;
-
 /**
  * DingTalkServiceImpl
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/10/14-14:08
  * @description 钉钉服务实现类
  * @since 1.0.0
@@ -51,17 +61,20 @@ public class DingTalkServiceImpl implements IDingTalkService {
                 throw new BizException("钉钉应用 Token 响应无效");
             }
             GetAccessTokenResponseBody data = response.getBody();
-            validateToken(data.getAccessToken(), data.getExpireIn());
-            return new AppAccessTokenVO(data.getAccessToken(), data.getExpireIn());
+            return AppAccessTokenVO.builder()
+                    .accessToken(data.getAccessToken())
+                    .expiresIn(data.getExpireIn())
+                    .build();
         } catch (Exception e) {
-            throw tokenFailure("获取钉钉应用 AccessToken 失败", e);
+            log.error("[钉钉认证] 获取应用 AccessToken 失败", e);
+            throw new BizException("获取钉钉应用 AccessToken 失败", e);
         }
     }
 
     @Override
     public String getUserOauthUrl(String state) {
         AssertUtil.notBlank(config.getAppKey(), "钉钉appKey不能为空");
-        if (!isOauthRedirectUri(config.getOauthRedirectUri())) {
+        if (!ValidateUtil.isURL(config.getOauthRedirectUri())) {
             throw new BizException("钉钉 OAuth 回调地址有误");
         }
         try {
@@ -107,34 +120,108 @@ public class DingTalkServiceImpl implements IDingTalkService {
                 throw new BizException("钉钉用户 Token 响应无效");
             }
             GetUserTokenResponseBody data = response.getBody();
-            validateToken(data.getAccessToken(), data.getExpireIn());
-            return new UserAccessTokenVO(data.getAccessToken(), data.getRefreshToken(), data.getCorpId(), data.getExpireIn());
+            return UserAccessTokenVO.builder()
+                    .accessToken(data.getAccessToken())
+                    .refreshToken(data.getRefreshToken())
+                    .corpId(data.getCorpId())
+                    .expireIn(data.getExpireIn())
+                    .build();
         } catch (Exception e) {
-            throw tokenFailure("获取钉钉用户 AccessToken 失败", e);
+            log.error("[钉钉认证] 获取用户 AccessToken 失败", e);
+            throw new BizException("获取钉钉用户 AccessToken 失败", e);
         }
     }
 
-    private boolean isOauthRedirectUri(String value) {
-        if (!ValidateUtil.isURL(value)) {
-            return false;
-        }
+    /**
+     * 获取用户信息
+     *
+     * @param accessToken 访问令牌
+     */
+    @Override
+    public UserInfoVO getUserInfo(String accessToken) {
+        AssertUtil.notBlank(accessToken, "用户访问令牌不能为空");
+        GetUserHeaders headers = new GetUserHeaders().setXAcsDingtalkAccessToken(accessToken);
         try {
-            URI uri = URI.create(value);
-            return ("https".equalsIgnoreCase(uri.getScheme()) || "http".equalsIgnoreCase(uri.getScheme()))
-                    && StringUtils.isNotBlank(uri.getHost());
-        } catch (IllegalArgumentException e) {
-            return false;
+            com.aliyun.dingtalkcontact_1_0.Client contactClient = DingTalkClientUtil.getInstance(com.aliyun.dingtalkcontact_1_0.Client.class);
+            GetUserResponse response = contactClient.getUserWithOptions("me", headers, new RuntimeOptions());
+            if (response.getStatusCode() != 200) {
+                log.error("[钉钉认证] 获取用户信息失败,statusCode={}", response.getStatusCode());
+                throw new BizException("钉钉接口返回异常状态码: " + response.getStatusCode());
+            }
+            GetUserResponseBody data = response.getBody();
+            return UserInfoVO.builder()
+                    .avatarUrl(data.getAvatarUrl())
+                    .email(data.getEmail())
+                    .mobile(data.getMobile())
+                    .nick(data.getNick())
+                    .openId(data.getOpenId())
+                    .stateCode(data.getStateCode())
+                    .unionId(data.getUnionId())
+                    .build();
+        } catch (BizException e) {
+            log.error("[钉钉认证] 获取用户信息失败", e);
+            throw e;
+        } catch (Exception e) {
+            log.error("[钉钉认证] 获取用户信息失败", e);
+            throw new BizException("获取用户信息失败");
         }
     }
 
-    private void validateToken(String accessToken, Long expireIn) {
-        if (StringUtils.isBlank(accessToken) || expireIn == null || expireIn <= 0) {
-            throw new BizException("钉钉 Token 或有效期无效");
+    /**
+     * 获取用户ID
+     *
+     * @param accessToken 应用访问令牌
+     * @param unionId     用户的unionId
+     */
+    @Override
+    public String getUserId(String accessToken, String unionId) {
+        AssertUtil.notBlank(accessToken, "应用访问令牌不能为空");
+        AssertUtil.notBlank(unionId, "用户unionId不能为空");
+        try {
+            DingTalkClient client = new DefaultDingTalkClient("https://oapi.dingtalk.com/topapi/user/getbyunionid");
+            OapiUserGetbyunionidRequest request = new OapiUserGetbyunionidRequest();
+            request.setUnionid(unionId);
+            OapiUserGetbyunionidResponse response = client.execute(request, accessToken);
+            if (!response.isSuccess()) {
+                log.error("[钉钉认证] 获取用户ID失败, statusCode={}", response.getErrorCode());
+                throw new BizException("钉钉接口返回异常状态码: " + response.getErrorCode());
+            }
+            return response.getResult().getUserid();
+        } catch (BizException e) {
+            log.error("[钉钉认证] 获取用户ID失败", e);
+            throw e;
+        } catch (Exception e) {
+            log.error("[钉钉认证] 获取用户ID失败", e);
+            throw new BizException("获取用户ID失败: " + e.getMessage());
         }
     }
 
-    private BizException tokenFailure(String operation, Exception cause) {
-        log.error("{}, configKey={}, exceptionType={}", operation, config.getConfigKey(), cause.getClass().getName());
-        return new BizException(operation, cause);
+    /**
+     * 获取用户详情
+     *
+     * @param accessToken 应用访问令牌
+     * @param userId      用户ID
+     */
+    @Override
+    public UserDetailVO getUserDetail(String accessToken, String userId) {
+        try {
+            DingTalkClient client = new DefaultDingTalkClient("https://oapi.dingtalk.com/topapi/v2/user/get");
+            OapiV2UserGetRequest request = new OapiV2UserGetRequest();
+            request.setUserid(userId);
+            OapiV2UserGetResponse response = client.execute(request, accessToken);
+            if (!response.isSuccess()) {
+                log.error("[钉钉认证] 获取用户详情失败, statusCode={}, errorMsg={}", response.getErrorCode(), response.getErrmsg());
+                throw new BizException("钉钉接口返回异常状态码: " + response.getErrorCode());
+            }
+            OapiV2UserGetResponse.UserGetResponse result = response.getResult();
+            // TODO
+            return null;
+        }  catch (BizException e){
+            log.error("[钉钉认证] 获取用户详情失败", e);
+            throw e;
+        }catch (Exception e) {
+            log.error("[钉钉认证] 获取用户详情失败", e);
+            throw new BizException("获取用户详情失败: " + e.getMessage());
+        }
     }
 }

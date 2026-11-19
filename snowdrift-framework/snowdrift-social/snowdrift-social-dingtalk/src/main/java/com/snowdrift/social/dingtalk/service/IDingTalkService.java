@@ -2,10 +2,12 @@ package com.snowdrift.social.dingtalk.service;
 
 import com.snowdrift.social.dingtalk.model.AppAccessTokenVO;
 import com.snowdrift.social.dingtalk.model.UserAccessTokenVO;
+import com.snowdrift.social.dingtalk.model.UserInfoVO;
+import com.snowdrift.social.dingtalk.model.UserDetailVO;
 
 /**
  *
- * @author 83674
+ * @author gaoyzelov
  * @date 2026/10/14-14:08
  * @description
  * @since 1.0.0
@@ -33,4 +35,10 @@ public interface IDingTalkService {
      * @return {@link UserAccessTokenVO}
      */
     UserAccessTokenVO getUserAccessToken(String authCode);
+
+    UserInfoVO getUserInfo(String accessToken);
+
+    String getUserId(String accessToken, String unionId);
+
+    UserDetailVO getUserDetail(String accessToken, String userId);
 }
