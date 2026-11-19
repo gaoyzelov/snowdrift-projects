@@ -288,9 +288,11 @@ public class MyCacheConfig implements CachingConfigurer {
 | cache-redis | `SnowdriftRedisCacheServiceImplTest`(13) | mock RedisTemplate：命令映射、TTL 换算、Lua increment 秒数取整、前缀 |
 | cache-redis | `SnowdriftRedisConfigurationTest`(9) | 模板/管理器装配、前缀与 TTL 进入配置、`@Cacheable` 值序列化器固定为带 `@class` 的实现（回归）、自定义 ICacheService 回归、**Redis 后端下两个切面的装配回归** |
 | cache-redis | `SnowdriftRedissonDistributedLockServiceImplTest`(7) | mock RLock：加解锁、中断语义、executeWithLock |
+| cache-redis | `SnowdriftRedissonConfigurationTest`(4) | starter 客户端定制（StringCodec + 15s 看门狗）、锁服务装配与退让、`enabled=false` 整体退避 |
 
 ## 升级注意（本轮变更）
 
+- **Redisson 客户端交还 starter（本轮）**：`SnowdriftRedissonConfiguration` 不再自建 `RedissonClient`，改为 `RedissonAutoConfigurationCustomizer` 追加 `StringCodec` 与 15s 看门狗。此前它排在 starter 之后，`@ConditionalOnMissingBean` 恒退避，这两项定制**从未生效**；升级后真实生效——Redisson 中按默认 codec（Kryo5Codec）写入的数据需清库或迁移，锁续期周期由 30s 变为 15s。`spring.data.redis.username`、`redisson.yaml`、SSL Bundle 等 starter 能力现在可直接使用。
 - **`@Cacheable` 的 key 格式再次变更（参数段统一摘要）**：`SnowdriftKeyGenerator` 改为「简单类名#方法名[:SHA-256 前 128 位参数段摘要]」，带参数时参数段整体一次摘要（固定 32 个十六进制字符，长度恒定、参数值不落明文）。旧 key 全部失效（按 TTL 自然淘汰或清库重建）。
 - **行为变更**：显式非正 TTL 抛 `BizException`；`delete`/`batchDelete` 补 key 非空校验；`@RepeatSubmit(interval <= 0)` 抛 `BizException`；Caffeine 对“永不过期”条目 `getExpire` 返回 `-1`。
 - **装配变更**：后端配置的条件由类级下移到 `ICacheService` 的 Bean 方法（自定义 `ICacheService` 不再连带关闭 `CacheManager`/`snowdriftRedisTemplate`）；`snowdriftRedisTemplate` 去掉 `@Primary`；新增 `snowdrift.cache.redisson.enabled`（默认 true）。
@@ -315,4 +317,4 @@ public class MyCacheConfig implements CachingConfigurer {
 
 | 属性 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
-| `enabled` | boolean | `true` | 是否启用 Redisson 自动配置（分布式锁）。类路径存在 Redisson 时默认生效；设为 `false` 可让 `redisson-spring-boot-starter` 自己的自动配置（`redisson.yaml`、ACL、SSL 证书等）接管 |
+| `enabled` | boolean | `true` | 是否启用框架的 Redisson 定制（`IDistributedLockService`、`StringCodec`、15s 看门狗）。`RedissonClient` 始终由 `redisson-spring-boot-starter` 按 `spring.data.redis.*` / `redisson.yaml` 创建；设为 `false` 只去掉框架定制与锁服务（`@DistributedLock` 随之 fail-closed），需彻底禁用 Redisson 请排除 starter 自带自动配置 |

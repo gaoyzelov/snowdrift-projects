@@ -1,173 +1,66 @@
 package com.snowdrift.framework.cache.redis.config;
 
-import com.snowdrift.framework.base.constant.StrConst;
 import com.snowdrift.framework.cache.IDistributedLockService;
-import com.snowdrift.framework.cache.config.SnowdriftCacheConfiguration;
 import com.snowdrift.framework.cache.redis.service.SnowdriftRedissonDistributedLockServiceImpl;
-import com.snowdrift.framework.cache.serialize.ICacheSerializer;
-import jakarta.annotation.PreDestroy;
-import org.redisson.Redisson;
 import org.redisson.api.RedissonClient;
 import org.redisson.client.codec.StringCodec;
-import org.redisson.config.Config;
+import org.redisson.spring.starter.RedissonAutoConfigurationCustomizer;
+import org.redisson.spring.starter.RedissonAutoConfigurationV2;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.autoconfigure.data.redis.RedisProperties;
 import org.springframework.context.annotation.Bean;
 
-import java.util.List;
-
 /**
- * Redisson 缓存与分布式锁自动配置
+ * Redisson 分布式锁自动配置
  * <p>
- * 直接从 {@link RedisProperties}（兼容 {@code spring.data.redis.*}）构建 {@link RedissonClient}，
- * 支持单节点、哨兵和集群模式。使用 {@link StringCodec} 存储 JSON 字符串，
- * 序列化由 {@link ICacheSerializer} 统一处理。
+ * {@link RedissonClient} 的连接构建与生命周期完全交给 <b>redisson-spring-boot-starter</b>
+ * （读取 {@code spring.data.redis.*}、{@code redisson.yaml}、ACL、SSL Bundle 等），
+ * 本类只通过 {@link RedissonAutoConfigurationCustomizer} 追加框架需要的差异配置：
+ * {@link StringCodec} 与更短的看门狗续期时间。
+ * </p>
+ * <p>
+ * 必须排在 starter 之后：{@code RedissonAutoConfigurationV2} 用
+ * {@code @ConditionalOnMissingBean(RedissonClient.class)} 注册客户端，只有它先处理，
+ * 定制器才能作用到实际创建的 {@code RedissonClient} 上。
  * </p>
  * <p>
  * 只要类路径存在 Redisson 就会生效（默认开启），可设 {@code snowdrift.cache.redisson.enabled=false}
- * 关闭。注意本类会先于 <b>redisson-spring-boot-starter</b> 自身的自动配置注册 {@code RedissonClient}
- * （两者都带 {@code @ConditionalOnMissingBean}），因此 {@code redisson.yaml}、ACL 用户名、SSL 证书等
- * starter 专属配置不会生效——需要那些能力时请关闭本类并改为自行提供 {@code RedissonClient}。
+ * 关闭本类：此时不再注册 {@link IDistributedLockService}、也不注入上述定制，但 starter 仍会创建
+ * {@link RedissonClient}——需要彻底禁用请排除 starter 自身的自动配置。
  * </p>
  *
  * @author gaoyzelov
  * @date 2026/6/2
  * @since 1.0.0
  */
-@AutoConfiguration(before = {SnowdriftRedisConfiguration.class, SnowdriftCacheConfiguration.class})
+@AutoConfiguration(after = RedissonAutoConfigurationV2.class)
 @ConditionalOnClass(RedissonClient.class)
 @ConditionalOnProperty(prefix = "snowdrift.cache.redisson", name = "enabled", havingValue = "true",
         matchIfMissing = true)
 public class SnowdriftRedissonConfiguration {
-    private RedissonClient redissonClient;
+
     /**
      * 看门狗锁续期时间（毫秒）。
      * <p>Redisson 默认 30s，缩短至 15s 可更快释放失联客户端持有的锁。</p>
      */
     private static final long LOCK_WATCHDOG_TIMEOUT_MS = 15_000L;
-    private static final int DEFAULT_TIMEOUT_MS = 3000;
-
-
-
-    @PreDestroy
-    public void destroy() {
-        if (redissonClient != null && !redissonClient.isShutdown()) {
-            redissonClient.shutdown();
-        }
-    }
 
     /**
-     * 初始化 RedissonClient 客户端
+     * 向 starter 创建的客户端追加定制配置
      * <p>
-     * 根据配置自动选择集群、哨兵或单节点模式。
+     * starter 会在构造 {@code Config} 后、{@code Redisson.create} 之前依次应用容器中所有
+     * {@link RedissonAutoConfigurationCustomizer}，因此这里的定制才是实际生效的配置。
      * 使用 {@link StringCodec} 以 JSON 字符串存储，与 Caffeine / Redis 后端数据格式一致。
      * </p>
-     *
-     * @param redisProperties Spring Boot Redis 配置属性
-     * @return {@link RedissonClient}
      */
     @Bean
-    @ConditionalOnMissingBean
-    public RedissonClient redissonClient(RedisProperties redisProperties) {
-        Config config = new Config();
-        // 使用 StringCodec，序列化由 CacheSerializer 在服务层统一处理
-        config.setCodec(StringCodec.INSTANCE);
-
-        if (redisProperties.getCluster() != null) {
-            configureCluster(config, redisProperties);
-        } else if (redisProperties.getSentinel() != null) {
-            configureSentinel(config, redisProperties);
-        } else {
-            configureSingle(config, redisProperties);
-        }
-
-        config.setLockWatchdogTimeout(LOCK_WATCHDOG_TIMEOUT_MS);
-        this.redissonClient = Redisson.create(config);
-        return this.redissonClient;
-    }
-
-    /**
-     * 集群模式配置
-     */
-    private void configureCluster(Config config, RedisProperties redisProperties) {
-        int timeout = getTimeout(redisProperties);
-        String uriPrefix = getUriPrefix(redisProperties);
-        List<String> nodes = redisProperties.getCluster().getNodes();
-        String[] addresses = nodes.stream()
-                .map(node -> uriPrefix + node)
-                .toArray(String[]::new);
-        config.useClusterServers()
-                .addNodeAddress(addresses)
-                .setPassword(redisProperties.getPassword())
-                .setTimeout(timeout);
-    }
-
-    /**
-     * 哨兵模式配置
-     */
-    private void configureSentinel(Config config, RedisProperties redisProperties) {
-        int timeout = getTimeout(redisProperties);
-        String uriPrefix = getUriPrefix(redisProperties);
-        RedisProperties.Sentinel sentinel = redisProperties.getSentinel();
-        String[] addresses = sentinel.getNodes().stream()
-                .map(node -> uriPrefix + node)
-                .toArray(String[]::new);
-        config.useSentinelServers()
-                .setMasterName(sentinel.getMaster())
-                .addSentinelAddress(addresses)
-                .setPassword(redisProperties.getPassword())
-                .setDatabase(redisProperties.getDatabase())
-                .setTimeout(timeout);
-    }
-
-    /**
-     * 单节点模式配置
-     */
-    private void configureSingle(Config config, RedisProperties redisProperties) {
-        int timeout = getTimeout(redisProperties);
-        String uriPrefix = getUriPrefix(redisProperties);
-        config.useSingleServer()
-                .setAddress(uriPrefix + redisProperties.getHost() + StrConst.COLON + redisProperties.getPort())
-                .setDatabase(redisProperties.getDatabase())
-                .setPassword(redisProperties.getPassword())
-                .setTimeout(timeout);
-        applyPoolConfig(config,redisProperties);
-    }
-
-    /**
-     * 转发 spring.data.redis 连接池配置到 Redisson（仅单节点模式适用）
-     * <p>兼容 Lettuce 和 Jedis 两种客户端配置。</p>
-     */
-    private void applyPoolConfig(Config config, RedisProperties redisProperties) {
-        // 优先取 Lettuce pool，其次 Jedis pool
-        RedisProperties.Pool pool = null;
-        if (redisProperties.getLettuce() != null && redisProperties.getLettuce().getPool() != null) {
-            pool =  redisProperties.getLettuce().getPool();
-        } else if (redisProperties.getJedis() != null && redisProperties.getJedis().getPool() != null) {
-            pool = redisProperties.getJedis().getPool();
-        }
-        if (pool == null) {
-            return;
-        }
-        config.useSingleServer().setConnectionPoolSize(pool.getMaxActive());
-        config.useSingleServer().setConnectionMinimumIdleSize(pool.getMinIdle());
-    }
-
-    /**
-     * 获取超时时间（毫秒）
-     */
-    private int getTimeout(RedisProperties redisProperties) {
-        return redisProperties.getTimeout() != null ? (int) redisProperties.getTimeout().toMillis() : DEFAULT_TIMEOUT_MS;
-    }
-
-    /**
-     * 获取 URI 前缀
-     */
-    private String getUriPrefix(RedisProperties redisProperties) {
-        return redisProperties.getSsl() != null && redisProperties.getSsl().isEnabled() ? "rediss://" : "redis://";
+    public RedissonAutoConfigurationCustomizer redissonCustomizer() {
+        return config -> {
+            config.setCodec(StringCodec.INSTANCE);
+            config.setLockWatchdogTimeout(LOCK_WATCHDOG_TIMEOUT_MS);
+        };
     }
 
     @Bean
